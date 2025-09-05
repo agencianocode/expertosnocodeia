@@ -214,7 +214,52 @@ export function registerSimpleRoutes(app: Express): Server {
     }
   });
 
-  // Simple user info endpoint
+  // User info endpoint for simple auth
+  app.get("/api/user-me", async (req: Request, res: Response) => {
+    try {
+      const authHeader = req.headers.authorization;
+      const token = authHeader && authHeader.split(" ")[1];
+      
+      if (!token) {
+        return res.status(401).json({ 
+          message: "Token requerido",
+          reason: "no_token" 
+        });
+      }
+
+      // Simple token validation with database lookup
+      try {
+        const decoded = Buffer.from(token, 'base64').toString('utf-8');
+        const [userId, timestamp] = decoded.split(':');
+        
+        // Get user from database
+        const user = await storage.getUser(userId);
+        if (user) {
+          res.json({
+            id: user.id,
+            email: user.email,
+            firstName: user.firstName,
+            lastName: user.lastName,
+          });
+        } else {
+          res.status(401).json({ 
+            message: "Usuario no encontrado",
+            reason: "user_not_found" 
+          });
+        }
+      } catch (decodeError) {
+        res.status(401).json({ 
+          message: "Token inválido",
+          reason: "invalid_token" 
+        });
+      }
+    } catch (error) {
+      console.error("Auth check error:", error);
+      res.status(500).json({ message: "Error interno del servidor" });
+    }
+  });
+
+  // Original Supabase auth endpoint for compatibility
   app.get("/api/auth/me", async (req: Request, res: Response) => {
     try {
       const authHeader = req.headers.authorization;

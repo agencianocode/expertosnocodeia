@@ -37,7 +37,7 @@ export function SimpleAuthProvider({ children }: { children: ReactNode }) {
 
   const fetchUser = async (authToken: string) => {
     try {
-      const response = await fetch('/api/auth/me', {
+      const response = await fetch('/api/user-me', {
         headers: {
           'Authorization': `Bearer ${authToken}`,
         },
@@ -64,7 +64,7 @@ export function SimpleAuthProvider({ children }: { children: ReactNode }) {
     try {
       setIsLoading(true);
       
-      const response = await fetch('/api/auth/login', {
+      const response = await fetch('/api/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
