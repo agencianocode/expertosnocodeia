@@ -63,6 +63,7 @@ export function SimpleAuthProvider({ children }: { children: ReactNode }) {
   const login = async (email: string, password: string) => {
     try {
       setIsLoading(true);
+      console.log('Attempting login with:', { email, password });
       
       const response = await fetch('/api/login', {
         method: 'POST',
@@ -72,6 +73,9 @@ export function SimpleAuthProvider({ children }: { children: ReactNode }) {
         body: JSON.stringify({ email, password }),
       });
 
+      console.log('Login response status:', response.status);
+      console.log('Login response ok:', response.ok);
+      
       if (response.ok) {
         const data = await response.json();
         
