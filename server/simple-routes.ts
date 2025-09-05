@@ -4,6 +4,7 @@ import { Request, Response } from "express";
 import { storage } from "./storage";
 import { isAdmin } from "./adminMiddleware";
 import { SupabaseStorageService } from "./supabaseStorage";
+import { ObjectStorageService, ObjectNotFoundError } from "./objectStorage";
 import { supabaseAuth, optionalSupabaseAuth, supabaseAdminAuth, AuthenticatedRequest } from "./supabaseAuth";
 import { setupSupabaseAuthRoutes } from "./supabaseAuthRoutes";
 import { replitAuth, optionalReplitAuth, replitLogin, replitCallback, AuthenticatedRequest as ReplitAuthenticatedRequest } from "./replitAuth";
@@ -140,6 +141,22 @@ export function registerSimpleRoutes(app: Express): Server {
   // Replit Auth routes
   app.get("/api/login", replitLogin);
   app.get("/api/auth/callback", replitCallback);
+  
+  // Object Storage routes for serving public assets
+  app.get("/public-objects/:filePath(*)", async (req: Request, res: Response) => {
+    const filePath = req.params.filePath;
+    const objectStorageService = new ObjectStorageService();
+    try {
+      const file = await objectStorageService.searchPublicObject(filePath);
+      if (!file) {
+        return res.status(404).json({ error: "File not found" });
+      }
+      objectStorageService.downloadObject(file, res);
+    } catch (error) {
+      console.error("Error searching for public object:", error);
+      return res.status(500).json({ error: "Internal server error" });
+    }
+  });
   
   // Legacy login endpoint (maintain backward compatibility with simple auth)
   app.post("/api/login", async (req: Request, res: Response) => {
@@ -374,6 +391,18 @@ export function registerSimpleRoutes(app: Express): Server {
     }
   });
 
+  // Admin media upload URL endpoint  
+  app.post("/api/admin/media/upload-url", simpleAdminAuth, isAdmin, async (req: Request, res: Response) => {
+    try {
+      const objectStorageService = new ObjectStorageService();
+      const uploadURL = await objectStorageService.getObjectEntityUploadURL();
+      res.json({ uploadURL });
+    } catch (error) {
+      console.error("Error getting upload URL:", error);
+      res.status(500).json({ message: "Error interno del servidor" });
+    }
+  });
+
   // Admin courses endpoint for content management
   app.get("/api/admin/courses", simpleAdminAuth, isAdmin, async (req: Request, res: Response) => {
     try {
@@ -469,21 +498,25 @@ export function registerSimpleRoutes(app: Express): Server {
     }
   });
 
-  // Get lesson resource files from Google Cloud Storage
+  // Get lesson resource files from Replit Object Storage
   app.get("/api/lesson-resources/:resourceId/*", async (req: Request, res: Response) => {
     try {
       const resourceId = req.params.resourceId;
       const fileName = req.params[0]; // Gets the * part
-      const objectPath = `/lesson-resources/${resourceId}/${fileName}`;
+      const filePath = `lesson-resources/${resourceId}/${fileName}`;
       
-      console.log(`Requesting lesson resource: ${objectPath}`);
+      console.log(`Requesting lesson resource: ${filePath}`);
       
-      // Use the SupabaseStorageService to get the file
-      const supabaseStorageService = new SupabaseStorageService();
-      const file = await supabaseStorageService.getLessonResourceFile(objectPath);
+      // Use the ObjectStorageService to get the file
+      const objectStorageService = new ObjectStorageService();
+      const file = await objectStorageService.searchPublicObject(filePath);
+      
+      if (!file) {
+        throw new Error("File not found");
+      }
       
       // Stream the file directly to the response
-      await supabaseStorageService.downloadObject(file, res);
+      await objectStorageService.downloadObject(file, res);
     } catch (error) {
       console.error("Error fetching lesson resource:", error);
       
