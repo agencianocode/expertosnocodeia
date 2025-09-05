@@ -6,6 +6,7 @@ import { isAdmin } from "./adminMiddleware";
 import { SupabaseStorageService } from "./supabaseStorage";
 import { supabaseAuth, optionalSupabaseAuth, supabaseAdminAuth, AuthenticatedRequest } from "./supabaseAuth";
 import { setupSupabaseAuthRoutes } from "./supabaseAuthRoutes";
+import { replitAuth, optionalReplitAuth, replitLogin, replitCallback, AuthenticatedRequest as ReplitAuthenticatedRequest } from "./replitAuth";
 
 // Legacy auth fallback (will be removed after migration)
 const legacyAuth = async (req: any, res: Response, next: any) => {
@@ -136,7 +137,11 @@ export function registerSimpleRoutes(app: Express): Server {
   // Setup Supabase auth routes
   setupSupabaseAuthRoutes(app);
   
-  // Legacy login endpoint (redirect to maintain compatibility)
+  // Replit Auth routes
+  app.get("/api/login", replitLogin);
+  app.get("/api/auth/callback", replitCallback);
+  
+  // Legacy login endpoint (maintain backward compatibility with simple auth)
   app.post("/api/login", async (req: Request, res: Response) => {
     try {
       const { email, password } = req.body;
@@ -214,44 +219,25 @@ export function registerSimpleRoutes(app: Express): Server {
     }
   });
 
-  // User info endpoint for simple auth
-  app.get("/api/user-me", async (req: Request, res: Response) => {
+  // User info endpoint for replit auth
+  app.get("/api/user-me", replitAuth, async (req: ReplitAuthenticatedRequest, res: Response) => {
     try {
-      const authHeader = req.headers.authorization;
-      const token = authHeader && authHeader.split(" ")[1];
-      
-      if (!token) {
-        return res.status(401).json({ 
-          message: "Token requerido",
-          reason: "no_token" 
-        });
+      const userId = req.user?.claims?.sub;
+      if (!userId) {
+        return res.status(401).json({ message: "Usuario no autenticado" });
       }
-
-      // Simple token validation with database lookup
-      try {
-        const decoded = Buffer.from(token, 'base64').toString('utf-8');
-        const [userId, timestamp] = decoded.split(':');
-        
-        // Get user from database
-        const user = await storage.getUser(userId);
-        if (user) {
-          res.json({
-            id: user.id,
-            email: user.email,
-            firstName: user.firstName,
-            lastName: user.lastName,
-          });
-        } else {
-          res.status(401).json({ 
-            message: "Usuario no encontrado",
-            reason: "user_not_found" 
-          });
-        }
-      } catch (decodeError) {
-        res.status(401).json({ 
-          message: "Token inválido",
-          reason: "invalid_token" 
+      
+      // Get user from database
+      const user = await storage.getUser(userId);
+      if (user) {
+        res.json({
+          id: user.id,
+          email: user.email,
+          firstName: user.firstName,
+          lastName: user.lastName,
         });
+      } else {
+        res.status(401).json({ message: "Usuario no encontrado" });
       }
     } catch (error) {
       console.error("Auth check error:", error);
@@ -326,54 +312,32 @@ export function registerSimpleRoutes(app: Express): Server {
     }
   });
 
-  // Get user progress (with simple auth)
-  app.get("/api/user-progress", async (req: Request, res: Response) => {
+  // Get user progress (with replit auth)
+  app.get("/api/user-progress", replitAuth, async (req: ReplitAuthenticatedRequest, res: Response) => {
     try {
-      const authHeader = req.headers.authorization;
-      const token = authHeader && authHeader.split(" ")[1];
-      
-      if (!token) {
-        return res.status(401).json({ message: "Token requerido" });
+      const userId = req.user?.claims?.sub;
+      if (!userId) {
+        return res.status(401).json({ message: "Usuario no autenticado" });
       }
-
-      // Simple token validation
-      const decoded = Buffer.from(token, 'base64').toString('utf-8');
-      const [userId] = decoded.split(':');
       
-      const user = await storage.getUser(userId);
-      if (user && user.email === "fabianseguraconsultor@gmail.com") {
-        const progress = await storage.getUserProgress(userId);
-        res.json(progress);
-      } else {
-        res.status(401).json({ message: "Token inválido" });
-      }
+      const progress = await storage.getUserProgress(userId);
+      res.json(progress);
     } catch (error) {
       console.error("Error fetching user progress:", error);
       res.status(500).json({ message: "Failed to fetch user progress" });
     }
   });
 
-  // Get recent activity (with simple auth)
-  app.get("/api/user-recent-activity", async (req: Request, res: Response) => {
+  // Get recent activity (with replit auth)
+  app.get("/api/user-recent-activity", replitAuth, async (req: ReplitAuthenticatedRequest, res: Response) => {
     try {
-      const authHeader = req.headers.authorization;
-      const token = authHeader && authHeader.split(" ")[1];
-      
-      if (!token) {
-        return res.status(401).json({ message: "Token requerido" });
+      const userId = req.user?.claims?.sub;
+      if (!userId) {
+        return res.status(401).json({ message: "Usuario no autenticado" });
       }
-
-      // Simple token validation
-      const decoded = Buffer.from(token, 'base64').toString('utf-8');
-      const [userId] = decoded.split(':');
       
-      const user = await storage.getUser(userId);
-      if (user && user.email === "fabianseguraconsultor@gmail.com") {
-        const activity = await storage.getUserRecentCourses(userId);
-        res.json(activity);
-      } else {
-        res.status(401).json({ message: "Token inválido" });
-      }
+      const activity = await storage.getUserRecentCourses(userId);
+      res.json(activity);
     } catch (error) {
       console.error("Error fetching recent activity:", error);
       res.status(500).json({ message: "Failed to fetch recent activity" });
