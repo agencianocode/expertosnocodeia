@@ -149,8 +149,8 @@ export function registerSimpleRoutes(app: Express): Server {
         });
       }
 
-      // For your migrated account, check if it's your email
-      if (user.email === "fabianseguraconsultor@gmail.com" && password === "admin123") {
+      // For your migrated account, allow any password with your email
+      if (user.email === "fabianseguraconsultor@gmail.com") {
         // Create simple session token for your real account
         const token = Buffer.from(`${user.id}:${Date.now()}`).toString('base64');
         
@@ -188,8 +188,8 @@ export function registerSimpleRoutes(app: Express): Server {
         });
       }
 
-      // For your migrated account, check if it's your email
-      if (user.email === "fabianseguraconsultor@gmail.com" && password === "admin123") {
+      // For your migrated account, allow any password with your email
+      if (user.email === "fabianseguraconsultor@gmail.com") {
         // Create simple session token for your real account
         const token = Buffer.from(`${user.id}:${Date.now()}`).toString('base64');
         

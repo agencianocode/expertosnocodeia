@@ -59,9 +59,9 @@ export default function SimpleLogin() {
             </Button>
           </form>
           
-          <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-            <h4 className="font-medium text-blue-800 mb-2">Tu cuenta migrada:</h4>
-            <p className="text-sm text-blue-700">
+          <div className="mt-6 p-4 bg-green-50 border border-green-200 rounded-lg">
+            <h4 className="font-medium text-green-800 mb-2">Tu cuenta migrada:</h4>
+            <p className="text-sm text-green-700">
               <strong>Email:</strong> fabianseguraconsultor@gmail.com<br/>
               <strong>Contraseña:</strong> Cualquier contraseña (tu cuenta está migrada)
             </p>
