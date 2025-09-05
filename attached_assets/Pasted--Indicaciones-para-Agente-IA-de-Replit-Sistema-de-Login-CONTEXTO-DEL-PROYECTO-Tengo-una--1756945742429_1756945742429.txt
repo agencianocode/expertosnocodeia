@@ -1,0 +1,105 @@
+# Indicaciones para Agente IA de Replit - Sistema de Login
+
+## CONTEXTO DEL PROYECTO
+
+Tengo una plataforma educativa de IA que replica la funcionalidad de rundown.ai con la siguiente estructura:
+
+### Flujo de Usuario:
+1. **Landing Page** → Usuario llega al sitio web principal
+2. **AI University** → Sección educativa con opciones de suscripción
+3. **Checkout** → Proceso de pago (prueba gratis, mensual, anual)
+4. **App Dashboard** → Plataforma de estudio (requiere autenticación)
+
+### Estados de la Aplicación:
+- **Sin Login**: Usuarios ven contenido limitado/promocional
+- **Con Login**: Usuarios acceden a contenido completo y personalizado
+
+## PROBLEMAS ESPECÍFICOS A RESOLVER
+
+### 1. Autenticación y Autorización
+- [ ] Sistema de registro de nuevos usuarios
+- [ ] Sistema de login/logout
+- [ ] Verificación de estado de autenticación
+- [ ] Manejo de sesiones de usuario
+- [ ] Redirecciones apropiadas según estado de login
+
+### 2. Integración con Sistema de Pagos
+- [ ] Validación de suscripciones activas
+- [ ] Diferenciación entre usuarios de prueba vs. pagos
+- [ ] Manejo de expiración de suscripciones
+- [ ] Sincronización entre checkout y permisos de usuario
+
+### 3. Experiencia de Usuario
+- [ ] Mostrar contenido correcto según tipo de usuario
+- [ ] Transición suave entre estados (logged/not logged)
+- [ ] Manejo de errores de autenticación
+- [ ] Persistencia de sesión del usuario
+
+## INFORMACIÓN TÉCNICA
+
+### Stack Tecnológico:
+- **Frontend**: [Especificar: React, Vue, HTML/JS, etc.]
+- **Backend**: [Especificar: Node.js, Python, etc.]
+- **Base de Datos**: [Especificar: MongoDB, PostgreSQL, etc.]
+- **Autenticación**: [Especificar método actual o deseado]
+
+### Archivos Clave del Proyecto:
+```
+/
+├── [Especificar estructura de carpetas]
+├── auth/
+├── components/
+├── pages/
+└── config/
+```
+
+## TAREAS ESPECÍFICAS REQUERIDAS
+
+### Prioridad Alta:
+1. **Revisar y depurar el sistema de autenticación actual**
+   - Identificar puntos de falla en el login
+   - Verificar manejo de tokens/sesiones
+   - Asegurar redirecciones correctas
+
+2. **Implementar verificación de estado de usuario**
+   - Middleware para verificar autenticación
+   - Componentes condicionales según estado de login
+   - Manejo de usuarios no autorizados
+
+3. **Sincronizar checkout con permisos**
+   - Conectar sistema de pagos con autenticación
+   - Activar cuentas después del pago
+   - Manejar diferentes tipos de suscripción
+
+### Prioridad Media:
+- Mejorar UX de transición entre estados
+- Implementar recuperación de contraseña
+- Optimizar manejo de errores
+
+## COMPORTAMIENTO ESPERADO
+
+### Flujo Ideal:
+1. Usuario completa checkout → Cuenta se activa automáticamente
+2. Usuario hace login → Ve dashboard completo (como imagen 2)
+3. Usuario sin login → Ve vista promocional (como imagen 1)
+4. Sesión persiste entre reloads de página
+5. Logout limpia sesión correctamente
+
+## ENTREGABLES ESPERADOS
+
+- [ ] Código funcional del sistema de login/logout
+- [ ] Middleware de autenticación
+- [ ] Componentes de UI actualizados
+- [ ] Documentación de la implementación
+- [ ] Pruebas de funcionamiento
+
+## CONSIDERACIONES IMPORTANTES
+
+- **Seguridad**: Implementar buenas prácticas de seguridad
+- **Performance**: Minimizar llamadas a API innecesarias
+- **Escalabilidad**: Código mantenible y extensible
+- **UX**: Transiciones suaves sin interrupciones bruscas
+
+---
+
+**NOTA**: Por favor, solicita acceso al código del proyecto y proporciona un análisis inicial de la estructura actual antes de proceder con las implementaciones.
