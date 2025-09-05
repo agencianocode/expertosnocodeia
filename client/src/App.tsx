@@ -59,8 +59,8 @@ function Router() {
       return false; // Usar rutas públicas para preview
     }
     
-    // En desarrollo local, usar aplicación LMS por defecto
-    if (hostname.includes('localhost')) {
+    // En desarrollo local, usar aplicación LMS siempre
+    if (hostname.includes('localhost') || hostname.includes('127.0.0.1') || hostname.includes('replit.dev')) {
       return true; // Usar rutas de LMS por defecto
     }
     
