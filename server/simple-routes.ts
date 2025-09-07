@@ -63,11 +63,18 @@ const legacyAuth = async (req: any, res: Response, next: any) => {
 // Simple admin middleware for our simplified auth
 const simpleAdminAuth = async (req: any, res: Response, next: any) => {
   try {
+    console.log("🚨 simpleAdminAuth called - Method:", req.method, "URL:", req.url);
+    console.log("🚨 Headers received:", JSON.stringify(req.headers, null, 2));
+    
     const authHeader = req.headers.authorization;
     const token = authHeader && authHeader.split(" ")[1];
     
+    console.log("🚨 authHeader:", authHeader);
+    console.log("🚨 token:", token ? token.substring(0, 20) + "..." : "NONE");
+    
     if (!token) {
-      return res.status(401).json({ message: "Token requerido" });
+      console.log("🚨 NO TOKEN - returning 401");
+      return res.status(401).json({ message: "token required" });
     }
 
     console.log("Raw token received:", token.substring(0, 50) + "...");
