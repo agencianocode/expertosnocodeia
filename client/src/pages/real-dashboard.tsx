@@ -122,7 +122,7 @@ export default function RealDashboard() {
       <div className="container mx-auto px-4 py-8">
         {/* Stats Cards */}
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-8">
-          <Card>
+          <Card key="total-courses">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
                 Cursos Disponibles
@@ -133,7 +133,7 @@ export default function RealDashboard() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card key="in-progress">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
                 En Progreso
@@ -144,7 +144,7 @@ export default function RealDashboard() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card key="completed">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
                 Completados
@@ -155,7 +155,7 @@ export default function RealDashboard() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card key="lessons-completed">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
                 Lecciones Completadas
@@ -169,7 +169,7 @@ export default function RealDashboard() {
 
         <div className="grid gap-8 lg:grid-cols-2">
           {/* Tu Progreso */}
-          <Card>
+          <Card key="user-progress">
             <CardHeader>
               <CardTitle>Tu Progreso</CardTitle>
             </CardHeader>
@@ -202,7 +202,7 @@ export default function RealDashboard() {
           </Card>
 
           {/* Actividad Reciente */}
-          <Card>
+          <Card key="recent-activity">
             <CardHeader>
               <CardTitle>Actividad Reciente</CardTitle>
             </CardHeader>
