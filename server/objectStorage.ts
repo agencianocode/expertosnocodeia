@@ -99,6 +99,21 @@ export class ObjectStorageService {
             console.log(`Found mapped image: ${mappedName} for request: ${fileName}`);
             return mappedFile;
           }
+
+          // If exact timestamp doesn't work, try fallback to any available image
+          // List all files in the bucket to find a suitable fallback
+          try {
+            const [files] = await bucket.getFiles({ prefix: 'public/image_' });
+            if (files && files.length > 0) {
+              // Use timestamp to deterministically pick a fallback image
+              const hash = parseInt(timestamp.slice(-6), 10);
+              const fallbackFile = files[hash % files.length];
+              console.log(`Using fallback image: ${fallbackFile.name} for missing: ${fileName}`);
+              return fallbackFile;
+            }
+          } catch (error) {
+            console.log(`Could not list files for fallback: ${error}`);
+          }
         }
       }
     }
