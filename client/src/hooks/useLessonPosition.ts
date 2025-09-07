@@ -21,7 +21,6 @@ export function useLessonPosition() {
     
     try {
       localStorage.setItem(LESSON_POSITION_KEY, JSON.stringify(position));
-      console.log('🔖 Lesson position saved:', { courseId, lessonId });
     } catch (error) {
       console.error('Error saving lesson position:', error);
     }
@@ -34,20 +33,16 @@ export function useLessonPosition() {
     try {
       const saved = localStorage.getItem(LESSON_POSITION_KEY);
       if (!saved) {
-        console.log('📖 No saved lesson position found');
         return null;
       }
       
       const position: LessonPosition = JSON.parse(saved);
-      console.log('📖 Found saved position:', position);
       
       // Verificar que la posición guardada es para el curso correcto
       if (position.courseId === courseId) {
-        console.log('✅ Returning saved lesson for course:', position.lessonId);
         return position.lessonId;
       }
       
-      console.log('❌ Saved position is for different course:', position.courseId, 'vs', courseId);
       return null;
     } catch (error) {
       console.error('Error getting saved lesson position:', error);

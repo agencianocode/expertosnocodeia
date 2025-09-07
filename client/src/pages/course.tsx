@@ -280,33 +280,33 @@ export default function Course() {
 
   // Verificar si hay una lección guardada y redirigir automáticamente
   useEffect(() => {
-    console.log('🔍 Checking saved position...', { 
-      courseId: id, 
-      lessonsCount: lessonsArray.length, 
-      hasCheckedSavedPosition 
-    });
+    // console.log('🔍 Checking saved position...', { 
+    //   courseId: id, 
+    //   lessonsCount: lessonsArray.length, 
+    //   hasCheckedSavedPosition 
+    // });
     
     if (id && lessonsArray.length > 0 && !hasCheckedSavedPosition) {
       const savedLessonId = getSavedLessonPosition(id);
-      console.log('📋 Got saved lesson ID:', savedLessonId);
+      // console.log('📋 Got saved lesson ID:', savedLessonId);
       
       if (savedLessonId) {
         // Verificar que la lección guardada aún existe en este curso
         const savedLessonIndex = lessonsArray.findIndex((lesson: any) => lesson.id === savedLessonId);
-        console.log('🔍 Found lesson index:', savedLessonIndex);
+        // console.log('🔍 Found lesson index:', savedLessonIndex);
         
         if (savedLessonIndex !== -1) {
-          console.log('🚀 Setting current lesson index to:', savedLessonIndex);
+          // console.log('🚀 Setting current lesson index to:', savedLessonIndex);
           // Establecer el índice de la lección guardada
           setCurrentLessonIndex(savedLessonIndex);
           setHasCheckedSavedPosition(true);
           return;
         } else {
-          console.log('❌ Saved lesson not found in current course lessons');
+          // console.log('❌ Saved lesson not found in current course lessons');
         }
       }
       
-      console.log('✅ Setting hasCheckedSavedPosition to true');
+      // console.log('✅ Setting hasCheckedSavedPosition to true');
       setHasCheckedSavedPosition(true);
     }
   }, [id, lessonsArray, hasCheckedSavedPosition, getSavedLessonPosition, setLocation]);
