@@ -498,29 +498,82 @@ export function registerSimpleRoutes(app: Express): Server {
     }
   });
 
-  // Get lesson resource files from Replit Object Storage
+  // Get lesson resource files from attached_assets first, then Object Storage
   app.get("/api/lesson-resources/:resourceId/*", async (req: Request, res: Response) => {
     try {
       const resourceId = req.params.resourceId;
       const fileName = req.params[0]; // Gets the * part
+      
+      console.log(`Requesting lesson resource: lesson-resources/${resourceId}/${fileName}`);
+      
+      // First, try to find the file in attached_assets (fallback for migration)
+      const fs = require('fs');
+      const path = require('path');
+      
+      // Look for files that might match (since attached_assets has timestamped names)
+      const attachedAssetsDir = path.join(process.cwd(), 'attached_assets');
+      
+      if (fs.existsSync(attachedAssetsDir)) {
+        const files = fs.readdirSync(attachedAssetsDir);
+        
+        // Try to find a matching image file with smart matching
+        // Convert filename patterns: image-1756240390808-doqa6e.png -> image_1756240390808
+        const baseFileName = fileName.split('.')[0]; // Remove extension
+        const timestamp = baseFileName.match(/image-(\d+)/)?.[1]; // Extract timestamp
+        
+        const matchingFile = files.find(file => {
+          // Direct match
+          if (file.includes(baseFileName)) return true;
+          
+          // Try with underscores instead of dashes
+          const underscoredName = baseFileName.replace(/-/g, '_');
+          if (file.includes(underscoredName)) return true;
+          
+          // Try matching by timestamp
+          if (timestamp && file.includes(`image_${timestamp}`)) return true;
+          
+          // Try matching by resource ID
+          if (file.includes(resourceId)) return true;
+          
+          return false;
+        });
+        
+        if (matchingFile) {
+          const fullPath = path.join(attachedAssetsDir, matchingFile);
+          console.log(`Found matching file in attached_assets: ${matchingFile}`);
+          
+          // Determine content type
+          const ext = path.extname(matchingFile).toLowerCase();
+          const contentType = ext === '.png' ? 'image/png' : 
+                            ext === '.jpg' || ext === '.jpeg' ? 'image/jpeg' :
+                            ext === '.gif' ? 'image/gif' :
+                            ext === '.svg' ? 'image/svg+xml' :
+                            'application/octet-stream';
+          
+          res.setHeader('Content-Type', contentType);
+          res.setHeader('Cache-Control', 'public, max-age=3600');
+          
+          const fileStream = fs.createReadStream(fullPath);
+          fileStream.pipe(res);
+          return;
+        }
+      }
+      
+      // If not found in attached_assets, try Object Storage
       const filePath = `lesson-resources/${resourceId}/${fileName}`;
-      
-      console.log(`Requesting lesson resource: ${filePath}`);
-      
-      // Use the ObjectStorageService to get the file
       const objectStorageService = new ObjectStorageService();
       const file = await objectStorageService.searchPublicObject(filePath);
       
       if (!file) {
-        throw new Error("File not found");
+        throw new Error("File not found in both attached_assets and Object Storage");
       }
       
-      // Stream the file directly to the response
+      // Stream the file directly from Object Storage
       await objectStorageService.downloadObject(file, res);
     } catch (error) {
       console.error("Error fetching lesson resource:", error);
       
-      // If file not found, create a fallback SVG placeholder
+      // If file not found anywhere, create a fallback SVG placeholder
       const colors = [
         '#3B82F6', '#10B981', '#F59E0B', '#EF4444', 
         '#8B5CF6', '#06B6D4', '#F97316', '#84CC16'
