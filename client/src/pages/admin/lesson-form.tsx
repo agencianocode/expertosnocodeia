@@ -25,6 +25,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAdmin } from "@/hooks/useAdmin";
 import { RichTextEditor } from "@/components/ui/rich-text-editor";
 import { LessonResourcesEditor } from "@/components/lesson-resources-editor";
+import { apiRequest } from "@/lib/queryClient";
 
 const lessonSchema = z.object({
   title: z.string().min(1, "El título es requerido"),
@@ -126,17 +127,7 @@ export default function LessonForm() {
       const url = isEditing ? `/api/admin/lessons/${lessonId}` : `/api/admin/courses/${courseId}/lessons`;
       const method = isEditing ? 'PUT' : 'POST';
       
-      const response = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      });
-      
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Error al guardar la lección');
-      }
-      
+      const response = await apiRequest(method, url, data);
       return response.json();
     },
     onSuccess: (data) => {
