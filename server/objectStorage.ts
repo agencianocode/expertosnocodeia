@@ -67,20 +67,39 @@ export class ObjectStorageService {
     return dir;
   }
 
-  // Search for a public object from the search paths.
+  // Search for a public object from the search paths with intelligent name mapping.
   async searchPublicObject(filePath: string): Promise<File | null> {
     for (const searchPath of this.getPublicObjectSearchPaths()) {
+      // Try direct path first
       const fullPath = `${searchPath}/${filePath}`;
-
-      // Full path format: /<bucket_name>/<object_name>
       const { bucketName, objectName } = parseObjectPath(fullPath);
       const bucket = objectStorageClient.bucket(bucketName);
       const file = bucket.file(objectName);
 
-      // Check if file exists
       const [exists] = await file.exists();
       if (exists) {
         return file;
+      }
+
+      // If direct search fails and this is a lesson resource, try intelligent mapping
+      if (filePath.includes('lesson-resources/') && filePath.includes('image-')) {
+        const fileName = filePath.split('/').pop() || '';
+        const baseFileName = fileName.split('.')[0]; // Remove extension
+        const timestamp = baseFileName.match(/image-(\d+)/)?.[1]; // Extract timestamp
+
+        if (timestamp) {
+          // Try mapping: image-1756839147937-ce32d.jpg -> image_1756839147937.png
+          const mappedName = `image_${timestamp}.png`;
+          const mappedPath = `${searchPath}/${mappedName}`;
+          const { bucketName: mappedBucketName, objectName: mappedObjectName } = parseObjectPath(mappedPath);
+          const mappedFile = bucket.file(mappedObjectName);
+
+          const [mappedExists] = await mappedFile.exists();
+          if (mappedExists) {
+            console.log(`Found mapped image: ${mappedName} for request: ${fileName}`);
+            return mappedFile;
+          }
+        }
       }
     }
 
