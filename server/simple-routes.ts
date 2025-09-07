@@ -498,134 +498,28 @@ export function registerSimpleRoutes(app: Express): Server {
     }
   });
 
-  // Get lesson resource files from attached_assets first, then Object Storage
+  // Get lesson resource files from Object Storage (restored original behavior)
   app.get("/api/lesson-resources/:resourceId/*", async (req: Request, res: Response) => {
     try {
       const resourceId = req.params.resourceId;
       const fileName = req.params[0]; // Gets the * part
       
-      console.log(`Requesting lesson resource: lesson-resources/${resourceId}/${fileName}`);
+      console.log(`Requesting lesson resource from Object Storage: lesson-resources/${resourceId}/${fileName}`);
       
-      // First, try to find the file in attached_assets (fallback for migration)
-      const fs = require('fs');
-      const path = require('path');
-      
-      // Look for files that might match (since attached_assets has timestamped names)
-      const attachedAssetsDir = path.join(process.cwd(), 'attached_assets');
-      
-      if (fs.existsSync(attachedAssetsDir)) {
-        const files = fs.readdirSync(attachedAssetsDir);
-        
-        // Try to find a matching image file with smart matching
-        // Convert filename patterns: image-1756240390808-doqa6e.png -> image_1756240390808
-        const baseFileName = fileName.split('.')[0]; // Remove extension
-        const timestamp = baseFileName.match(/image-(\d+)/)?.[1]; // Extract timestamp
-        
-        console.log(`Looking for: ${fileName}, baseFileName: ${baseFileName}, timestamp: ${timestamp}`);
-        
-        const matchingFile = files.find((file: string) => {
-          // Direct match
-          if (file.includes(baseFileName)) return true;
-          
-          // Try with underscores instead of dashes
-          const underscoredName = baseFileName.replace(/-/g, '_');
-          if (file.includes(underscoredName)) return true;
-          
-          // Try matching by timestamp
-          if (timestamp && file.includes(`image_${timestamp}`)) return true;
-          
-          // Try matching by resource ID
-          if (file.includes(resourceId)) return true;
-          
-          // Try partial timestamp matching (last 6 digits)
-          if (timestamp && timestamp.length >= 6) {
-            const partialTimestamp = timestamp.slice(-6);
-            if (file.includes(partialTimestamp)) return true;
-          }
-          
-          return false;
-        });
-        
-        // If no exact match, try a more flexible approach
-        if (!matchingFile && files.length > 0) {
-          const imageFiles = files.filter(f => f.includes('image_') && (f.includes('.png') || f.includes('.jpg')));
-          if (imageFiles.length > 0) {
-            // Use resourceId to deterministically pick an image
-            const hash = resourceId.split('').reduce((a, b) => { a = ((a << 5) - a) + b.charCodeAt(0); return a & a; }, 0);
-            const selectedFile = imageFiles[Math.abs(hash) % imageFiles.length];
-            console.log(`No exact match found, using fallback image: ${selectedFile}`);
-            
-            const fullPath = path.join(attachedAssetsDir, selectedFile);
-            const ext = path.extname(selectedFile).toLowerCase();
-            const contentType = ext === '.png' ? 'image/png' : 
-                              ext === '.jpg' || ext === '.jpeg' ? 'image/jpeg' :
-                              ext === '.gif' ? 'image/gif' : 'image/png';
-            
-            res.setHeader('Content-Type', contentType);
-            res.setHeader('Cache-Control', 'public, max-age=3600');
-            
-            const fileStream = fs.createReadStream(fullPath);
-            fileStream.pipe(res);
-            return;
-          }
-        }
-        
-        if (matchingFile) {
-          const fullPath = path.join(attachedAssetsDir, matchingFile);
-          console.log(`Found matching file in attached_assets: ${matchingFile}`);
-          
-          // Determine content type
-          const ext = path.extname(matchingFile).toLowerCase();
-          const contentType = ext === '.png' ? 'image/png' : 
-                            ext === '.jpg' || ext === '.jpeg' ? 'image/jpeg' :
-                            ext === '.gif' ? 'image/gif' :
-                            ext === '.svg' ? 'image/svg+xml' :
-                            'application/octet-stream';
-          
-          res.setHeader('Content-Type', contentType);
-          res.setHeader('Cache-Control', 'public, max-age=3600');
-          
-          const fileStream = fs.createReadStream(fullPath);
-          fileStream.pipe(res);
-          return;
-        }
-      }
-      
-      // If not found in attached_assets, try Object Storage
+      // Use Object Storage directly (restored original behavior)
       const filePath = `lesson-resources/${resourceId}/${fileName}`;
       const objectStorageService = new ObjectStorageService();
       const file = await objectStorageService.searchPublicObject(filePath);
       
       if (!file) {
-        throw new Error("File not found in both attached_assets and Object Storage");
+        return res.status(404).json({ error: "File not found" });
       }
       
       // Stream the file directly from Object Storage
       await objectStorageService.downloadObject(file, res);
     } catch (error) {
       console.error("Error fetching lesson resource:", error);
-      
-      // If file not found anywhere, create a fallback SVG placeholder
-      const colors = [
-        '#3B82F6', '#10B981', '#F59E0B', '#EF4444', 
-        '#8B5CF6', '#06B6D4', '#F97316', '#84CC16'
-      ];
-      const resourceId = req.params.resourceId;
-      const colorIndex = parseInt(resourceId.slice(-2), 16) % colors.length;
-      const bgColor = colors[colorIndex];
-      
-      const fallbackSvg = `
-        <svg width="600" height="400" xmlns="http://www.w3.org/2000/svg">
-          <rect width="100%" height="100%" fill="${bgColor}"/>
-          <circle cx="300" cy="200" r="80" fill="rgba(255,255,255,0.3)"/>
-          <text x="300" y="210" text-anchor="middle" fill="white" font-size="24" font-family="Arial, sans-serif">
-            📚
-          </text>
-        </svg>
-      `;
-      res.setHeader('Content-Type', 'image/svg+xml');
-      res.setHeader('Cache-Control', 'public, max-age=86400');
-      res.send(fallbackSvg);
+      res.status(500).json({ error: "Internal server error" });
     }
   });
 
