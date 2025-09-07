@@ -94,10 +94,10 @@ export class ObjectStorageService {
       const fileNames: string[] = [];
       
       // Try both public and private directories
-      const searchPaths = [
-        ...this.getPublicObjectSearchPaths(),
-        this.getPrivateObjectDir()
-      ];
+      const publicPaths = this.getPublicObjectSearchPaths();
+      const privatePath = this.getPrivateObjectDir();
+      const searchPaths = [...publicPaths, privatePath];
+      console.log("🔍 All search paths:", searchPaths);
       
       for (const searchPath of searchPaths) {
         console.log("🔍 Searching path:", searchPath);
