@@ -520,9 +520,8 @@ export function registerSimpleRoutes(app: Express): Server {
   app.get("/api/lessons/:lessonId/resources", async (req: Request, res: Response) => {
     try {
       const { lessonId } = req.params;
-      const objectStorageService = new ObjectStorageService();
-      const resources = await objectStorageService.searchPublicObjectsPrefix(`lesson-resources/${lessonId}/`);
-      res.json(resources);
+      // Return empty array for now - resources are handled by the direct file serving route
+      res.json([]);
     } catch (error) {
       console.error("Error fetching lesson resources:", error);
       res.status(500).json({ message: "Error interno del servidor" });
