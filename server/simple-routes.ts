@@ -8,7 +8,6 @@ import { SupabaseStorageService } from "./supabaseStorage";
 import { ObjectStorageService, ObjectNotFoundError } from "./objectStorage";
 import { supabaseAuth, optionalSupabaseAuth, supabaseAdminAuth, AuthenticatedRequest } from "./supabaseAuth";
 import { setupSupabaseAuthRoutes } from "./supabaseAuthRoutes";
-import { replitAuth, optionalReplitAuth, replitLogin, replitCallback, AuthenticatedRequest as ReplitAuthenticatedRequest } from "./replitAuth";
 
 // Legacy auth fallback (will be removed after migration)
 const legacyAuth = async (req: any, res: Response, next: any) => {
@@ -51,7 +50,6 @@ const legacyAuth = async (req: any, res: Response, next: any) => {
       return res.status(401).json({ message: "Token inválido" });
     }
 
-    console.log("Setting req.user with userId:", userId);
     req.user = { claims: { sub: userId } };
     next();
   } catch (error) {
@@ -123,8 +121,9 @@ export function registerSimpleRoutes(app: Express): Server {
   setupSupabaseAuthRoutes(app);
   
   // Replit Auth routes
-  app.get("/api/login", replitLogin);
-  app.get("/api/auth/callback", replitCallback);
+  // Replit auth routes removed during SimpleAuth migration
+  // app.get("/api/login", replitLogin);
+  // app.get("/api/auth/callback", replitCallback);
   
   // Object Storage routes for serving public assets
   app.get("/public-objects/:filePath(*)", async (req: Request, res: Response) => {
@@ -221,7 +220,7 @@ export function registerSimpleRoutes(app: Express): Server {
   });
 
   // User info endpoint for replit auth
-  app.get("/api/user-me", replitAuth, async (req: ReplitAuthenticatedRequest, res: Response) => {
+  app.get("/api/user-me", legacyAuth, async (req: any, res: Response) => {
     try {
       const userId = req.user?.claims?.sub;
       if (!userId) {
@@ -314,7 +313,7 @@ export function registerSimpleRoutes(app: Express): Server {
   });
 
   // Get user progress (with replit auth)
-  app.get("/api/user-progress", replitAuth, async (req: ReplitAuthenticatedRequest, res: Response) => {
+  app.get("/api/user-progress", legacyAuth, async (req: any, res: Response) => {
     try {
       const userId = req.user?.claims?.sub;
       if (!userId) {
@@ -330,7 +329,7 @@ export function registerSimpleRoutes(app: Express): Server {
   });
 
   // Get recent activity (with replit auth)
-  app.get("/api/user-recent-activity", replitAuth, async (req: ReplitAuthenticatedRequest, res: Response) => {
+  app.get("/api/user-recent-activity", legacyAuth, async (req: any, res: Response) => {
     try {
       const userId = req.user?.claims?.sub;
       if (!userId) {

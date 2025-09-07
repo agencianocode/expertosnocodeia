@@ -7,7 +7,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Separator } from "@/components/ui/separator";
 import { Eye, EyeOff, Shield, Chrome } from "lucide-react";
 import { loginSchema, registerSchema, type LoginData, type RegisterData } from "@shared/schema";
-import { useNewAuth } from "@/hooks/use-new-auth";
+import { useSimpleAuth } from "@/hooks/use-simple-auth";
 import { useLocation } from "wouter";
 import LoginSidebar from "@/components/layout/login-sidebar";
 
@@ -16,8 +16,8 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [, setLocation] = useLocation();
   
-  // Use new auth system
-  const { isAuthenticated, loginMutation, registerMutation, googleLoginMutation } = useNewAuth();
+  // Use simple auth system
+  const { isAuthenticated, login } = useSimpleAuth();
 
   // Redirect if already authenticated
   useEffect(() => {
@@ -46,12 +46,17 @@ export default function Login() {
     },
   });
 
-  const handleLogin = (data: LoginData) => {
-    loginMutation.mutate(data);
+  const handleLogin = async (data: LoginData) => {
+    try {
+      await login(data.email, data.password);
+    } catch (error) {
+      console.error('Login failed:', error);
+    }
   };
 
   const handleRegister = (data: RegisterData) => {
-    registerMutation.mutate(data);
+    // Registration not implemented in SimpleAuth yet
+    console.log('Registration not yet implemented');
   };
 
   const handleGoogleLogin = () => {
@@ -202,10 +207,10 @@ export default function Login() {
                     <Button
                       type="submit"
                       className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold py-2 px-4 rounded-lg transition-colors"
-                      disabled={loginMutation.isPending}
+                      disabled={false}
                       data-testid="button-login"
                     >
-                      {loginMutation.isPending ? "Iniciando sesión..." : "Iniciar sesión"}
+                      Iniciar sesión
                     </Button>
                   </form>
                 </Form>
@@ -329,10 +334,10 @@ export default function Login() {
                     <Button
                       type="submit"
                       className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold py-2 px-4 rounded-lg transition-colors"
-                      disabled={registerMutation.isPending}
+                      disabled={false}
                       data-testid="button-register"
                     >
-                      {registerMutation.isPending ? "Creando cuenta..." : "Crear cuenta"}
+                      Crear cuenta
                     </Button>
                   </form>
                 </Form>
