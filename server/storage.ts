@@ -224,11 +224,7 @@ export class DatabaseStorage implements IStorage {
   async createUser(userData: Partial<User>): Promise<User> {
     const [user] = await db
       .insert(users)
-      .values({
-        ...userData,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      })
+      .values(userData)
       .returning();
     return user;
   }
@@ -995,7 +991,9 @@ export class DatabaseStorage implements IStorage {
     }
 
     // Update overall course progress
-    await this.updateCourseProgress(userId, lesson.courseId);
+    if (lesson.courseId) {
+      await this.updateCourseProgress(userId, lesson.courseId);
+    }
 
     return lessonProgress;
   }
