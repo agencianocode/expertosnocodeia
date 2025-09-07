@@ -19,7 +19,7 @@ export const isAdmin: RequestHandler = async (req: any, res, next) => {
     if (!adminUser || !adminUser.isActive) {
       console.log("isAdmin middleware - Admin user not found or inactive");
       return res.status(403).json({ 
-        message: "Acceso denegado. Se requieren privilegios de administrador." 
+        message: "No tienes privilegios de administrador." 
       });
     }
 
