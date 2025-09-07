@@ -1,6 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { Request, Response } from "express";
+import { randomUUID } from "crypto";
 import { storage } from "./storage";
 import { isAdmin } from "./adminMiddleware";
 import { SupabaseStorageService } from "./supabaseStorage";
@@ -444,6 +445,86 @@ export function registerSimpleRoutes(app: Express): Server {
       res.json(lessons);
     } catch (error) {
       console.error("Error fetching course lessons:", error);
+      res.status(500).json({ message: "Error interno del servidor" });
+    }
+  });
+
+  // Get specific lesson for admin editing
+  app.get("/api/admin/lessons/:id", simpleAdminAuth, isAdmin, async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+      const lesson = await storage.getLessonById(id);
+      if (!lesson) {
+        return res.status(404).json({ message: "Lección no encontrada" });
+      }
+      res.json(lesson);
+    } catch (error) {
+      console.error("Error fetching lesson:", error);
+      res.status(500).json({ message: "Error interno del servidor" });
+    }
+  });
+
+  // Create new lesson
+  app.post("/api/admin/courses/:courseId/lessons", simpleAdminAuth, isAdmin, async (req: Request, res: Response) => {
+    try {
+      const { courseId } = req.params;
+      const lessonData = {
+        ...req.body,
+        courseId,
+        id: randomUUID(), // Generate unique ID
+      };
+      
+      const lesson = await storage.createLesson(lessonData);
+      res.json(lesson);
+    } catch (error) {
+      console.error("Error creating lesson:", error);
+      res.status(500).json({ message: "Error interno del servidor" });
+    }
+  });
+
+  // Update existing lesson
+  app.put("/api/admin/lessons/:id", simpleAdminAuth, isAdmin, async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+      const lessonData = req.body;
+      
+      const lesson = await storage.updateLesson(id, lessonData);
+      if (!lesson) {
+        return res.status(404).json({ message: "Lección no encontrada" });
+      }
+      
+      res.json(lesson);
+    } catch (error) {
+      console.error("Error updating lesson:", error);
+      res.status(500).json({ message: "Error interno del servidor" });
+    }
+  });
+
+  // Delete lesson
+  app.delete("/api/admin/lessons/:id", simpleAdminAuth, isAdmin, async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+      const success = await storage.deleteLesson(id);
+      if (!success) {
+        return res.status(404).json({ message: "Lección no encontrada" });
+      }
+      
+      res.json({ message: "Lección eliminada correctamente" });
+    } catch (error) {
+      console.error("Error deleting lesson:", error);
+      res.status(500).json({ message: "Error interno del servidor" });
+    }
+  });
+
+  // Get lesson resources
+  app.get("/api/lessons/:lessonId/resources", async (req: Request, res: Response) => {
+    try {
+      const { lessonId } = req.params;
+      const objectStorageService = new ObjectStorageService();
+      const resources = await objectStorageService.searchPublicObjectsPrefix(`lesson-resources/${lessonId}/`);
+      res.json(resources);
+    } catch (error) {
+      console.error("Error fetching lesson resources:", error);
       res.status(500).json({ message: "Error interno del servidor" });
     }
   });
