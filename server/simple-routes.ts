@@ -63,69 +63,45 @@ const legacyAuth = async (req: any, res: Response, next: any) => {
 // Simple admin middleware for our simplified auth
 const simpleAdminAuth = async (req: any, res: Response, next: any) => {
   try {
-    console.log("🚨 simpleAdminAuth called - Method:", req.method, "URL:", req.url);
-    console.log("🚨 Headers received:", JSON.stringify(req.headers, null, 2));
-    
     const authHeader = req.headers.authorization;
     const token = authHeader && authHeader.split(" ")[1];
     
-    console.log("🚨 authHeader:", authHeader);
-    console.log("🚨 token:", token ? token.substring(0, 20) + "..." : "NONE");
-    
     if (!token) {
-      console.log("🚨 NO TOKEN - returning 401");
-      return res.status(401).json({ message: "token required" });
+      return res.status(401).json({ message: "Token requerido" });
     }
 
-    console.log("Raw token received:", token.substring(0, 50) + "...");
-    
     let userId;
     
-    // Handle JWT tokens (what we're actually receiving)
+    // Handle JWT tokens 
     if (token.startsWith('eyJ')) {
-      // This is a JWT token
       try {
         const parts = token.split('.');
         if (parts.length === 3) {
           const payload = JSON.parse(Buffer.from(parts[1], 'base64').toString());
-          console.log("JWT payload:", payload);
           userId = payload.userId;
-          console.log("Extracted userId from JWT:", userId);
         }
       } catch (jwtError) {
-        console.log("JWT parse failed, falling back to email lookup");
         const user = await storage.getUserByEmail("fabianseguraconsultor@gmail.com");
         if (user) {
           userId = user.id;
-          console.log("Found user by email:", userId);
         }
       }
     } else {
       // Handle simple base64 tokens
       try {
         const decoded = Buffer.from(token, 'base64').toString('utf-8');
-        console.log("Decoded token:", decoded);
         [userId] = decoded.split(':');
-        console.log("Extracted userId:", userId);
       } catch (decodeError) {
-        console.log("Base64 decode failed");
+        // Token decode failed
       }
     }
     
-    // Direct check since we know this is your admin account
-    if (userId === "b380d310-84b4-4c25-9a52-4f5af4a3e79e") {
-      console.log("Setting req.user with userId:", userId);
-      req.user = { claims: { sub: userId } }; // Set structure for admin middleware compatibility
-      
-      // Also check admin user exists
-      const adminUser = await storage.getAdminUser(userId);
-      console.log("Admin user found:", adminUser);
-      
-      next();
-    } else {
-      console.log("Auth failed for userId:", userId);
-      res.status(403).json({ message: "No tienes privilegios de administrador." });
+    if (!userId) {
+      return res.status(401).json({ message: "Token inválido" });
     }
+
+    req.user = { claims: { sub: userId } };
+    next();
   } catch (error) {
     console.error("Auth error:", error);
     res.status(500).json({ message: "Error de autenticación" });
