@@ -87,6 +87,35 @@ export class ObjectStorageService {
     return null;
   }
 
+  // List files with a specific prefix (e.g., lesson-resources/lessonId/)
+  async listFiles(prefix: string): Promise<string[]> {
+    try {
+      const fileNames: string[] = [];
+      
+      for (const searchPath of this.getPublicObjectSearchPaths()) {
+        const fullPath = `${searchPath}/${prefix}`;
+        const { bucketName, objectName } = parseObjectPath(fullPath);
+        const bucket = objectStorageClient.bucket(bucketName);
+
+        // List files with prefix
+        const [files] = await bucket.getFiles({ prefix: objectName });
+        
+        // Extract just the file names
+        for (const file of files) {
+          const fileName = file.name.replace(objectName, '').replace(/^\//, '');
+          if (fileName) {
+            fileNames.push(fileName);
+          }
+        }
+      }
+      
+      return fileNames;
+    } catch (error) {
+      console.error("Error listing files:", error);
+      return [];
+    }
+  }
+
   // Downloads an object to the response.
   async downloadObject(file: File, res: Response, cacheTtlSec: number = 3600) {
     try {

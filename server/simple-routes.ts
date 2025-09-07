@@ -520,13 +520,45 @@ export function registerSimpleRoutes(app: Express): Server {
   app.get("/api/lessons/:lessonId/resources", async (req: Request, res: Response) => {
     try {
       const { lessonId } = req.params;
-      // Return empty array for now - resources are handled by the direct file serving route
-      res.json([]);
+      const objectStorageService = new ObjectStorageService();
+      
+      // List files with lesson-resources/lessonId/ prefix
+      const files = await objectStorageService.listFiles(`lesson-resources/${lessonId}/`);
+      
+      // Convert to resource objects with URLs
+      const resources = files.map(fileName => ({
+        name: fileName,
+        url: `/api/lesson-resources/${lessonId}/${fileName}`,
+        type: getFileType(fileName)
+      }));
+      
+      res.json(resources);
     } catch (error) {
       console.error("Error fetching lesson resources:", error);
       res.status(500).json({ message: "Error interno del servidor" });
     }
   });
+
+  // Helper function to determine file type
+  function getFileType(fileName: string): string {
+    const ext = fileName.toLowerCase().split('.').pop();
+    switch (ext) {
+      case 'jpg':
+      case 'jpeg':
+      case 'png':
+      case 'gif':
+      case 'webp':
+        return 'image';
+      case 'mp4':
+      case 'webm':
+      case 'ogg':
+        return 'video';
+      case 'pdf':
+        return 'document';
+      default:
+        return 'file';
+    }
+  }
 
   // USER ROUTES (public/authenticated user routes, not admin)
   
