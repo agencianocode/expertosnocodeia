@@ -90,48 +90,36 @@ export class ObjectStorageService {
   // List files with a specific prefix (e.g., lesson-resources/lessonId/)
   async listFiles(prefix: string): Promise<string[]> {
     try {
-      console.log("🔍 listFiles called with prefix:", prefix);
       const fileNames: string[] = [];
       
       // Try both public and private directories
       const publicPaths = this.getPublicObjectSearchPaths();
       const privatePath = this.getPrivateObjectDir();
       const searchPaths = [...publicPaths, privatePath];
-      console.log("🔍 All search paths:", searchPaths);
       
       for (const searchPath of searchPaths) {
-        console.log("🔍 Searching path:", searchPath);
         const fullPath = `${searchPath}/${prefix}`;
-        console.log("🔍 Full path:", fullPath);
-        
         const { bucketName, objectName } = parseObjectPath(fullPath);
-        console.log("🔍 Bucket:", bucketName, "Object prefix:", objectName);
-        
         const bucket = objectStorageClient.bucket(bucketName);
 
         // List files with prefix
         const [files] = await bucket.getFiles({ prefix: objectName });
-        console.log("🔍 Found files count:", files.length);
         
-        // Let's also try without the trailing slash to see if files exist
+        // Also try without the trailing slash
         const [filesNoSlash] = await bucket.getFiles({ prefix: objectName.replace(/\/$/, '') });
-        console.log("🔍 Found files (no slash) count:", filesNoSlash.length);
         
         // Use the result with more files
         const filesToUse = files.length > 0 ? files : filesNoSlash;
         
         // Extract just the file names
         for (const file of filesToUse) {
-          console.log("🔍 File found:", file.name);
           const fileName = file.name.replace(objectName.replace(/\/$/, ''), '').replace(/^\//, '');
-          console.log("🔍 Processed fileName:", fileName);
           if (fileName && !fileNames.includes(fileName)) {
             fileNames.push(fileName);
           }
         }
       }
       
-      console.log("🔍 Final fileNames:", fileNames);
       return fileNames;
     } catch (error) {
       console.error("Error listing files:", error);
