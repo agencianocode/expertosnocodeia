@@ -140,31 +140,6 @@ export default function Sidebar() {
       </nav>
       {/* Bottom Section */}
       <div className="mt-auto">
-        {/* Start Button */}
-        <div className="p-4">
-          <Button className="w-full bg-secondary hover:bg-secondary/80 text-secondary-foreground font-satoshi text-[13px] leading-[20px] rounded-lg py-2 px-4 flex items-center justify-between">
-            <div className="flex items-center">
-              <span className="w-6 h-6 bg-green-accent rounded-full flex items-center justify-center lg:mr-3">
-                <span className="text-white text-xs">▶</span>
-              </span>
-              <span className="hidden lg:block">Empezar</span>
-            </div>
-            <div className="bg-green-accent text-white text-xs px-2 py-1 rounded-full hidden lg:block">
-              52%
-            </div>
-          </Button>
-        </div>
-
-        {/* Help Link */}
-        <div className="px-4 pb-4">
-          <Button
-            variant="ghost"
-            className="w-full justify-center lg:justify-start font-satoshi font-normal text-[13px] leading-[20px] text-muted-foreground hover:text-foreground hover:bg-muted"
-          >
-            <Settings className="lg:mr-3 h-4 w-4" />
-            <span className="hidden lg:block">Informar un problema</span>
-          </Button>
-        </div>
 
         {/* User Profile */}
         <div className="p-4 border-t border-border">
@@ -188,18 +163,6 @@ export default function Sidebar() {
               </p>
             </div>
             <div className="flex items-center space-x-2 hidden lg:flex">
-              <Button
-                variant="ghost"
-                size="sm"
-                className="text-xs text-muted-foreground hover:text-foreground h-6 px-2"
-                onClick={toggleView}
-                title={isStudentView ? "Cambiar a vista Admin" : "Cambiar a vista Estudiante"}
-              >
-                {isStudentView ? "👨‍🎓" : "⚙️"}
-              </Button>
-              <div className="w-4 h-4 bg-yellow-500 rounded-full flex items-center justify-center">
-                <span className="text-xs">🔔</span>
-              </div>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
