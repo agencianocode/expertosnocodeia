@@ -191,15 +191,6 @@ export default function Sidebar() {
                   </p>
                 </div>
                 <div className="flex items-center space-x-2 hidden lg:flex">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="text-xs text-muted-foreground hover:text-foreground h-6 px-2"
-                    onClick={toggleView}
-                    title={isStudentView ? "Cambiar a vista Admin" : "Cambiar a vista Estudiante"}
-                  >
-                    {isStudentView ? "👨‍🎓" : "⚙️"}
-                  </Button>
                   <div className="w-4 h-4 bg-yellow-500 rounded-full flex items-center justify-center">
                     <span className="text-xs">🔔</span>
                   </div>
