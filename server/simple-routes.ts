@@ -638,8 +638,8 @@ export function registerSimpleRoutes(app: Express): Server {
 
   // USER ROUTES (public/authenticated user routes, not admin)
   
-  // Get specific course for regular users
-  app.get("/api/courses/:courseId", legacyAuth, async (req: Request, res: Response) => {
+  // Get specific course for regular users (public access for preview)
+  app.get("/api/courses/:courseId", async (req: Request, res: Response) => {
     try {
       const { courseId } = req.params;
       const course = await storage.getCourseById(courseId);
@@ -653,8 +653,8 @@ export function registerSimpleRoutes(app: Express): Server {
     }
   });
 
-  // Get lessons for a specific course (regular users)
-  app.get("/api/courses/:courseId/lessons", legacyAuth, async (req: Request, res: Response) => {
+  // Get lessons for a specific course (public access for preview)
+  app.get("/api/courses/:courseId/lessons", async (req: Request, res: Response) => {
     try {
       const { courseId } = req.params;
       const lessons = await storage.getLessonsByCourse(courseId);
