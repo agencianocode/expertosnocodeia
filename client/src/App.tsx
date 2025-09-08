@@ -94,6 +94,8 @@ function Router() {
       ) : !isAuthenticated ? (
         <>
           <Route path="/login" component={SimpleLogin} />
+          <Route path="/apoyo" component={Support} />
+          <Route path="/support" component={Support} />
           <Route path="/" component={() => <Redirect to="/login" />} />
           <Route component={NotFound} />
         </>

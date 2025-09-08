@@ -236,20 +236,7 @@ export default function Support() {
     message: ""
   });
 
-  // Redirect to login if not authenticated
-  useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
-      toast({
-        title: "Unauthorized",
-        description: "You are logged out. Logging in again...",
-        variant: "destructive",
-      });
-      setTimeout(() => {
-        window.location.href = "/login";
-      }, 500);
-      return;
-    }
-  }, [isAuthenticated, isLoading, toast]);
+  // Página de apoyo accesible sin autenticación
 
   const handleSubmitContact = (e: React.FormEvent) => {
     e.preventDefault();
@@ -262,16 +249,7 @@ export default function Support() {
     alert("¡Mensaje enviado con éxito! Te contactaremos pronto.");
   };
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-background flex">
-        <div className="w-64 bg-card border-r border-border"></div>
-        <div className="flex-1 flex items-center justify-center">
-          <div className="text-foreground">Loading...</div>
-        </div>
-      </div>
-    );
-  }
+  // Página de apoyo disponible para todos los usuarios
 
   return (
     <div className="min-h-screen bg-background text-foreground">
