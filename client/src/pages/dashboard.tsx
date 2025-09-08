@@ -20,24 +20,11 @@ export default function Dashboard() {
   const { subscription, isFreePlan } = useSubscription();
   const [currentSlide, setCurrentSlide] = useState(0);
 
-  // Redirect to login if not authenticated
-  useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
-      toast({
-        title: "Unauthorized",
-        description: "You are logged out. Logging in again...",
-        variant: "destructive",
-      });
-      setTimeout(() => {
-        window.location.href = "/api/login";
-      }, 500);
-      return;
-    }
-  }, [isAuthenticated, isLoading, toast]);
+  // No authentication redirect - allow public access with locked content
 
   const { data: dashboardData, isLoading: dashboardLoading } = useQuery({
     queryKey: ["/api/dashboard"],
-    enabled: isAuthenticated,
+    enabled: isAuthenticated, // Only fetch real data when authenticated
     refetchOnWindowFocus: true, // Refetch when user returns to tab
   });
 
@@ -52,9 +39,43 @@ export default function Dashboard() {
     );
   }
 
-  const continueCourses = (dashboardData as any)?.continueCourses || [];
-  const recommendedCourses = (dashboardData as any)?.recommendedCourses || [];
-  const categories = (dashboardData as any)?.categories || [];
+  // Mock data for non-authenticated users
+  const mockCourses = [
+    {
+      id: "preview-1",
+      title: "Introducción a NoCode para Principiantes",
+      description: "Aprende los fundamentos de NoCode y cómo empezar tu primer proyecto",
+      difficulty: "beginner",
+      duration: "2h",
+      type: "course"
+    },
+    {
+      id: "preview-2", 
+      title: "Automatización con Zapier y Make",
+      description: "Domina las herramientas de automatización más populares",
+      difficulty: "intermediate",
+      duration: "3h",
+      type: "course"
+    },
+    {
+      id: "preview-3",
+      title: "Creación de Apps sin Código",
+      description: "Construye aplicaciones completas usando plataformas NoCode",
+      difficulty: "advanced", 
+      duration: "4h",
+      type: "course"
+    }
+  ];
+
+  const mockCategories = [
+    { id: "cat-1", name: "General", icon: "💻" },
+    { id: "cat-2", name: "Automatización", icon: "🤖" },
+    { id: "cat-3", name: "Desarrollo", icon: "⚡" }
+  ];
+
+  const continueCourses = isAuthenticated ? (dashboardData as any)?.continueCourses || [] : mockCourses;
+  const recommendedCourses = isAuthenticated ? (dashboardData as any)?.recommendedCourses || [] : mockCourses;
+  const categories = isAuthenticated ? (dashboardData as any)?.categories || [] : mockCategories;
 
   const cardsPerView = 4;
   const maxCourses = Math.min(continueCourses.length, 8);

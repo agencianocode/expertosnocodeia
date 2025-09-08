@@ -16,29 +16,16 @@ export default function Courses() {
   const { isAuthenticated, isLoading } = useSimpleAuth();
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
 
-  // Redirect to login if not authenticated
-  useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
-      toast({
-        title: "Unauthorized",
-        description: "You are logged out. Logging in again...",
-        variant: "destructive",
-      });
-      setTimeout(() => {
-        window.location.href = "/api/login";
-      }, 500);
-      return;
-    }
-  }, [isAuthenticated, isLoading, toast]);
+  // No authentication redirect - allow public access with locked content
 
   const { data: courses, isLoading: coursesLoading } = useQuery({
     queryKey: ["/api/courses"],
-    enabled: isAuthenticated,
+    enabled: isAuthenticated, // Only fetch real data when authenticated
   });
 
   const { data: categories } = useQuery({
     queryKey: ["/api/categories"],
-    enabled: isAuthenticated,
+    enabled: isAuthenticated, // Only fetch real data when authenticated
   });
 
   if (isLoading || coursesLoading) {
@@ -52,7 +39,56 @@ export default function Courses() {
     );
   }
 
-  const filteredCourses = (courses as any)?.filter((course: any) => {
+  // Mock data for non-authenticated users
+  const mockCourses = [
+    {
+      id: "preview-1",
+      title: "Introducción a NoCode para Principiantes", 
+      description: "Aprende los fundamentos de NoCode y cómo empezar tu primer proyecto",
+      difficulty: "beginner",
+      duration: "2h",
+      type: "course",
+      categoryId: "cat-1"
+    },
+    {
+      id: "preview-2",
+      title: "Automatización con Zapier y Make",
+      description: "Domina las herramientas de automatización más populares", 
+      difficulty: "intermediate",
+      duration: "3h",
+      type: "course",
+      categoryId: "cat-2"
+    },
+    {
+      id: "preview-3",
+      title: "Creación de Apps sin Código",
+      description: "Construye aplicaciones completas usando plataformas NoCode",
+      difficulty: "advanced",
+      duration: "4h", 
+      type: "course",
+      categoryId: "cat-3"
+    },
+    {
+      id: "preview-4",
+      title: "Bases de Datos NoCode con Airtable",
+      description: "Gestiona datos de forma profesional sin escribir código",
+      difficulty: "intermediate",
+      duration: "2.5h",
+      type: "course", 
+      categoryId: "cat-1"
+    }
+  ];
+
+  const mockCategories = [
+    { id: "cat-1", name: "General" },
+    { id: "cat-2", name: "Automatización" },
+    { id: "cat-3", name: "Desarrollo" }
+  ];
+
+  const coursesToShow = isAuthenticated ? courses : mockCourses;
+  const categoriesToShow = isAuthenticated ? categories : mockCategories;
+
+  const filteredCourses = (coursesToShow as any)?.filter((course: any) => {
     // First filter out workshops - only show actual courses
     if (course.type === 'workshop' || course.id.startsWith('workshop-')) {
       return false;

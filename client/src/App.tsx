@@ -94,10 +94,17 @@ function Router() {
         </div>} />
       ) : !isAuthenticated ? (
         <>
+          {/* Public access to main content pages with locked content */}
+          <Route path="/" component={Dashboard} />
+          <Route path="/courses" component={Courses} />
+          <Route path="/guides" component={Guides} />
+          <Route path="/talleres" component={Workshops} />
+          <Route path="/categoria/:categorySlug" component={CategoryPage} />
+          
+          {/* Authentication and support pages */}
           <Route path="/login" component={SimpleLogin} />
           <Route path="/apoyo" component={Support} />
           <Route path="/support" component={Support} />
-          <Route path="/" component={() => <Redirect to="/login" />} />
           <Route component={NotFound} />
         </>
       ) : (

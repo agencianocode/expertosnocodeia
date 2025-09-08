@@ -15,20 +15,7 @@ export default function Guides() {
   const { isAuthenticated, isLoading } = useAuth();
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
 
-  // Redirect to login if not authenticated
-  useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
-      toast({
-        title: "Unauthorized",
-        description: "You are logged out. Logging in again...",
-        variant: "destructive",
-      });
-      setTimeout(() => {
-        window.location.href = "/api/login";
-      }, 500);
-      return;
-    }
-  }, [isAuthenticated, isLoading, toast]);
+  // No authentication redirect - allow public access with locked content
 
   // Mark guides as visited for onboarding progress tracking
   useEffect(() => {
@@ -39,12 +26,12 @@ export default function Guides() {
 
   const { data: guides, isLoading: guidesLoading } = useQuery({
     queryKey: ["/api/guides"],
-    enabled: isAuthenticated,
+    enabled: isAuthenticated, // Only fetch real data when authenticated
   });
 
   const { data: categories } = useQuery({
     queryKey: ["/api/categories"],
-    enabled: isAuthenticated,
+    enabled: isAuthenticated, // Only fetch real data when authenticated
   });
 
   if (isLoading || guidesLoading) {
@@ -58,12 +45,52 @@ export default function Guides() {
     );
   }
 
-  const filteredGuides = (guides as any)?.filter((guide: any) => {
+  // Mock data for non-authenticated users
+  const mockGuides = [
+    {
+      id: "guide-preview-1",
+      title: "Guía Completa de Bubble",
+      description: "Todo lo que necesitas saber para crear apps web con Bubble",
+      difficulty: "beginner",
+      duration: "45min",
+      type: "guide",
+      categoryId: "cat-1"
+    },
+    {
+      id: "guide-preview-2", 
+      title: "Automatización de Marketing con NoCode",
+      description: "Configura campañas automáticas sin programación",
+      difficulty: "intermediate", 
+      duration: "30min",
+      type: "guide",
+      categoryId: "cat-2"
+    },
+    {
+      id: "guide-preview-3",
+      title: "Integración de APIs sin Código", 
+      description: "Conecta servicios externos usando herramientas visuales",
+      difficulty: "advanced",
+      duration: "60min",
+      type: "guide", 
+      categoryId: "cat-3"
+    }
+  ];
+
+  const mockCategories = [
+    { id: "cat-1", name: "General" },
+    { id: "cat-2", name: "Automatización" }, 
+    { id: "cat-3", name: "Desarrollo" }
+  ];
+
+  const guidesToShow = isAuthenticated ? guides : mockGuides;
+  const categoriesToShow = isAuthenticated ? categories : mockCategories;
+
+  const filteredGuides = (guidesToShow as any)?.filter((guide: any) => {
     if (selectedCategory === "all") return true;
     return guide.categoryId === selectedCategory;
   }) || [];
 
-  const categoriesList = (categories as any) || [];
+  const categoriesList = categoriesToShow || [];
 
   return (
     <div className="min-h-screen bg-background text-foreground">
