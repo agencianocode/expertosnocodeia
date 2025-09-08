@@ -40,7 +40,7 @@ export function useOnboardingProgress() {
     const surveyCompleted = !!onboardingResponse;
     
     // Check if user has progress in any course from dashboard data
-    const firstCourseStarted = dashboardData?.continueCourses?.length > 0 || false;
+    const firstCourseStarted = !!(dashboardData as any)?.continueCourses?.length || false;
     
     // Count completed steps
     let completedSteps = 0;

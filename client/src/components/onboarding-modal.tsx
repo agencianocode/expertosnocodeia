@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
 import { Check, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useLocation } from 'wouter';
+import { useOnboardingProgress } from '@/hooks/useOnboardingProgress';
 
 interface OnboardingStep {
   id: string;
@@ -21,30 +22,40 @@ interface OnboardingModalProps {
 
 export default function OnboardingModal({ open, onOpenChange, trigger }: OnboardingModalProps) {
   const [, setLocation] = useLocation();
-  const [steps] = useState<OnboardingStep[]>([
-    {
-      id: 'survey',
-      title: 'Realice la encuesta de incorporación',
-      description: 'Responda nuestra breve encuesta para personalizar su experiencia de aprendizaje de IA',
-      completed: true
-    },
-    {
-      id: 'first-course',
-      title: 'Toma tu primer curso',
-      description: 'Comience con un curso adaptado a su área de enfoque y nivel de habilidad.',
-      completed: true
-    },
-    {
-      id: 'guides',
-      title: 'Explora nuestras guías',
-      description: 'Complete una guía de aprendizaje personalizada para su ruta de desarrollo.',
-      completed: false,
-      current: true
-    }
-  ]);
+  const progress = useOnboardingProgress();
+  const [steps, setSteps] = useState<OnboardingStep[]>([]);
 
-  const completedSteps = steps.filter(step => step.completed).length;
-  const totalSteps = steps.length;
+  useEffect(() => {
+    // Create dynamic steps based on actual user progress
+    const dynamicSteps: OnboardingStep[] = [
+      {
+        id: 'survey',
+        title: 'Realice la encuesta de incorporación',
+        description: 'Responda nuestra breve encuesta para personalizar su experiencia de aprendizaje de IA',
+        completed: progress.surveyCompleted,
+        current: !progress.surveyCompleted
+      },
+      {
+        id: 'first-course',
+        title: 'Toma tu primer curso',
+        description: 'Comience con un curso adaptado a su área de enfoque y nivel de habilidad.',
+        completed: progress.firstCourseStarted,
+        current: progress.surveyCompleted && !progress.firstCourseStarted
+      },
+      {
+        id: 'guides',
+        title: 'Explora nuestras guías',
+        description: 'Complete una guía de aprendizaje personalizada para su ruta de desarrollo.',
+        completed: progress.guidesExplored,
+        current: progress.surveyCompleted && progress.firstCourseStarted && !progress.guidesExplored
+      }
+    ];
+    
+    setSteps(dynamicSteps);
+  }, [progress]);
+
+  const completedSteps = progress.completedSteps;
+  const totalSteps = 3;
 
   const handleStepClick = (stepId: string) => {
     switch (stepId) {
@@ -58,6 +69,8 @@ export default function OnboardingModal({ open, onOpenChange, trigger }: Onboard
         break;
       case 'guides':
         onOpenChange(false);
+        // Mark guides as visited when user clicks
+        localStorage.setItem('guides-visited', 'true');
         setLocation('/guides'); // Navigate to guides page
         break;
       default:
@@ -133,7 +146,7 @@ export default function OnboardingModal({ open, onOpenChange, trigger }: Onboard
           <div className="w-full bg-gray-700 rounded-full h-2">
             <div 
               className="bg-purple-500 h-2 rounded-full transition-all duration-300"
-              style={{ width: `${(completedSteps / totalSteps) * 100}%` }}
+              style={{ width: `${progress.totalProgress}%` }}
             />
           </div>
         </div>
