@@ -361,10 +361,10 @@ export function registerSimpleRoutes(app: Express): Server {
 
       // Get user progress for all courses
       const userProgress = await storage.getUserProgress(userId);
-      const progressMap = userProgress.reduce((acc: any, progress: any) => {
+      const progressMap = Array.isArray(userProgress) ? userProgress.reduce((acc: any, progress: any) => {
         acc[progress.courseId] = progress;
         return acc;
-      }, {});
+      }, {}) : {};
 
       // Combine courses with their progress and categories
       const coursesWithData = recommendedCourses.map((course: any) => {
