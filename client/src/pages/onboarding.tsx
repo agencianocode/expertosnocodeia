@@ -327,9 +327,13 @@ export default function Onboarding() {
               ].map((option) => (
                 <Button
                   key={option.text}
-                  variant={data.aiTools.includes(option.text) ? "default" : "outline"}
+                  variant="outline"
                   onClick={() => toggleArraySelection('aiTools', option.text)}
-                  className="p-4 bg-gray-800 border-gray-600 hover:bg-gray-700 text-white flex items-center space-x-2"
+                  className={`p-4 flex items-center space-x-2 transition-all duration-200 ${
+                    data.aiTools.includes(option.text) 
+                      ? 'bg-blue-600 border-blue-500 text-white shadow-lg shadow-blue-500/25' 
+                      : 'bg-gray-800 border-gray-600 text-white hover:bg-gray-700 hover:border-gray-500'
+                  }`}
                 >
                   <span className="text-lg">{option.icon}</span>
                   <span className="text-sm">{option.text}</span>
@@ -338,9 +342,14 @@ export default function Onboarding() {
             </div>
             <Button 
               onClick={nextStep}
-              className="w-full mt-6 bg-gray-600 hover:bg-gray-500 text-white"
+              disabled={data.aiTools.length === 0}
+              className={`w-full mt-6 transition-all duration-200 ${
+                data.aiTools.length > 0 
+                  ? 'bg-gray-600 hover:bg-gray-500 text-white' 
+                  : 'bg-gray-700 text-gray-400 cursor-not-allowed'
+              }`}
             >
-              Continue
+              Continuar
             </Button>
           </div>
         );
