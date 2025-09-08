@@ -99,7 +99,7 @@ function Router() {
         </>
       ) : (
         <>
-          <Route path="/" component={RealDashboard} />
+          <Route path="/" component={Dashboard} />
           <Route path="/courses" component={Courses} />
           <Route path="/guides" component={Guides} />
           <Route path="/talleres" component={Workshops} />
