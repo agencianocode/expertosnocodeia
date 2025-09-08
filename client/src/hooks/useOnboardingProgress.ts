@@ -18,6 +18,11 @@ export function useOnboardingProgress() {
     completedSteps: 0
   });
 
+  // Check if user has viewed guides page (we'll use localStorage for this)
+  const [guidesExplored, setGuidesExplored] = useState(
+    typeof window !== 'undefined' ? localStorage.getItem('guides-visited') === 'true' : false
+  );
+
   // Check if user completed onboarding survey
   const { data: onboardingResponse } = useQuery({
     queryKey: ['/api/onboarding/response'],
@@ -32,8 +37,20 @@ export function useOnboardingProgress() {
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
-  // Check if user has viewed guides page (we'll use localStorage for this)
-  const guidesExplored = localStorage.getItem('guides-visited') === 'true';
+  // Listen for localStorage changes
+  useEffect(() => {
+    const handleStorageChange = () => {
+      setGuidesExplored(localStorage.getItem('guides-visited') === 'true');
+    };
+    
+    window.addEventListener('storage', handleStorageChange);
+    // Also check on component mount/updates
+    handleStorageChange();
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, []);
 
   useEffect(() => {
     // Calculate progress based on completed tasks

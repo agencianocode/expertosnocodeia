@@ -30,6 +30,13 @@ export default function Guides() {
     }
   }, [isAuthenticated, isLoading, toast]);
 
+  // Mark guides as visited for onboarding progress tracking
+  useEffect(() => {
+    if (isAuthenticated && !isLoading) {
+      localStorage.setItem('guides-visited', 'true');
+    }
+  }, [isAuthenticated, isLoading]);
+
   const { data: guides, isLoading: guidesLoading } = useQuery({
     queryKey: ["/api/guides"],
     enabled: isAuthenticated,
