@@ -140,84 +140,84 @@ export default function Sidebar() {
       </nav>
       {/* Bottom Section */}
       <div className="mt-auto">
-        {/* Start Button */}
-        <div className="p-4">
-          <Button className="w-full bg-secondary hover:bg-secondary/80 text-secondary-foreground font-satoshi text-[13px] leading-[20px] rounded-lg py-2 px-4 flex items-center justify-between">
-            <div className="flex items-center">
-              <span className="w-6 h-6 bg-green-accent rounded-full flex items-center justify-center lg:mr-3">
-                <span className="text-white text-xs">▶</span>
-              </span>
-              <span className="hidden lg:block">Empezar</span>
+        {user ? (
+          // Sección completa para usuario autenticado
+          <>
+            {/* Start Button */}
+            <div className="p-4">
+              <Button className="w-full bg-secondary hover:bg-secondary/80 text-secondary-foreground font-satoshi text-[13px] leading-[20px] rounded-lg py-2 px-4 flex items-center justify-between">
+                <div className="flex items-center">
+                  <span className="w-6 h-6 bg-green-accent rounded-full flex items-center justify-center lg:mr-3">
+                    <span className="text-white text-xs">▶</span>
+                  </span>
+                  <span className="hidden lg:block">Empezar</span>
+                </div>
+                <div className="bg-green-accent text-white text-xs px-2 py-1 rounded-full hidden lg:block">
+                  52%
+                </div>
+              </Button>
             </div>
-            <div className="bg-green-accent text-white text-xs px-2 py-1 rounded-full hidden lg:block">
-              52%
-            </div>
-          </Button>
-        </div>
 
-        {/* Help Link */}
-        <div className="px-4 pb-4">
-          <Button
-            variant="ghost"
-            className="w-full justify-center lg:justify-start font-satoshi font-normal text-[13px] leading-[20px] text-muted-foreground hover:text-foreground hover:bg-muted"
-          >
-            <Settings className="lg:mr-3 h-4 w-4" />
-            <span className="hidden lg:block">Informar un problema</span>
-          </Button>
-        </div>
-
-        {/* User Profile */}
-        <div className="p-4 border-t border-border">
-          <div className="flex items-center justify-center lg:justify-start lg:space-x-3">
-            <div className="w-8 h-8 bg-gradient-to-r from-purple-accent to-blue-accent rounded-full flex items-center justify-center">
-              {(user as any)?.profileImageUrl ? (
-                <img
-                  src={(user as any).profileImageUrl}
-                  alt="Profile"
-                  className="w-8 h-8 rounded-full object-cover"
-                />
-              ) : (
-                <span className="text-xs font-semibold text-white">
-                  {getUserInitials()}
-                </span>
-              )}
-            </div>
-            <div className="flex-1 min-w-0 hidden lg:block">
-              <p className="font-satoshi font-normal text-[13px] leading-[20px] text-foreground truncate">
-                {getUserName()}
-              </p>
-            </div>
-            <div className="flex items-center space-x-2 hidden lg:flex">
+            {/* Help Link */}
+            <div className="px-4 pb-4">
               <Button
                 variant="ghost"
-                size="sm"
-                className="text-xs text-muted-foreground hover:text-foreground h-6 px-2"
-                onClick={toggleView}
-                title={isStudentView ? "Cambiar a vista Admin" : "Cambiar a vista Estudiante"}
+                className="w-full justify-center lg:justify-start font-satoshi font-normal text-[13px] leading-[20px] text-muted-foreground hover:text-foreground hover:bg-muted"
               >
-                {isStudentView ? "👨‍🎓" : "⚙️"}
+                <Settings className="lg:mr-3 h-4 w-4" />
+                <span className="hidden lg:block">Informar un problema</span>
               </Button>
-              <div className="w-4 h-4 bg-yellow-500 rounded-full flex items-center justify-center">
-                <span className="text-xs">🔔</span>
-              </div>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
+            </div>
+
+            {/* User Profile */}
+            <div className="p-4 border-t border-border">
+              <div className="flex items-center justify-center lg:justify-start lg:space-x-3">
+                <div className="w-8 h-8 bg-gradient-to-r from-purple-accent to-blue-accent rounded-full flex items-center justify-center">
+                  {(user as any)?.profileImageUrl ? (
+                    <img
+                      src={(user as any).profileImageUrl}
+                      alt="Profile"
+                      className="w-8 h-8 rounded-full object-cover"
+                    />
+                  ) : (
+                    <span className="text-xs font-semibold text-white">
+                      {getUserInitials()}
+                    </span>
+                  )}
+                </div>
+                <div className="flex-1 min-w-0 hidden lg:block">
+                  <p className="font-satoshi font-normal text-[13px] leading-[20px] text-foreground truncate">
+                    {getUserName()}
+                  </p>
+                </div>
+                <div className="flex items-center space-x-2 hidden lg:flex">
                   <Button
                     variant="ghost"
-                    size="icon"
-                    className="text-muted-foreground hover:text-foreground h-6 w-6"
+                    size="sm"
+                    className="text-xs text-muted-foreground hover:text-foreground h-6 px-2"
+                    onClick={toggleView}
+                    title={isStudentView ? "Cambiar a vista Admin" : "Cambiar a vista Estudiante"}
                   >
-                    <MoreHorizontal className="h-4 w-4" />
+                    {isStudentView ? "👨‍🎓" : "⚙️"}
                   </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent 
-                  align="end" 
-                  className="w-56 bg-card border-border"
-                  sideOffset={5}
-                >
-                  {user ? (
-                    // Menu para usuario autenticado
-                    <>
+                  <div className="w-4 h-4 bg-yellow-500 rounded-full flex items-center justify-center">
+                    <span className="text-xs">🔔</span>
+                  </div>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="text-muted-foreground hover:text-foreground h-6 w-6"
+                      >
+                        <MoreHorizontal className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent 
+                      align="end" 
+                      className="w-56 bg-card border-border"
+                      sideOffset={5}
+                    >
                       <DropdownMenuItem 
                         className="text-card-foreground hover:bg-muted hover:text-foreground cursor-pointer"
                         onClick={() => window.location.href = "/profile"}
@@ -289,65 +289,98 @@ export default function Sidebar() {
                         <LogOut className="mr-2 h-4 w-4" />
                         <span>Finalizar la sesión</span>
                       </DropdownMenuItem>
-                    </>
-                  ) : (
-                    // Menu para usuario NO autenticado (imagen de referencia exacta)
-                    <>
-                      <DropdownMenuSub>
-                        <DropdownMenuSubTrigger className="text-card-foreground hover:bg-muted hover:text-foreground">
-                          <Monitor className="mr-2 h-4 w-4" />
-                          <span>Tema: Sistema</span>
-                        </DropdownMenuSubTrigger>
-                        <DropdownMenuSubContent className="bg-card border-border">
-                          <DropdownMenuItem 
-                            className="text-card-foreground hover:bg-muted hover:text-foreground cursor-pointer"
-                            onClick={() => changeTheme("claro")}
-                          >
-                            <Sun className="mr-2 h-4 w-4" />
-                            <span>Luz</span>
-                          </DropdownMenuItem>
-                          <DropdownMenuItem 
-                            className="text-card-foreground hover:bg-muted hover:text-foreground cursor-pointer"
-                            onClick={() => changeTheme("oscuro")}
-                          >
-                            <Moon className="mr-2 h-4 w-4" />
-                            <span>Oscuro</span>
-                          </DropdownMenuItem>
-                          <DropdownMenuItem 
-                            className="text-card-foreground hover:bg-muted hover:text-foreground cursor-pointer"
-                            onClick={() => changeTheme("sistema")}
-                          >
-                            <Monitor className="mr-2 h-4 w-4" />
-                            <span>Sistema</span>
-                          </DropdownMenuItem>
-                        </DropdownMenuSubContent>
-                      </DropdownMenuSub>
-                      
-                      <DropdownMenuItem 
-                        className="text-card-foreground hover:bg-muted hover:text-foreground cursor-pointer"
-                        onClick={() => window.location.href = "/apoyo"}
-                      >
-                        <HelpCircle className="mr-2 h-4 w-4" />
-                        <span>Apoyo</span>
-                      </DropdownMenuItem>
-                      
-                      <DropdownMenuSeparator className="bg-border" />
-                      
-                      <div className="p-2">
-                        <Button 
-                          className="w-full bg-muted-foreground hover:bg-muted text-background"
-                          onClick={() => window.location.href = "/login"}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+              </div>
+            </div>
+          </>
+        ) : (
+          // Sección minimalista para usuario NO autenticado (imagen de referencia)
+          <div className="p-4 border-t border-border">
+            <div className="flex items-center justify-center lg:justify-between">
+              <div className="hidden lg:flex items-center space-x-3 flex-1">
+                <Monitor className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm text-muted-foreground">Tema: Sistema</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-muted-foreground hover:text-foreground p-1"
+                  onClick={() => window.location.href = "/apoyo"}
+                >
+                  <HelpCircle className="h-4 w-4" />
+                </Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="text-muted-foreground hover:text-foreground h-6 w-6"
+                    >
+                      <MoreHorizontal className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent 
+                    align="end" 
+                    className="w-56 bg-card border-border"
+                    sideOffset={5}
+                  >
+                    <DropdownMenuSub>
+                      <DropdownMenuSubTrigger className="text-card-foreground hover:bg-muted hover:text-foreground">
+                        <Monitor className="mr-2 h-4 w-4" />
+                        <span>Tema: Sistema</span>
+                      </DropdownMenuSubTrigger>
+                      <DropdownMenuSubContent className="bg-card border-border">
+                        <DropdownMenuItem 
+                          className="text-card-foreground hover:bg-muted hover:text-foreground cursor-pointer"
+                          onClick={() => changeTheme("claro")}
                         >
-                          Acceso
-                        </Button>
-                      </div>
-                    </>
-                  )}
-                </DropdownMenuContent>
-              </DropdownMenu>
+                          <Sun className="mr-2 h-4 w-4" />
+                          <span>Luz</span>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem 
+                          className="text-card-foreground hover:bg-muted hover:text-foreground cursor-pointer"
+                          onClick={() => changeTheme("oscuro")}
+                        >
+                          <Moon className="mr-2 h-4 w-4" />
+                          <span>Oscuro</span>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem 
+                          className="text-card-foreground hover:bg-muted hover:text-foreground cursor-pointer"
+                          onClick={() => changeTheme("sistema")}
+                        >
+                          <Monitor className="mr-2 h-4 w-4" />
+                          <span>Sistema</span>
+                        </DropdownMenuItem>
+                      </DropdownMenuSubContent>
+                    </DropdownMenuSub>
+                    
+                    <DropdownMenuItem 
+                      className="text-card-foreground hover:bg-muted hover:text-foreground cursor-pointer"
+                      onClick={() => window.location.href = "/apoyo"}
+                    >
+                      <HelpCircle className="mr-2 h-4 w-4" />
+                      <span>Apoyo</span>
+                    </DropdownMenuItem>
+                    
+                    <DropdownMenuSeparator className="bg-border" />
+                    
+                    <div className="p-2">
+                      <Button 
+                        className="w-full bg-muted-foreground hover:bg-muted text-background"
+                        onClick={() => window.location.href = "/login"}
+                      >
+                        Acceso
+                      </Button>
+                    </div>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
             </div>
           </div>
-        </div>
+        )}
       </div>
     </aside>
   );
