@@ -6,6 +6,7 @@ import { useRoleSwitch } from "@/hooks/useRoleSwitch";
 import { useTheme } from "@/hooks/useTheme";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import OnboardingModal from "@/components/onboarding-modal";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -49,6 +50,7 @@ export default function Sidebar() {
   const { isStudentView, toggleView } = useRoleSwitch();
   const [searchQuery, setSearchQuery] = useState("");
   const { theme, changeTheme } = useTheme();
+  const [onboardingOpen, setOnboardingOpen] = useState(false);
 
   const navigation = [
     { name: "Hogar", href: "/", icon: Home },
@@ -145,7 +147,10 @@ export default function Sidebar() {
           <>
             {/* Start Button */}
             <div className="p-4">
-              <Button className="w-full bg-secondary hover:bg-secondary/80 text-secondary-foreground font-satoshi text-[13px] leading-[20px] rounded-lg py-2 px-4 flex items-center justify-between">
+              <Button 
+                onClick={() => setOnboardingOpen(true)}
+                className="w-full bg-secondary hover:bg-secondary/80 text-secondary-foreground font-satoshi text-[13px] leading-[20px] rounded-lg py-2 px-4 flex items-center justify-between"
+              >
                 <div className="flex items-center">
                   <span className="w-6 h-6 bg-green-accent rounded-full flex items-center justify-center lg:mr-3">
                     <span className="text-white text-xs">▶</span>
@@ -153,7 +158,7 @@ export default function Sidebar() {
                   <span className="hidden lg:block">Empezar</span>
                 </div>
                 <div className="bg-green-accent text-white text-xs px-2 py-1 rounded-full hidden lg:block">
-                  52%
+                  67%
                 </div>
               </Button>
             </div>
@@ -357,6 +362,9 @@ export default function Sidebar() {
           </div>
         )}
       </div>
+
+      {/* Onboarding Modal */}
+      <OnboardingModal open={onboardingOpen} onOpenChange={setOnboardingOpen} />
     </aside>
   );
 }
