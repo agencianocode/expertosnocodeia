@@ -453,8 +453,8 @@ export class DatabaseStorage implements IStorage {
     };
   }
 
-  // Track user activity when they view a course
-  async trackUserActivity(userId: string, courseId: string): Promise<void> {
+  // Track user activity when they view a course or lesson
+  async trackUserActivity(userId: string, courseId: string, lastLessonId?: string): Promise<void> {
     // Check if activity already exists for this user/course combination
     const [existing] = await db
       .select()
@@ -462,23 +462,37 @@ export class DatabaseStorage implements IStorage {
       .where(and(eq(userRecentActivity.userId, userId), eq(userRecentActivity.courseId, courseId)));
 
     if (existing) {
-      // Update existing record
+      // Update existing record with new lesson and timestamp
+      const updateData: any = { 
+        lastAccessedAt: new Date(),
+        updatedAt: new Date() 
+      };
+      
+      // Only update lastLessonId if provided
+      if (lastLessonId) {
+        updateData.lastLessonId = lastLessonId;
+      }
+      
       await db
         .update(userRecentActivity)
-        .set({ 
-          lastAccessedAt: new Date(),
-          updatedAt: new Date() 
-        })
+        .set(updateData)
         .where(and(eq(userRecentActivity.userId, userId), eq(userRecentActivity.courseId, courseId)));
     } else {
       // Create new activity record
+      const insertData: any = {
+        userId,
+        courseId,
+        lastAccessedAt: new Date(),
+      };
+      
+      // Include lastLessonId if provided
+      if (lastLessonId) {
+        insertData.lastLessonId = lastLessonId;
+      }
+      
       await db
         .insert(userRecentActivity)
-        .values({
-          userId,
-          courseId,
-          lastAccessedAt: new Date(),
-        });
+        .values(insertData);
     }
   }
 
@@ -491,6 +505,7 @@ export class DatabaseStorage implements IStorage {
         course: courses,
         category: categories,
         progress: userProgress,
+        lastLesson: lessons, // Include lesson info
       })
       .from(userRecentActivity)
       .leftJoin(courses, eq(userRecentActivity.courseId, courses.id))
@@ -499,6 +514,7 @@ export class DatabaseStorage implements IStorage {
         eq(userProgress.userId, userId),
         eq(userProgress.courseId, courses.id)
       ))
+      .leftJoin(lessons, eq(userRecentActivity.lastLessonId, lessons.id)) // Join with lessons table
       .where(eq(userRecentActivity.userId, userId))
       .orderBy(userRecentActivity.courseId, desc(userRecentActivity.lastAccessedAt))
       .limit(limit);
@@ -515,6 +531,8 @@ export class DatabaseStorage implements IStorage {
       category: item.category,
       progress: item.progress,
       lastAccessed: item.activity.lastAccessedAt,
+      lastLesson: item.lastLesson, // Include last lesson info for navigation
+      lastLessonId: item.activity.lastLessonId, // Also include the ID directly
     }));
   }
 
