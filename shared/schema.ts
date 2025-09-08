@@ -296,6 +296,21 @@ export const userUsage = pgTable("user_usage", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// User Onboarding Responses
+export const userOnboardingResponses = pgTable("user_onboarding_responses", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").references(() => users.id).notNull(),
+  experienceLevel: varchar("experience_level"), // 'beginner', 'intermediate', 'advanced'
+  workAreas: jsonb("work_areas").$type<string[]>().default([]), // Areas selected in step 3
+  learningMethods: jsonb("learning_methods").$type<string[]>().default([]), // Methods selected in step 4
+  goals: jsonb("goals").$type<string[]>().default([]), // Goals selected in step 5
+  aiTools: jsonb("ai_tools").$type<string[]>().default([]), // AI tools selected in step 6
+  mainGoal: varchar("main_goal"), // Main goal from step 7
+  completedAt: timestamp("completed_at").defaultNow(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Relations
 export const userSavedCoursesRelations = relations(userSavedCourses, ({ one }) => ({
   user: one(users, {
@@ -438,6 +453,13 @@ export const userUsageRelations = relations(userUsage, ({ one }) => ({
   }),
 }));
 
+export const userOnboardingResponsesRelations = relations(userOnboardingResponses, ({ one }) => ({
+  user: one(users, {
+    fields: [userOnboardingResponses.userId],
+    references: [users.id],
+  }),
+}));
+
 // Update existing relations to include new CMS entities
 export const extendedCourseRelations = relations(courses, ({ one, many }) => ({
   category: one(categories, {
@@ -467,6 +489,7 @@ export const extendedUserRelations = relations(users, ({ many, one }) => ({
   courseTemplates: many(courseTemplates),
   subscriptions: many(userSubscriptions),
   usage: many(userUsage),
+  onboardingResponses: many(userOnboardingResponses),
 }));
 
 // Schema types
@@ -525,6 +548,8 @@ export type UserSubscription = typeof userSubscriptions.$inferSelect;
 export type InsertUserSubscription = typeof userSubscriptions.$inferInsert;
 export type UserUsage = typeof userUsage.$inferSelect;
 export type InsertUserUsage = typeof userUsage.$inferInsert;
+export type UserOnboardingResponse = typeof userOnboardingResponses.$inferSelect;
+export type InsertUserOnboardingResponse = typeof userOnboardingResponses.$inferInsert;
 
 // Insert schemas
 export const insertCategorySchema = createInsertSchema(categories);
@@ -547,6 +572,13 @@ export const insertCourseTemplateSchema = createInsertSchema(courseTemplates);
 export const insertSubscriptionPlanSchema = createInsertSchema(subscriptionPlans);
 export const insertUserSubscriptionSchema = createInsertSchema(userSubscriptions);
 export const insertUserUsageSchema = createInsertSchema(userUsage);
+
+// Onboarding Insert schema
+export const insertUserOnboardingResponseSchema = createInsertSchema(userOnboardingResponses).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
 
 // Authentication schemas
 export const insertUserSchema = createInsertSchema(users).omit({
