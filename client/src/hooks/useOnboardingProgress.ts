@@ -33,24 +33,20 @@ export function useOnboardingProgress() {
   // Check if guides were visited
   const guidesExplored = typeof window !== 'undefined' ? localStorage.getItem('guides-visited') === 'true' : false;
   
-  // Debug logs (temporary)
-  console.log('Progress Debug:', {
-    onboardingResponse: !!onboardingResponse,
-    dashboardData: (dashboardData as any)?.continueCourses?.length,
-    guidesVisited: localStorage.getItem('guides-visited'),
-    surveyCompleted,
-    firstCourseStarted,
-    guidesExplored
-  });
-  
   // Count completed steps
   let completedSteps = 0;
   if (surveyCompleted) completedSteps++;
   if (firstCourseStarted) completedSteps++;
   if (guidesExplored) completedSteps++;
 
-  // Calculate percentage (33.3% per step)
-  const totalProgress = Math.round((completedSteps / 3) * 100);
+  // Calculate percentage (33.3% per step) - Fixed calculation
+  let totalProgress = 0;
+  if (completedSteps === 1) totalProgress = 33;
+  else if (completedSteps === 2) totalProgress = 67;
+  else if (completedSteps === 3) totalProgress = 100;
+
+  // Debug log
+  console.log('Final Progress:', { completedSteps, totalProgress, surveyCompleted, firstCourseStarted, guidesExplored });
 
   return {
     surveyCompleted,
