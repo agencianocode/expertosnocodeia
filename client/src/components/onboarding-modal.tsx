@@ -52,7 +52,7 @@ export default function OnboardingModal({ open, onOpenChange, trigger }: Onboard
     ];
     
     setSteps(dynamicSteps);
-  }, [progress]);
+  }, [progress.surveyCompleted, progress.firstCourseStarted, progress.guidesExplored]);
 
   const completedSteps = progress.completedSteps;
   const totalSteps = 3;
