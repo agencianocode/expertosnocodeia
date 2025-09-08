@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/useAuth";
+import { useSimpleAuth } from "@/hooks/use-simple-auth";
 import { useRoleSwitch } from "@/hooks/useRoleSwitch";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,6 +22,7 @@ import {
 export default function CourseSidebar() {
   const [location] = useLocation();
   const { user } = useAuth();
+  const { logout } = useSimpleAuth();
   const { isStudentView, toggleView } = useRoleSwitch();
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -174,7 +176,7 @@ export default function CourseSidebar() {
                 variant="ghost"
                 size="icon"
                 className="text-gray-400 hover:text-white h-6 w-6"
-                onClick={() => window.location.href = "/api/logout"}
+                onClick={logout}
               >
                 <span className="text-lg">⋯</span>
               </Button>

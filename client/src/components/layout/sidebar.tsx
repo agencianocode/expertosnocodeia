@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/useAuth";
+import { useSimpleAuth } from "@/hooks/use-simple-auth";
 import { useRoleSwitch } from "@/hooks/useRoleSwitch";
 import { useTheme } from "@/hooks/useTheme";
 import { Button } from "@/components/ui/button";
@@ -44,6 +45,7 @@ import {
 export default function Sidebar() {
   const [location] = useLocation();
   const { user } = useAuth();
+  const { logout } = useSimpleAuth();
   const { isStudentView, toggleView } = useRoleSwitch();
   const [searchQuery, setSearchQuery] = useState("");
   const { theme, changeTheme } = useTheme();
@@ -279,7 +281,7 @@ export default function Sidebar() {
                   
                   <DropdownMenuItem 
                     className="text-red-400 hover:bg-red-500/10 hover:text-red-300 cursor-pointer"
-                    onClick={() => window.location.href = "/api/logout"}
+                    onClick={logout}
                   >
                     <LogOut className="mr-2 h-4 w-4" />
                     <span>Finalizar la sesión</span>
