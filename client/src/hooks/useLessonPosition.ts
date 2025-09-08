@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { apiRequest } from '@/lib/queryClient';
 
 interface LessonPosition {
   courseId: string;
@@ -10,7 +11,7 @@ const LESSON_POSITION_KEY = 'expertosnocodeia_lesson_position';
 
 export function useLessonPosition() {
   // Guardar la posición actual de la lección
-  const saveLessonPosition = (courseId: string, lessonId: string) => {
+  const saveLessonPosition = async (courseId: string, lessonId: string) => {
     if (!courseId || !lessonId) return;
     
     const position: LessonPosition = {
@@ -20,7 +21,14 @@ export function useLessonPosition() {
     };
     
     try {
+      // Save locally
       localStorage.setItem(LESSON_POSITION_KEY, JSON.stringify(position));
+      
+      // Also track in backend for "Continue where you left off"
+      await apiRequest('POST', '/api/track-activity', {
+        courseId,
+        lessonId
+      });
     } catch (error) {
       console.error('Error saving lesson position:', error);
     }

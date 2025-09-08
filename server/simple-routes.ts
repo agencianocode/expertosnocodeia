@@ -344,6 +344,27 @@ export function registerSimpleRoutes(app: Express): Server {
     }
   });
 
+  // Track user activity when viewing content
+  app.post("/api/track-activity", legacyAuth, async (req: any, res: Response) => {
+    try {
+      const userId = req.user?.claims?.sub;
+      if (!userId) {
+        return res.status(401).json({ message: "Usuario no autenticado" });
+      }
+
+      const { courseId, lessonId } = req.body;
+      if (!courseId) {
+        return res.status(400).json({ message: "courseId requerido" });
+      }
+
+      await storage.trackUserActivity(userId, courseId, lessonId);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error tracking user activity:", error);
+      res.status(500).json({ message: "Failed to track activity" });
+    }
+  });
+
   // Dashboard endpoint - combines all data needed for dashboard
   app.get("/api/dashboard", legacyAuth, async (req: any, res: Response) => {
     try {
