@@ -101,6 +101,11 @@ function Router() {
           <Route path="/talleres" component={Workshops} />
           <Route path="/categoria/:categorySlug" component={CategoryPage} />
           
+          {/* Course pages - show real content but locked for non-authenticated users */}
+          <Route path="/course/:id" component={Course} />
+          <Route path="/curso/:id" component={Course} />
+          <Route path="/taller/:id" component={Workshop} />
+          
           {/* Authentication and support pages */}
           <Route path="/login" component={SimpleLogin} />
           <Route path="/apoyo" component={Support} />
