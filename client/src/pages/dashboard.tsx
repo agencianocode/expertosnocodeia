@@ -86,34 +86,6 @@ export default function Dashboard() {
         
         {/* Main Content */}
         <main className="flex-1 overflow-auto pb-20 lg:pb-0 lg:ml-[250px]">
-        {/* Header */}
-        <header className="bg-card border-b border-border p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
-              <p className="text-muted-foreground mt-1">Welcome back! Continue your AI learning journey.</p>
-            </div>
-            <div className="flex items-center space-x-4">
-              <Link href="/setup">
-                <Button variant="outline" className="border-primary text-primary hover:bg-primary hover:text-primary-foreground">
-                  <Shield className="mr-2 h-4 w-4" />
-                  Admin Setup
-                </Button>
-              </Link>
-              <Button className="bg-primary hover:bg-primary/90 text-primary-foreground">
-                <Plus className="mr-2 h-4 w-4" />
-                New Course
-              </Button>
-              <div className="relative">
-                <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground">
-                  <Bell className="h-5 w-5" />
-                  <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full"></span>
-                </Button>
-              </div>
-            </div>
-          </div>
-        </header>
-
         <div className="p-6 space-y-8">
           {/* Continue Learning Section */}
           <section>
