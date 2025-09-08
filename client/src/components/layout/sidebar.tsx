@@ -147,20 +147,25 @@ export default function Sidebar() {
           <>
             {/* Start Button */}
             <div className="p-4">
-              <Button 
-                onClick={() => setOnboardingOpen(true)}
-                className="w-full bg-secondary hover:bg-secondary/80 text-secondary-foreground font-satoshi text-[13px] leading-[20px] rounded-lg py-2 px-4 flex items-center justify-between"
-              >
-                <div className="flex items-center">
-                  <span className="w-6 h-6 bg-green-accent rounded-full flex items-center justify-center lg:mr-3">
-                    <span className="text-white text-xs">▶</span>
-                  </span>
-                  <span className="hidden lg:block">Empezar</span>
-                </div>
-                <div className="bg-green-accent text-white text-xs px-2 py-1 rounded-full hidden lg:block">
-                  67%
-                </div>
-              </Button>
+              <OnboardingModal 
+                open={onboardingOpen} 
+                onOpenChange={setOnboardingOpen}
+                trigger={
+                  <Button 
+                    className="w-full bg-secondary hover:bg-secondary/80 text-secondary-foreground font-satoshi text-[13px] leading-[20px] rounded-lg py-2 px-4 flex items-center justify-between"
+                  >
+                    <div className="flex items-center">
+                      <span className="w-6 h-6 bg-green-accent rounded-full flex items-center justify-center lg:mr-3">
+                        <span className="text-white text-xs">▶</span>
+                      </span>
+                      <span className="hidden lg:block">Empezar</span>
+                    </div>
+                    <div className="bg-green-accent text-white text-xs px-2 py-1 rounded-full hidden lg:block">
+                      67%
+                    </div>
+                  </Button>
+                }
+              />
             </div>
 
             {/* Help Link */}
@@ -363,8 +368,6 @@ export default function Sidebar() {
         )}
       </div>
 
-      {/* Onboarding Modal */}
-      <OnboardingModal open={onboardingOpen} onOpenChange={setOnboardingOpen} />
     </aside>
   );
 }

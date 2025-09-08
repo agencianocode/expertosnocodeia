@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader } from '@/components/ui/dialog';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
 import { Check, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -15,9 +15,10 @@ interface OnboardingStep {
 interface OnboardingModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  trigger: React.ReactNode;
 }
 
-export default function OnboardingModal({ open, onOpenChange }: OnboardingModalProps) {
+export default function OnboardingModal({ open, onOpenChange, trigger }: OnboardingModalProps) {
   const [steps] = useState<OnboardingStep[]>([
     {
       id: 'survey',
@@ -44,20 +45,29 @@ export default function OnboardingModal({ open, onOpenChange }: OnboardingModalP
   const totalSteps = steps.length;
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="bg-gray-900 border-gray-700 text-white max-w-md p-0 gap-0">
-        <DialogHeader className="p-6 pb-4">
+    <Popover open={open} onOpenChange={onOpenChange}>
+      <PopoverTrigger asChild>
+        {trigger}
+      </PopoverTrigger>
+      <PopoverContent 
+        className="bg-gray-900 border-gray-700 text-white w-96 p-0 gap-0" 
+        side="right" 
+        align="start"
+        sideOffset={8}
+        alignOffset={-8}
+      >
+        <div className="p-6 pb-4">
           <div className="text-lg font-medium">
             ¡Empieza ahora! {completedSteps}/{totalSteps}
           </div>
-        </DialogHeader>
+        </div>
         
         <div className="px-6 pb-6 space-y-4">
           {steps.map((step, index) => (
             <div
               key={step.id}
               className={cn(
-                "flex items-start space-x-4 p-4 rounded-lg transition-colors",
+                "flex items-start space-x-4 p-4 rounded-lg transition-colors cursor-pointer hover:bg-gray-800",
                 step.current ? "bg-gray-800" : "bg-transparent"
               )}
             >
@@ -105,7 +115,7 @@ export default function OnboardingModal({ open, onOpenChange }: OnboardingModalP
             />
           </div>
         </div>
-      </DialogContent>
-    </Dialog>
+      </PopoverContent>
+    </Popover>
   );
 }
