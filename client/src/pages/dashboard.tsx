@@ -90,7 +90,7 @@ export default function Dashboard() {
           {/* Continue Learning Section */}
           <section>
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-semibold text-foreground">Continúa donde lo dejaste</h2>
+              <h2 className="font-semibold text-foreground text-[24px]">Continúa donde lo dejaste</h2>
               <div className="flex space-x-2">
                 <Button
                   variant="ghost"
