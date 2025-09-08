@@ -102,6 +102,7 @@ function Router() {
       ) : (
         <>
           <Route path="/" component={Dashboard} />
+          <Route path="/onboarding" component={Onboarding} />
           <Route path="/courses" component={Courses} />
           <Route path="/guides" component={Guides} />
           <Route path="/talleres" component={Workshops} />

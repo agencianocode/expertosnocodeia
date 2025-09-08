@@ -3,6 +3,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Button } from '@/components/ui/button';
 import { Check, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useLocation } from 'wouter';
 
 interface OnboardingStep {
   id: string;
@@ -19,6 +20,7 @@ interface OnboardingModalProps {
 }
 
 export default function OnboardingModal({ open, onOpenChange, trigger }: OnboardingModalProps) {
+  const [, setLocation] = useLocation();
   const [steps] = useState<OnboardingStep[]>([
     {
       id: 'survey',
@@ -44,6 +46,25 @@ export default function OnboardingModal({ open, onOpenChange, trigger }: Onboard
   const completedSteps = steps.filter(step => step.completed).length;
   const totalSteps = steps.length;
 
+  const handleStepClick = (stepId: string) => {
+    switch (stepId) {
+      case 'survey':
+        onOpenChange(false); // Close the popup
+        setLocation('/onboarding'); // Navigate to onboarding page
+        break;
+      case 'first-course':
+        onOpenChange(false);
+        setLocation('/courses'); // Navigate to courses page
+        break;
+      case 'guides':
+        onOpenChange(false);
+        setLocation('/guides'); // Navigate to guides page
+        break;
+      default:
+        break;
+    }
+  };
+
   return (
     <Popover open={open} onOpenChange={onOpenChange}>
       <PopoverTrigger asChild>
@@ -66,6 +87,7 @@ export default function OnboardingModal({ open, onOpenChange, trigger }: Onboard
           {steps.map((step, index) => (
             <div
               key={step.id}
+              onClick={() => handleStepClick(step.id)}
               className={cn(
                 "flex items-start space-x-4 p-4 rounded-lg transition-colors cursor-pointer hover:bg-gray-800",
                 step.current ? "bg-gray-800" : "bg-transparent"

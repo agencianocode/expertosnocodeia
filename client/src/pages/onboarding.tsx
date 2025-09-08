@@ -1,361 +1,590 @@
-import { useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useLocation } from "wouter";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
-} from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
-import { 
-  Briefcase, 
-  Code, 
-  TrendingUp, 
-  Users, 
-  Lightbulb, 
-  Globe,
-  ArrowRight,
-  CheckCircle
-} from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/hooks/useAuth";
+import { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { ChevronLeft } from 'lucide-react';
+import { useLocation } from 'wouter';
+
+interface OnboardingData {
+  name: string;
+  aiExperience: string;
+  goal: string;
+  workAreas: string[];
+  learningMethods: string[];
+  timeCommitment: string;
+  aiTools: string[];
+  jobLevel: string;
+  teamInterest: string;
+  companyUrl: string;
+  teamSize: string;
+  emailContact: string;
+}
 
 export default function Onboarding() {
-  const { user } = useAuth();
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
   const [, setLocation] = useLocation();
-  
-  const [step, setStep] = useState(1);
-  const [formData, setFormData] = useState({
-    profession: "",
-    experience: "",
-    interests: [] as string[],
-    goals: "",
-    companySize: "",
-    industry: "",
+  const [currentStep, setCurrentStep] = useState(0);
+  const [isLoading, setIsLoading] = useState(false);
+  const [data, setData] = useState<OnboardingData>({
+    name: '',
+    aiExperience: '',
+    goal: '',
+    workAreas: [],
+    learningMethods: [],
+    timeCommitment: '',
+    aiTools: [],
+    jobLevel: '',
+    teamInterest: '',
+    companyUrl: '',
+    teamSize: '',
+    emailContact: ''
   });
 
-  const professions = [
-    { value: "consultant", label: "Consultor/a", icon: Briefcase },
-    { value: "developer", label: "Desarrollador/a", icon: Code },
-    { value: "marketer", label: "Marketing", icon: TrendingUp },
-    { value: "manager", label: "Gerente/Director", icon: Users },
-    { value: "entrepreneur", label: "Emprendedor/a", icon: Lightbulb },
-    { value: "freelancer", label: "Freelancer", icon: Globe },
-    { value: "other", label: "Otro", icon: Users },
-  ];
+  const totalSteps = 13;
 
-  const experienceLevels = [
-    { value: "beginner", label: "Principiante - Primera vez con IA" },
-    { value: "basic", label: "Básico - He usado herramientas como ChatGPT" },
-    { value: "intermediate", label: "Intermedio - Implementé IA en algunos proyectos" },
-    { value: "advanced", label: "Avanzado - Trabajo profesionalmente con IA" },
-  ];
-
-  const interestOptions = [
-    "Automatización de procesos",
-    "ChatGPT y LLMs",
-    "IA para Marketing",
-    "Análisis de datos",
-    "Desarrollo de aplicaciones",
-    "Consultoría en IA",
-    "IA para ventas",
-    "Productividad personal",
-    "Machine Learning",
-    "Computer Vision",
-  ];
-
-  const companySizes = [
-    { value: "solo", label: "Solo/Freelancer" },
-    { value: "small", label: "Pequeña (2-10 empleados)" },
-    { value: "medium", label: "Mediana (11-50 empleados)" },
-    { value: "large", label: "Grande (50+ empleados)" },
-  ];
-
-  const industries = [
-    "Tecnología", "Marketing", "Consultoría", "E-commerce", 
-    "Educación", "Salud", "Finanzas", "Retail", "Manufactura", "Otro"
-  ];
-
-  const onboardingMutation = useMutation({
-    mutationFn: async (data: typeof formData) => {
-      const response = await fetch('/api/auth/onboarding', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      });
-      
-      if (!response.ok) {
-        throw new Error('Error al guardar el perfil');
-      }
-      
-      return response.json();
-    },
-    onSuccess: () => {
-      toast({
-        title: "¡Perfil completado!",
-        description: "Ahora puedes acceder a todos los cursos",
-      });
-      queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
-      setLocation("/");
-    },
-    onError: () => {
-      toast({
-        title: "Error",
-        description: "No se pudo completar el perfil. Inténtalo de nuevo.",
-        variant: "destructive",
-      });
-    },
-  });
-
-  const handleInterestToggle = (interest: string) => {
-    setFormData(prev => ({
-      ...prev,
-      interests: prev.interests.includes(interest)
-        ? prev.interests.filter(i => i !== interest)
-        : [...prev.interests, interest]
-    }));
+  const updateData = (field: keyof OnboardingData, value: any) => {
+    setData(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleSubmit = () => {
-    onboardingMutation.mutate(formData);
+  const toggleArraySelection = (field: keyof OnboardingData, value: string) => {
+    setData(prev => {
+      const currentArray = prev[field] as string[];
+      const newArray = currentArray.includes(value) 
+        ? currentArray.filter(item => item !== value)
+        : [...currentArray, value];
+      return { ...prev, [field]: newArray };
+    });
   };
 
-  const isStepComplete = () => {
-    switch (step) {
-      case 1: return formData.profession && formData.experience;
-      case 2: return formData.interests.length > 0;
-      case 3: return formData.goals && formData.companySize && formData.industry;
-      default: return false;
+  const nextStep = () => {
+    if (currentStep === 11) {
+      // Start loading animation
+      setIsLoading(true);
+      setTimeout(() => {
+        setCurrentStep(currentStep + 1);
+        setIsLoading(false);
+      }, 3000);
+    } else if (currentStep === 12) {
+      // Final loading before redirect
+      setIsLoading(true);
+      setTimeout(() => {
+        setCurrentStep(currentStep + 1);
+        setIsLoading(false);
+      }, 2000);
+    } else if (currentStep === 13) {
+      // Redirect to dashboard
+      setLocation('/');
+    } else {
+      setCurrentStep(currentStep + 1);
+    }
+  };
+
+  const prevStep = () => {
+    if (currentStep > 0) {
+      setCurrentStep(currentStep - 1);
+    }
+  };
+
+  const renderProgressBar = () => {
+    const progress = ((currentStep + 1) / totalSteps) * 100;
+    return (
+      <div className="w-full max-w-md mx-auto mb-8">
+        <div className="flex justify-between text-sm text-gray-400 mb-2">
+          <span>Pregunta {currentStep + 1} de {totalSteps}</span>
+        </div>
+        <div className="w-full bg-gray-700 rounded-full h-1">
+          <div 
+            className="bg-white h-1 rounded-full transition-all duration-300"
+            style={{ width: `${progress}%` }}
+          />
+        </div>
+      </div>
+    );
+  };
+
+  const renderStep = () => {
+    switch (currentStep) {
+      case 0:
+        return (
+          <div className="text-center max-w-lg mx-auto">
+            <div className="w-16 h-16 bg-white text-black text-xl font-bold flex items-center justify-center rounded-lg mx-auto mb-6">
+              ENC
+            </div>
+            <div className="text-4xl font-bold mb-4">
+              ¡Bienvenido a Expertos NoCode IA!
+            </div>
+            <p className="text-gray-400 mb-8">
+              Complete nuestro formulario rápido y encontraremos las mejores herramientas y recursos de NoCode IA para sus necesidades.
+            </p>
+            <div className="space-y-6">
+              <div>
+                <h3 className="text-xl font-medium mb-4">¿Cómo te llamas?</h3>
+                <Input
+                  value={data.name}
+                  onChange={(e) => updateData('name', e.target.value)}
+                  placeholder="Nombre de pila"
+                  className="bg-gray-800 border-gray-600 text-white placeholder-gray-400 text-center"
+                />
+              </div>
+              <Button 
+                onClick={nextStep}
+                disabled={!data.name.trim()}
+                className="w-full bg-gray-600 hover:bg-gray-500 text-white"
+              >
+                Continuar
+              </Button>
+            </div>
+          </div>
+        );
+
+      case 1:
+        return (
+          <div className="text-center max-w-lg mx-auto">
+            {renderProgressBar()}
+            <h2 className="text-2xl font-medium mb-8">
+              ¿Qué tan familiarizado está usted con la IA NoCode en estos momentos?
+            </h2>
+            <div className="space-y-3">
+              {['Principiante', 'Intermedio', 'Avanzado'].map((option) => (
+                <Button
+                  key={option}
+                  variant={data.aiExperience === option ? "default" : "outline"}
+                  onClick={() => {
+                    updateData('aiExperience', option);
+                    setTimeout(nextStep, 300);
+                  }}
+                  className="w-full bg-gray-800 border-gray-600 hover:bg-gray-700 text-white"
+                >
+                  {option}
+                </Button>
+              ))}
+            </div>
+          </div>
+        );
+
+      case 2:
+        return (
+          <div className="text-center max-w-lg mx-auto">
+            {renderProgressBar()}
+            <h2 className="text-2xl font-medium mb-8">
+              ¿Cuál es su objetivo principal al aprender NoCode IA?
+            </h2>
+            <div className="space-y-3">
+              {[
+                'Trabajar más rápido',
+                'Ganar más dinero',
+                'Crecimiento profesional',
+                'Manténgase a la vanguardia de las tendencias',
+                'Implementar NoCode IA en mi negocio'
+              ].map((option) => (
+                <Button
+                  key={option}
+                  variant={data.goal === option ? "default" : "outline"}
+                  onClick={() => {
+                    updateData('goal', option);
+                    setTimeout(nextStep, 300);
+                  }}
+                  className="w-full bg-gray-800 border-gray-600 hover:bg-gray-700 text-white"
+                >
+                  {option}
+                </Button>
+              ))}
+            </div>
+          </div>
+        );
+
+      case 3:
+        return (
+          <div className="text-center max-w-2xl mx-auto">
+            {renderProgressBar()}
+            <h2 className="text-2xl font-medium mb-8">
+              ¿En qué área de trabajo le gustaría que el NoCode IA le ayudara más?
+            </h2>
+            <div className="grid grid-cols-2 gap-3">
+              {[
+                { icon: '💻', text: 'Codificación' },
+                { icon: '📱', text: 'Marketing' },
+                { icon: '✍️', text: 'Creador de contenido' },
+                { icon: '🎓', text: 'Educador' },
+                { icon: '📊', text: 'Operaciones comerciales' },
+                { icon: '📈', text: 'Ventas' },
+                { icon: '💰', text: 'Finanzas' },
+                { icon: '🎨', text: 'Diseño' },
+                { icon: '👤', text: 'Consultante' },
+                { icon: '🏛️', text: 'Gobierno' },
+                { icon: '📊', text: 'Análisis de datos' },
+                { icon: '📋', text: 'Gestión de proyectos' }
+              ].map((option) => (
+                <Button
+                  key={option.text}
+                  variant={data.workAreas.includes(option.text) ? "default" : "outline"}
+                  onClick={() => toggleArraySelection('workAreas', option.text)}
+                  className="p-4 bg-gray-800 border-gray-600 hover:bg-gray-700 text-white flex items-center space-x-2"
+                >
+                  <span className="text-lg">{option.icon}</span>
+                  <span className="text-sm">{option.text}</span>
+                </Button>
+              ))}
+            </div>
+            {data.workAreas.length > 0 && (
+              <Button 
+                onClick={nextStep}
+                className="w-full mt-6 bg-gray-600 hover:bg-gray-500 text-white"
+              >
+                Continuar
+              </Button>
+            )}
+          </div>
+        );
+
+      case 4:
+        return (
+          <div className="text-center max-w-lg mx-auto">
+            {renderProgressBar()}
+            <h2 className="text-2xl font-medium mb-8">
+              Además de nuestro boletín, ¿de qué otra manera le gustaría aprender nuevas habilidades de NoCode IA?
+            </h2>
+            <div className="space-y-3">
+              {[
+                'Cursos de certificación',
+                'Microlecciones paso a paso',
+                'Talleres prácticos en vivo',
+                'Orientación personalizada',
+                'Una comunidad de entusiastas del NoCode IA'
+              ].map((option) => (
+                <Button
+                  key={option}
+                  variant={data.learningMethods.includes(option) ? "default" : "outline"}
+                  onClick={() => toggleArraySelection('learningMethods', option)}
+                  className="w-full bg-gray-800 border-gray-600 hover:bg-gray-700 text-white"
+                >
+                  {option}
+                </Button>
+              ))}
+            </div>
+            {data.learningMethods.length > 0 && (
+              <Button 
+                onClick={nextStep}
+                className="w-full mt-6 bg-gray-600 hover:bg-gray-500 text-white"
+              >
+                Continuar
+              </Button>
+            )}
+          </div>
+        );
+
+      case 5:
+        return (
+          <div className="text-center max-w-lg mx-auto">
+            {renderProgressBar()}
+            <h2 className="text-2xl font-medium mb-8">
+              Siendo realistas, ¿cuánto tiempo tienes cada semana para aprender NoCode IA?
+            </h2>
+            <div className="space-y-3">
+              {[
+                'Menos de 30 minutos',
+                '30-60 minutos',
+                '1-3 horas',
+                '3+ horas'
+              ].map((option) => (
+                <Button
+                  key={option}
+                  variant={data.timeCommitment === option ? "default" : "outline"}
+                  onClick={() => {
+                    updateData('timeCommitment', option);
+                    setTimeout(nextStep, 300);
+                  }}
+                  className="w-full bg-gray-800 border-gray-600 hover:bg-gray-700 text-white"
+                >
+                  {option}
+                </Button>
+              ))}
+            </div>
+          </div>
+        );
+
+      case 6:
+        return (
+          <div className="text-center max-w-3xl mx-auto">
+            {renderProgressBar()}
+            <h2 className="text-2xl font-medium mb-8">
+              ¿A qué herramientas de NoCode IA ya estás suscrito?
+            </h2>
+            <div className="grid grid-cols-2 gap-3">
+              {[
+                { icon: '🔧', text: 'Zapier' },
+                { icon: '📊', text: 'Airtable' },
+                { icon: '💎', text: 'Bubble' },
+                { icon: '⚡', text: 'Webflow' },
+                { icon: '🔗', text: 'Integromat' },
+                { icon: '📱', text: 'Adalo' },
+                { icon: '🎯', text: 'Notion' },
+                { icon: '📋', text: 'Monday.com' },
+                { icon: '🔄', text: 'Automator' },
+                { icon: '✨', text: 'Framer' },
+                { icon: '📊', text: 'Retool' },
+                { icon: '🎨', text: 'Figma' },
+                { icon: '🔧', text: 'Make' },
+                { icon: '📱', text: 'Glide' },
+                { icon: '⚡', text: 'Ninguno todavía' }
+              ].map((option) => (
+                <Button
+                  key={option.text}
+                  variant={data.aiTools.includes(option.text) ? "default" : "outline"}
+                  onClick={() => toggleArraySelection('aiTools', option.text)}
+                  className="p-4 bg-gray-800 border-gray-600 hover:bg-gray-700 text-white flex items-center space-x-2"
+                >
+                  <span className="text-lg">{option.icon}</span>
+                  <span className="text-sm">{option.text}</span>
+                </Button>
+              ))}
+            </div>
+            <Button 
+              onClick={nextStep}
+              className="w-full mt-6 bg-gray-600 hover:bg-gray-500 text-white"
+            >
+              Continuar
+            </Button>
+          </div>
+        );
+
+      case 7:
+        return (
+          <div className="text-center max-w-lg mx-auto">
+            {renderProgressBar()}
+            <h2 className="text-2xl font-medium mb-8">
+              ¿Cuál es su nivel laboral actual?
+            </h2>
+            <div className="space-y-3">
+              {[
+                'Fundador',
+                'Alta dirección',
+                'Director/Vicepresidente',
+                'Nivel medio o de entrada',
+                'Estudiante o pasante',
+                'Otro'
+              ].map((option) => (
+                <Button
+                  key={option}
+                  variant={data.jobLevel === option ? "default" : "outline"}
+                  onClick={() => {
+                    updateData('jobLevel', option);
+                    setTimeout(nextStep, 300);
+                  }}
+                  className="w-full bg-gray-800 border-gray-600 hover:bg-gray-700 text-white"
+                >
+                  {option}
+                </Button>
+              ))}
+            </div>
+          </div>
+        );
+
+      case 8:
+        return (
+          <div className="text-center max-w-lg mx-auto">
+            {renderProgressBar()}
+            <h2 className="text-2xl font-medium mb-8">
+              ¿Quieres que tu equipo también se ponga al día con el NoCode IA?
+            </h2>
+            <div className="space-y-3">
+              {['Sí', 'No'].map((option) => (
+                <Button
+                  key={option}
+                  variant={data.teamInterest === option ? "default" : "outline"}
+                  onClick={() => {
+                    updateData('teamInterest', option);
+                    setTimeout(nextStep, 300);
+                  }}
+                  className="w-full bg-gray-800 border-gray-600 hover:bg-gray-700 text-white"
+                >
+                  {option}
+                </Button>
+              ))}
+            </div>
+          </div>
+        );
+
+      case 9:
+        return (
+          <div className="text-center max-w-lg mx-auto">
+            {renderProgressBar()}
+            <h2 className="text-2xl font-medium mb-8">
+              ¿Cuál es el enlace de la página de inicio de su empresa?
+            </h2>
+            <div className="space-y-6">
+              <Input
+                value={data.companyUrl}
+                onChange={(e) => updateData('companyUrl', e.target.value)}
+                placeholder="https://suempresa.com"
+                className="bg-gray-800 border-gray-600 text-white placeholder-gray-400"
+              />
+              <Button 
+                onClick={nextStep}
+                className="w-full bg-gray-600 hover:bg-gray-500 text-white"
+              >
+                Continuar
+              </Button>
+            </div>
+          </div>
+        );
+
+      case 10:
+        return (
+          <div className="text-center max-w-lg mx-auto">
+            {renderProgressBar()}
+            <h2 className="text-2xl font-medium mb-8">
+              ¿Cuántos asientos tiene tu equipo?
+            </h2>
+            <div className="space-y-3">
+              {[
+                '2-5',
+                '5-20',
+                '50-100',
+                'más de 100'
+              ].map((option) => (
+                <Button
+                  key={option}
+                  variant={data.teamSize === option ? "default" : "outline"}
+                  onClick={() => {
+                    updateData('teamSize', option);
+                    setTimeout(nextStep, 300);
+                  }}
+                  className="w-full bg-gray-800 border-gray-600 hover:bg-gray-700 text-white"
+                >
+                  {option}
+                </Button>
+              ))}
+            </div>
+          </div>
+        );
+
+      case 11:
+        return (
+          <div className="text-center max-w-lg mx-auto">
+            {renderProgressBar()}
+            <h2 className="text-2xl font-medium mb-8">
+              ¿Quieres que nos comuniquemos contigo por correo electrónico con un paquete personalizado?
+            </h2>
+            <div className="space-y-3">
+              {['Sí', 'No'].map((option) => (
+                <Button
+                  key={option}
+                  variant={data.emailContact === option ? "default" : "outline"}
+                  onClick={() => {
+                    updateData('emailContact', option);
+                    setTimeout(nextStep, 300);
+                  }}
+                  className="w-full bg-gray-800 border-gray-600 hover:bg-gray-700 text-white"
+                >
+                  {option}
+                </Button>
+              ))}
+            </div>
+          </div>
+        );
+
+      case 12:
+        return (
+          <div className="text-center max-w-lg mx-auto">
+            <div className="text-center space-y-6">
+              <h2 className="text-3xl font-bold">
+                ¡Gracias! Nos pondremos en contacto contigo en 24 horas.
+              </h2>
+              <p className="text-gray-400 max-w-md mx-auto">
+                Nuestro equipo le enviará por correo electrónico opciones empresariales personalizadas según sus necesidades. Mientras tanto, puede continuar con su página de inicio personalizada.
+              </p>
+              <Button 
+                onClick={nextStep}
+                className="w-full bg-white hover:bg-gray-100 text-black"
+              >
+                Continúa a tu página de inicio personalizada
+              </Button>
+            </div>
+          </div>
+        );
+
+      case 13:
+        return (
+          <div className="text-center max-w-lg mx-auto">
+            {isLoading ? (
+              <div className="space-y-6">
+                <div className="w-32 h-32 mx-auto relative">
+                  <div className="w-32 h-32 border-4 border-gray-600 border-t-blue-500 rounded-full animate-spin"></div>
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="text-2xl font-bold">ENC</div>
+                  </div>
+                </div>
+                <p className="text-gray-400">Analizando tus habilidades y objetivos...</p>
+                <div className="space-y-4">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-8 h-8 rounded-full bg-gray-700"></div>
+                    <div className="flex-1 text-left">
+                      <div className="text-sm font-medium">Jamal Reid • Líder de producto</div>
+                      <div className="text-xs text-gray-400 flex">
+                        {'⭐'.repeat(5)} "Los flujos de trabajo aquí ayudaron a nuestro equipo a automatizar las tareas aburridas y centrarse en los clientes"
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-6">
+                <div className="w-32 h-32 mx-auto relative">
+                  <div className="w-32 h-32 border-4 border-gray-600 rounded-full"></div>
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="text-2xl font-bold">ENC</div>
+                  </div>
+                </div>
+                <h2 className="text-2xl font-bold">
+                  ¡Listo! Te estamos redirigiendo a tu panel de control...
+                </h2>
+                <div className="w-full bg-gray-700 rounded-full h-1">
+                  <div className="bg-blue-500 h-1 rounded-full w-full"></div>
+                </div>
+                <div className="space-y-4">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-8 h-8 rounded-full bg-gray-700"></div>
+                    <div className="flex-1 text-left">
+                      <div className="text-sm font-medium">Elena Petrova • Estratega de contenido</div>
+                      <div className="text-xs text-gray-400 flex">
+                        {'⭐'.repeat(5)} "Claros, prácticos y realmente divertidos. Uso estos manuales todas las semanas."
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <Button 
+                  onClick={() => setLocation('/')}
+                  className="w-full bg-white hover:bg-gray-100 text-black mt-6"
+                >
+                  Ir al Dashboard
+                </Button>
+              </div>
+            )}
+          </div>
+        );
+
+      default:
+        return null;
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 flex items-center justify-center p-4">
-      <div className="w-full max-w-2xl">
-        {/* Progress Bar */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-4">
-            <h1 className="text-2xl font-bold text-white">
-              ¡Hola {user?.firstName || ""}! 👋
-            </h1>
-            <div className="text-sm text-gray-400">
-              Paso {step} de 3
-            </div>
+    <div className="min-h-screen bg-gray-900 text-white flex items-center justify-center p-4">
+      <div className="w-full max-w-4xl">
+        {/* Back Button */}
+        {currentStep > 0 && currentStep < 12 && (
+          <div className="mb-8">
+            <Button
+              variant="ghost"
+              onClick={prevStep}
+              className="text-gray-400 hover:text-white flex items-center space-x-2"
+            >
+              <ChevronLeft className="w-4 h-4" />
+              <span>Atrás</span>
+            </Button>
           </div>
-          <div className="w-full bg-slate-800 rounded-full h-2">
-            <div 
-              className="bg-gradient-to-r from-purple-600 to-blue-600 h-2 rounded-full transition-all duration-300"
-              style={{ width: `${(step / 3) * 100}%` }}
-            ></div>
-          </div>
-        </div>
-
-        <Card className="bg-slate-900/50 border-slate-700 backdrop-blur-sm">
-          <CardHeader className="text-center">
-            <CardTitle className="text-xl text-white">
-              {step === 1 && "Cuéntanos sobre ti"}
-              {step === 2 && "¿En qué estás interesado?"}
-              {step === 3 && "Últimos detalles"}
-            </CardTitle>
-            <CardDescription className="text-gray-400">
-              {step === 1 && "Personalicemos tu experiencia de aprendizaje"}
-              {step === 2 && "Selecciona los temas que más te interesan"}
-              {step === 3 && "Información adicional para recomendarte mejor"}
-            </CardDescription>
-          </CardHeader>
-
-          <CardContent className="space-y-6">
-            {/* Step 1: Profession & Experience */}
-            {step === 1 && (
-              <div className="space-y-6">
-                <div>
-                  <Label className="text-white mb-4 block">¿Cuál es tu profesión principal?</Label>
-                  <div className="grid grid-cols-2 gap-3">
-                    {professions.map((prof) => {
-                      const Icon = prof.icon;
-                      return (
-                        <button
-                          key={prof.value}
-                          onClick={() => setFormData(prev => ({ ...prev, profession: prof.value }))}
-                          className={`p-4 rounded-lg border transition-colors text-left ${
-                            formData.profession === prof.value
-                              ? 'border-purple-500 bg-purple-500/20'
-                              : 'border-slate-600 bg-slate-800/50 hover:bg-slate-700/50'
-                          }`}
-                        >
-                          <div className="flex items-center gap-2">
-                            <Icon className="h-4 w-4 text-purple-400" />
-                            <span className="text-white text-sm">{prof.label}</span>
-                          </div>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                <div>
-                  <Label className="text-white">¿Cuál es tu nivel de experiencia con IA?</Label>
-                  <Select onValueChange={(value) => setFormData(prev => ({ ...prev, experience: value }))}>
-                    <SelectTrigger className="bg-slate-800 border-slate-600 text-white">
-                      <SelectValue placeholder="Selecciona tu nivel" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {experienceLevels.map((level) => (
-                        <SelectItem key={level.value} value={level.value}>
-                          {level.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-            )}
-
-            {/* Step 2: Interests */}
-            {step === 2 && (
-              <div className="space-y-4">
-                <Label className="text-white">Selecciona los temas que más te interesan (máximo 5):</Label>
-                <div className="grid grid-cols-2 gap-3">
-                  {interestOptions.map((interest) => (
-                    <button
-                      key={interest}
-                      onClick={() => handleInterestToggle(interest)}
-                      disabled={formData.interests.length >= 5 && !formData.interests.includes(interest)}
-                      className={`p-3 rounded-lg border text-sm text-left transition-colors ${
-                        formData.interests.includes(interest)
-                          ? 'border-purple-500 bg-purple-500/20'
-                          : 'border-slate-600 bg-slate-800/50 hover:bg-slate-700/50'
-                      } ${formData.interests.length >= 5 && !formData.interests.includes(interest) ? 'opacity-50 cursor-not-allowed' : ''}`}
-                    >
-                      <span className="text-white">{interest}</span>
-                      {formData.interests.includes(interest) && (
-                        <CheckCircle className="h-4 w-4 text-purple-400 float-right mt-0.5" />
-                      )}
-                    </button>
-                  ))}
-                </div>
-                <div className="text-sm text-gray-400">
-                  Seleccionados: {formData.interests.length}/5
-                </div>
-              </div>
-            )}
-
-            {/* Step 3: Additional Details */}
-            {step === 3 && (
-              <div className="space-y-6">
-                <div>
-                  <Label htmlFor="goals" className="text-white">¿Cuáles son tus objetivos con IA?</Label>
-                  <Textarea
-                    id="goals"
-                    value={formData.goals}
-                    onChange={(e) => setFormData(prev => ({ ...prev, goals: e.target.value }))}
-                    placeholder="Ej: Automatizar procesos en mi empresa, mejorar productividad, crear nuevos servicios..."
-                    className="bg-slate-800 border-slate-600 text-white"
-                    rows={3}
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <Label className="text-white">Tamaño de tu empresa/equipo</Label>
-                    <Select onValueChange={(value) => setFormData(prev => ({ ...prev, companySize: value }))}>
-                      <SelectTrigger className="bg-slate-800 border-slate-600 text-white">
-                        <SelectValue placeholder="Selecciona" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {companySizes.map((size) => (
-                          <SelectItem key={size.value} value={size.value}>
-                            {size.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div>
-                    <Label className="text-white">Industria</Label>
-                    <Select onValueChange={(value) => setFormData(prev => ({ ...prev, industry: value }))}>
-                      <SelectTrigger className="bg-slate-800 border-slate-600 text-white">
-                        <SelectValue placeholder="Selecciona" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {industries.map((industry) => (
-                          <SelectItem key={industry} value={industry}>
-                            {industry}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Selected Interests Preview */}
-            {step === 2 && formData.interests.length > 0 && (
-              <div className="space-y-2">
-                <Label className="text-white">Temas seleccionados:</Label>
-                <div className="flex flex-wrap gap-2">
-                  {formData.interests.map((interest) => (
-                    <Badge key={interest} variant="secondary" className="bg-purple-500/20 text-purple-400">
-                      {interest}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Navigation Buttons */}
-            <div className="flex justify-between pt-6">
-              <Button
-                onClick={() => setStep(step - 1)}
-                variant="outline"
-                disabled={step === 1}
-                className="border-slate-600 text-white"
-              >
-                Anterior
-              </Button>
-
-              {step < 3 ? (
-                <Button
-                  onClick={() => setStep(step + 1)}
-                  disabled={!isStepComplete()}
-                  className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
-                >
-                  Continuar
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
-              ) : (
-                <Button
-                  onClick={handleSubmit}
-                  disabled={!isStepComplete() || onboardingMutation.isPending}
-                  className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
-                >
-                  {onboardingMutation.isPending ? (
-                    <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                      Guardando...
-                    </>
-                  ) : (
-                    <>
-                      Completar Registro
-                      <CheckCircle className="ml-2 h-4 w-4" />
-                    </>
-                  )}
-                </Button>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+        )}
+        
+        {renderStep()}
       </div>
     </div>
   );
