@@ -293,13 +293,35 @@ export default function Sidebar() {
                   ) : (
                     // Menu para usuario NO autenticado (imagen de referencia exacta)
                     <>
-                      <DropdownMenuItem 
-                        className="text-muted-foreground cursor-default"
-                        disabled
-                      >
-                        <Monitor className="mr-2 h-4 w-4" />
-                        <span>Tema: Sistema</span>
-                      </DropdownMenuItem>
+                      <DropdownMenuSub>
+                        <DropdownMenuSubTrigger className="text-card-foreground hover:bg-muted hover:text-foreground">
+                          <Monitor className="mr-2 h-4 w-4" />
+                          <span>Tema: Sistema</span>
+                        </DropdownMenuSubTrigger>
+                        <DropdownMenuSubContent className="bg-card border-border">
+                          <DropdownMenuItem 
+                            className="text-card-foreground hover:bg-muted hover:text-foreground cursor-pointer"
+                            onClick={() => changeTheme("claro")}
+                          >
+                            <Sun className="mr-2 h-4 w-4" />
+                            <span>Luz</span>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem 
+                            className="text-card-foreground hover:bg-muted hover:text-foreground cursor-pointer"
+                            onClick={() => changeTheme("oscuro")}
+                          >
+                            <Moon className="mr-2 h-4 w-4" />
+                            <span>Oscuro</span>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem 
+                            className="text-card-foreground hover:bg-muted hover:text-foreground cursor-pointer"
+                            onClick={() => changeTheme("sistema")}
+                          >
+                            <Monitor className="mr-2 h-4 w-4" />
+                            <span>Sistema</span>
+                          </DropdownMenuItem>
+                        </DropdownMenuSubContent>
+                      </DropdownMenuSub>
                       
                       <DropdownMenuItem 
                         className="text-card-foreground hover:bg-muted hover:text-foreground cursor-pointer"
