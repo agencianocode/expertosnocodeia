@@ -344,6 +344,50 @@ export function registerSimpleRoutes(app: Express): Server {
     }
   });
 
+  // Dashboard endpoint - combines all data needed for dashboard
+  app.get("/api/dashboard", legacyAuth, async (req: any, res: Response) => {
+    try {
+      const userId = req.user?.claims?.sub;
+      if (!userId) {
+        return res.status(401).json({ message: "Usuario no autenticado" });
+      }
+
+      // Get all necessary data for dashboard
+      const [continueCourses, recommendedCourses, categories] = await Promise.all([
+        storage.getUserRecentCourses(userId, 8), // Recent activity for "continue" section
+        storage.getAllCourses(), // All courses for recommendations
+        storage.getAllCategories() // Categories for filtering
+      ]);
+
+      // Get user progress for all courses
+      const userProgress = await storage.getUserProgress(userId);
+      const progressMap = userProgress.reduce((acc: any, progress: any) => {
+        acc[progress.courseId] = progress;
+        return acc;
+      }, {});
+
+      // Combine courses with their progress and categories
+      const coursesWithData = recommendedCourses.map((course: any) => {
+        const category = categories.find((cat: any) => cat.id === course.categoryId);
+        const progress = progressMap[course.id];
+        return {
+          course,
+          category,
+          progress
+        };
+      });
+
+      res.json({
+        continueCourses, // Recent activity for "Continue where you left off"
+        recommendedCourses: coursesWithData, // All courses with progress and category data
+        categories
+      });
+    } catch (error) {
+      console.error("Error fetching dashboard data:", error);
+      res.status(500).json({ message: "Failed to fetch dashboard data" });
+    }
+  });
+
   // Admin routes with simple auth - simplified versions
   app.get("/api/admin/dashboard", simpleAdminAuth, isAdmin, async (req: Request, res: Response) => {
     try {
