@@ -33,6 +33,16 @@ export function useOnboardingProgress() {
   // Check if guides were visited
   const guidesExplored = typeof window !== 'undefined' ? localStorage.getItem('guides-visited') === 'true' : false;
   
+  // Debug logs (temporary)
+  console.log('Progress Debug:', {
+    onboardingResponse: !!onboardingResponse,
+    dashboardData: (dashboardData as any)?.continueCourses?.length,
+    guidesVisited: localStorage.getItem('guides-visited'),
+    surveyCompleted,
+    firstCourseStarted,
+    guidesExplored
+  });
+  
   // Count completed steps
   let completedSteps = 0;
   if (surveyCompleted) completedSteps++;
