@@ -737,7 +737,15 @@ export default function Course() {
                 {lessonsArray.map((lesson: any, index: number) => (
                   <div
                     key={lesson.id}
-                    onClick={() => isAuthenticated ? handleLessonClick(index) : window.location.href = "/api/login"}
+                    onClick={() => {
+                      if (isAuthenticated) {
+                        handleLessonClick(index);
+                      } else if (index === 0) {
+                        // Primera lección siempre accesible
+                        handleLessonClick(index);
+                      }
+                      // Para lecciones 2+: no hacer nada (no redirect a login)
+                    }}
                     className={cn(
                       "py-5 px-4 rounded-lg transition-colors",
                       isAuthenticated 
@@ -1136,8 +1144,15 @@ export default function Course() {
                   <div
                     key={lesson.id}
                     onClick={() => {
-                      handleLessonClick(index);
-                      setIsMobileLessonsOpen(false);
+                      if (isAuthenticated) {
+                        handleLessonClick(index);
+                        setIsMobileLessonsOpen(false);
+                      } else if (index === 0) {
+                        // Primera lección siempre accesible
+                        handleLessonClick(index);
+                        setIsMobileLessonsOpen(false);
+                      }
+                      // Para lecciones 2+: no hacer nada (no redirect a login)
                     }}
                     className={cn(
                       "p-4 rounded-lg cursor-pointer transition-all",
