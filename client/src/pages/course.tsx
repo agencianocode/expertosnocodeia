@@ -518,26 +518,54 @@ export default function Course() {
             {/* Current Lesson Content */}
             {currentLesson && (
               <section>
-                {!isAuthenticated ? (
-                  // Blocked content view for non-authenticated users
-                  <div className="relative rounded-lg overflow-hidden mb-6 lg:mb-8 bg-black" style={{ paddingBottom: '56.25%' }}>
-                    <div className="absolute top-0 left-0 w-full h-full flex items-center justify-center bg-black">
-                      <div className="text-center text-white">
-                        <div className="mb-4">
-                          <div className="w-16 h-16 mx-auto rounded-full bg-gray-800 flex items-center justify-center mb-4">
-                            <Play className="h-8 w-8 text-gray-400" />
-                          </div>
-                        </div>
-                        <p className="text-lg mb-4">Tu plan actual no incluye acceso a este curso.</p>
-                        <Button 
-                          onClick={() => window.location.href = "/api/login"}
-                          className="bg-white text-black hover:bg-gray-200"
-                        >
-                          Inscribirse
-                        </Button>
-                      </div>
+                {!isAuthenticated && currentLessonIndex > 0 ? (
+                  // Blocked content view for lessons 2+ when not authenticated
+                  <div className="bg-card rounded-xl p-4 lg:p-8 font-satoshi">
+                    <div className="text-center text-card-foreground">
+                      <Lock className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
+                      <h2 className="text-lg lg:text-xl font-bold mb-4">{currentLesson.title}</h2>
+                      <p className="text-muted-foreground mb-6">Debes registrarte en Rundown University para ver esta lección.</p>
+                      <Button 
+                        onClick={() => window.location.href = "/planes"}
+                        className="bg-primary text-primary-foreground hover:bg-primary/90"
+                      >
+                        Inscribirse
+                      </Button>
                     </div>
                   </div>
+                ) : !isAuthenticated && currentLessonIndex === 0 ? (
+                  // First lesson preview for non-authenticated users
+                  <>
+                    {/* Media Area - Video/Image/Empty based on lesson content */}
+                    {currentLesson.videoUrl ? (
+                      <div className="relative rounded-lg overflow-hidden mb-6 lg:mb-8 bg-black" style={{ paddingBottom: '56.25%' }}>
+                        <div className="absolute top-0 left-0 w-full h-full flex items-center justify-center bg-black">
+                          <div className="text-center text-white">
+                            <div className="mb-4">
+                              <div className="w-16 h-16 mx-auto rounded-full bg-gray-800 flex items-center justify-center mb-4">
+                                <Play className="h-8 w-8 text-gray-400" />
+                              </div>
+                            </div>
+                            <p className="text-lg mb-4">Tu plan actual no incluye acceso a este curso.</p>
+                            <Button 
+                              onClick={() => window.location.href = "/planes"}
+                              className="bg-white text-black hover:bg-gray-200"
+                            >
+                              Inscribirse
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    ) : currentLesson.imageUrl ? (
+                      <div className="rounded-lg mb-6 lg:mb-8">
+                        <img 
+                          src={currentLesson.imageUrl} 
+                          alt={currentLesson.title}
+                          className="w-full h-auto rounded-lg"
+                        />
+                      </div>
+                    ) : null}
+                  </>
                 ) : (
                   // Normal content for authenticated users
                   <>
