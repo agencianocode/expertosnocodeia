@@ -45,8 +45,6 @@ export function useOnboardingProgress() {
   else if (completedSteps === 2) totalProgress = 67;
   else if (completedSteps === 3) totalProgress = 100;
 
-  // Debug log
-  console.log('Final Progress:', { completedSteps, totalProgress, surveyCompleted, firstCourseStarted, guidesExplored });
 
   return {
     surveyCompleted,
