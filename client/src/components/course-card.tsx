@@ -129,17 +129,13 @@ export default function CourseCard({ course, category, progress, variant = "defa
     return (
       <div 
         onClick={() => {
-          if (!isAuthenticated) {
-            // Redirect to login if not authenticated
-            window.location.href = "/login";
-            return;
-          }
-          
+          // Allow navigation for both authenticated and non-authenticated users
+          // Non-authenticated users will see blocked content in the course page
           let courseUrl;
           if (course.type === 'workshop') {
             courseUrl = `/taller/${course.id}`;
-          } else if (lastLessonId && showContinueText) {
-            // Navigate to specific lesson for "Continue where you left off"
+          } else if (lastLessonId && showContinueText && isAuthenticated) {
+            // Navigate to specific lesson for "Continue where you left off" (only when authenticated)
             courseUrl = `/curso/${course.id}/leccion/${lastLessonId}`;
           } else {
             // Normal course navigation
@@ -215,7 +211,8 @@ export default function CourseCard({ course, category, progress, variant = "defa
             onClick={(e) => {
               e.stopPropagation();
               if (!isAuthenticated) {
-                window.location.href = "/login";
+                // Redirect to login only for bookmark action, not course navigation
+                window.location.href = "/api/login";
                 return;
               }
               saveCourseMutation.mutate();
@@ -240,17 +237,13 @@ export default function CourseCard({ course, category, progress, variant = "defa
         isAuthenticated ? "hover:shadow-lg hover:shadow-primary/20 hover:scale-105" : "hover:shadow-md opacity-90"
       )}
       onClick={() => {
-        if (!isAuthenticated) {
-          // Redirect to login if not authenticated
-          window.location.href = "/login";
-          return;
-        }
-        
+        // Allow navigation for both authenticated and non-authenticated users
+        // Non-authenticated users will see blocked content in the course page
         let courseUrl;
         if (course.type === 'workshop') {
           courseUrl = `/taller/${course.id}`;
-        } else if (lastLessonId && showContinueText) {
-          // Navigate to specific lesson for "Continue where you left off"
+        } else if (lastLessonId && showContinueText && isAuthenticated) {
+          // Navigate to specific lesson for "Continue where you left off" (only when authenticated)
           courseUrl = `/curso/${course.id}/leccion/${lastLessonId}`;
         } else {
           // Normal course navigation
