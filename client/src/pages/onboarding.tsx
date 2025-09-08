@@ -216,7 +216,13 @@ export default function Onboarding() {
                 <Button
                   key={option.text}
                   variant={data.workAreas.includes(option.text) ? "default" : "outline"}
-                  onClick={() => toggleArraySelection('workAreas', option.text)}
+                  onClick={() => {
+                    toggleArraySelection('workAreas', option.text);
+                    // Auto advance after selection
+                    setTimeout(() => {
+                      nextStep();
+                    }, 1000);
+                  }}
                   className="p-4 bg-gray-800 border-gray-600 hover:bg-gray-700 text-white flex items-center space-x-2"
                 >
                   <span className="text-lg">{option.icon}</span>
@@ -224,14 +230,6 @@ export default function Onboarding() {
                 </Button>
               ))}
             </div>
-            {data.workAreas.length > 0 && (
-              <Button 
-                onClick={nextStep}
-                className="w-full mt-6 bg-gray-600 hover:bg-gray-500 text-white"
-              >
-                Continuar
-              </Button>
-            )}
           </div>
         );
 
@@ -253,21 +251,19 @@ export default function Onboarding() {
                 <Button
                   key={option}
                   variant={data.learningMethods.includes(option) ? "default" : "outline"}
-                  onClick={() => toggleArraySelection('learningMethods', option)}
+                  onClick={() => {
+                    toggleArraySelection('learningMethods', option);
+                    // Auto advance after selection
+                    setTimeout(() => {
+                      nextStep();
+                    }, 1000);
+                  }}
                   className="w-full bg-gray-800 border-gray-600 hover:bg-gray-700 text-white"
                 >
                   {option}
                 </Button>
               ))}
             </div>
-            {data.learningMethods.length > 0 && (
-              <Button 
-                onClick={nextStep}
-                className="w-full mt-6 bg-gray-600 hover:bg-gray-500 text-white"
-              >
-                Continuar
-              </Button>
-            )}
           </div>
         );
 
@@ -306,25 +302,28 @@ export default function Onboarding() {
           <div className="text-center max-w-3xl mx-auto">
             {renderProgressBar()}
             <h2 className="text-2xl font-medium mb-8">
-              ¿A qué herramientas de NoCode IA ya estás suscrito?
+              ¿A qué herramientas de IA ya estás suscrito?
             </h2>
             <div className="grid grid-cols-2 gap-3">
               {[
-                { icon: '🔧', text: 'Zapier' },
-                { icon: '📊', text: 'Airtable' },
-                { icon: '💎', text: 'Bubble' },
-                { icon: '⚡', text: 'Webflow' },
-                { icon: '🔗', text: 'Integromat' },
-                { icon: '📱', text: 'Adalo' },
-                { icon: '🎯', text: 'Notion' },
-                { icon: '📋', text: 'Monday.com' },
-                { icon: '🔄', text: 'Automator' },
-                { icon: '✨', text: 'Framer' },
-                { icon: '📊', text: 'Retool' },
-                { icon: '🎨', text: 'Figma' },
-                { icon: '🔧', text: 'Make' },
-                { icon: '📱', text: 'Glide' },
-                { icon: '⚡', text: 'Ninguno todavía' }
+                { icon: '🔮', text: 'ChatGPT' },
+                { icon: '🎨', text: 'Microsoft Copilot' },
+                { icon: '✨', text: 'Gemini' },
+                { icon: '🤖', text: 'Claude' },
+                { icon: '🔍', text: 'Perplexity' },
+                { icon: '🎬', text: 'Midjourney' },
+                { icon: '⚡', text: 'Zapier' },
+                { icon: '🔗', text: 'n8n' },
+                { icon: '📝', text: 'NotebookLM' },
+                { icon: '💻', text: 'Cursor' },
+                { icon: '🎞️', text: 'KLING' },
+                { icon: '👤', text: 'HeyGen' },
+                { icon: '🎥', text: 'Runway' },
+                { icon: '📋', text: 'Notion AI' },
+                { icon: '🎙️', text: 'ElevenLabs' },
+                { icon: '🎨', text: 'Canva AI' },
+                { icon: '💙', text: 'Lovable' },
+                { icon: '🤷', text: 'None yet' }
               ].map((option) => (
                 <Button
                   key={option.text}
@@ -341,7 +340,7 @@ export default function Onboarding() {
               onClick={nextStep}
               className="w-full mt-6 bg-gray-600 hover:bg-gray-500 text-white"
             >
-              Continuar
+              Continue
             </Button>
           </div>
         );
