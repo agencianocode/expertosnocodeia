@@ -56,6 +56,9 @@ import {
   type InsertUserSubscription,
   type UserUsage,
   type InsertUserUsage,
+  userOnboardingResponses,
+  type UserOnboardingResponse,
+  type InsertUserOnboardingResponse,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, sql } from "drizzle-orm";
@@ -191,6 +194,10 @@ export interface IStorage {
   // Usage tracking operations
   trackUserUsage(data: InsertUserUsage): Promise<UserUsage>;
   getUserUsageCount(userId: string, resourceType: string, startDate?: Date): Promise<number>;
+
+  // Onboarding responses operations
+  saveOnboardingResponse(data: InsertUserOnboardingResponse): Promise<UserOnboardingResponse>;
+  getUserOnboardingResponse(userId: string): Promise<UserOnboardingResponse | undefined>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -224,7 +231,7 @@ export class DatabaseStorage implements IStorage {
   async createUser(userData: Partial<User>): Promise<User> {
     const [user] = await db
       .insert(users)
-      .values(userData)
+      .values(userData as any) // Cast to bypass type checking for dynamic user creation
       .returning();
     return user;
   }
@@ -1225,6 +1232,43 @@ export class DatabaseStorage implements IStorage {
       .where(and(...conditions));
 
     return result.length;
+  }
+
+  // Onboarding responses operations
+  async saveOnboardingResponse(data: InsertUserOnboardingResponse): Promise<UserOnboardingResponse> {
+    // Check if user already has onboarding response
+    const [existing] = await db
+      .select()
+      .from(userOnboardingResponses)
+      .where(eq(userOnboardingResponses.userId, data.userId));
+
+    if (existing) {
+      // Update existing response
+      const [updated] = await db
+        .update(userOnboardingResponses)
+        .set({
+          ...data,
+          updatedAt: new Date(),
+        })
+        .where(eq(userOnboardingResponses.userId, data.userId))
+        .returning();
+      return updated;
+    } else {
+      // Create new response
+      const [created] = await db
+        .insert(userOnboardingResponses)
+        .values(data)
+        .returning();
+      return created;
+    }
+  }
+
+  async getUserOnboardingResponse(userId: string): Promise<UserOnboardingResponse | undefined> {
+    const [response] = await db
+      .select()
+      .from(userOnboardingResponses)
+      .where(eq(userOnboardingResponses.userId, userId));
+    return response;
   }
 
 }

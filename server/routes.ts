@@ -68,6 +68,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Save onboarding responses (authenticated)
+  app.post("/api/onboarding/submit", supabaseAuth, async (req: AuthenticatedRequest, res) => {
+    try {
+      const userId = req.user!.id;
+      const { experienceLevel, workAreas, learningMethods, goals, aiTools, mainGoal } = req.body;
+
+      const onboardingData = {
+        userId,
+        experienceLevel,
+        workAreas: workAreas || [],
+        learningMethods: learningMethods || [],
+        goals: goals || [],
+        aiTools: aiTools || [],
+        mainGoal,
+      };
+
+      const response = await storage.saveOnboardingResponse(onboardingData);
+      res.json(response);
+    } catch (error) {
+      console.error("Error saving onboarding response:", error);
+      res.status(500).json({ message: "Failed to save onboarding response" });
+    }
+  });
+
+  // Get user onboarding response (authenticated)
+  app.get("/api/onboarding/response", supabaseAuth, async (req: AuthenticatedRequest, res) => {
+    try {
+      const userId = req.user!.id;
+      const response = await storage.getUserOnboardingResponse(userId);
+      res.json(response || null);
+    } catch (error) {
+      console.error("Error fetching onboarding response:", error);
+      res.status(500).json({ message: "Failed to fetch onboarding response" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

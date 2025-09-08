@@ -54,7 +54,7 @@ export default function Onboarding() {
     });
   };
 
-  const nextStep = () => {
+  const nextStep = async () => {
     if (currentStep === 11) {
       // Start loading animation
       setIsLoading(true);
@@ -63,8 +63,32 @@ export default function Onboarding() {
         setIsLoading(false);
       }, 3000);
     } else if (currentStep === 12) {
-      // Final loading before redirect
+      // Save onboarding data and then final loading before redirect
       setIsLoading(true);
+      
+      try {
+        // Save onboarding data to backend
+        console.log('Saving onboarding data:', data);
+        
+        const response = await fetch('/api/onboarding/submit', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(data),
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to save onboarding data');
+        }
+
+        const result = await response.json();
+        console.log('Onboarding data saved successfully:', result);
+      } catch (error) {
+        console.error('Error saving onboarding data:', error);
+        // Continue even if save fails
+      }
+      
       setTimeout(() => {
         setCurrentStep(currentStep + 1);
         setIsLoading(false);
