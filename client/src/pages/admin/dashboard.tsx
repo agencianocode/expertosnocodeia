@@ -1,6 +1,6 @@
 import { useAdmin } from "@/hooks/useAdmin";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, BookOpen, FolderOpen, Image } from "lucide-react";
+import { Users, BookOpen, FolderOpen, Image, ClipboardList } from "lucide-react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import Sidebar from "@/components/layout/sidebar";
@@ -46,11 +46,11 @@ export default function AdminDashboard() {
       href: "/admin/categories",
     },
     {
-      title: "Administradores",
-      value: (adminStats as any)?.totalAdmins || 0,
-      description: "Usuarios con privilegios admin",
-      icon: Users,
-      href: "/admin/users",
+      title: "Respuestas Onboarding",
+      value: (adminStats as any)?.totalOnboardingResponses || 0,
+      description: "Usuarios que completaron onboarding",
+      icon: ClipboardList,
+      href: "/admin/onboarding",
     },
     {
       title: "Archivos Multimedia",

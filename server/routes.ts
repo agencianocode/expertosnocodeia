@@ -104,6 +104,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Admin onboarding analytics (authenticated admin only - check simple-routes.ts for proper admin auth)
+  app.get("/api/admin/onboarding/analytics", supabaseAuth, async (req: AuthenticatedRequest, res) => {
+    try {
+      // TODO: Add proper admin check when integrating with admin middleware
+      const analytics = await storage.getOnboardingAnalytics();
+      res.json(analytics);
+    } catch (error) {
+      console.error("Error fetching onboarding analytics:", error);
+      res.status(500).json({ message: "Failed to fetch onboarding analytics" });
+    }
+  });
+
+  // Admin get all onboarding responses (authenticated admin only)
+  app.get("/api/admin/onboarding/responses", supabaseAuth, async (req: AuthenticatedRequest, res) => {
+    try {
+      // TODO: Add proper admin check when integrating with admin middleware
+      const limit = parseInt(req.query.limit as string) || 50;
+      const offset = parseInt(req.query.offset as string) || 0;
+      
+      const responses = await storage.getAllOnboardingResponses(limit, offset);
+      res.json(responses);
+    } catch (error) {
+      console.error("Error fetching onboarding responses:", error);
+      res.status(500).json({ message: "Failed to fetch onboarding responses" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

@@ -25,6 +25,7 @@ import CategoryForm from "@/pages/admin/category-form";
 import AdminMedia from "@/pages/admin/media";
 import MediaUpload from "@/pages/admin/media-upload";
 import WorkshopEditor from "@/pages/admin/workshop-editor";
+import OnboardingAnalytics from "@/pages/admin/onboarding-analytics";
 import Setup from "@/pages/setup";
 import Lesson from "@/pages/lesson";
 import Events from "@/pages/events";
@@ -125,6 +126,7 @@ function Router() {
           <Route path="/curso/:id" component={Course} />
           <Route path="/admin" component={AdminDashboard} />
           <Route path="/admin/dashboard" component={AdminDashboard} />
+          <Route path="/admin/onboarding" component={OnboardingAnalytics} />
           <Route path="/admin/content" component={ContentManagement} />
           <Route path="/admin/content/course/new" component={CourseForm} />
           <Route path="/admin/content/course/:id/lessons" component={CourseLessons} />

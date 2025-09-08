@@ -415,15 +415,44 @@ export function registerSimpleRoutes(app: Express): Server {
       // Use direct database queries for now
       const courses = await storage.getAllCourses();
       const categories = await storage.getAllCategories();
+      const onboardingAnalytics = await storage.getOnboardingAnalytics();
       
       res.json({
         totalCourses: courses.length,
         totalUsers: 1, // You're the main user
         totalLessons: 35, // From your progress
-        totalCategories: categories.length
+        totalCategories: categories.length,
+        // Add onboarding metrics
+        totalOnboardingResponses: onboardingAnalytics.totalResponses,
+        onboardingAnalytics: onboardingAnalytics
       });
     } catch (error) {
       console.error("Error fetching admin dashboard:", error);
+      res.status(500).json({ message: "Error interno del servidor" });
+    }
+  });
+
+  // Admin onboarding analytics
+  app.get("/api/admin/onboarding/analytics", simpleAdminAuth, isAdmin, async (req: Request, res: Response) => {
+    try {
+      const analytics = await storage.getOnboardingAnalytics();
+      res.json(analytics);
+    } catch (error) {
+      console.error("Error fetching onboarding analytics:", error);
+      res.status(500).json({ message: "Error interno del servidor" });
+    }
+  });
+
+  // Admin get all onboarding responses
+  app.get("/api/admin/onboarding/responses", simpleAdminAuth, isAdmin, async (req: Request, res: Response) => {
+    try {
+      const limit = parseInt(req.query.limit as string) || 50;
+      const offset = parseInt(req.query.offset as string) || 0;
+      
+      const responses = await storage.getAllOnboardingResponses(limit, offset);
+      res.json(responses);
+    } catch (error) {
+      console.error("Error fetching onboarding responses:", error);
       res.status(500).json({ message: "Error interno del servidor" });
     }
   });

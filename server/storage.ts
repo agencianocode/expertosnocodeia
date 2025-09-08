@@ -198,6 +198,16 @@ export interface IStorage {
   // Onboarding responses operations
   saveOnboardingResponse(data: InsertUserOnboardingResponse): Promise<UserOnboardingResponse>;
   getUserOnboardingResponse(userId: string): Promise<UserOnboardingResponse | undefined>;
+  getOnboardingAnalytics(): Promise<{
+    totalResponses: number;
+    experienceLevels: Record<string, number>;
+    popularWorkAreas: Record<string, number>;
+    popularLearningMethods: Record<string, number>;
+    popularGoals: Record<string, number>;
+    popularAiTools: Record<string, number>;
+    recentResponses: UserOnboardingResponse[];
+  }>;
+  getAllOnboardingResponses(limit?: number, offset?: number): Promise<UserOnboardingResponse[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1269,6 +1279,85 @@ export class DatabaseStorage implements IStorage {
       .from(userOnboardingResponses)
       .where(eq(userOnboardingResponses.userId, userId));
     return response;
+  }
+
+  async getOnboardingAnalytics(): Promise<{
+    totalResponses: number;
+    experienceLevels: Record<string, number>;
+    popularWorkAreas: Record<string, number>;
+    popularLearningMethods: Record<string, number>;
+    popularGoals: Record<string, number>;
+    popularAiTools: Record<string, number>;
+    recentResponses: UserOnboardingResponse[];
+  }> {
+    // Get all onboarding responses
+    const responses = await db.select().from(userOnboardingResponses);
+    
+    // Calculate analytics
+    const analytics = {
+      totalResponses: responses.length,
+      experienceLevels: {} as Record<string, number>,
+      popularWorkAreas: {} as Record<string, number>,
+      popularLearningMethods: {} as Record<string, number>,
+      popularGoals: {} as Record<string, number>,
+      popularAiTools: {} as Record<string, number>,
+      recentResponses: [] as UserOnboardingResponse[],
+    };
+
+    // Process each response
+    responses.forEach((response) => {
+      // Count experience levels
+      if (response.experienceLevel) {
+        analytics.experienceLevels[response.experienceLevel] = 
+          (analytics.experienceLevels[response.experienceLevel] || 0) + 1;
+      }
+
+      // Count work areas
+      if (response.workAreas && Array.isArray(response.workAreas)) {
+        response.workAreas.forEach((area: string) => {
+          analytics.popularWorkAreas[area] = (analytics.popularWorkAreas[area] || 0) + 1;
+        });
+      }
+
+      // Count learning methods
+      if (response.learningMethods && Array.isArray(response.learningMethods)) {
+        response.learningMethods.forEach((method: string) => {
+          analytics.popularLearningMethods[method] = (analytics.popularLearningMethods[method] || 0) + 1;
+        });
+      }
+
+      // Count goals
+      if (response.goals && Array.isArray(response.goals)) {
+        response.goals.forEach((goal: string) => {
+          analytics.popularGoals[goal] = (analytics.popularGoals[goal] || 0) + 1;
+        });
+      }
+
+      // Count AI tools
+      if (response.aiTools && Array.isArray(response.aiTools)) {
+        response.aiTools.forEach((tool: string) => {
+          analytics.popularAiTools[tool] = (analytics.popularAiTools[tool] || 0) + 1;
+        });
+      }
+    });
+
+    // Get recent responses (last 10)
+    analytics.recentResponses = await db
+      .select()
+      .from(userOnboardingResponses)
+      .orderBy(desc(userOnboardingResponses.completedAt))
+      .limit(10);
+
+    return analytics;
+  }
+
+  async getAllOnboardingResponses(limit: number = 50, offset: number = 0): Promise<UserOnboardingResponse[]> {
+    return await db
+      .select()
+      .from(userOnboardingResponses)
+      .orderBy(desc(userOnboardingResponses.completedAt))
+      .limit(limit)
+      .offset(offset);
   }
 
 }
