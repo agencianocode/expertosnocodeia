@@ -296,89 +296,73 @@ export default function Sidebar() {
             </div>
           </>
         ) : (
-          // Sección minimalista para usuario NO autenticado (imagen de referencia)
-          <div className="p-4 border-t border-border">
-            <div className="flex items-center justify-center lg:justify-between">
-              <div className="hidden lg:flex items-center space-x-3 flex-1">
+          // Sección minimalista para usuario NO autenticado (imagen de referencia exacta)
+          <div className="p-4 border-t border-border space-y-3">
+            {/* Tema: Sistema - línea directa con dropdown de opciones */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
                 <Monitor className="h-4 w-4 text-muted-foreground" />
                 <span className="text-sm text-muted-foreground">Tema: Sistema</span>
               </div>
-              <div className="flex items-center space-x-2">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="text-muted-foreground hover:text-foreground p-1"
-                  onClick={() => window.location.href = "/apoyo"}
-                >
-                  <HelpCircle className="h-4 w-4" />
-                </Button>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="text-muted-foreground hover:text-foreground h-6 w-6"
-                    >
-                      <MoreHorizontal className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent 
-                    align="end" 
-                    className="w-56 bg-card border-border"
-                    sideOffset={5}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="text-muted-foreground hover:text-foreground h-6 w-6"
                   >
-                    <DropdownMenuSub>
-                      <DropdownMenuSubTrigger className="text-card-foreground hover:bg-muted hover:text-foreground">
-                        <Monitor className="mr-2 h-4 w-4" />
-                        <span>Tema: Sistema</span>
-                      </DropdownMenuSubTrigger>
-                      <DropdownMenuSubContent className="bg-card border-border">
-                        <DropdownMenuItem 
-                          className="text-card-foreground hover:bg-muted hover:text-foreground cursor-pointer"
-                          onClick={() => changeTheme("claro")}
-                        >
-                          <Sun className="mr-2 h-4 w-4" />
-                          <span>Luz</span>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem 
-                          className="text-card-foreground hover:bg-muted hover:text-foreground cursor-pointer"
-                          onClick={() => changeTheme("oscuro")}
-                        >
-                          <Moon className="mr-2 h-4 w-4" />
-                          <span>Oscuro</span>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem 
-                          className="text-card-foreground hover:bg-muted hover:text-foreground cursor-pointer"
-                          onClick={() => changeTheme("sistema")}
-                        >
-                          <Monitor className="mr-2 h-4 w-4" />
-                          <span>Sistema</span>
-                        </DropdownMenuItem>
-                      </DropdownMenuSubContent>
-                    </DropdownMenuSub>
-                    
-                    <DropdownMenuItem 
-                      className="text-card-foreground hover:bg-muted hover:text-foreground cursor-pointer"
-                      onClick={() => window.location.href = "/apoyo"}
-                    >
-                      <HelpCircle className="mr-2 h-4 w-4" />
-                      <span>Apoyo</span>
-                    </DropdownMenuItem>
-                    
-                    <DropdownMenuSeparator className="bg-border" />
-                    
-                    <div className="p-2">
-                      <Button 
-                        className="w-full bg-muted-foreground hover:bg-muted text-background"
-                        onClick={() => window.location.href = "/login"}
-                      >
-                        Acceso
-                      </Button>
-                    </div>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
+                    <MoreHorizontal className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent 
+                  align="end" 
+                  className="w-56 bg-card border-border"
+                  sideOffset={5}
+                >
+                  <DropdownMenuItem 
+                    className="text-card-foreground hover:bg-muted hover:text-foreground cursor-pointer"
+                    onClick={() => changeTheme("claro")}
+                  >
+                    <Sun className="mr-2 h-4 w-4" />
+                    <span>Luz</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem 
+                    className="text-card-foreground hover:bg-muted hover:text-foreground cursor-pointer"
+                    onClick={() => changeTheme("oscuro")}
+                  >
+                    <Moon className="mr-2 h-4 w-4" />
+                    <span>Oscuro</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem 
+                    className="text-card-foreground hover:bg-muted hover:text-foreground cursor-pointer"
+                    onClick={() => changeTheme("sistema")}
+                  >
+                    <Monitor className="mr-2 h-4 w-4" />
+                    <span>Sistema</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
+
+            {/* Apoyo - línea directa */}
+            <div 
+              className="flex items-center space-x-3 cursor-pointer hover:bg-muted rounded-lg p-2 -mx-2"
+              onClick={() => window.location.href = "/apoyo"}
+            >
+              <HelpCircle className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm text-muted-foreground">Apoyo</span>
+            </div>
+
+            {/* Separador */}
+            <div className="border-t border-border"></div>
+
+            {/* Botón Acceso */}
+            <Button 
+              className="w-full bg-muted-foreground hover:bg-muted text-background"
+              onClick={() => window.location.href = "/login"}
+            >
+              Acceso
+            </Button>
           </div>
         )}
       </div>
