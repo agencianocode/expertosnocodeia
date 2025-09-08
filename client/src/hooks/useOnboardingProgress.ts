@@ -10,19 +10,6 @@ interface OnboardingProgress {
 }
 
 export function useOnboardingProgress() {
-  const [progress, setProgress] = useState<OnboardingProgress>({
-    surveyCompleted: false,
-    firstCourseStarted: false,
-    guidesExplored: false,
-    totalProgress: 0,
-    completedSteps: 0
-  });
-
-  // Check if user has viewed guides page (we'll use localStorage for this)
-  const [guidesExplored, setGuidesExplored] = useState(
-    typeof window !== 'undefined' ? localStorage.getItem('guides-visited') === 'true' : false
-  );
-
   // Check if user completed onboarding survey
   const { data: onboardingResponse } = useQuery({
     queryKey: ['/api/onboarding/response'],
@@ -37,45 +24,29 @@ export function useOnboardingProgress() {
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
-  // Listen for localStorage changes
-  useEffect(() => {
-    const handleStorageChange = () => {
-      setGuidesExplored(localStorage.getItem('guides-visited') === 'true');
-    };
-    
-    window.addEventListener('storage', handleStorageChange);
-    // Also check on component mount/updates
-    handleStorageChange();
-    
-    return () => {
-      window.removeEventListener('storage', handleStorageChange);
-    };
-  }, []);
+  // Calculate progress based on completed tasks
+  const surveyCompleted = !!onboardingResponse;
+  
+  // Check if user has progress in any course from dashboard data
+  const firstCourseStarted = !!(dashboardData as any)?.continueCourses?.length || false;
+  
+  // Check if guides were visited
+  const guidesExplored = typeof window !== 'undefined' ? localStorage.getItem('guides-visited') === 'true' : false;
+  
+  // Count completed steps
+  let completedSteps = 0;
+  if (surveyCompleted) completedSteps++;
+  if (firstCourseStarted) completedSteps++;
+  if (guidesExplored) completedSteps++;
 
-  useEffect(() => {
-    // Calculate progress based on completed tasks
-    const surveyCompleted = !!onboardingResponse;
-    
-    // Check if user has progress in any course from dashboard data
-    const firstCourseStarted = !!(dashboardData as any)?.continueCourses?.length || false;
-    
-    // Count completed steps
-    let completedSteps = 0;
-    if (surveyCompleted) completedSteps++;
-    if (firstCourseStarted) completedSteps++;
-    if (guidesExplored) completedSteps++;
+  // Calculate percentage (33.3% per step)
+  const totalProgress = Math.round((completedSteps / 3) * 100);
 
-    // Calculate percentage (33.3% per step)
-    const totalProgress = (completedSteps / 3) * 100;
-
-    setProgress({
-      surveyCompleted,
-      firstCourseStarted,
-      guidesExplored,
-      totalProgress,
-      completedSteps
-    });
-  }, [onboardingResponse, dashboardData, guidesExplored]);
-
-  return progress;
+  return {
+    surveyCompleted,
+    firstCourseStarted,
+    guidesExplored,
+    totalProgress,
+    completedSteps
+  };
 }
