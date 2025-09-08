@@ -215,43 +215,92 @@ export default function Sidebar() {
                   className="w-56 bg-card border-border"
                   sideOffset={5}
                 >
-                  <DropdownMenuItem 
-                    className="text-card-foreground hover:bg-muted hover:text-foreground cursor-pointer"
-                    onClick={() => window.location.href = "/profile"}
-                  >
-                    <User className="mr-2 h-4 w-4" />
-                    <span>Mi perfil</span>
-                  </DropdownMenuItem>
-                  
-                  <DropdownMenuItem 
-                    className="text-card-foreground hover:bg-muted hover:text-foreground cursor-pointer"
-                    onClick={() => window.location.href = "/progreso"}
-                  >
-                    <TrendingUp className="mr-2 h-4 w-4" />
-                    <span>Mi progreso</span>
-                  </DropdownMenuItem>
-                  
-                  <DropdownMenuItem 
-                    className="text-card-foreground hover:bg-muted hover:text-foreground cursor-pointer"
-                    onClick={() => window.location.href = "/guardado"}
-                  >
-                    <Bookmark className="mr-2 h-4 w-4" />
-                    <span>Guardado</span>
-                  </DropdownMenuItem>
-                  
-                  <DropdownMenuSub>
-                    <DropdownMenuSubTrigger className="text-muted-foreground hover:bg-muted hover:text-foreground">
-                      <Monitor className="mr-2 h-4 w-4" />
-                      <span>Tema: {theme.charAt(0).toUpperCase() + theme.slice(1)}</span>
-                    </DropdownMenuSubTrigger>
-                    <DropdownMenuSubContent className="bg-card border-border">
+                  {user ? (
+                    // Menu para usuario autenticado
+                    <>
+                      <DropdownMenuItem 
+                        className="text-card-foreground hover:bg-muted hover:text-foreground cursor-pointer"
+                        onClick={() => window.location.href = "/profile"}
+                      >
+                        <User className="mr-2 h-4 w-4" />
+                        <span>Mi perfil</span>
+                      </DropdownMenuItem>
+                      
+                      <DropdownMenuItem 
+                        className="text-card-foreground hover:bg-muted hover:text-foreground cursor-pointer"
+                        onClick={() => window.location.href = "/progreso"}
+                      >
+                        <TrendingUp className="mr-2 h-4 w-4" />
+                        <span>Mi progreso</span>
+                      </DropdownMenuItem>
+                      
+                      <DropdownMenuItem 
+                        className="text-card-foreground hover:bg-muted hover:text-foreground cursor-pointer"
+                        onClick={() => window.location.href = "/guardado"}
+                      >
+                        <Bookmark className="mr-2 h-4 w-4" />
+                        <span>Guardado</span>
+                      </DropdownMenuItem>
+                      
+                      <DropdownMenuSub>
+                        <DropdownMenuSubTrigger className="text-muted-foreground hover:bg-muted hover:text-foreground">
+                          <Monitor className="mr-2 h-4 w-4" />
+                          <span>Tema: {theme.charAt(0).toUpperCase() + theme.slice(1)}</span>
+                        </DropdownMenuSubTrigger>
+                        <DropdownMenuSubContent className="bg-card border-border">
+                          <DropdownMenuItem 
+                            className="text-card-foreground hover:bg-muted hover:text-foreground cursor-pointer"
+                            onClick={() => changeTheme("claro")}
+                          >
+                            <Sun className="mr-2 h-4 w-4" />
+                            <span>Claro</span>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem 
+                            className="text-card-foreground hover:bg-muted hover:text-foreground cursor-pointer"
+                            onClick={() => changeTheme("oscuro")}
+                          >
+                            <Moon className="mr-2 h-4 w-4" />
+                            <span>Oscuro</span>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem 
+                            className="text-card-foreground hover:bg-muted hover:text-foreground cursor-pointer"
+                            onClick={() => changeTheme("sistema")}
+                          >
+                            <Monitor className="mr-2 h-4 w-4" />
+                            <span>Sistema</span>
+                          </DropdownMenuItem>
+                        </DropdownMenuSubContent>
+                      </DropdownMenuSub>
+                      
+                      <DropdownMenuItem 
+                        className="text-card-foreground hover:bg-muted hover:text-foreground cursor-pointer"
+                        onClick={() => window.location.href = "/apoyo"}
+                      >
+                        <HelpCircle className="mr-2 h-4 w-4" />
+                        <span>Apoyo</span>
+                      </DropdownMenuItem>
+                      
+                      <DropdownMenuSeparator className="bg-border" />
+                      
+                      <DropdownMenuItem 
+                        className="text-red-400 hover:bg-red-500/10 hover:text-red-300 cursor-pointer"
+                        onClick={logout}
+                      >
+                        <LogOut className="mr-2 h-4 w-4" />
+                        <span>Finalizar la sesión</span>
+                      </DropdownMenuItem>
+                    </>
+                  ) : (
+                    // Menu para usuario NO autenticado (como en la imagen de referencia)
+                    <>
                       <DropdownMenuItem 
                         className="text-card-foreground hover:bg-muted hover:text-foreground cursor-pointer"
                         onClick={() => changeTheme("claro")}
                       >
                         <Sun className="mr-2 h-4 w-4" />
-                        <span>Claro</span>
+                        <span>Luz</span>
                       </DropdownMenuItem>
+                      
                       <DropdownMenuItem 
                         className="text-card-foreground hover:bg-muted hover:text-foreground cursor-pointer"
                         onClick={() => changeTheme("oscuro")}
@@ -259,6 +308,7 @@ export default function Sidebar() {
                         <Moon className="mr-2 h-4 w-4" />
                         <span>Oscuro</span>
                       </DropdownMenuItem>
+                      
                       <DropdownMenuItem 
                         className="text-card-foreground hover:bg-muted hover:text-foreground cursor-pointer"
                         onClick={() => changeTheme("sistema")}
@@ -266,26 +316,37 @@ export default function Sidebar() {
                         <Monitor className="mr-2 h-4 w-4" />
                         <span>Sistema</span>
                       </DropdownMenuItem>
-                    </DropdownMenuSubContent>
-                  </DropdownMenuSub>
-                  
-                  <DropdownMenuItem 
-                    className="text-card-foreground hover:bg-muted hover:text-foreground cursor-pointer"
-                    onClick={() => window.location.href = "/apoyo"}
-                  >
-                    <HelpCircle className="mr-2 h-4 w-4" />
-                    <span>Apoyo</span>
-                  </DropdownMenuItem>
-                  
-                  <DropdownMenuSeparator className="bg-border" />
-                  
-                  <DropdownMenuItem 
-                    className="text-red-400 hover:bg-red-500/10 hover:text-red-300 cursor-pointer"
-                    onClick={logout}
-                  >
-                    <LogOut className="mr-2 h-4 w-4" />
-                    <span>Finalizar la sesión</span>
-                  </DropdownMenuItem>
+                      
+                      <DropdownMenuSeparator className="bg-border" />
+                      
+                      <DropdownMenuItem 
+                        className="text-muted-foreground hover:bg-muted hover:text-foreground cursor-pointer"
+                        disabled
+                      >
+                        <Monitor className="mr-2 h-4 w-4" />
+                        <span>Tema: Sistema</span>
+                      </DropdownMenuItem>
+                      
+                      <DropdownMenuItem 
+                        className="text-card-foreground hover:bg-muted hover:text-foreground cursor-pointer"
+                        onClick={() => window.location.href = "/apoyo"}
+                      >
+                        <HelpCircle className="mr-2 h-4 w-4" />
+                        <span>Apoyo</span>
+                      </DropdownMenuItem>
+                      
+                      <DropdownMenuSeparator className="bg-border" />
+                      
+                      <div className="p-2">
+                        <Button 
+                          className="w-full bg-primary hover:bg-primary/90"
+                          onClick={() => window.location.href = "/login"}
+                        >
+                          Acceso
+                        </Button>
+                      </div>
+                    </>
+                  )}
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
