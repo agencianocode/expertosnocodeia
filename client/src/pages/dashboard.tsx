@@ -146,7 +146,7 @@ export default function Dashboard() {
           {/* Guide Recommendations */}
           <section>
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold text-foreground">Recomendaciones de la guía</h2>
+              <h2 className="font-semibold text-foreground text-[24px]">Recomendaciones de la guía</h2>
               <div className="flex space-x-2">
                 <Button
                   variant="ghost"
