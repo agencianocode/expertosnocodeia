@@ -24,6 +24,9 @@ export default function OnboardingModal({ open, onOpenChange, trigger }: Onboard
   const [, setLocation] = useLocation();
   const progress = useOnboardingProgress();
   const [steps, setSteps] = useState<OnboardingStep[]>([]);
+  
+  // Force re-render when progress changes
+  const [forceUpdate, setForceUpdate] = useState(0);
 
   useEffect(() => {
     // Create dynamic steps based on actual user progress
@@ -52,7 +55,8 @@ export default function OnboardingModal({ open, onOpenChange, trigger }: Onboard
     ];
     
     setSteps(dynamicSteps);
-  }, [progress.surveyCompleted, progress.firstCourseStarted, progress.guidesExplored]);
+    setForceUpdate(prev => prev + 1); // Force component re-render
+  }, [progress.surveyCompleted, progress.firstCourseStarted, progress.guidesExplored, progress.totalProgress]);
 
   const completedSteps = progress.completedSteps;
   const totalSteps = 3;
@@ -145,8 +149,11 @@ export default function OnboardingModal({ open, onOpenChange, trigger }: Onboard
         <div className="px-6 pb-6">
           <div className="w-full bg-gray-700 rounded-full h-2">
             <div 
-              className="bg-purple-500 h-2 rounded-full transition-all duration-300"
-              style={{ width: `${progress.totalProgress}%` }}
+              className="bg-purple-500 h-2 rounded-full"
+              style={{ 
+                width: `${progress.totalProgress}%`,
+                transition: 'width 0.3s ease-in-out'
+              }}
             />
           </div>
         </div>
