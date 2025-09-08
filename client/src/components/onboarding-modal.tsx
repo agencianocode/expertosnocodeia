@@ -143,8 +143,6 @@ export default function OnboardingModal({ open, onOpenChange, trigger }: Onboard
 
         {/* Progress bar */}
         <div className="px-6 pb-6">
-          {/* Temporary debug */}
-          {console.log('Modal Progress:', progress)}
           <div className="w-full bg-gray-700 rounded-full h-2">
             <div 
               className="bg-purple-500 h-2 rounded-full transition-all duration-300"
