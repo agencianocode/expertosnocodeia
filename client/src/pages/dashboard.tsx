@@ -24,7 +24,7 @@ export default function Dashboard() {
 
   const { data: dashboardData, isLoading: dashboardLoading } = useQuery({
     queryKey: ["/api/dashboard"],
-    enabled: isAuthenticated, // Only fetch real data when authenticated
+    enabled: true, // Allow fetching for all users to show real content
     refetchOnWindowFocus: true, // Refetch when user returns to tab
   });
 
@@ -39,43 +39,10 @@ export default function Dashboard() {
     );
   }
 
-  // Mock data for non-authenticated users
-  const mockCourses = [
-    {
-      id: "preview-1",
-      title: "Introducción a NoCode para Principiantes",
-      description: "Aprende los fundamentos de NoCode y cómo empezar tu primer proyecto",
-      difficulty: "beginner",
-      duration: "2h",
-      type: "course"
-    },
-    {
-      id: "preview-2", 
-      title: "Automatización con Zapier y Make",
-      description: "Domina las herramientas de automatización más populares",
-      difficulty: "intermediate",
-      duration: "3h",
-      type: "course"
-    },
-    {
-      id: "preview-3",
-      title: "Creación de Apps sin Código",
-      description: "Construye aplicaciones completas usando plataformas NoCode",
-      difficulty: "advanced", 
-      duration: "4h",
-      type: "course"
-    }
-  ];
-
-  const mockCategories = [
-    { id: "cat-1", name: "General", icon: "💻" },
-    { id: "cat-2", name: "Automatización", icon: "🤖" },
-    { id: "cat-3", name: "Desarrollo", icon: "⚡" }
-  ];
-
-  const continueCourses = isAuthenticated ? (dashboardData as any)?.continueCourses || [] : mockCourses;
-  const recommendedCourses = isAuthenticated ? (dashboardData as any)?.recommendedCourses || [] : mockCourses;
-  const categories = isAuthenticated ? (dashboardData as any)?.categories || [] : mockCategories;
+  // Use real data for all users - authenticated users get progress, non-authenticated see locked content
+  const continueCourses = (dashboardData as any)?.continueCourses || [];
+  const recommendedCourses = (dashboardData as any)?.recommendedCourses || [];
+  const categories = (dashboardData as any)?.categories || [];
 
   const cardsPerView = 4;
   const maxCourses = Math.min(continueCourses.length, 8);
