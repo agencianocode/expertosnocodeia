@@ -164,7 +164,7 @@ export default function Dashboard() {
                 </Button>
               </div>
             </div>
-            <p className="text-muted-foreground mb-6 text-[12px]">Basándonos en tus respuestas a la encuesta y tu historial en la plataforma, hemos seleccionado las mejores guías de IA para consultores . Siempre puedes cambiar tu enfoque en tu perfil.</p>
+            <p className="text-muted-foreground mb-6 text-[16px]">Basándonos en tus respuestas a la encuesta y tu historial en la plataforma, hemos seleccionado las mejores guías de IA para consultores . Siempre puedes cambiar tu enfoque en tu perfil.</p>
 
             {recommendedCourses.filter((item: any) => item.course?.type === 'guide').slice(0, 1).map((item: any) => (
               <div key={item.course.id} className="bg-card rounded-xl border border-border overflow-hidden hover:shadow-lg transition-shadow cursor-pointer mb-6">
