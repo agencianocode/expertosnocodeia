@@ -129,7 +129,7 @@ export default function Guides() {
                     <SelectItem value="all" className="text-foreground hover:bg-muted">
                       Todas las categorías
                     </SelectItem>
-                    {categoriesList.map((category: any) => (
+                    {Array.isArray(categoriesList) && categoriesList.map((category: any) => (
                       <SelectItem 
                         key={category.id} 
                         value={category.id}
@@ -171,7 +171,7 @@ export default function Guides() {
             {/* Guides Grid - 4 columns */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {filteredGuides.map((guide: any) => (
-                <CourseCard key={guide.id} course={guide} />
+                <CourseCard key={guide.id} course={guide} isAuthenticated={isAuthenticated} />
               ))}
             </div>
 
@@ -197,7 +197,7 @@ export default function Guides() {
                     <SelectItem value="all" className="text-foreground hover:bg-muted">
                       Todas las categorías
                     </SelectItem>
-                    {categoriesList.map((category: any) => (
+                    {Array.isArray(categoriesList) && categoriesList.map((category: any) => (
                       <SelectItem 
                         key={category.id} 
                         value={category.id}
@@ -234,7 +234,7 @@ export default function Guides() {
             {/* Mobile Guides Grid - 1 column */}
             <div className="space-y-4">
               {filteredGuides.map((guide: any) => (
-                <CourseCard key={guide.id} course={guide} />
+                <CourseCard key={guide.id} course={guide} isAuthenticated={isAuthenticated} />
               ))}
             </div>
 

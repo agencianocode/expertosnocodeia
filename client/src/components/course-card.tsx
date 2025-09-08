@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { useLocation } from "wouter";
-import { Award, Bot, Users, GraduationCap, Code, Megaphone, DollarSign, Brain, Settings, BarChart, CheckSquare, Scale, Heart, Building, Bookmark, BookmarkCheck } from "lucide-react";
+import { Award, Bot, Users, GraduationCap, Code, Megaphone, DollarSign, Brain, Settings, BarChart, CheckSquare, Scale, Heart, Building, Bookmark, BookmarkCheck, Lock } from "lucide-react";
 import { useState } from "react";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
@@ -15,19 +15,21 @@ interface CourseCardProps {
   variant?: "default" | "horizontal";
   lastLessonId?: string; // For "Continue where you left off" navigation
   showContinueText?: boolean; // Show "Continuar" text instead of normal navigation
+  isAuthenticated?: boolean; // Whether user is authenticated - shows padlock if false
 }
 
-export default function CourseCard({ course, category, progress, variant = "default", lastLessonId, showContinueText = false }: CourseCardProps) {
+export default function CourseCard({ course, category, progress, variant = "default", lastLessonId, showContinueText = false, isAuthenticated = true }: CourseCardProps) {
   if (!course) return null;
   
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   
-  // Check if course is saved/bookmarked
+  // Check if course is saved/bookmarked (only when authenticated)
   const { data: savedCourses } = useQuery({
     queryKey: ['/api/users/saved-courses'],
     retry: false,
+    enabled: isAuthenticated,
   });
   
   const isSaved = Array.isArray(savedCourses) && savedCourses.some((savedCourse: any) => savedCourse.courseId === course.id);
@@ -127,6 +129,12 @@ export default function CourseCard({ course, category, progress, variant = "defa
     return (
       <div 
         onClick={() => {
+          if (!isAuthenticated) {
+            // Redirect to login if not authenticated
+            window.location.href = "/login";
+            return;
+          }
+          
           let courseUrl;
           if (course.type === 'workshop') {
             courseUrl = `/taller/${course.id}`;
@@ -139,10 +147,19 @@ export default function CourseCard({ course, category, progress, variant = "defa
           }
           setLocation(courseUrl);
         }}
-        className="flex items-start space-x-4 p-4 cursor-pointer hover:bg-muted/50 transition-colors w-full"
+        className={cn(
+          "flex items-start space-x-4 p-4 cursor-pointer transition-colors w-full relative",
+          isAuthenticated ? "hover:bg-muted/50" : "hover:bg-muted/30"
+        )}
       >
         {/* Course Image */}
         <div className="w-20 h-14 bg-muted rounded-lg overflow-hidden flex-shrink-0 relative">
+          {/* Padlock overlay for non-authenticated users */}
+          {!isAuthenticated && (
+            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-10">
+              <Lock className="w-6 h-6 text-white" />
+            </div>
+          )}
           {course.coverImageUrl ? (
             <img 
               src={course.coverImageUrl} 
@@ -197,9 +214,13 @@ export default function CourseCard({ course, category, progress, variant = "defa
             className="w-8 h-8 p-0 hover:bg-muted/50"
             onClick={(e) => {
               e.stopPropagation();
+              if (!isAuthenticated) {
+                window.location.href = "/login";
+                return;
+              }
               saveCourseMutation.mutate();
             }}
-            disabled={saveCourseMutation.isPending}
+            disabled={saveCourseMutation.isPending || !isAuthenticated}
           >
             {isSaved ? (
               <BookmarkCheck className="w-4 h-4 text-foreground" />
@@ -214,8 +235,17 @@ export default function CourseCard({ course, category, progress, variant = "defa
 
   return (
     <div 
-      className="bg-card border border-border rounded-xl overflow-hidden hover:shadow-lg hover:shadow-primary/20 hover:scale-105 transition-all duration-300 cursor-pointer group flex flex-col h-full"
+      className={cn(
+        "bg-card border border-border rounded-xl overflow-hidden transition-all duration-300 cursor-pointer group flex flex-col h-full relative",
+        isAuthenticated ? "hover:shadow-lg hover:shadow-primary/20 hover:scale-105" : "hover:shadow-md opacity-90"
+      )}
       onClick={() => {
+        if (!isAuthenticated) {
+          // Redirect to login if not authenticated
+          window.location.href = "/login";
+          return;
+        }
+        
         let courseUrl;
         if (course.type === 'workshop') {
           courseUrl = `/taller/${course.id}`;
@@ -278,27 +308,38 @@ export default function CourseCard({ course, category, progress, variant = "defa
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-black/30" />
         )}
         
+        {/* Padlock overlay for non-authenticated users */}
+        {!isAuthenticated && (
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-20">
+            <div className="bg-white/20 rounded-full p-4">
+              <Lock className="w-8 h-8 text-white" />
+            </div>
+          </div>
+        )}
+        
         {/* Save/Bookmark button - moved to top right with gray background */}
-        <div className="absolute top-3 right-3 z-10">
-          <div className="bg-muted/90 backdrop-blur-sm rounded-lg border border-border p-1">
-            <Button
-              size="sm"
-              variant="ghost"
-              className="w-8 h-8 p-0 hover:bg-muted/50"
-              onClick={(e) => {
-                e.stopPropagation();
-                saveCourseMutation.mutate();
-              }}
-              disabled={saveCourseMutation.isPending}
-            >
+        {isAuthenticated && (
+          <div className="absolute top-3 right-3 z-10">
+            <div className="bg-muted/90 backdrop-blur-sm rounded-lg border border-border p-1">
+              <Button
+                size="sm"
+                variant="ghost"
+                className="w-8 h-8 p-0 hover:bg-muted/50"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  saveCourseMutation.mutate();
+                }}
+                disabled={saveCourseMutation.isPending}
+              >
               {isSaved ? (
                 <BookmarkCheck className="w-4 h-4 text-foreground" />
               ) : (
                 <Bookmark className="w-4 h-4 text-foreground" />
               )}
-            </Button>
+              </Button>
+            </div>
           </div>
-        </div>
+        )}
         
         {/* Course icon - only show if no custom image */}
         {!course.coverImageUrl && (

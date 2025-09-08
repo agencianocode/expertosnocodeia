@@ -152,6 +152,7 @@ export default function Courses() {
                   key={course.id}
                   course={course}
                   category={(categories as any)?.find((cat: any) => cat.id === course.category_id)}
+                  isAuthenticated={isAuthenticated}
                 />
               ))}
             </div>
