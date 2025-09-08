@@ -14,7 +14,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { LessonResources } from "@/components/lesson-resources";
-import { Award, Check, ChevronRight, ChevronLeft, Users, Bot, Code, Megaphone, Settings, DollarSign, Heart, Building, CheckSquare, Scale, BarChart, GraduationCap, PlayCircle, Clock, CheckCircle2, BookOpen, Play } from "lucide-react";
+import { Award, Check, ChevronRight, ChevronLeft, Users, Bot, Code, Megaphone, Settings, DollarSign, Heart, Building, CheckSquare, Scale, BarChart, GraduationCap, PlayCircle, Clock, CheckCircle2, BookOpen, Play, Lock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -245,34 +245,22 @@ export default function Course() {
     }
   ];
 
-  // Redirect to login if not authenticated
-  useEffect(() => {
-    if (!authLoading && !isAuthenticated) {
-      toast({
-        title: "Unauthorized",
-        description: "You are logged out. Logging in again...",
-        variant: "destructive",
-      });
-      setTimeout(() => {
-        window.location.href = "/api/login";
-      }, 500);
-      return;
-    }
-  }, [isAuthenticated, authLoading, toast]);
+  // Allow non-authenticated users to view course content but locked
+  // No automatic redirect - show locked content instead
 
   const { data: course, isLoading: courseLoading } = useQuery({
     queryKey: [`/api/courses/${id}`],
-    enabled: isAuthenticated && !!id,
+    enabled: !!id, // Allow fetching for all users to show real course info
   });
 
   const { data: lessons, isLoading: lessonsLoading } = useQuery({
     queryKey: [`/api/courses/${id}/lessons`],
-    enabled: isAuthenticated && !!id,
+    enabled: !!id, // Allow fetching for all users to show real lesson list
   });
 
   const { data: completedLessons = [] } = useQuery<string[]>({
     queryKey: [`/api/courses/${id}/progress`],
-    enabled: isAuthenticated && !!id,
+    enabled: isAuthenticated && !!id, // Only fetch progress if authenticated
   });
 
   // Ensure lessons is always an array
@@ -530,27 +518,52 @@ export default function Course() {
             {/* Current Lesson Content */}
             {currentLesson && (
               <section>
-                {/* Media Area - Video/Image/Empty based on lesson content */}
-                {currentLesson.videoUrl ? (
-                  <div className="relative rounded-lg overflow-hidden mb-6 lg:mb-8" style={{ paddingBottom: '56.25%' }}>
-                    <iframe
-                      className="absolute top-0 left-0 w-full h-full"
-                      src={getYouTubeEmbedUrl(currentLesson.videoUrl)}
-                      title={currentLesson.title}
-                      frameBorder="0"
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                      allowFullScreen
-                    />
+                {!isAuthenticated ? (
+                  // Blocked content view for non-authenticated users
+                  <div className="relative rounded-lg overflow-hidden mb-6 lg:mb-8 bg-black" style={{ paddingBottom: '56.25%' }}>
+                    <div className="absolute top-0 left-0 w-full h-full flex items-center justify-center bg-black">
+                      <div className="text-center text-white">
+                        <div className="mb-4">
+                          <div className="w-16 h-16 mx-auto rounded-full bg-gray-800 flex items-center justify-center mb-4">
+                            <Play className="h-8 w-8 text-gray-400" />
+                          </div>
+                        </div>
+                        <p className="text-lg mb-4">Tu plan actual no incluye acceso a este curso.</p>
+                        <Button 
+                          onClick={() => window.location.href = "/api/login"}
+                          className="bg-white text-black hover:bg-gray-200"
+                        >
+                          Inscribirse
+                        </Button>
+                      </div>
+                    </div>
                   </div>
-                ) : currentLesson.imageUrl ? (
-                  <div className="rounded-lg mb-6 lg:mb-8">
-                    <img 
-                      src={currentLesson.imageUrl} 
-                      alt={currentLesson.title}
-                      className="w-full h-auto rounded-lg"
-                    />
-                  </div>
-                ) : null}
+                ) : (
+                  // Normal content for authenticated users
+                  <>
+                    {/* Media Area - Video/Image/Empty based on lesson content */}
+                    {currentLesson.videoUrl ? (
+                      <div className="relative rounded-lg overflow-hidden mb-6 lg:mb-8" style={{ paddingBottom: '56.25%' }}>
+                        <iframe
+                          className="absolute top-0 left-0 w-full h-full"
+                          src={getYouTubeEmbedUrl(currentLesson.videoUrl)}
+                          title={currentLesson.title}
+                          frameBorder="0"
+                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                          allowFullScreen
+                        />
+                      </div>
+                    ) : currentLesson.imageUrl ? (
+                      <div className="rounded-lg mb-6 lg:mb-8">
+                        <img 
+                          src={currentLesson.imageUrl} 
+                          alt={currentLesson.title}
+                          className="w-full h-auto rounded-lg"
+                        />
+                      </div>
+                    ) : null}
+                  </>
+                )}
 
                 <div className="space-y-6 lg:space-y-8">
                   <div className="bg-card rounded-xl p-4 lg:p-8 font-satoshi font-normal text-[14px] lg:text-[16px] leading-[22px] lg:leading-[26px] text-card-foreground">
@@ -568,20 +581,43 @@ export default function Course() {
                         </p>
                       )}
                     </div>
-                    <div className="prose prose-sm lg:prose-base max-w-none">
-                      {currentLesson.content ? (
-                        <div className="markdown-content">
-                          <ReactMarkdown 
-                            remarkPlugins={[remarkGfm]}
-                            rehypePlugins={[rehypeHighlight, rehypeRaw]}
-                          >
-                            {currentLesson.content}
-                          </ReactMarkdown>
+                    
+                    {!isAuthenticated ? (
+                      // Blocked content for non-authenticated users
+                      <div className="text-center py-8">
+                        <div className="mb-6">
+                          <div className="w-16 h-16 mx-auto rounded-full bg-muted flex items-center justify-center mb-4">
+                            <BookOpen className="h-8 w-8 text-muted-foreground" />
+                          </div>
+                          <h3 className="text-lg font-semibold mb-2">Contenido Restringido</h3>
+                          <p className="text-muted-foreground mb-6">
+                            Inscríbete para acceder al contenido completo de esta lección
+                          </p>
                         </div>
-                      ) : (
-                        <p className="text-muted-foreground italic">Contenido de la lección no disponible.</p>
-                      )}
-                    </div>
+                        <Button 
+                          onClick={() => window.location.href = "/api/login"}
+                          className="bg-primary text-primary-foreground hover:bg-primary/90"
+                        >
+                          Inscribirse Ahora
+                        </Button>
+                      </div>
+                    ) : (
+                      // Normal content for authenticated users  
+                      <div className="prose prose-sm lg:prose-base max-w-none">
+                        {currentLesson.content ? (
+                          <div className="markdown-content">
+                            <ReactMarkdown 
+                              remarkPlugins={[remarkGfm]}
+                              rehypePlugins={[rehypeHighlight, rehypeRaw]}
+                            >
+                              {currentLesson.content}
+                            </ReactMarkdown>
+                          </div>
+                        ) : (
+                          <p className="text-muted-foreground italic">Contenido de la lección no disponible.</p>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -654,9 +690,11 @@ export default function Course() {
             <div className="bg-card rounded-lg p-5">
               <div className="flex justify-between items-center mb-3">
                 <span className="font-satoshi font-medium text-[14px] leading-[20px] text-foreground">Progreso del curso</span>
-                <span className="font-satoshi font-normal text-[14px] leading-[20px] text-muted-foreground">{Math.round(progressPercentage)}% Completo</span>
+                <span className="font-satoshi font-normal text-[14px] leading-[20px] text-muted-foreground">
+                  {isAuthenticated ? `${Math.round(progressPercentage)}% Completado` : "0% Completado"}
+                </span>
               </div>
-              <Progress value={progressPercentage} className="h-2 bg-muted" />
+              <Progress value={isAuthenticated ? progressPercentage : 0} className="h-2 bg-muted" />
             </div>
 
             {/* Lesson Resources Card - Show only if current lesson has resources */}
@@ -671,18 +709,25 @@ export default function Course() {
                 {lessonsArray.map((lesson: any, index: number) => (
                   <div
                     key={lesson.id}
-                    onClick={() => handleLessonClick(index)}
+                    onClick={() => isAuthenticated ? handleLessonClick(index) : window.location.href = "/api/login"}
                     className={cn(
-                      "py-5 px-4 rounded-lg cursor-pointer transition-colors",
-                      index === currentLessonIndex 
-                        ? "bg-muted text-foreground border border-border" 
-                        : "hover:bg-muted/50 hover:border hover:border-border text-muted-foreground"
+                      "py-5 px-4 rounded-lg transition-colors",
+                      isAuthenticated 
+                        ? cn(
+                            "cursor-pointer",
+                            index === currentLessonIndex 
+                              ? "bg-muted text-foreground border border-border" 
+                              : "hover:bg-muted/50 hover:border hover:border-border text-muted-foreground"
+                          )
+                        : "cursor-pointer hover:bg-muted/30 text-muted-foreground"
                     )}
                   >
                     <div className="flex items-start justify-between">
                       <div className="flex items-start space-x-3">
                         <div className="w-6 h-6 rounded border flex items-center justify-center font-medium flex-shrink-0 bg-muted text-foreground border-border text-[14px] mt-[0px] mb-[0px]">
-                          {isLessonCompleted(lesson.id) ? (
+                          {!isAuthenticated ? (
+                            <Lock size={10} className="text-muted-foreground" />
+                          ) : isLessonCompleted(lesson.id) ? (
                             <Check size={10} />
                           ) : (
                             index + 1
@@ -694,7 +739,9 @@ export default function Course() {
                           </div>
                         </div>
                       </div>
-                      {index === currentLessonIndex && !isLessonCompleted(lesson.id) && (
+                      {!isAuthenticated ? (
+                        <Lock size={14} className="text-muted-foreground mt-1" />
+                      ) : index === currentLessonIndex && !isLessonCompleted(lesson.id) && (
                         <div 
                           className="flex items-center border border-border rounded px-2 py-1 ml-3 cursor-pointer hover:bg-muted/20 transition-colors"
                           onClick={(e) => {
