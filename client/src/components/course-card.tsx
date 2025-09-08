@@ -13,9 +13,11 @@ interface CourseCardProps {
   category?: any;
   progress?: any;
   variant?: "default" | "horizontal";
+  lastLessonId?: string; // For "Continue where you left off" navigation
+  showContinueText?: boolean; // Show "Continuar" text instead of normal navigation
 }
 
-export default function CourseCard({ course, category, progress, variant = "default" }: CourseCardProps) {
+export default function CourseCard({ course, category, progress, variant = "default", lastLessonId, showContinueText = false }: CourseCardProps) {
   if (!course) return null;
   
   const [, setLocation] = useLocation();
@@ -125,7 +127,16 @@ export default function CourseCard({ course, category, progress, variant = "defa
     return (
       <div 
         onClick={() => {
-          const courseUrl = course.type === 'workshop' ? `/taller/${course.id}` : `/curso/${course.id}`;
+          let courseUrl;
+          if (course.type === 'workshop') {
+            courseUrl = `/taller/${course.id}`;
+          } else if (lastLessonId && showContinueText) {
+            // Navigate to specific lesson for "Continue where you left off"
+            courseUrl = `/curso/${course.id}/leccion/${lastLessonId}`;
+          } else {
+            // Normal course navigation
+            courseUrl = `/curso/${course.id}`;
+          }
           setLocation(courseUrl);
         }}
         className="flex items-start space-x-4 p-4 cursor-pointer hover:bg-muted/50 transition-colors w-full"
@@ -205,7 +216,16 @@ export default function CourseCard({ course, category, progress, variant = "defa
     <div 
       className="bg-card border border-border rounded-xl overflow-hidden hover:shadow-lg hover:shadow-primary/20 hover:scale-105 transition-all duration-300 cursor-pointer group flex flex-col h-full"
       onClick={() => {
-        const courseUrl = course.type === 'workshop' ? `/taller/${course.id}` : `/curso/${course.id}`;
+        let courseUrl;
+        if (course.type === 'workshop') {
+          courseUrl = `/taller/${course.id}`;
+        } else if (lastLessonId && showContinueText) {
+          // Navigate to specific lesson for "Continue where you left off"
+          courseUrl = `/curso/${course.id}/leccion/${lastLessonId}`;
+        } else {
+          // Normal course navigation
+          courseUrl = `/curso/${course.id}`;
+        }
         setLocation(courseUrl);
       }}
     >

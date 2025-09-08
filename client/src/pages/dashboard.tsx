@@ -131,6 +131,8 @@ export default function Dashboard() {
                       course={item.course}
                       category={item.category}
                       progress={item.progress}
+                      lastLessonId={item.lastLessonId} // Pass the last lesson ID for intelligent navigation
+                      showContinueText={true} // Enable "continue where you left off" navigation
                     />
                   </div>
                 ))}
