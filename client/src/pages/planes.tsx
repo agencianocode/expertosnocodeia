@@ -112,8 +112,7 @@ export default function Planes() {
 
             {/* Plans Grid */}
             {activeTab === 'individual' && (
-              <div className="w-full">
-                <div className="flex flex-col md:flex-row justify-center items-center gap-8 md:gap-16 mx-auto" style={{ width: 'calc(100vw - 250px)', marginLeft: '125px' }}>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto px-8">
                 {individualPlans.map((plan) => (
                   <div
                     key={plan.id}
@@ -193,7 +192,6 @@ export default function Planes() {
                     </div>
                   </div>
                 ))}
-                </div>
               </div>
             )}
 
