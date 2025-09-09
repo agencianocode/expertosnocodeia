@@ -70,6 +70,7 @@ export default function Planes() {
     <div className="min-h-screen bg-background text-foreground">
       {/* Mobile Header */}
       <MobileHeader />
+      
       <div className="flex">
         {/* Sidebar - Hidden on mobile */}
         <div className="hidden lg:block">
@@ -77,8 +78,8 @@ export default function Planes() {
         </div>
         
         {/* Main Content */}
-        <main className="flex-1 lg:ml-[250px] min-h-screen bg-background ml-[0px] mr-[0px]">
-          <div className="max-w-4xl mx-auto py-12 px-4 lg:px-8 ml-[20px] mr-[20px] pt-[20px] pb-[20px] pl-[20px] pr-[20px] mt-[20px] mb-[20px]">
+        <main className="flex-1 lg:ml-[250px] min-h-screen bg-background">
+          <div className="max-w-4xl mx-auto py-12 px-4 lg:px-8">
             {/* Header */}
             <div className="text-center mb-12">
               <h1 className="text-4xl font-bold text-foreground mb-8">
@@ -112,11 +113,11 @@ export default function Planes() {
 
             {/* Plans Grid */}
             {activeTab === 'individual' && (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto px-8" style={{ marginLeft: '125px' }}>
+              <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
                 {individualPlans.map((plan) => (
                   <div
                     key={plan.id}
-                    className={`relative rounded-2xl p-10 flex flex-col h-full max-w-sm mx-auto ${
+                    className={`relative rounded-2xl p-8 ${
                       plan.highlight 
                         ? 'bg-card border-2 border-primary' 
                         : 'bg-card border border-border'
@@ -161,7 +162,7 @@ export default function Planes() {
                     </div>
 
                     {/* Features */}
-                    <div className="space-y-4 mb-8 flex-grow">
+                    <div className="space-y-4 mb-8">
                       {plan.features.map((feature, index) => (
                         <div key={index} className="flex items-start gap-3">
                           <div className="flex-shrink-0 w-5 h-5 rounded-full bg-primary/20 flex items-center justify-center mt-0.5">
@@ -175,21 +176,19 @@ export default function Planes() {
                     </div>
 
                     {/* Action Button */}
-                    <div className="mt-auto">
-                      <Button
-                        className={`w-full py-3 font-medium ${
-                          plan.buttonVariant === 'primary'
-                            ? 'bg-primary text-primary-foreground hover:bg-primary/90'
-                            : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
-                        }`}
-                        onClick={() => {
-                          // TODO: Implement subscription logic
-                          console.log(`Selected plan: ${plan.id}`);
-                        }}
-                      >
-                        {plan.buttonText}
-                      </Button>
-                    </div>
+                    <Button
+                      className={`w-full py-3 font-medium ${
+                        plan.buttonVariant === 'primary'
+                          ? 'bg-primary text-primary-foreground hover:bg-primary/90'
+                          : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
+                      }`}
+                      onClick={() => {
+                        // TODO: Implement subscription logic
+                        console.log(`Selected plan: ${plan.id}`);
+                      }}
+                    >
+                      {plan.buttonText}
+                    </Button>
                   </div>
                 ))}
               </div>
