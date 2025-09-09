@@ -519,20 +519,54 @@ export default function Course() {
             {currentLesson && (
               <section>
                 {!isAuthenticated && currentLessonIndex > 0 ? (
-                  // Blocked content view for lessons 2+ when not authenticated
-                  <div className="bg-card rounded-xl p-4 lg:p-8 font-satoshi">
-                    <div className="text-center text-card-foreground">
-                      <Lock className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
-                      <h2 className="text-lg lg:text-xl font-bold mb-4">{currentLesson.title}</h2>
-                      <p className="text-muted-foreground mb-6">Debes registrarte en Rundown University para ver esta lección.</p>
-                      <Button 
-                        onClick={() => window.location.href = "/planes"}
-                        className="bg-primary text-primary-foreground hover:bg-primary/90"
-                      >
-                        Inscribirse
-                      </Button>
+                  // Blocked content view for lessons 2+ when not authenticated - FULL LESSON STRUCTURE
+                  <>
+                    {/* Video Player Area - Blocked */}
+                    <div className="relative rounded-lg overflow-hidden mb-6 lg:mb-8 bg-black" style={{ paddingBottom: '56.25%' }}>
+                      <div className="absolute top-0 left-0 w-full h-full flex items-center justify-center bg-black">
+                        <div className="text-center text-white">
+                          <div className="mb-4">
+                            <div className="w-16 h-16 mx-auto rounded-full bg-gray-800 flex items-center justify-center mb-4">
+                              <Play className="h-8 w-8 text-gray-400" />
+                            </div>
+                          </div>
+                          <p className="text-lg mb-4">Tu plan actual no incluye acceso a este curso.</p>
+                          <Button 
+                            onClick={() => window.location.href = "/planes"}
+                            className="bg-white text-black hover:bg-gray-200"
+                          >
+                            Inscribirse
+                          </Button>
+                        </div>
+                      </div>
                     </div>
-                  </div>
+                    
+                    {/* Lesson Content - Blocked */}
+                    <div className="space-y-6 lg:space-y-8">
+                      <div className="bg-card rounded-xl p-4 lg:p-8 font-satoshi font-normal text-[14px] lg:text-[16px] leading-[22px] lg:leading-[26px] text-card-foreground">
+                        {/* Lesson Title inside content card */}
+                        <div className="mb-4 lg:mb-6">
+                          <h2 className="text-lg lg:text-xl font-bold text-foreground mb-3 flex items-center font-satoshi" style={{fontSize: '24px'}}>
+                            <div className="w-8 h-8 rounded-lg mr-3 flex items-center justify-center flex-shrink-0" style={{backgroundColor: '#363636'}}>
+                              <GraduationCap className="h-4 w-4 text-foreground" />
+                            </div>
+                            {currentLesson.title}
+                          </h2>
+                        </div>
+                        
+                        {/* Blocked description */}
+                        <div className="text-center py-8">
+                          <p className="text-muted-foreground mb-6">Debes registrarte en Rundown University para ver esta lección.</p>
+                          <Button 
+                            onClick={() => window.location.href = "/planes"}
+                            className="bg-primary text-primary-foreground hover:bg-primary/90"
+                          >
+                            Inscribirse
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  </>
                 ) : !isAuthenticated && currentLessonIndex === 0 ? (
                   // First lesson preview for non-authenticated users
                   <>
