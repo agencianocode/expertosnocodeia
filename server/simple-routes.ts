@@ -497,6 +497,39 @@ export function registerSimpleRoutes(app: Express): Server {
     }
   });
 
+  // Object proxy route to serve images from Object Storage
+  app.get("/api/object-proxy/objects/*", async (req: Request, res: Response) => {
+    try {
+      const objectPath = req.path.replace("/api/object-proxy", "");
+      const objectStorageService = new ObjectStorageService();
+      
+      // Extract the entity ID from the path (remove "/objects/" prefix)
+      const entityId = objectPath.replace("/objects/", "");
+      
+      // Construct full path in private directory
+      const privateDir = objectStorageService.getPrivateObjectDir();
+      const fullPath = `${privateDir}/${entityId}`;
+      
+      // Get the file from Object Storage
+      const file = await objectStorageService.getPrivateObject(fullPath);
+      if (!file) {
+        return res.status(404).json({ message: "Imagen no encontrada" });
+      }
+
+      // Stream the file content
+      const stream = file.createReadStream();
+      
+      // Set appropriate headers
+      res.setHeader('Content-Type', 'image/jpeg'); // Default to JPEG, could be enhanced to detect type
+      res.setHeader('Cache-Control', 'public, max-age=31536000'); // Cache for 1 year
+      
+      stream.pipe(res);
+    } catch (error) {
+      console.error("Error serving object:", error);
+      res.status(500).json({ message: "Error interno del servidor" });
+    }
+  });
+
   // Admin courses endpoint for content management
   app.get("/api/admin/courses", simpleAdminAuth, isAdmin, async (req: Request, res: Response) => {
     try {
