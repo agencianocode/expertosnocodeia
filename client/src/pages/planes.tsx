@@ -113,11 +113,11 @@ export default function Planes() {
 
             {/* Plans Grid */}
             {activeTab === 'individual' && (
-              <div className="grid md:grid-cols-3 gap-8 max-w-7xl mx-auto">
+              <div className="grid md:grid-cols-3 gap-8 max-w-8xl mx-auto px-4">
                 {individualPlans.map((plan) => (
                   <div
                     key={plan.id}
-                    className={`relative rounded-2xl p-8 flex flex-col h-full ${
+                    className={`relative rounded-2xl p-10 flex flex-col h-full min-w-[320px] ${
                       plan.highlight 
                         ? 'bg-card border-2 border-primary' 
                         : 'bg-card border border-border'
