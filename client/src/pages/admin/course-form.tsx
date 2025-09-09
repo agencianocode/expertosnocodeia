@@ -62,6 +62,11 @@ export default function CourseForm() {
 
   const { data: course, isLoading: courseLoading } = useQuery({
     queryKey: ["/api/admin/courses", courseId],
+    queryFn: async () => {
+      if (!courseId) return null;
+      const response = await apiRequest('GET', `/api/admin/courses/${courseId}`);
+      return response.json();
+    },
     enabled: isEditing && !!courseId,
   });
 
