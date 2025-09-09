@@ -503,18 +503,8 @@ export function registerSimpleRoutes(app: Express): Server {
       const objectPath = req.path.replace("/api/object-proxy", "");
       const objectStorageService = new ObjectStorageService();
       
-      // Extract the entity ID from the path (remove "/objects/" prefix)
-      const entityId = objectPath.replace("/objects/", "");
-      
-      // Construct full path in private directory
-      const privateDir = objectStorageService.getPrivateObjectDir();
-      const fullPath = `${privateDir}/${entityId}`;
-      
-      // Get the file from Object Storage
-      const file = await objectStorageService.getPrivateObject(fullPath);
-      if (!file) {
-        return res.status(404).json({ message: "Imagen no encontrada" });
-      }
+      // Get the file from Object Storage using the full object path
+      const file = await objectStorageService.getObjectEntityFile(objectPath);
 
       // Stream the file content
       const stream = file.createReadStream();
@@ -525,6 +515,9 @@ export function registerSimpleRoutes(app: Express): Server {
       
       stream.pipe(res);
     } catch (error) {
+      if (error.name === 'ObjectNotFoundError') {
+        return res.status(404).json({ message: "Imagen no encontrada" });
+      }
       console.error("Error serving object:", error);
       res.status(500).json({ message: "Error interno del servidor" });
     }

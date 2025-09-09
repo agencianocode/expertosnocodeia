@@ -308,7 +308,7 @@ export default function CourseForm() {
                       <div className="border border-slate-600 rounded-lg p-3 bg-slate-800/50">
                         <Label className="text-white text-sm mb-2 block">Vista Previa:</Label>
                         <img
-                          src={form.watch("coverImageUrl").startsWith('/objects/') 
+                          src={form.watch("coverImageUrl")?.startsWith('/objects/') 
                             ? `/api/object-proxy${form.watch("coverImageUrl")}` 
                             : form.watch("coverImageUrl")
                           }
