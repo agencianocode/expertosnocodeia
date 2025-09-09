@@ -113,7 +113,7 @@ export default function Planes() {
 
             {/* Plans Grid */}
             {activeTab === 'individual' && (
-              <div className="grid md:grid-cols-3 gap-16 max-w-[1400px] mx-auto px-8">
+              <div className="grid md:grid-cols-3 gap-32 max-w-[1600px] mx-auto px-8">
                 {individualPlans.map((plan) => (
                   <div
                     key={plan.id}
