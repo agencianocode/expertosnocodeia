@@ -70,7 +70,6 @@ export default function Planes() {
     <div className="min-h-screen bg-background text-foreground">
       {/* Mobile Header */}
       <MobileHeader />
-      
       <div className="flex">
         {/* Sidebar - Hidden on mobile */}
         <div className="hidden lg:block">
@@ -79,7 +78,7 @@ export default function Planes() {
         
         {/* Main Content */}
         <main className="flex-1 lg:ml-[250px] min-h-screen bg-background">
-          <div className="max-w-4xl mx-auto py-12 px-4 lg:px-8">
+          <div className="max-w-4xl mx-auto py-12 px-4 lg:px-8 ml-[20px] mr-[20px] pt-[20px] pb-[20px] pl-[20px] pr-[20px] mt-[20px] mb-[20px]">
             {/* Header */}
             <div className="text-center mb-12">
               <h1 className="text-4xl font-bold text-foreground mb-8">
