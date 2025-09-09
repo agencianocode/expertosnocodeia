@@ -113,11 +113,11 @@ export default function Planes() {
 
             {/* Plans Grid */}
             {activeTab === 'individual' && (
-              <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+              <div className="grid md:grid-cols-3 gap-8 max-w-7xl mx-auto">
                 {individualPlans.map((plan) => (
                   <div
                     key={plan.id}
-                    className={`relative rounded-2xl p-8 ${
+                    className={`relative rounded-2xl p-8 flex flex-col h-full ${
                       plan.highlight 
                         ? 'bg-card border-2 border-primary' 
                         : 'bg-card border border-border'
@@ -162,7 +162,7 @@ export default function Planes() {
                     </div>
 
                     {/* Features */}
-                    <div className="space-y-4 mb-8">
+                    <div className="space-y-4 mb-8 flex-grow">
                       {plan.features.map((feature, index) => (
                         <div key={index} className="flex items-start gap-3">
                           <div className="flex-shrink-0 w-5 h-5 rounded-full bg-primary/20 flex items-center justify-center mt-0.5">
@@ -176,19 +176,21 @@ export default function Planes() {
                     </div>
 
                     {/* Action Button */}
-                    <Button
-                      className={`w-full py-3 font-medium ${
-                        plan.buttonVariant === 'primary'
-                          ? 'bg-primary text-primary-foreground hover:bg-primary/90'
-                          : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
-                      }`}
-                      onClick={() => {
-                        // TODO: Implement subscription logic
-                        console.log(`Selected plan: ${plan.id}`);
-                      }}
-                    >
-                      {plan.buttonText}
-                    </Button>
+                    <div className="mt-auto">
+                      <Button
+                        className={`w-full py-3 font-medium ${
+                          plan.buttonVariant === 'primary'
+                            ? 'bg-primary text-primary-foreground hover:bg-primary/90'
+                            : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
+                        }`}
+                        onClick={() => {
+                          // TODO: Implement subscription logic
+                          console.log(`Selected plan: ${plan.id}`);
+                        }}
+                      >
+                        {plan.buttonText}
+                      </Button>
+                    </div>
                   </div>
                 ))}
               </div>
