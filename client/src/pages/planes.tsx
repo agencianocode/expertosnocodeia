@@ -1,239 +1,203 @@
-import { useSubscription, useSubscriptionPlans } from "@/hooks/useSubscription";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Check, Crown, Star, Zap } from "lucide-react";
-import { Link } from "wouter";
+import { Check } from "lucide-react";
+import Sidebar from "@/components/layout/sidebar";
+import MobileHeader from "@/components/layout/mobile-header";
 
 export default function Planes() {
-  const { subscription, isLoading: subscriptionLoading } = useSubscription();
-  const { plans, isLoading: plansLoading } = useSubscriptionPlans();
+  const [activeTab, setActiveTab] = useState<'individual' | 'equipos'>('individual');
 
-  if (subscriptionLoading || plansLoading) {
-    return (
-      <div className="min-h-screen bg-dark-bg text-white flex items-center justify-center">
-        <div>Cargando planes...</div>
-      </div>
-    );
-  }
-
-  const getPlanIcon = (planName: string) => {
-    switch (planName) {
-      case 'FREE':
-        return Zap;
-      case 'MENSUAL':
-        return Star;
-      case 'ANUAL':
-        return Crown;
-      default:
-        return Zap;
+  const individualPlans = [
+    {
+      id: 'prueba-gratuita',
+      title: 'Prueba gratuita',
+      originalPrice: 999,
+      currentPrice: 0,
+      period: '/año',
+      badge: 'Los más populares',
+      badgeType: 'primary',
+      trialDays: 14,
+      features: [
+        'Curso de certificación en IA específico de la industria',
+        'Guías de IA paso a paso de 3 a 5',
+        'Talleres semanales en vivo de expertos en IA',
+        'Apoyo personalizado de nuestro equipo',
+        'Una red de más de 10 000 usuarios pioneros de IA'
+      ],
+      buttonText: 'Pruébelo gratis durante 14 días',
+      buttonVariant: 'primary' as const,
+      highlight: true
+    },
+    {
+      id: 'acceso-completo',
+      title: 'Acceso completo',
+      currentPrice: 999,
+      period: '/año',
+      features: [
+        'Los 17 cursos de certificación en IA',
+        'Más de 500 guías de IA paso a paso',
+        'Talleres semanales en vivo de expertos en IA',
+        'Apoyo personalizado de nuestro equipo',
+        'Más de $1000 en beneficios exclusivos de herramientas de IA',
+        'Una red de más de 10 000 usuarios pioneros de IA'
+      ],
+      buttonText: 'Suscríbete ahora',
+      buttonVariant: 'secondary' as const,
+      highlight: false
     }
-  };
-
-  const formatPrice = (price: number, currency: string) => {
-    if (price === 0) return 'Gratis';
-    const formattedPrice = (price / 100).toFixed(0);
-    return `$${formattedPrice} USD`;
-  };
-
-  const getPlanFeatures = (planName: string) => {
-    switch (planName) {
-      case 'FREE':
-        return [
-          '5-10 casos de uso de IA',
-          'Cursos certificados para industria seleccionada',
-          'Guías diarias paso a paso',
-          'Solo visualización de workshops en vivo',
-          'Prueba gratis por 14 días'
-        ];
-      case 'MENSUAL':
-        return [
-          'Acceso completo a la universidad',
-          '300+ guías paso a paso',
-          'Workshops en vivo semanales',
-          'Comunidad privada',
-          'Certificados de finalización',
-          'Descuentos en herramientas'
-        ];
-      case 'ANUAL':
-        return [
-          'Todo lo del Plan Mensual',
-          '2 meses GRATIS',
-          'Acceso prioritario a workshops',
-          'Sesiones 1:1 mensuales',
-          'Recursos exclusivos',
-          'Garantía de 30 días'
-        ];
-      default:
-        return [];
-    }
-  };
-
-  const isCurrentPlan = (planName: string) => {
-    return subscription?.plan === planName;
-  };
-
-  const isPlanHigher = (planName: string) => {
-    const hierarchy = ['FREE', 'MENSUAL', 'ANUAL'];
-    const currentIndex = hierarchy.indexOf(subscription?.plan || 'FREE');
-    const planIndex = hierarchy.indexOf(planName);
-    return planIndex > currentIndex;
-  };
+  ];
 
   return (
-    <div className="min-h-screen bg-dark-bg text-white">
-      {/* Header */}
-      <header className="bg-dark-card border-b border-dark-border p-6">
-        <div className="max-w-6xl mx-auto">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold">Planes de Suscripción</h1>
-              <p className="text-gray-400 mt-2">
-                Elige el plan perfecto para tu aprendizaje en NoCode e IA
-              </p>
-            </div>
-            <Link href="/">
-              <Button variant="outline" className="border-gray-600 text-gray-300 hover:bg-gray-700">
-                Volver al Dashboard
-              </Button>
-            </Link>
-          </div>
+    <div className="min-h-screen bg-background text-foreground">
+      {/* Mobile Header */}
+      <MobileHeader />
+      
+      <div className="flex">
+        {/* Sidebar - Hidden on mobile */}
+        <div className="hidden lg:block">
+          <Sidebar />
         </div>
-      </header>
+        
+        {/* Main Content */}
+        <main className="flex-1 lg:ml-[250px] min-h-screen bg-background">
+          <div className="max-w-4xl mx-auto py-12 px-4 lg:px-8">
+            {/* Header */}
+            <div className="text-center mb-12">
+              <h1 className="text-4xl font-bold text-foreground mb-8">
+                Elija un plan de suscripción
+              </h1>
+              
+              {/* Tabs */}
+              <div className="inline-flex rounded-lg bg-muted p-1 mb-8">
+                <button
+                  onClick={() => setActiveTab('individual')}
+                  className={`px-6 py-2 rounded-md text-sm font-medium transition-colors ${
+                    activeTab === 'individual'
+                      ? 'bg-primary text-primary-foreground'
+                      : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  Individual
+                </button>
+                <button
+                  onClick={() => setActiveTab('equipos')}
+                  className={`px-6 py-2 rounded-md text-sm font-medium transition-colors ${
+                    activeTab === 'equipos'
+                      ? 'bg-primary text-primary-foreground'
+                      : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  Equipos
+                </button>
+              </div>
+            </div>
 
-      {/* Plans Section */}
-      <main className="max-w-6xl mx-auto p-6">
-        <div className="grid md:grid-cols-3 gap-8 mt-8">
-          {plans && Array.isArray(plans) && plans.map((plan: any) => {
-            const Icon = getPlanIcon(plan.name);
-            const features = getPlanFeatures(plan.name);
-            const isCurrent = isCurrentPlan(plan.name);
-            const isHigher = isPlanHigher(plan.name);
-            const isPopular = plan.name === 'MENSUAL';
-            const isBest = plan.name === 'ANUAL';
-
-            return (
-              <div
-                key={plan.id}
-                className={`relative bg-dark-card border rounded-xl p-6 ${
-                  isCurrent
-                    ? 'border-green-500 bg-green-900/10'
-                    : isHigher
-                    ? 'border-purple-accent'
-                    : 'border-dark-border'
-                } ${isPopular || isBest ? 'scale-105' : ''}`}
-              >
-                {/* Popular/Best Badge */}
-                {isPopular && (
-                  <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                    <Badge className="bg-blue-600 text-white">Más Popular</Badge>
-                  </div>
-                )}
-                {isBest && (
-                  <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                    <Badge className="bg-yellow-600 text-white">Mejor Valor</Badge>
-                  </div>
-                )}
-
-                {/* Current Plan Badge */}
-                {isCurrent && (
-                  <div className="absolute -top-3 right-4">
-                    <Badge className="bg-green-600 text-white">Plan Actual</Badge>
-                  </div>
-                )}
-
-                <div className="text-center mb-6">
-                  <Icon className="h-12 w-12 mx-auto mb-4 text-purple-accent" />
-                  <h3 className="text-xl font-bold mb-2">{plan.display_name}</h3>
-                  <div className="text-3xl font-bold">
-                    {formatPrice(plan.price, plan.currency)}
-                    {plan.name !== 'FREE' && (
-                      <span className="text-sm text-gray-400 font-normal">
-                        /{plan.billing_interval === 'month' ? 'mes' : 'año'}
-                      </span>
+            {/* Plans Grid */}
+            {activeTab === 'individual' && (
+              <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
+                {individualPlans.map((plan) => (
+                  <div
+                    key={plan.id}
+                    className={`relative rounded-2xl p-8 ${
+                      plan.highlight 
+                        ? 'bg-card border-2 border-primary' 
+                        : 'bg-card border border-border'
+                    }`}
+                  >
+                    {/* Badge */}
+                    {plan.badge && (
+                      <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
+                        <Badge 
+                          className={`${
+                            plan.badgeType === 'primary' 
+                              ? 'bg-primary text-primary-foreground' 
+                              : 'bg-secondary text-secondary-foreground'
+                          } px-4 py-1`}
+                        >
+                          ⭐ {plan.badge}
+                        </Badge>
+                      </div>
                     )}
-                  </div>
-                  {plan.name === 'ANUAL' && (
-                    <p className="text-sm text-yellow-400 mt-1">
-                      ¡Ahorra $156 al año!
-                    </p>
-                  )}
-                </div>
 
-                {/* Features */}
-                <div className="space-y-3 mb-8">
-                  {features.map((feature, index) => (
-                    <div key={index} className="flex items-start space-x-3">
-                      <Check className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" />
-                      <span className="text-sm text-gray-300">{feature}</span>
+                    {/* Plan Header */}
+                    <div className="mb-8">
+                      <h3 className="text-2xl font-bold text-foreground mb-4">
+                        {plan.title}
+                      </h3>
+                      
+                      {/* Pricing */}
+                      <div className="flex items-baseline gap-3">
+                        {plan.originalPrice && plan.originalPrice !== plan.currentPrice && (
+                          <span className="text-2xl text-muted-foreground line-through">
+                            ${plan.originalPrice}
+                          </span>
+                        )}
+                        <span className="text-4xl font-bold text-foreground">
+                          ${plan.currentPrice}
+                        </span>
+                        <span className="text-muted-foreground">
+                          {plan.period}
+                        </span>
+                      </div>
+                      
+                      {plan.trialDays && (
+                        <Badge className="mt-3 bg-blue-100 text-blue-800 border-blue-200">
+                          {plan.trialDays} días gratis
+                        </Badge>
+                      )}
                     </div>
-                  ))}
-                </div>
 
-                {/* Action Button */}
-                <div className="mt-auto">
-                  {isCurrent ? (
-                    <Button 
-                      className="w-full bg-green-600 hover:bg-green-700 text-white"
-                      disabled
-                    >
-                      Plan Actual
-                    </Button>
-                  ) : isHigher ? (
-                    <Button 
-                      className="w-full bg-purple-accent hover:bg-purple-accent/90 text-white"
+                    {/* Features */}
+                    <div className="space-y-4 mb-8">
+                      {plan.features.map((feature, index) => (
+                        <div key={index} className="flex items-start gap-3">
+                          <div className="flex-shrink-0 w-5 h-5 rounded-full bg-primary/20 flex items-center justify-center mt-0.5">
+                            <Check className="w-3 h-3 text-primary" />
+                          </div>
+                          <span className="text-sm text-muted-foreground">
+                            {feature}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Action Button */}
+                    <Button
+                      className={`w-full py-3 font-medium ${
+                        plan.buttonVariant === 'primary'
+                          ? 'bg-primary text-primary-foreground hover:bg-primary/90'
+                          : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
+                      }`}
                       onClick={() => {
-                        // TODO: Implement subscription upgrade
-                        alert('Funcionalidad de actualización en desarrollo');
+                        // TODO: Implement subscription logic
+                        console.log(`Selected plan: ${plan.id}`);
                       }}
                     >
-                      Actualizar Plan
+                      {plan.buttonText}
                     </Button>
-                  ) : (
-                    <Button 
-                      variant="outline"
-                      className="w-full border-gray-600 text-gray-400"
-                      disabled
-                    >
-                      Plan Básico
-                    </Button>
-                  )}
-                </div>
+                  </div>
+                ))}
               </div>
-            );
-          })}
-        </div>
+            )}
 
-        {/* FAQ Section */}
-        <div className="mt-16 bg-dark-card rounded-xl p-8">
-          <h2 className="text-2xl font-bold mb-6 text-center">Preguntas Frecuentes</h2>
-          <div className="grid md:grid-cols-2 gap-8">
-            <div>
-              <h3 className="font-semibold mb-2">¿Puedo cambiar de plan en cualquier momento?</h3>
-              <p className="text-gray-400 text-sm">
-                Sí, puedes actualizar o cambiar tu plan en cualquier momento. Los cambios se aplicarán inmediatamente.
-              </p>
-            </div>
-            <div>
-              <h3 className="font-semibold mb-2">¿Qué incluye la garantía de 30 días?</h3>
-              <p className="text-gray-400 text-sm">
-                Si no estás satisfecho con el Plan Anual, puedes solicitar un reembolso completo dentro de los primeros 30 días.
-              </p>
-            </div>
-            <div>
-              <h3 className="font-semibold mb-2">¿Cómo funcionan las sesiones 1:1?</h3>
-              <p className="text-gray-400 text-sm">
-                Con el Plan Anual, tienes derecho a una sesión personal mensual de 30 minutos con nuestros expertos.
-              </p>
-            </div>
-            <div>
-              <h3 className="font-semibold mb-2">¿Puedo cancelar en cualquier momento?</h3>
-              <p className="text-gray-400 text-sm">
-                Sí, puedes cancelar tu suscripción en cualquier momento. Mantendrás acceso hasta el final de tu período de facturación.
-              </p>
-            </div>
+            {/* Equipos Tab Content */}
+            {activeTab === 'equipos' && (
+              <div className="text-center py-16">
+                <h3 className="text-2xl font-bold text-foreground mb-4">
+                  Planes para Equipos
+                </h3>
+                <p className="text-muted-foreground mb-8">
+                  ¿Necesitas un plan para tu equipo? Contacta con nosotros para obtener precios personalizados.
+                </p>
+                <Button className="bg-primary text-primary-foreground hover:bg-primary/90">
+                  Contactar Ventas
+                </Button>
+              </div>
+            )}
           </div>
-        </div>
-      </main>
+        </main>
+      </div>
     </div>
   );
 }
