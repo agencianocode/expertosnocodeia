@@ -738,13 +738,8 @@ export default function Course() {
                   <div
                     key={lesson.id}
                     onClick={() => {
-                      if (isAuthenticated) {
-                        handleLessonClick(index);
-                      } else if (index === 0) {
-                        // Primera lección siempre accesible
-                        handleLessonClick(index);
-                      }
-                      // Para lecciones 2+: no hacer nada (no redirect a login)
+                      handleLessonClick(index);
+                      // La lógica de contenido bloqueado se maneja en la vista principal
                     }}
                     className={cn(
                       "py-5 px-4 rounded-lg transition-colors",
@@ -1144,15 +1139,9 @@ export default function Course() {
                   <div
                     key={lesson.id}
                     onClick={() => {
-                      if (isAuthenticated) {
-                        handleLessonClick(index);
-                        setIsMobileLessonsOpen(false);
-                      } else if (index === 0) {
-                        // Primera lección siempre accesible
-                        handleLessonClick(index);
-                        setIsMobileLessonsOpen(false);
-                      }
-                      // Para lecciones 2+: no hacer nada (no redirect a login)
+                      handleLessonClick(index);
+                      setIsMobileLessonsOpen(false);
+                      // La lógica de contenido bloqueado se maneja en la vista principal
                     }}
                     className={cn(
                       "p-4 rounded-lg cursor-pointer transition-all",
