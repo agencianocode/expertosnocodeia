@@ -312,6 +312,18 @@ export class DatabaseStorage implements IStorage {
 
   async getCourseById(id: string): Promise<Course | undefined> {
     const [course] = await db.select().from(courses).where(eq(courses.id, id));
+    
+    if (course) {
+      // Get the category IDs for this course
+      const courseCats = await db
+        .select({ categoryId: courseCategories.categoryId })
+        .from(courseCategories)
+        .where(eq(courseCategories.courseId, id));
+      
+      // Add categoryIds to the course object for the admin form
+      (course as any).categoryIds = courseCats.map(cc => cc.categoryId);
+    }
+    
     return course;
   }
 

@@ -230,7 +230,8 @@ export class ObjectStorageService {
   
     // Extract the entity ID from the path
     const entityId = rawObjectPath.slice(objectEntityDir.length);
-    return `/objects/${entityId}`;
+    // Return the normalized path with the proxy prefix for proper serving
+    return `/api/object-proxy/objects/${entityId}`;
   }
 }
 
