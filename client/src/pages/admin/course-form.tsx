@@ -24,6 +24,7 @@ import { ObjectUploader } from "@/components/ObjectUploader";
 import { ArrowLeft, Save, Eye } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAdmin } from "@/hooks/useAdmin";
+import { apiRequest } from "@/lib/queryClient";
 
 const courseSchema = z.object({
   title: z.string().min(1, "El título es requerido"),
@@ -261,16 +262,9 @@ export default function CourseForm() {
                         maxNumberOfFiles={1}
                         maxFileSize={5242880} // 5MB
                         onGetUploadParameters={async () => {
-                          const response = await fetch('/api/admin/media/upload-url', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ fileType: 'image/jpeg' })
-                          });
-                          if (!response.ok) {
-                            throw new Error('Error al obtener URL de upload');
-                          }
-                          const { uploadUrl } = await response.json();
-                          return { method: 'PUT' as const, url: uploadUrl };
+                          const response = await apiRequest('POST', '/api/admin/media/upload-url', { fileType: 'image/jpeg' });
+                          const { uploadURL } = await response.json();
+                          return { method: 'PUT' as const, url: uploadURL };
                         }}
                         onComplete={async (result) => {
                           if (result.successful?.[0]) {
@@ -279,18 +273,9 @@ export default function CourseForm() {
                             
                             // Convert to object path through backend
                             try {
-                              const response = await fetch('/api/admin/media/normalize-path', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ url: imageUrl })
-                              });
-                              
-                              if (response.ok) {
-                                const { normalizedPath } = await response.json();
-                                form.setValue("coverImageUrl", normalizedPath || "");
-                              } else {
-                                form.setValue("coverImageUrl", imageUrl || "");
-                              }
+                              const response = await apiRequest('POST', '/api/admin/media/normalize-path', { url: imageUrl });
+                              const { normalizedPath } = await response.json();
+                              form.setValue("coverImageUrl", normalizedPath || "");
                             } catch (error) {
                               console.error('Error normalizing path:', error);
                               form.setValue("coverImageUrl", imageUrl || "");
