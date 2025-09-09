@@ -77,7 +77,7 @@ export default function Planes() {
         </div>
         
         {/* Main Content */}
-        <main className="flex-1 lg:ml-[250px] min-h-screen bg-background">
+        <main className="flex-1 lg:ml-[250px] min-h-screen bg-background ml-[0px] mr-[0px]">
           <div className="max-w-4xl mx-auto py-12 px-4 lg:px-8 ml-[20px] mr-[20px] pt-[20px] pb-[20px] pl-[20px] pr-[20px] mt-[20px] mb-[20px]">
             {/* Header */}
             <div className="text-center mb-12">
