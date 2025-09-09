@@ -10,41 +10,59 @@ export default function Planes() {
 
   const individualPlans = [
     {
-      id: 'prueba-gratuita',
-      title: 'Prueba gratuita',
-      originalPrice: 999,
+      id: 'prueba-gratis',
+      title: 'Prueba Gratis',
       currentPrice: 0,
-      period: '/año',
-      badge: 'Los más populares',
-      badgeType: 'primary',
-      trialDays: 14,
+      period: '/14 días',
+      subtitle: 'Desbloquear el acceso a:',
       features: [
-        'Curso de certificación en IA específico de la industria',
-        'Guías de IA paso a paso de 3 a 5',
-        'Talleres semanales en vivo de expertos en IA',
-        'Apoyo personalizado de nuestro equipo',
-        'Una red de más de 10 000 usuarios pioneros de IA'
+        '5-10 casos de uso de IA',
+        'Cursos de IA certificados para la industria seleccionada',
+        'Guías diarias paso a paso',
+        'Talleres semanales dirigidos por expertos (solo en vivo)',
+        'Comunidad privada'
       ],
-      buttonText: 'Pruébelo gratis durante 14 días',
-      buttonVariant: 'primary' as const,
-      highlight: true
-    },
-    {
-      id: 'acceso-completo',
-      title: 'Acceso completo',
-      currentPrice: 999,
-      period: '/año',
-      features: [
-        'Los 17 cursos de certificación en IA',
-        'Más de 500 guías de IA paso a paso',
-        'Talleres semanales en vivo de expertos en IA',
-        'Apoyo personalizado de nuestro equipo',
-        'Más de $1000 en beneficios exclusivos de herramientas de IA',
-        'Una red de más de 10 000 usuarios pioneros de IA'
-      ],
-      buttonText: 'Suscríbete ahora',
+      buttonText: 'Empezar ahora',
       buttonVariant: 'secondary' as const,
       highlight: false
+    },
+    {
+      id: 'mensual',
+      title: 'Mensual',
+      currentPrice: 39,
+      period: '/mes',
+      subtitle: 'Perfecto para empezar',
+      features: [
+        'Acceso completo a la universidad',
+        '300+ guías paso a paso',
+        'Workshops en vivo semanales',
+        'Comunidad privada',
+        'Certificados de finalización',
+        'Descuentos en herramientas'
+      ],
+      buttonText: 'Empezar ahora',
+      buttonVariant: 'secondary' as const,
+      highlight: false
+    },
+    {
+      id: 'anual',
+      title: 'Anual',
+      currentPrice: 299,
+      period: '/año',
+      subtitle: 'Mejor valor - Ahorra $169',
+      badge: 'Más Popular',
+      badgeType: 'primary',
+      features: [
+        'Todo lo incluido en Mensual',
+        '2 meses GRATIS',
+        'Acceso prioritario a workshops',
+        'Sesiones 1:1 mensuales',
+        'Recursos exclusivos',
+        'Garantía de 30 días'
+      ],
+      buttonText: 'Empezar ahora',
+      buttonVariant: 'primary' as const,
+      highlight: true
     }
   ];
 
@@ -95,7 +113,7 @@ export default function Planes() {
 
             {/* Plans Grid */}
             {activeTab === 'individual' && (
-              <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
+              <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
                 {individualPlans.map((plan) => (
                   <div
                     key={plan.id}
@@ -121,18 +139,13 @@ export default function Planes() {
                     )}
 
                     {/* Plan Header */}
-                    <div className="mb-8">
+                    <div className="mb-8 text-center">
                       <h3 className="text-2xl font-bold text-foreground mb-4">
                         {plan.title}
                       </h3>
                       
                       {/* Pricing */}
-                      <div className="flex items-baseline gap-3">
-                        {plan.originalPrice && plan.originalPrice !== plan.currentPrice && (
-                          <span className="text-2xl text-muted-foreground line-through">
-                            ${plan.originalPrice}
-                          </span>
-                        )}
+                      <div className="mb-4">
                         <span className="text-4xl font-bold text-foreground">
                           ${plan.currentPrice}
                         </span>
@@ -141,10 +154,10 @@ export default function Planes() {
                         </span>
                       </div>
                       
-                      {plan.trialDays && (
-                        <Badge className="mt-3 bg-blue-100 text-blue-800 border-blue-200">
-                          {plan.trialDays} días gratis
-                        </Badge>
+                      {plan.subtitle && (
+                        <p className="text-muted-foreground text-sm">
+                          {plan.subtitle}
+                        </p>
                       )}
                     </div>
 
