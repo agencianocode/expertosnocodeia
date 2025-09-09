@@ -568,6 +568,56 @@ export function registerSimpleRoutes(app: Express): Server {
     }
   });
 
+  // Create new course
+  app.post("/api/admin/courses", simpleAdminAuth, isAdmin, async (req: Request, res: Response) => {
+    try {
+      const courseData = {
+        ...req.body,
+        id: randomUUID(),
+      };
+      
+      const course = await storage.createCourse(courseData);
+      res.json(course);
+    } catch (error) {
+      console.error("Error creating course:", error);
+      res.status(500).json({ message: "Error interno del servidor" });
+    }
+  });
+
+  // Update existing course
+  app.put("/api/admin/courses/:courseId", simpleAdminAuth, isAdmin, async (req: Request, res: Response) => {
+    try {
+      const { courseId } = req.params;
+      const courseData = req.body;
+      
+      const course = await storage.updateCourse(courseId, courseData);
+      if (!course) {
+        return res.status(404).json({ message: "Curso no encontrado" });
+      }
+      
+      res.json(course);
+    } catch (error) {
+      console.error("Error updating course:", error);
+      res.status(500).json({ message: "Error interno del servidor" });
+    }
+  });
+
+  // Delete course
+  app.delete("/api/admin/courses/:courseId", simpleAdminAuth, isAdmin, async (req: Request, res: Response) => {
+    try {
+      const { courseId } = req.params;
+      const success = await storage.deleteCourse(courseId);
+      if (!success) {
+        return res.status(404).json({ message: "Curso no encontrado" });
+      }
+      
+      res.json({ message: "Curso eliminado correctamente" });
+    } catch (error) {
+      console.error("Error deleting course:", error);
+      res.status(500).json({ message: "Error interno del servidor" });
+    }
+  });
+
   // Get specific lesson for admin editing
   app.get("/api/admin/lessons/:id", simpleAdminAuth, isAdmin, async (req: Request, res: Response) => {
     try {
