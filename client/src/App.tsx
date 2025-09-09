@@ -108,6 +108,7 @@ function Router() {
           
           {/* Authentication and support pages */}
           <Route path="/login" component={SimpleLogin} />
+          <Route path="/planes" component={Planes} />
           <Route path="/apoyo" component={Support} />
           <Route path="/support" component={Support} />
           <Route component={NotFound} />
