@@ -518,38 +518,28 @@ export default function Course() {
             {/* Current Lesson Content */}
             {currentLesson && (
               <section>
-                {!isAuthenticated && currentLessonIndex === 0 ? (
-                  // First lesson preview for non-authenticated users
+                {!isAuthenticated ? (
+                  // Blocked video/media for ALL lessons when not authenticated
                   <>
-                    {/* Media Area - Video/Image/Empty based on lesson content */}
-                    {currentLesson.videoUrl ? (
-                      <div className="relative rounded-lg overflow-hidden mb-6 lg:mb-8 bg-black" style={{ paddingBottom: '56.25%' }}>
-                        <div className="absolute top-0 left-0 w-full h-full flex items-center justify-center bg-black">
-                          <div className="text-center text-white">
-                            <div className="mb-4">
-                              <div className="w-16 h-16 mx-auto rounded-full bg-gray-800 flex items-center justify-center mb-4">
-                                <Play className="h-8 w-8 text-gray-400" />
-                              </div>
+                    {/* Media Area - Always blocked for non-authenticated users */}
+                    <div className="relative rounded-lg overflow-hidden mb-6 lg:mb-8 bg-black" style={{ paddingBottom: '56.25%' }}>
+                      <div className="absolute top-0 left-0 w-full h-full flex items-center justify-center bg-black">
+                        <div className="text-center text-white">
+                          <div className="mb-4">
+                            <div className="w-16 h-16 mx-auto rounded-full bg-gray-800 flex items-center justify-center mb-4">
+                              <Play className="h-8 w-8 text-gray-400" />
                             </div>
-                            <p className="text-lg mb-4">Tu plan actual no incluye acceso a este curso.</p>
-                            <Button 
-                              onClick={() => window.location.href = "/planes"}
-                              className="bg-white text-black hover:bg-gray-200"
-                            >
-                              Inscribirse
-                            </Button>
                           </div>
+                          <p className="text-lg mb-4">Tu plan actual no incluye acceso a este curso.</p>
+                          <Button 
+                            onClick={() => window.location.href = "/planes"}
+                            className="bg-white text-black hover:bg-gray-200"
+                          >
+                            Inscribirse
+                          </Button>
                         </div>
                       </div>
-                    ) : currentLesson.imageUrl ? (
-                      <div className="rounded-lg mb-6 lg:mb-8">
-                        <img 
-                          src={currentLesson.imageUrl} 
-                          alt={currentLesson.title}
-                          className="w-full h-auto rounded-lg"
-                        />
-                      </div>
-                    ) : null}
+                    </div>
                   </>
                 ) : (
                   // Normal content for authenticated users
