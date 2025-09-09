@@ -112,7 +112,7 @@ export default function Planes() {
 
             {/* Plans Grid */}
             {activeTab === 'individual' && (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto px-8">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto px-8" style={{ marginLeft: '125px' }}>
                 {individualPlans.map((plan) => (
                   <div
                     key={plan.id}
