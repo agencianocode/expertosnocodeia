@@ -520,7 +520,7 @@ export default function Course() {
               <section>
                 {!isAuthenticated ? (
                   // Blocked video/media for ALL lessons when not authenticated
-                  <>
+                  (<>
                     {/* Media Area - Always blocked for non-authenticated users */}
                     <div className="relative rounded-lg overflow-hidden mb-6 lg:mb-8 bg-black" style={{ paddingBottom: '56.25%' }}>
                       <div className="absolute top-0 left-0 w-full h-full flex items-center justify-center bg-black">
@@ -540,10 +540,10 @@ export default function Course() {
                         </div>
                       </div>
                     </div>
-                  </>
+                  </>)
                 ) : (
                   // Normal content for authenticated users
-                  <>
+                  (<>
                     {/* Media Area - Video/Image/Empty based on lesson content */}
                     {currentLesson.videoUrl ? (
                       <div className="relative rounded-lg overflow-hidden mb-6 lg:mb-8" style={{ paddingBottom: '56.25%' }}>
@@ -565,7 +565,7 @@ export default function Course() {
                         />
                       </div>
                     ) : null}
-                  </>
+                  </>)
                 )}
 
                 <div className="space-y-6 lg:space-y-8">
@@ -587,37 +587,8 @@ export default function Course() {
                     
                     {!isAuthenticated ? (
                       // Blocked content for non-authenticated users
-                      currentLessonIndex === 0 ? (
-                        // Primera lección: contenido completamente visible (esto se renderiza en las líneas anteriores)
-                        <div className="prose prose-sm lg:prose-base max-w-none">
-                          {currentLesson.content ? (
-                            <div className="markdown-content">
-                              <ReactMarkdown 
-                                remarkPlugins={[remarkGfm]}
-                                rehypePlugins={[rehypeHighlight, rehypeRaw]}
-                              >
-                                {currentLesson.content}
-                              </ReactMarkdown>
-                            </div>
-                          ) : (
-                            <p className="text-muted-foreground italic">Contenido de la lección no disponible.</p>
-                          )}
-                        </div>
-                      ) : (
-                        // Lecciones 2+: contenido bloqueado
-                        <div className="py-8">
-                          <p className="text-muted-foreground mb-6">Debes registrarte en Rundown University para ver esta lección.</p>
-                          <Button 
-                            onClick={() => window.location.href = "/planes"}
-                            className="bg-primary text-primary-foreground hover:bg-primary/90"
-                          >
-                            Inscribirse
-                          </Button>
-                        </div>
-                      )
-                    ) : (
-                      // Normal content for authenticated users  
-                      <div className="prose prose-sm lg:prose-base max-w-none">
+                      (currentLessonIndex === 0 ? // Primera lección: contenido completamente visible (esto se renderiza en las líneas anteriores)
+                      (<div className="prose prose-sm lg:prose-base max-w-none">
                         {currentLesson.content ? (
                           <div className="markdown-content">
                             <ReactMarkdown 
@@ -630,7 +601,32 @@ export default function Course() {
                         ) : (
                           <p className="text-muted-foreground italic">Contenido de la lección no disponible.</p>
                         )}
-                      </div>
+                      </div>) : // Lecciones 2+: contenido bloqueado
+                      (<div className="py-8">
+                        <p className="text-muted-foreground mb-6">Debes registrarte en Universidad Expertos NoCode IA para ver esta lección.</p>
+                        <Button 
+                          onClick={() => window.location.href = "/planes"}
+                          className="bg-primary text-primary-foreground hover:bg-primary/90"
+                        >
+                          Inscribirse
+                        </Button>
+                      </div>))
+                    ) : (
+                      // Normal content for authenticated users  
+                      (<div className="prose prose-sm lg:prose-base max-w-none">
+                        {currentLesson.content ? (
+                          <div className="markdown-content">
+                            <ReactMarkdown 
+                              remarkPlugins={[remarkGfm]}
+                              rehypePlugins={[rehypeHighlight, rehypeRaw]}
+                            >
+                              {currentLesson.content}
+                            </ReactMarkdown>
+                          </div>
+                        ) : (
+                          <p className="text-muted-foreground italic">Contenido de la lección no disponible.</p>
+                        )}
+                      </div>)
                     )}
                   </div>
                 </div>
@@ -797,7 +793,6 @@ export default function Course() {
       </div>
       {/* Mobile Navigation */}
       <MobileNav />
-
       {/* Celebration Confetti */}
       {isExamCompleted && (
         <div className="fixed inset-0 pointer-events-none z-[60]">
@@ -858,7 +853,6 @@ export default function Course() {
           </div>
         </div>
       )}
-
       {/* Exam Failed Modal */}
       {isExamFailed && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50">
@@ -903,7 +897,6 @@ export default function Course() {
           </div>
         </div>
       )}
-
       {/* Course Completion Modal */}
       {isExamCompleted && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50">
@@ -969,7 +962,6 @@ export default function Course() {
           </div>
         </div>
       )}
-
       {/* Final Exam Modal */}
       {isExamModalOpen && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50">
@@ -1078,7 +1070,6 @@ export default function Course() {
           </div>
         </div>
       )}
-
       {/* Mobile Lessons Sidebar */}
       {isMobileLessonsOpen && (
         <div className="fixed inset-0 z-50 lg:hidden">
