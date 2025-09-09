@@ -480,6 +480,23 @@ export function registerSimpleRoutes(app: Express): Server {
     }
   });
 
+  // Admin media normalize path endpoint
+  app.post("/api/admin/media/normalize-path", simpleAdminAuth, isAdmin, async (req: Request, res: Response) => {
+    try {
+      const { url } = req.body;
+      if (!url) {
+        return res.status(400).json({ message: "URL es requerida" });
+      }
+      
+      const objectStorageService = new ObjectStorageService();
+      const normalizedPath = objectStorageService.normalizeObjectEntityPath(url);
+      res.json({ normalizedPath });
+    } catch (error) {
+      console.error("Error normalizing path:", error);
+      res.status(500).json({ message: "Error interno del servidor" });
+    }
+  });
+
   // Admin courses endpoint for content management
   app.get("/api/admin/courses", simpleAdminAuth, isAdmin, async (req: Request, res: Response) => {
     try {
