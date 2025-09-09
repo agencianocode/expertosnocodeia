@@ -62,7 +62,6 @@ export default function CourseForm() {
 
   const { data: course, isLoading: courseLoading } = useQuery({
     queryKey: ["/api/admin/courses", courseId],
-    queryFn: () => fetch(`/api/admin/courses/${courseId}`).then(r => r.json()),
     enabled: isEditing && !!courseId,
   });
 
@@ -104,17 +103,7 @@ export default function CourseForm() {
       const url = isEditing ? `/api/admin/courses/${courseId}` : '/api/admin/courses';
       const method = isEditing ? 'PUT' : 'POST';
       
-      const response = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      });
-      
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Error al guardar el curso');
-      }
-      
+      const response = await apiRequest(method, url, data);
       return response.json();
     },
     onSuccess: (data) => {
