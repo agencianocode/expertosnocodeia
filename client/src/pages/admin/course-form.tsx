@@ -267,8 +267,8 @@ export default function CourseForm() {
                           return { method: 'PUT' as const, url: uploadURL };
                         }}
                         onComplete={async (result) => {
-                          if (result.successful?.[0]) {
-                            const uploadUrl = result.successful[0].uploadURL;
+                          if (result?.[0]) {
+                            const uploadUrl = result[0].uploadURL;
                             const imageUrl = uploadUrl?.split('?')[0]; // Remove query params
                             
                             // Convert to object path through backend
