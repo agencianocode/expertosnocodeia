@@ -544,9 +544,8 @@ export function registerSimpleRoutes(app: Express): Server {
       }
       
       const objectStorageService = new ObjectStorageService();
-      const objectPath = objectStorageService.normalizeObjectEntityPath(imageURL);
-      // Return a complete URL that can be directly accessed by the browser
-      const url = `/api/object-proxy${objectPath}`;
+      const url = objectStorageService.normalizeObjectEntityPath(imageURL);
+      // normalizeObjectEntityPath already returns the complete URL like "/api/object-proxy/objects/..."
       res.json({ url });
     } catch (error) {
       console.error("Error finalizing lesson image:", error);
