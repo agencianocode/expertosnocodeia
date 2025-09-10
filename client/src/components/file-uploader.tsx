@@ -52,12 +52,19 @@ export function FileUploader({
     setUploadProgress(0);
 
     try {
+      // Get auth token for request
+      const token = localStorage.getItem('simpleAuthToken');
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+      };
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
       // Get upload URL from server
       const response = await fetch('/api/lesson-resources/upload-url', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers,
         body: JSON.stringify({
           fileName: selectedFile.name,
         }),
