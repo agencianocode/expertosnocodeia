@@ -46,7 +46,12 @@ export default function Dashboard() {
     enabled: !isAuthenticated,
   });
 
-  if (isLoading || dashboardLoading || (!isAuthenticated && (coursesLoading || guidesLoading || categoriesLoading))) {
+  const { data: workshopsData, isLoading: workshopsLoading } = useQuery({
+    queryKey: ["/api/workshops"],
+    enabled: !isAuthenticated,
+  });
+
+  if (isLoading || dashboardLoading || (!isAuthenticated && (coursesLoading || guidesLoading || categoriesLoading || workshopsLoading))) {
     return (
       <div className="min-h-screen bg-background flex">
         <div className="w-64 bg-card border-r border-border"></div>
@@ -60,13 +65,14 @@ export default function Dashboard() {
   // Use different data sources based on authentication
   const continueCourses = isAuthenticated ? ((dashboardData as any)?.continueCourses || []) : [];
   
-  // For non-authenticated users, combine courses and guides for recommendations
+  // For non-authenticated users, combine courses, guides and workshops for recommendations
   const publicCourses = !isAuthenticated ? ((coursesData as any) || []).map((course: any) => ({ course, category: null, progress: null })) : [];
   const publicGuides = !isAuthenticated ? ((guidesData as any) || []).map((guide: any) => ({ course: guide, category: null, progress: null })) : [];
+  const publicWorkshops = !isAuthenticated ? ((workshopsData as any) || []).map((workshop: any) => ({ course: workshop, category: null, progress: null })) : [];
   
   const recommendedCourses = isAuthenticated 
     ? ((dashboardData as any)?.recommendedCourses || []) 
-    : [...publicCourses, ...publicGuides];
+    : [...publicCourses, ...publicGuides, ...publicWorkshops];
     
   const categories = isAuthenticated 
     ? ((dashboardData as any)?.categories || []) 
@@ -261,7 +267,7 @@ export default function Dashboard() {
           {/* Guide Recommendations */}
           <section>
             <div className="flex items-center justify-between mb-4">
-              <h2 className="font-semibold text-foreground text-[24px]">Recomendaciones de la guía</h2>
+              <h2 className="font-semibold text-foreground text-[24px]">Recomendaciones de Guías</h2>
               <div className="flex space-x-2">
                 <Button
                   variant="ghost"
@@ -301,7 +307,7 @@ export default function Dashboard() {
           {/* Course Recommendations */}
           <section>
             <div className="flex items-center justify-between mb-6">
-              <h2 className="font-semibold text-foreground text-[24px]">Recomendaciones de cursos</h2>
+              <h2 className="font-semibold text-foreground text-[24px]">Recomendaciones de Cursos</h2>
               <div className="flex space-x-2">
                 <Button
                   variant="ghost"
@@ -336,7 +342,7 @@ export default function Dashboard() {
           {/* Workshop Recommendations */}
           <section>
             <div className="flex items-center justify-between mb-6">
-              <h2 className="font-semibold text-foreground text-[24px]">Recomendaciones del taller</h2>
+              <h2 className="font-semibold text-foreground text-[24px]">Recomendaciones del Talleres</h2>
               <div className="flex space-x-2">
                 <Button
                   variant="ghost"
