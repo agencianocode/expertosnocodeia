@@ -266,7 +266,7 @@ export default function CourseCard({ course, category, progress, variant = "defa
   return (
     <div 
       className={cn(
-        "bg-card border border-border rounded-xl overflow-hidden transition-all duration-300 cursor-pointer group flex flex-col h-full relative",
+        "bg-card border border-border rounded-xl transition-all duration-300 cursor-pointer group flex flex-col h-full relative",
         isAuthenticated ? "hover:shadow-lg hover:shadow-primary/20 hover:scale-105" : "hover:shadow-md opacity-90"
       )}
       onClick={() => {
