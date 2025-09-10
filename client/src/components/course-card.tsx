@@ -240,7 +240,7 @@ export default function CourseCard({ course, category, progress, variant = "defa
                     <Lock className="w-4 h-4 text-foreground" />
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent side="top" align="center" avoidCollisions={false} sideOffset={8} className="bg-card border border-border p-3 rounded-lg shadow-lg max-w-48">
+                <TooltipContent side="top" align="center" avoidCollisions={false} sideOffset={12} className="z-[9999] bg-card border border-border p-3 rounded-lg shadow-lg max-w-48">
                   <div className="text-sm font-medium text-foreground mb-2">
                     Exclusivo solo para miembros suscritos
                   </div>
@@ -372,7 +372,7 @@ export default function CourseCard({ course, category, progress, variant = "defa
                       <Lock className="w-4 h-4 text-foreground" />
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent side="top" align="center" avoidCollisions={false} sideOffset={8} className="bg-card border border-border p-3 rounded-lg shadow-lg max-w-48">
+                  <TooltipContent side="top" align="center" avoidCollisions={false} sideOffset={12} className="z-[9999] bg-card border border-border p-3 rounded-lg shadow-lg max-w-48">
                     <div className="text-sm font-medium text-foreground mb-2">
                       Exclusivo solo para miembros suscritos
                     </div>
