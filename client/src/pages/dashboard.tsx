@@ -139,21 +139,35 @@ export default function Dashboard() {
             ) : (
               // Show Premium Features section for non-authenticated users
               <div className="bg-gradient-to-br from-gray-900 via-black to-gray-900 rounded-xl p-12">
-                {/* Main heading */}
-                <div className="mb-12">
-                  <h2 className="text-4xl font-bold text-white mb-3 leading-tight">
-                    Capacitar a mil millones de personas para el futuro<br />
-                    Un mundo donde la IA es lo primero
-                  </h2>
-                  <p className="text-gray-400 text-base max-w-2xl">
-                    Obten formación en IA personalizada, adaptada a tu estilo de aprendizaje, objetivos profesionales y 
-                    necesidades del sector. Únete a más de 10,000 profesionales que ya están transformando sus carreras.
-                  </p>
+                {/* Row 1: Header + Quote Card */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 mb-12">
+                  {/* Left: Header */}
+                  <div>
+                    <h2 className="text-4xl font-bold text-white mb-3 leading-tight">
+                      Capacitar a mil millones de personas para el futuro<br />
+                      Un mundo donde la IA es lo primero
+                    </h2>
+                    <p className="text-gray-400 text-base">
+                      Obten formación en IA personalizada, adaptada a tu estilo de aprendizaje, objetivos profesionales y 
+                      necesidades del sector. Únete a más de 10,000 profesionales que ya están transformando sus carreras.
+                    </p>
+                  </div>
+
+                  {/* Right: Quote Card */}
+                  <div className="flex items-start">
+                    <div className="bg-gray-800 rounded-xl p-6 text-center w-full">
+                      <blockquote className="text-lg text-white mb-4">
+                        "La IA no reemplazará a los humanos, pero los humanos que 
+                        la usan reemplazarán a los humanos que no la usan"
+                      </blockquote>
+                      <cite className="text-sm text-gray-400 font-medium">— Fei-Fei Li</cite>
+                    </div>
+                  </div>
                 </div>
 
-                {/* Two column layout: Features Grid + Quote */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 mb-12">
-                  {/* Left column - Features Grid 2x2 */}
+                {/* Row 2: Features + CTA */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+                  {/* Left: Features Grid 2x2 */}
                   <div className="grid grid-cols-2 gap-8">
                     <div className="flex items-start space-x-3">
                       <div className="flex-shrink-0 w-6 h-6 rounded-full bg-gray-600 flex items-center justify-center mt-1">
@@ -196,19 +210,9 @@ export default function Dashboard() {
                     </div>
                   </div>
 
-                  {/* Right column - Quote Card + CTA */}
-                  <div className="flex flex-col justify-center space-y-6">
-                    {/* Quote Card */}
-                    <div className="bg-gray-800 rounded-xl p-6 text-center">
-                      <blockquote className="text-lg text-white mb-4">
-                        "La IA no reemplazará a los humanos, pero los humanos que 
-                        la usan reemplazarán a los humanos que no la usan"
-                      </blockquote>
-                      <cite className="text-sm text-gray-400 font-medium">— Fei-Fei Li</cite>
-                    </div>
-
-                    {/* CTA Section */}
-                    <div className="text-center">
+                  {/* Right: CTA */}
+                  <div className="flex items-start">
+                    <div className="w-full">
                       <Button 
                         size="lg" 
                         className="bg-white text-black hover:bg-gray-100 text-base px-8 py-3 rounded-lg mb-3 font-medium w-full"
@@ -216,7 +220,7 @@ export default function Dashboard() {
                       >
                         Comience una prueba gratuita →
                       </Button>
-                      <p className="text-sm text-gray-400">
+                      <p className="text-sm text-gray-400 text-center">
                         <span className="text-green-400">✓</span> Más de 10,000 miembros • Prueba gratuita de 14 días
                       </p>
                     </div>
