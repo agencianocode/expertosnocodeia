@@ -196,30 +196,31 @@ export default function Dashboard() {
                     </div>
                   </div>
 
-                  {/* Right column - Quote */}
-                  <div className="flex flex-col justify-center">
-                    <div className="border-l-4 border-blue-500 pl-6">
-                      <blockquote className="text-lg italic text-gray-300 mb-4">
+                  {/* Right column - Quote Card + CTA */}
+                  <div className="flex flex-col justify-center space-y-6">
+                    {/* Quote Card */}
+                    <div className="bg-gray-800 rounded-xl p-6 text-center">
+                      <blockquote className="text-lg text-white mb-4">
                         "La IA no reemplazará a los humanos, pero los humanos que 
                         la usan reemplazarán a los humanos que no la usan"
                       </blockquote>
                       <cite className="text-sm text-gray-400 font-medium">— Fei-Fei Li</cite>
                     </div>
-                  </div>
-                </div>
 
-                {/* CTA Section */}
-                <div className="text-center">
-                  <Button 
-                    size="lg" 
-                    className="bg-white text-black hover:bg-gray-100 text-base px-8 py-3 rounded-lg mb-3 font-medium"
-                    onClick={() => window.location.href = '/universidad-nocode-ia'}
-                  >
-                    Comience una prueba gratuita →
-                  </Button>
-                  <p className="text-sm text-gray-400">
-                    <span className="text-green-400">✓</span> Más de 10,000 miembros • Prueba gratuita de 14 días
-                  </p>
+                    {/* CTA Section */}
+                    <div className="text-center">
+                      <Button 
+                        size="lg" 
+                        className="bg-white text-black hover:bg-gray-100 text-base px-8 py-3 rounded-lg mb-3 font-medium w-full"
+                        onClick={() => window.location.href = '/universidad-nocode-ia'}
+                      >
+                        Comience una prueba gratuita →
+                      </Button>
+                      <p className="text-sm text-gray-400">
+                        <span className="text-green-400">✓</span> Más de 10,000 miembros • Prueba gratuita de 14 días
+                      </p>
+                    </div>
+                  </div>
                 </div>
               </div>
             )}
