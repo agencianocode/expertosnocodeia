@@ -872,8 +872,8 @@ export function registerSimpleRoutes(app: Express): Server {
     }
   });
 
-  // Get lesson resource files from Object Storage - requires authentication
-  app.get("/api/lesson-resources/:resourceId/*", legacyAuth, async (req: Request, res: Response) => {
+  // Get lesson resource files from Object Storage - public access for lesson resources
+  app.get("/api/lesson-resources/:resourceId/*", async (req: Request, res: Response) => {
     try {
       const resourceId = req.params.resourceId;
       const fileName = req.params[0]; // Gets the * part
@@ -900,9 +900,9 @@ export function registerSimpleRoutes(app: Express): Server {
         return res.status(404).json({ error: "File not found" });
       }
       
-      // Set appropriate headers for download
-      res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
-      res.setHeader('Content-Type', 'application/octet-stream');
+      // Set appropriate headers for inline viewing (opens in browser)
+      res.setHeader('Content-Disposition', `inline; filename="${fileName}"`);
+      // Let the browser determine content type based on file extension
       
       // Stream the file directly from Object Storage
       await objectStorageService.downloadObject(file, res);
