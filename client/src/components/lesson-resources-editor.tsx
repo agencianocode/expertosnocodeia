@@ -99,6 +99,23 @@ export function LessonResourcesEditor({ lessonId }: LessonResourcesEditorProps) 
     }
   });
 
+  const handleDownload = (resource: LessonResource) => {
+    // Check if it's a cloud storage file (internal path) or external URL
+    if (resource.fileUrl.startsWith('/lesson-resources/')) {
+      // Internal cloud storage file - use our download endpoint
+      const downloadUrl = `/api/lesson-resources${resource.fileUrl}`;
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.download = resource.fileName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } else {
+      // External URL - open in new tab
+      window.open(resource.fileUrl, '_blank');
+    }
+  };
+
   const handleUrlChange = (url: string) => {
     setNewResource(prev => {
       const fileName = url.split('/').pop() || '';
@@ -218,7 +235,7 @@ export function LessonResourcesEditor({ lessonId }: LessonResourcesEditorProps) 
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => window.open(resource.fileUrl, '_blank')}
+                    onClick={() => handleDownload(resource)}
                     className="h-8 w-8 p-0 text-gray-400 hover:text-white"
                   >
                     <Download className="h-4 w-4" />
