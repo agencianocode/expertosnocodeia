@@ -141,24 +141,73 @@ export const supabaseAdminAuth = async (
   next: NextFunction
 ) => {
   try {
-    // First verify with Supabase
-    await supabaseAuth(req, res, () => {});
-    
-    if (!req.user) {
-      return res.status(401).json({ message: "Usuario no autenticado" });
+    const authHeader = req.headers.authorization;
+    const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
+
+    if (!token) {
+      return res.status(401).json({ 
+        message: "Token de acceso requerido",
+        reason: "no_token" 
+      });
     }
+
+    // Verify token with Supabase (fallback for development)
+    if (!supabaseAdmin) {
+      return res.status(503).json({ 
+        message: "Supabase no configurado - usar autenticación legacy",
+        reason: "supabase_not_configured" 
+      });
+    }
+
+    const { data: { user }, error } = await supabaseAdmin.auth.getUser(token);
+
+    if (error || !user) {
+      return res.status(401).json({ 
+        message: "Token inválido o expirado",
+        reason: "invalid_token" 
+      });
+    }
+
+    // Get or create user in our database
+    let dbUser = await storage.getUserByEmail(user.email!);
+    
+    if (!dbUser) {
+      // Create user if doesn't exist (for first-time Supabase users)
+      dbUser = await storage.createUser({
+        email: user.email!,
+        firstName: user.user_metadata?.first_name || '',
+        lastName: user.user_metadata?.last_name || '',
+        profileImageUrl: user.user_metadata?.avatar_url || '',
+        provider: 'supabase',
+        isEmailVerified: true, // Supabase handles email verification
+      });
+    }
+
+    // Attach both Supabase user and our DB user to request
+    req.supabaseUser = user;
+    req.user = {
+      id: dbUser.id,
+      email: dbUser.email,
+      firstName: dbUser.firstName || undefined,
+      lastName: dbUser.lastName || undefined,
+      profileImageUrl: dbUser.profileImageUrl || undefined,
+    };
 
     // Check if user is admin in our system
     const adminUser = await storage.getAdminUser(req.user.id);
+    console.log('isAdmin middleware - req.user:', { claims: { sub: req.user.id } });
+    console.log('isAdmin middleware - userId:', req.user.id);
+    console.log('isAdmin middleware - adminUser:', adminUser);
     
     if (!adminUser || !adminUser.isActive) {
       return res.status(403).json({ message: "Acceso denegado - Admin requerido" });
     }
 
+    console.log('isAdmin middleware - Success, proceeding');
     next();
   } catch (error) {
     console.error("Admin auth error:", error);
-    return res.status(401).json({ 
+    return res.status(500).json({ 
       message: "Error de autenticación de administrador" 
     });
   }
