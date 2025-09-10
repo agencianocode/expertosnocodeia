@@ -11,7 +11,7 @@ import CourseCard from "@/components/course-card";
 import TopicCard from "@/components/topic-card";
 import { SubscriptionStatus } from "@/components/subscription/SubscriptionBadge";
 import { Button } from "@/components/ui/button";
-import { Bell, ChevronLeft, ChevronRight, Plus, Shield, Lightbulb, Zap, Users, CheckCircle } from "lucide-react";
+import { Bell, ChevronLeft, ChevronRight, ChevronDown, Plus, Shield, Lightbulb, Zap, Users, CheckCircle } from "lucide-react";
 import { Link } from "wouter";
 
 export default function Dashboard() {
@@ -19,6 +19,7 @@ export default function Dashboard() {
   const { isAuthenticated, isLoading } = useAuth();
   const { subscription, isFreePlan } = useSubscription();
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [showOtherTopics, setShowOtherTopics] = useState(false);
 
   // No authentication redirect - allow public access with locked content
 
@@ -75,153 +76,65 @@ export default function Dashboard() {
         {/* Main Content */}
         <main className="flex-1 overflow-auto pb-20 lg:pb-0 lg:ml-[250px]">
         <div className="p-6 space-y-8">
-          {/* Continue Learning Section OR Premium Features Section */}
+          {/* Continue Learning Section - Now visible for all users */}
           <section>
-            {isAuthenticated ? (
-              <>
-                <div className="flex items-center justify-between mb-6">
-                  <h2 className="font-semibold text-foreground text-[24px]">Continúa donde lo dejaste</h2>
-                  <div className="flex space-x-2">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="w-8 h-8 rounded-full bg-card border border-border hover:bg-muted disabled:opacity-50"
-                      onClick={prevSlide}
-                      disabled={currentSlide <= 0}
-                    >
-                      <ChevronLeft className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="w-8 h-8 rounded-full bg-card border border-border hover:bg-muted disabled:opacity-50"
-                      onClick={nextSlide}
-                      disabled={currentSlide >= maxSlidePosition}
-                    >
-                      <ChevronRight className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-                <div className="overflow-hidden">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="font-semibold text-foreground text-[24px]">
+                {isAuthenticated ? "Continúa donde lo dejaste" : "Cursos recomendados"}
+              </h2>
+              <div className="flex space-x-2">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="w-8 h-8 rounded-full bg-card border border-border hover:bg-muted disabled:opacity-50"
+                  onClick={prevSlide}
+                  disabled={currentSlide <= 0}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="w-8 h-8 rounded-full bg-card border border-border hover:bg-muted disabled:opacity-50"
+                  onClick={nextSlide}
+                  disabled={currentSlide >= maxSlidePosition}
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+            <div className="overflow-hidden">
+              <div 
+                className="flex transition-transform duration-500 ease-in-out"
+                style={{ 
+                  transform: `translateX(-${currentSlide * (100/4)}%)`,
+                  gap: '1.5rem'
+                }}
+              >
+                {(isAuthenticated && continueCourses.length > 0 
+                  ? continueCourses.slice(0, 8) 
+                  : recommendedCourses.filter((item: any) => item.course?.type === 'course').slice(0, 8)
+                ).map((item: any, index: number) => (
                   <div 
-                    className="flex transition-transform duration-500 ease-in-out"
-                    style={{ 
-                      transform: `translateX(-${currentSlide * (100/4)}%)`,
-                      gap: '1.5rem'
-                    }}
+                    key={item.course?.id} 
+                    className="flex-shrink-0"
+                    style={{ width: 'calc(25% - 1.125rem)' }}
                   >
-                    {continueCourses.slice(0, 8).map((item: any, index: number) => (
-                      <div 
-                        key={item.course?.id} 
-                        className="flex-shrink-0"
-                        style={{ width: 'calc(25% - 1.125rem)' }}
-                      >
-                        <CourseCard
-                          course={item.course}
-                          category={item.category}
-                          progress={item.progress}
-                          lastLessonId={item.lastLessonId} // Pass the last lesson ID for intelligent navigation
-                          showContinueText={true} // Enable "continue where you left off" navigation
-                          isAuthenticated={isAuthenticated}
-                        />
-                      </div>
-                    ))}
+                    <CourseCard
+                      course={item.course}
+                      category={item.category}
+                      progress={isAuthenticated ? item.progress : undefined}
+                      lastLessonId={isAuthenticated ? item.lastLessonId : undefined}
+                      showContinueText={isAuthenticated && continueCourses.length > 0}
+                      isAuthenticated={isAuthenticated}
+                    />
                   </div>
-                </div>
-                {continueCourses.length === 0 && (
-                  <div className="w-full text-center py-12 text-muted-foreground">
-                    <p>No has visitado ningún curso aún. ¡Explora y comienza a aprender algo nuevo!</p>
-                  </div>
-                )}
-              </>
-            ) : (
-              <div className="bg-gradient-to-br from-gray-900 via-black to-gray-900 rounded-xl p-12">
-                {/* Single row with two columns */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                  {/* Left Column: Header + Features (longer column) */}
-                  <div>
-                    {/* Header */}
-                    <div className="mb-6">
-                      <h2 className="font-bold text-white mb-2 text-[28px]">
-                        Capacitar a mil millones de personas para el futuro<br />
-                        Un mundo donde la IA es lo primero
-                      </h2>
-                      <p className="text-gray-400 text-base">
-                        Obten formación en IA personalizada, adaptada a tu estilo de aprendizaje, objetivos profesionales y 
-                        necesidades del sector. Únete a más de 10,000 profesionales que ya están transformando sus carreras.
-                      </p>
-                    </div>
-
-                    {/* Features Grid 2x2 */}
-                    <div className="grid grid-cols-2 gap-4">
-                    <div className="flex items-start space-x-3">
-                      <div className="flex-shrink-0 w-6 h-6 rounded-full bg-gray-600 flex items-center justify-center mt-1">
-                        <Lightbulb className="w-3 h-3 text-gray-300" />
-                      </div>
-                      <div>
-                        <h3 className="text-base font-semibold text-white mb-1">Más de 300 casos de uso de IA</h3>
-                        <p className="text-sm text-gray-400">Tutoriales paso a paso para aplicación inmediata</p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-start space-x-3">
-                      <div className="flex-shrink-0 w-6 h-6 rounded-full bg-gray-600 flex items-center justify-center mt-1">
-                        <Zap className="w-3 h-3 text-gray-300" />
-                      </div>
-                      <div>
-                        <h3 className="text-base font-semibold text-white mb-1">Contenido diario</h3>
-                        <p className="text-sm text-gray-400">Mantente a la vanguardia con las actualizaciones diarias de herramientas de IA</p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-start space-x-3">
-                      <div className="flex-shrink-0 w-6 h-6 rounded-full bg-gray-600 flex items-center justify-center mt-1">
-                        <Users className="w-3 h-3 text-gray-300" />
-                      </div>
-                      <div>
-                        <h3 className="text-base font-semibold text-white mb-1">Comunidad exclusiva</h3>
-                        <p className="text-sm text-gray-400">Establece contactos con profesionales que priorizan la IA</p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-start space-x-3">
-                      <div className="flex-shrink-0 w-6 h-6 rounded-full bg-gray-600 flex items-center justify-center mt-1">
-                        <CheckCircle className="w-3 h-3 text-gray-300" />
-                      </div>
-                      <div>
-                        <h3 className="text-base font-semibold text-white mb-1">Certificaciones de IA</h3>
-                        <p className="text-sm text-gray-400">Impulsa tu carrera con credenciales reconocidas</p>
-                      </div>
-                    </div>
-                  </div>
-                  </div>
-
-                  {/* Right Column: Quote + CTA (shorter column) */}
-                  <div className="space-y-6">
-                    {/* Quote Card */}
-                    <div className="bg-gray-800 rounded-xl p-6 text-center">
-                      <blockquote className="text-lg text-white mb-4">
-                        "La IA no reemplazará a los humanos, pero los humanos que 
-                        la usan reemplazarán a los humanos que no la usan"
-                      </blockquote>
-                      <cite className="text-sm text-gray-400 font-medium">— Fei-Fei Li</cite>
-                    </div>
-
-                    {/* CTA */}
-                    <div>
-                      <Button 
-                        size="lg" 
-                        className="bg-white text-black hover:bg-gray-100 text-base px-8 py-3 rounded-lg mb-3 font-medium w-full"
-                        onClick={() => window.location.href = '/universidad-nocode-ia'}
-                      >
-                        Comience una prueba gratuita →
-                      </Button>
-                      <p className="text-sm text-gray-400 text-center">
-                        <span className="text-green-400">✓</span> Más de 10,000 miembros • Prueba gratuita de 14 días
-                      </p>
-                    </div>
-                  </div>
-                </div>
+                ))}
+              </div>
+            </div>
+            {isAuthenticated && continueCourses.length === 0 && (
+              <div className="w-full text-center py-12 text-muted-foreground">
+                <p>No has visitado ningún curso aún. ¡Explora y comienza a aprender algo nuevo!</p>
               </div>
             )}
           </section>
@@ -305,11 +218,43 @@ export default function Dashboard() {
           <section>
             <h2 className="font-semibold mb-6 text-foreground text-[24px]">Todos los temas</h2>
             
+            {/* Main Topics Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
-              {categories.map((category: any) => (
+              {/* Show first 11 categories */}
+              {categories.slice(0, 11).map((category: any) => (
                 <TopicCard key={category.id} category={category} />
               ))}
+              
+              {/* Others dropdown button */}
+              {categories.length > 11 && (
+                <div 
+                  className="bg-card rounded-lg border border-border p-4 cursor-pointer hover:bg-muted transition-colors"
+                  onClick={() => setShowOtherTopics(!showOtherTopics)}
+                  data-testid="button-others-toggle"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center">
+                        <span className="text-lg">⚙️</span>
+                      </div>
+                      <span className="font-medium text-foreground">Otros</span>
+                    </div>
+                    <ChevronDown 
+                      className={`h-4 w-4 text-muted-foreground transition-transform ${showOtherTopics ? 'rotate-180' : ''}`} 
+                    />
+                  </div>
+                </div>
+              )}
             </div>
+
+            {/* Expanded Other Topics */}
+            {showOtherTopics && categories.length > 11 && (
+              <div className="mt-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+                {categories.slice(11).map((category: any) => (
+                  <TopicCard key={category.id} category={category} />
+                ))}
+              </div>
+            )}
           </section>
         </div>
         </main>
