@@ -23,13 +23,30 @@ export default function Dashboard() {
 
   // No authentication redirect - allow public access with locked content
 
+  // Fetch different data based on authentication status
   const { data: dashboardData, isLoading: dashboardLoading } = useQuery({
     queryKey: ["/api/dashboard"],
-    enabled: true, // Allow fetching for all users to show real content
-    refetchOnWindowFocus: true, // Refetch when user returns to tab
+    enabled: isAuthenticated,
+    refetchOnWindowFocus: true,
   });
 
-  if (isLoading || dashboardLoading) {
+  // For non-authenticated users, fetch public data
+  const { data: coursesData, isLoading: coursesLoading } = useQuery({
+    queryKey: ["/api/courses"],
+    enabled: !isAuthenticated,
+  });
+
+  const { data: guidesData, isLoading: guidesLoading } = useQuery({
+    queryKey: ["/api/guides"],
+    enabled: !isAuthenticated,
+  });
+
+  const { data: categoriesData, isLoading: categoriesLoading } = useQuery({
+    queryKey: ["/api/categories"],
+    enabled: !isAuthenticated,
+  });
+
+  if (isLoading || dashboardLoading || (!isAuthenticated && (coursesLoading || guidesLoading || categoriesLoading))) {
     return (
       <div className="min-h-screen bg-background flex">
         <div className="w-64 bg-card border-r border-border"></div>
@@ -40,13 +57,27 @@ export default function Dashboard() {
     );
   }
 
-  // Use real data for all users - authenticated users get progress, non-authenticated see locked content
-  const continueCourses = (dashboardData as any)?.continueCourses || [];
-  const recommendedCourses = (dashboardData as any)?.recommendedCourses || [];
-  const categories = (dashboardData as any)?.categories || [];
+  // Use different data sources based on authentication
+  const continueCourses = isAuthenticated ? ((dashboardData as any)?.continueCourses || []) : [];
+  
+  // For non-authenticated users, combine courses and guides for recommendations
+  const publicCourses = !isAuthenticated ? ((coursesData as any) || []).map((course: any) => ({ course, category: null, progress: null })) : [];
+  const publicGuides = !isAuthenticated ? ((guidesData as any) || []).map((guide: any) => ({ course: guide, category: null, progress: null })) : [];
+  
+  const recommendedCourses = isAuthenticated 
+    ? ((dashboardData as any)?.recommendedCourses || []) 
+    : [...publicCourses, ...publicGuides];
+    
+  const categories = isAuthenticated 
+    ? ((dashboardData as any)?.categories || []) 
+    : (categoriesData as any) || [];
 
   const cardsPerView = 4;
-  const maxCourses = Math.min(continueCourses.length, 8);
+  // Use the correct data source for carousel navigation
+  const currentCourseList = isAuthenticated && continueCourses.length > 0 
+    ? continueCourses 
+    : recommendedCourses.filter((item: any) => item.course?.type === 'course');
+  const maxCourses = Math.min(currentCourseList.length, 8);
   const maxSlidePosition = Math.max(0, maxCourses - cardsPerView);
   
   const nextSlide = () => {
@@ -111,10 +142,7 @@ export default function Dashboard() {
                   gap: '1.5rem'
                 }}
               >
-                {(isAuthenticated && continueCourses.length > 0 
-                  ? continueCourses.slice(0, 8) 
-                  : recommendedCourses.filter((item: any) => item.course?.type === 'course').slice(0, 8)
-                ).map((item: any, index: number) => (
+                {currentCourseList.slice(0, 8).map((item: any, index: number) => (
                   <div 
                     key={item.course?.id} 
                     className="flex-shrink-0"
@@ -227,9 +255,12 @@ export default function Dashboard() {
               
               {/* Others dropdown button */}
               {categories.length > 11 && (
-                <div 
-                  className="bg-card rounded-lg border border-border p-4 cursor-pointer hover:bg-muted transition-colors"
+                <button 
+                  type="button"
+                  className="bg-card rounded-lg border border-border p-4 cursor-pointer hover:bg-muted transition-colors focus:ring-2 focus:ring-primary focus:outline-none"
                   onClick={() => setShowOtherTopics(!showOtherTopics)}
+                  aria-expanded={showOtherTopics}
+                  aria-controls="other-topics-grid"
                   data-testid="button-others-toggle"
                 >
                   <div className="flex items-center justify-between">
@@ -243,13 +274,13 @@ export default function Dashboard() {
                       className={`h-4 w-4 text-muted-foreground transition-transform ${showOtherTopics ? 'rotate-180' : ''}`} 
                     />
                   </div>
-                </div>
+                </button>
               )}
             </div>
 
             {/* Expanded Other Topics */}
             {showOtherTopics && categories.length > 11 && (
-              <div className="mt-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+              <div id="other-topics-grid" className="mt-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
                 {categories.slice(11).map((category: any) => (
                   <TopicCard key={category.id} category={category} />
                 ))}
