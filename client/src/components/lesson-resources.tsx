@@ -32,8 +32,9 @@ export function LessonResources({ lessonId, className = "" }: LessonResourcesPro
   const handleDownload = (resource: LessonResource) => {
     // Check if it's a cloud storage file (internal path) or external URL
     if (resource.fileUrl.startsWith('/lesson-resources/')) {
-      // Internal cloud storage file - use our download endpoint
-      const downloadUrl = `/api/lesson-resources${resource.fileUrl}`;
+      // Internal cloud storage file - remove the leading slash to avoid double prefix
+      const cleanPath = resource.fileUrl.substring(1); // Remove leading '/'
+      const downloadUrl = `/api/${cleanPath}`;
       const link = document.createElement('a');
       link.href = downloadUrl;
       link.download = resource.fileName;
