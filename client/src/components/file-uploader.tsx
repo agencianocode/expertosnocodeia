@@ -92,11 +92,19 @@ export function FileUploader({
       setUploadProgress(100);
 
       // Extract file info
+      const fullUrl = uploadURL.split('?')[0]; // Remove query parameters
+      // Extract just the path part for internal downloads (lesson-resources/...)
+      const urlParts = fullUrl.split('/');
+      const lessonResourcesIndex = urlParts.findIndex((part: string) => part === 'lesson-resources');
+      const relativePath = lessonResourcesIndex !== -1 
+        ? '/' + urlParts.slice(lessonResourcesIndex).join('/')
+        : fullUrl; // Fallback to full URL if pattern not found
+      
       const fileInfo = {
         fileName: selectedFile.name,
         fileType: selectedFile.name.split('.').pop()?.toLowerCase() || 'unknown',
         fileSize: selectedFile.size,
-        fileUrl: uploadURL.split('?')[0], // Remove query parameters
+        fileUrl: relativePath,
       };
 
       toast({
