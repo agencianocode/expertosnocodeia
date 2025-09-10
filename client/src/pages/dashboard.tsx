@@ -138,60 +138,72 @@ export default function Dashboard() {
               </>
             ) : (
               // Show Premium Features section for non-authenticated users
-              <div className="bg-gradient-to-br from-gray-900 via-black to-gray-900 rounded-xl p-8">
+              <div className="bg-gradient-to-br from-gray-900 via-black to-gray-900 rounded-xl p-12">
                 {/* Main heading */}
-                <div className="text-center mb-12">
-                  <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
-                    Capacitar a mil millones de personas para el futuro
-                  </h2>
-                  <p className="text-lg text-gray-300 mb-6">
+                <div className="mb-12">
+                  <h2 className="text-4xl font-bold text-white mb-3 leading-tight">
+                    Capacitar a mil millones de personas para el futuro<br />
                     Un mundo donde la IA es lo primero
-                  </p>
-                  <p className="text-base text-gray-400 max-w-3xl mx-auto">
+                  </h2>
+                  <p className="text-gray-400 text-base max-w-2xl">
                     Obten formación en IA personalizada, adaptada a tu estilo de aprendizaje, objetivos profesionales y 
                     necesidades del sector. Únete a más de 10,000 profesionales que ya están transformando sus carreras.
                   </p>
                 </div>
 
-                {/* Features Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
-                  <div className="flex items-start space-x-4">
-                    <div className="flex-shrink-0 w-10 h-10 bg-blue-500/10 rounded-lg flex items-center justify-center">
-                      <Lightbulb className="w-5 h-5 text-blue-400" />
+                {/* Two column layout: Features Grid + Quote */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 mb-12">
+                  {/* Left column - Features Grid 2x2 */}
+                  <div className="grid grid-cols-2 gap-8">
+                    <div className="flex items-start space-x-3">
+                      <div className="flex-shrink-0 w-6 h-6 rounded-full bg-gray-600 flex items-center justify-center mt-1">
+                        <Lightbulb className="w-3 h-3 text-gray-300" />
+                      </div>
+                      <div>
+                        <h3 className="text-base font-semibold text-white mb-1">Más de 300 casos de uso de IA</h3>
+                        <p className="text-sm text-gray-400">Tutoriales paso a paso para aplicación inmediata</p>
+                      </div>
                     </div>
-                    <div>
-                      <h3 className="text-base font-semibold text-white mb-2">Más de 300 casos de uso de IA</h3>
-                      <p className="text-sm text-gray-400">Tutoriales paso a paso para aplicación inmediata</p>
+
+                    <div className="flex items-start space-x-3">
+                      <div className="flex-shrink-0 w-6 h-6 rounded-full bg-gray-600 flex items-center justify-center mt-1">
+                        <Zap className="w-3 h-3 text-gray-300" />
+                      </div>
+                      <div>
+                        <h3 className="text-base font-semibold text-white mb-1">Contenido diario</h3>
+                        <p className="text-sm text-gray-400">Mantente a la vanguardia con las actualizaciones diarias de herramientas de IA</p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-start space-x-3">
+                      <div className="flex-shrink-0 w-6 h-6 rounded-full bg-gray-600 flex items-center justify-center mt-1">
+                        <Users className="w-3 h-3 text-gray-300" />
+                      </div>
+                      <div>
+                        <h3 className="text-base font-semibold text-white mb-1">Comunidad exclusiva</h3>
+                        <p className="text-sm text-gray-400">Establece contactos con profesionales que priorizan la IA</p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-start space-x-3">
+                      <div className="flex-shrink-0 w-6 h-6 rounded-full bg-gray-600 flex items-center justify-center mt-1">
+                        <CheckCircle className="w-3 h-3 text-gray-300" />
+                      </div>
+                      <div>
+                        <h3 className="text-base font-semibold text-white mb-1">Certificaciones de IA</h3>
+                        <p className="text-sm text-gray-400">Impulsa tu carrera con credenciales reconocidas</p>
+                      </div>
                     </div>
                   </div>
 
-                  <div className="flex items-start space-x-4">
-                    <div className="flex-shrink-0 w-10 h-10 bg-green-500/10 rounded-lg flex items-center justify-center">
-                      <Zap className="w-5 h-5 text-green-400" />
-                    </div>
-                    <div>
-                      <h3 className="text-base font-semibold text-white mb-2">Contenido diario</h3>
-                      <p className="text-sm text-gray-400">Mantente a la vanguardia con las actualizaciones diarias de herramientas de IA</p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-start space-x-4">
-                    <div className="flex-shrink-0 w-10 h-10 bg-purple-500/10 rounded-lg flex items-center justify-center">
-                      <Users className="w-5 h-5 text-purple-400" />
-                    </div>
-                    <div>
-                      <h3 className="text-base font-semibold text-white mb-2">Comunidad exclusiva</h3>
-                      <p className="text-sm text-gray-400">Establece contactos con profesionales que priorizan la IA</p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-start space-x-4">
-                    <div className="flex-shrink-0 w-10 h-10 bg-orange-500/10 rounded-lg flex items-center justify-center">
-                      <CheckCircle className="w-5 h-5 text-orange-400" />
-                    </div>
-                    <div>
-                      <h3 className="text-base font-semibold text-white mb-2">Certificaciones de IA</h3>
-                      <p className="text-sm text-gray-400">Impulsa tu carrera con credenciales reconocidas</p>
+                  {/* Right column - Quote */}
+                  <div className="flex flex-col justify-center">
+                    <div className="border-l-4 border-blue-500 pl-6">
+                      <blockquote className="text-lg italic text-gray-300 mb-4">
+                        "La IA no reemplazará a los humanos, pero los humanos que 
+                        la usan reemplazarán a los humanos que no la usan"
+                      </blockquote>
+                      <cite className="text-sm text-gray-400 font-medium">— Fei-Fei Li</cite>
                     </div>
                   </div>
                 </div>
@@ -200,23 +212,14 @@ export default function Dashboard() {
                 <div className="text-center">
                   <Button 
                     size="lg" 
-                    className="bg-white text-black hover:bg-gray-100 text-base px-6 py-3 rounded-lg mb-3"
+                    className="bg-white text-black hover:bg-gray-100 text-base px-8 py-3 rounded-lg mb-3 font-medium"
                     onClick={() => window.location.href = '/universidad-nocode-ia'}
                   >
                     Comience una prueba gratuita →
                   </Button>
-                  <p className="text-xs text-gray-400 mb-6">
+                  <p className="text-sm text-gray-400">
                     <span className="text-green-400">✓</span> Más de 10,000 miembros • Prueba gratuita de 14 días
                   </p>
-
-                  {/* Quote */}
-                  <div className="border-l-4 border-blue-500 pl-4 max-w-2xl mx-auto">
-                    <blockquote className="text-sm italic text-gray-300 mb-2">
-                      "La IA no reemplazará a los humanos, pero los humanos que 
-                      la usan reemplazarán a los humanos que no la usan"
-                    </blockquote>
-                    <cite className="text-xs text-gray-400 font-medium">— Fei-Fei Li</cite>
-                  </div>
                 </div>
               </div>
             )}
