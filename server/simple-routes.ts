@@ -5,7 +5,7 @@ import { randomUUID } from "crypto";
 import { storage } from "./storage";
 import { isAdmin } from "./adminMiddleware";
 import { SupabaseStorageService } from "./supabaseStorage";
-import { ObjectStorageService, ObjectNotFoundError } from "./objectStorage";
+import { ObjectStorageService, ObjectNotFoundError, objectStorageClient, parseObjectPath } from "./objectStorage";
 import { supabaseAuth, optionalSupabaseAuth, supabaseAdminAuth, AuthenticatedRequest } from "./supabaseAuth";
 import { setupSupabaseAuthRoutes } from "./supabaseAuthRoutes";
 import { insertLessonResourceSchema } from "../shared/schema";
@@ -763,7 +763,7 @@ export function registerSimpleRoutes(app: Express): Server {
   });
 
   // Create lesson resource (save metadata to database) - Admin only
-  app.post("/api/lessons/:lessonId/resources", supabaseAdminAuth, async (req: AuthenticatedRequest, res: Response) => {
+  app.post("/api/lessons/:lessonId/resources", simpleAdminAuth, async (req: any, res: Response) => {
     try {
       const { lessonId } = req.params;
       
@@ -789,7 +789,7 @@ export function registerSimpleRoutes(app: Express): Server {
   });
 
   // Delete lesson resource - Admin only
-  app.delete("/api/resources/:id", supabaseAdminAuth, async (req: AuthenticatedRequest, res: Response) => {
+  app.delete("/api/resources/:id", simpleAdminAuth, async (req: any, res: Response) => {
     try {
       const { id } = req.params;
       
@@ -880,26 +880,23 @@ export function registerSimpleRoutes(app: Express): Server {
       
       console.log(`Requesting lesson resource from Object Storage: lesson-resources/${resourceId}/${fileName}`);
       
-      // Use Object Storage directly but with authentication
-      const filePath = `lesson-resources/${resourceId}/${fileName}`;
       const objectStorageService = new ObjectStorageService();
       
-      // Try to find the file in Object Storage
-      let file;
-      try {
-        file = await objectStorageService.searchPublicObject(filePath);
-      } catch (error) {
-        // File not found in public, try getting directly from private
-        try {
-          const objectEntityPath = `/objects/${filePath}`;
-          file = await objectStorageService.getObjectEntityFile(objectEntityPath);
-        } catch (entityError) {
-          // File not found anywhere
-          file = null;
-        }
-      }
+      // Lesson resources are stored in private storage, so use the private object dir path
+      const privateDir = objectStorageService.getPrivateObjectDir();
+      const fullObjectPath = `${privateDir}/lesson-resources/${resourceId}/${fileName}`;
       
-      if (!file) {
+      console.log(`Looking for file at path: ${fullObjectPath}`);
+      
+      // Parse the path and get the file from private storage
+      const { bucketName, objectName } = parseObjectPath(fullObjectPath);
+      const bucket = objectStorageClient.bucket(bucketName);
+      const file = bucket.file(objectName);
+      
+      // Check if file exists
+      const [exists] = await file.exists();
+      if (!exists) {
+        console.log(`File not found in private storage: ${fullObjectPath}`);
         return res.status(404).json({ error: "File not found" });
       }
       
