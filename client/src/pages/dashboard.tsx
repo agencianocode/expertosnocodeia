@@ -78,8 +78,7 @@ export default function Dashboard() {
           {/* Continue Learning Section OR Premium Features Section */}
           <section>
             {isAuthenticated ? (
-              // Show "Continue Learning" for authenticated users
-              (<>
+              <>
                 <div className="flex items-center justify-between mb-6">
                   <h2 className="font-semibold text-foreground text-[24px]">Continúa donde lo dejaste</h2>
                   <div className="flex space-x-2">
@@ -134,39 +133,27 @@ export default function Dashboard() {
                     <p>No has visitado ningún curso aún. ¡Explora y comienza a aprender algo nuevo!</p>
                   </div>
                 )}
-              </>)
+              </>
             ) : (
-              // Show Premium Features section for non-authenticated users
-              (<div className="bg-gradient-to-br from-gray-900 via-black to-gray-900 rounded-xl p-12">
-                {/* Row 1: Header + Quote Card */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-6">
-                  {/* Left: Header */}
-                  <div>
-                    <h2 className="font-bold text-white mb-2 text-[28px]">
-                      Capacitar a mil millones de personas para el futuro<br />
-                      Un mundo donde la IA es lo primero
-                    </h2>
-                    <p className="text-gray-400 text-base">
-                      Obten formación en IA personalizada, adaptada a tu estilo de aprendizaje, objetivos profesionales y 
-                      necesidades del sector. Únete a más de 10,000 profesionales que ya están transformando sus carreras.
-                    </p>
-                  </div>
-
-                  {/* Right: Quote Card */}
-                  <div className="flex items-start">
-                    <div className="bg-gray-800 rounded-xl p-6 text-center w-full">
-                      <blockquote className="text-lg text-white mb-4">
-                        "La IA no reemplazará a los humanos, pero los humanos que 
-                        la usan reemplazarán a los humanos que no la usan"
-                      </blockquote>
-                      <cite className="text-sm text-gray-400 font-medium">— Fei-Fei Li</cite>
-                    </div>
-                  </div>
-                </div>
-                {/* Row 2: Features + CTA */}
+              <div className="bg-gradient-to-br from-gray-900 via-black to-gray-900 rounded-xl p-12">
+                {/* Single row with two columns */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                  {/* Left: Features Grid 2x2 */}
-                  <div className="grid grid-cols-2 gap-4">
+                  {/* Left Column: Header + Features (longer column) */}
+                  <div>
+                    {/* Header */}
+                    <div className="mb-6">
+                      <h2 className="text-4xl font-bold text-white mb-2 leading-tight">
+                        Capacitar a mil millones de personas para el futuro<br />
+                        Un mundo donde la IA es lo primero
+                      </h2>
+                      <p className="text-gray-400 text-base">
+                        Obten formación en IA personalizada, adaptada a tu estilo de aprendizaje, objetivos profesionales y 
+                        necesidades del sector. Únete a más de 10,000 profesionales que ya están transformando sus carreras.
+                      </p>
+                    </div>
+
+                    {/* Features Grid 2x2 */}
+                    <div className="grid grid-cols-2 gap-4">
                     <div className="flex items-start space-x-3">
                       <div className="flex-shrink-0 w-6 h-6 rounded-full bg-gray-600 flex items-center justify-center mt-1">
                         <Lightbulb className="w-3 h-3 text-gray-300" />
@@ -207,10 +194,21 @@ export default function Dashboard() {
                       </div>
                     </div>
                   </div>
+                  </div>
 
-                  {/* Right: CTA */}
-                  <div className="flex items-start">
-                    <div className="w-full">
+                  {/* Right Column: Quote + CTA (shorter column) */}
+                  <div className="space-y-6">
+                    {/* Quote Card */}
+                    <div className="bg-gray-800 rounded-xl p-6 text-center">
+                      <blockquote className="text-lg text-white mb-4">
+                        "La IA no reemplazará a los humanos, pero los humanos que 
+                        la usan reemplazarán a los humanos que no la usan"
+                      </blockquote>
+                      <cite className="text-sm text-gray-400 font-medium">— Fei-Fei Li</cite>
+                    </div>
+
+                    {/* CTA */}
+                    <div>
                       <Button 
                         size="lg" 
                         className="bg-white text-black hover:bg-gray-100 text-base px-8 py-3 rounded-lg mb-3 font-medium w-full"
@@ -224,7 +222,7 @@ export default function Dashboard() {
                     </div>
                   </div>
                 </div>
-              </div>)
+              </div>
             )}
           </section>
 
