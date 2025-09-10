@@ -555,7 +555,7 @@ export function registerSimpleRoutes(app: Express): Server {
   });
 
   // Lesson resources upload URL endpoint
-  app.post("/api/lesson-resources/upload-url", supabaseAdminAuth, async (req: AuthenticatedRequest, res: Response) => {
+  app.post("/api/lesson-resources/upload-url", simpleAdminAuth, async (req: AuthenticatedRequest, res: Response) => {
     try {
       const { fileName } = req.body;
       if (!fileName) {
