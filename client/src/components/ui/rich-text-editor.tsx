@@ -113,10 +113,19 @@ export function RichTextEditor({ content, onChange, placeholder = "Escribe tu co
   const uploadImage = useCallback(async (file: File): Promise<string> => {
     setIsUploading(true);
     try {
+      // Get auth token
+      const token = localStorage.getItem('simpleAuthToken');
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+      };
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
       // Get upload URL from working endpoint
       const uploadResponse = await fetch('/api/upload-image-url', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
       });
       
       if (!uploadResponse.ok) {
@@ -155,10 +164,17 @@ export function RichTextEditor({ content, onChange, placeholder = "Escribe tu co
         throw new Error(`Error al subir imagen: ${fileUploadResponse.status}`);
       }
       
-      // Set ACL and get final URL
+      // Set ACL and get final URL  
+      const aclHeaders: Record<string, string> = {
+        'Content-Type': 'application/json',
+      };
+      if (token) {
+        aclHeaders['Authorization'] = `Bearer ${token}`;
+      }
+
       const aclResponse = await fetch('/api/lesson-images', {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: aclHeaders,
         body: JSON.stringify({ imageURL: uploadURL }),
       });
       
@@ -166,8 +182,8 @@ export function RichTextEditor({ content, onChange, placeholder = "Escribe tu co
         throw new Error('Error al configurar imagen');
       }
       
-      const { objectPath } = await aclResponse.json();
-      return objectPath;
+      const { url } = await aclResponse.json();
+      return url;
     } catch (error) {
       console.error('Error uploading image:', error);
       let errorMessage = "No se pudo subir la imagen";

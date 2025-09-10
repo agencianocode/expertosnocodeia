@@ -515,10 +515,41 @@ export function registerSimpleRoutes(app: Express): Server {
       
       stream.pipe(res);
     } catch (error) {
-      if (error.name === 'ObjectNotFoundError') {
+      if (error instanceof ObjectNotFoundError) {
         return res.status(404).json({ message: "Imagen no encontrada" });
       }
       console.error("Error serving object:", error);
+      res.status(500).json({ message: "Error interno del servidor" });
+    }
+  });
+
+  // Upload image URL endpoint for rich text editor
+  app.post("/api/upload-image-url", legacyAuth, async (req: Request, res: Response) => {
+    try {
+      const objectStorageService = new ObjectStorageService();
+      const uploadURL = await objectStorageService.getObjectEntityUploadURL();
+      res.json({ uploadURL });
+    } catch (error) {
+      console.error("Error getting upload URL:", error);
+      res.status(500).json({ message: "Error interno del servidor" });
+    }
+  });
+
+  // Finalize lesson image upload
+  app.put("/api/lesson-images", legacyAuth, async (req: Request, res: Response) => {
+    try {
+      const { imageURL } = req.body;
+      if (!imageURL) {
+        return res.status(400).json({ message: "imageURL es requerida" });
+      }
+      
+      const objectStorageService = new ObjectStorageService();
+      const objectPath = objectStorageService.normalizeObjectEntityPath(imageURL);
+      // Return a complete URL that can be directly accessed by the browser
+      const url = `/api/object-proxy${objectPath}`;
+      res.json({ url });
+    } catch (error) {
+      console.error("Error finalizing lesson image:", error);
       res.status(500).json({ message: "Error interno del servidor" });
     }
   });
