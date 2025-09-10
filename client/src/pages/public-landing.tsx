@@ -194,6 +194,91 @@ export default function PublicLanding() {
         </div>
       </section>
 
+      {/* Premium Features Section */}
+      <section className="py-20 px-4 bg-gradient-to-br from-gray-900 via-black to-gray-900">
+        <div className="container mx-auto max-w-6xl">
+          {/* Main heading */}
+          <div className="text-center mb-16">
+            <h2 className="text-4xl md:text-5xl font-bold text-white mb-4">
+              Capacitar a mil millones de personas para el futuro
+            </h2>
+            <p className="text-xl text-gray-300 mb-8">
+              Un mundo donde la IA es lo primero
+            </p>
+            <p className="text-lg text-gray-400 max-w-4xl mx-auto">
+              Obten formación en IA personalizada, adaptada a tu estilo de aprendizaje, objetivos profesionales y 
+              necesidades del sector. Únete a más de 10,000 profesionales que ya están transformando sus carreras.
+            </p>
+          </div>
+
+          {/* Features Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-16">
+            <div className="flex items-start space-x-4">
+              <div className="flex-shrink-0 w-12 h-12 bg-blue-500/10 rounded-lg flex items-center justify-center">
+                <Lightbulb className="w-6 h-6 text-blue-400" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-white mb-2">Más de 300 casos de uso de IA</h3>
+                <p className="text-gray-400">Tutoriales paso a paso para aplicación inmediata</p>
+              </div>
+            </div>
+
+            <div className="flex items-start space-x-4">
+              <div className="flex-shrink-0 w-12 h-12 bg-green-500/10 rounded-lg flex items-center justify-center">
+                <Zap className="w-6 h-6 text-green-400" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-white mb-2">Contenido diario</h3>
+                <p className="text-gray-400">Mantente a la vanguardia con las actualizaciones diarias de herramientas de IA</p>
+              </div>
+            </div>
+
+            <div className="flex items-start space-x-4">
+              <div className="flex-shrink-0 w-12 h-12 bg-purple-500/10 rounded-lg flex items-center justify-center">
+                <Users className="w-6 h-6 text-purple-400" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-white mb-2">Comunidad exclusiva</h3>
+                <p className="text-gray-400">Establece contactos con profesionales que priorizan la IA</p>
+              </div>
+            </div>
+
+            <div className="flex items-start space-x-4">
+              <div className="flex-shrink-0 w-12 h-12 bg-orange-500/10 rounded-lg flex items-center justify-center">
+                <CheckCircle className="w-6 h-6 text-orange-400" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-white mb-2">Certificaciones de IA</h3>
+                <p className="text-gray-400">Impulsa tu carrera con credenciales reconocidas</p>
+              </div>
+            </div>
+          </div>
+
+          {/* CTA Section */}
+          <div className="text-center">
+            <Button 
+              size="lg" 
+              className="bg-white text-black hover:bg-gray-100 text-lg px-8 py-4 rounded-lg mb-4"
+              onClick={() => window.location.href = '/universidad-nocode-ia'}
+            >
+              Comience una prueba gratuita →
+            </Button>
+            <p className="text-sm text-gray-400 mb-8">
+              <span className="text-green-400">✓</span> Más de 10,000 miembros • Prueba gratuita de 14 días
+            </p>
+
+            {/* Quote */}
+            <div className="border-l-4 border-blue-500 pl-6 max-w-4xl mx-auto">
+              <blockquote className="text-lg italic text-gray-300 mb-4">
+                "La IA no reemplazará a los humanos, pero los humanos que 
+                la usan reemplazarán a los humanos que no la usan"
+              </blockquote>
+              <cite className="text-sm text-gray-400 font-medium">— Fei-Fei Li</cite>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Latest Articles */}
       <section id="articulos" className="py-16 px-4 bg-white text-black">
         <div className="container mx-auto max-w-6xl">
