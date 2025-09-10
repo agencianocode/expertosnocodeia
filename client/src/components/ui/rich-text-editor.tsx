@@ -8,6 +8,7 @@ import FontSize from '@tiptap/extension-font-size';
 import Color from '@tiptap/extension-color';
 import { TextStyle } from '@tiptap/extension-text-style';
 import UnderlineExtension from '@tiptap/extension-underline';
+import Strike from '@tiptap/extension-strike';
 import ListItem from '@tiptap/extension-list-item';
 import BulletList from '@tiptap/extension-bullet-list';
 import OrderedList from '@tiptap/extension-ordered-list';
@@ -251,6 +252,7 @@ export function RichTextEditor({ content, onChange, placeholder = "Escribe tu co
       Color,
       TextStyle,
       UnderlineExtension,
+      Strike,
       Youtube.configure({
         width: 640,
         height: 480,
