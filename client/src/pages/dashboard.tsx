@@ -142,7 +142,7 @@ export default function Dashboard() {
                   <div>
                     {/* Header */}
                     <div className="mb-6">
-                      <h2 className="text-4xl font-bold text-white mb-2 leading-tight">
+                      <h2 className="font-bold text-white mb-2 text-[28px]">
                         Capacitar a mil millones de personas para el futuro<br />
                         Un mundo donde la IA es lo primero
                       </h2>
