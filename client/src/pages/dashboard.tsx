@@ -139,10 +139,10 @@ export default function Dashboard() {
               // Show Premium Features section for non-authenticated users
               (<div className="bg-gradient-to-br from-gray-900 via-black to-gray-900 rounded-xl p-12">
                 {/* Row 1: Header + Quote Card */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 mb-12">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-6">
                   {/* Left: Header */}
                   <div>
-                    <h2 className="font-bold text-white mb-3 text-[28px]">
+                    <h2 className="text-4xl font-bold text-white mb-2 leading-tight">
                       Capacitar a mil millones de personas para el futuro<br />
                       Un mundo donde la IA es lo primero
                     </h2>
@@ -164,9 +164,9 @@ export default function Dashboard() {
                   </div>
                 </div>
                 {/* Row 2: Features + CTA */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                   {/* Left: Features Grid 2x2 */}
-                  <div className="grid grid-cols-2 gap-8">
+                  <div className="grid grid-cols-2 gap-4">
                     <div className="flex items-start space-x-3">
                       <div className="flex-shrink-0 w-6 h-6 rounded-full bg-gray-600 flex items-center justify-center mt-1">
                         <Lightbulb className="w-3 h-3 text-gray-300" />
