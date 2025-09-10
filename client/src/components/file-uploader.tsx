@@ -74,7 +74,7 @@ export function FileUploader({
         throw new Error('Failed to get upload URL');
       }
 
-      const { uploadURL } = await response.json();
+      const { uploadURL, resourceId, fileName: cleanFileName, resourcePath } = await response.json();
 
       // Upload file to cloud storage
       const uploadResponse = await fetch(uploadURL, {
@@ -91,20 +91,12 @@ export function FileUploader({
 
       setUploadProgress(100);
 
-      // Extract file info
-      const fullUrl = uploadURL.split('?')[0]; // Remove query parameters
-      // Extract just the path part for internal downloads (lesson-resources/...)
-      const urlParts = fullUrl.split('/');
-      const lessonResourcesIndex = urlParts.findIndex((part: string) => part === 'lesson-resources');
-      const relativePath = lessonResourcesIndex !== -1 
-        ? '/' + urlParts.slice(lessonResourcesIndex).join('/')
-        : fullUrl; // Fallback to full URL if pattern not found
-      
+      // Use the resource path provided by the server
       const fileInfo = {
-        fileName: selectedFile.name,
+        fileName: cleanFileName,
         fileType: selectedFile.name.split('.').pop()?.toLowerCase() || 'unknown',
         fileSize: selectedFile.size,
-        fileUrl: relativePath,
+        fileUrl: resourcePath, // This will be /lesson-resources/resourceId/fileName
       };
 
       toast({

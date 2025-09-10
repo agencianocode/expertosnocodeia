@@ -555,11 +555,33 @@ export function registerSimpleRoutes(app: Express): Server {
   });
 
   // Lesson resources upload URL endpoint
-  app.post("/api/lesson-resources/upload-url", legacyAuth, async (req: Request, res: Response) => {
+  app.post("/api/lesson-resources/upload-url", supabaseAdminAuth, async (req: AuthenticatedRequest, res: Response) => {
     try {
+      const { fileName } = req.body;
+      if (!fileName) {
+        return res.status(400).json({ message: "Nombre de archivo requerido" });
+      }
+
+      // Generate a unique resource ID for this upload
+      const resourceId = randomUUID();
+      
+      // Clean filename for URL safety
+      const cleanFileName = fileName.replace(/[^a-zA-Z0-9.-_]/g, '_');
+      
+      // Create specific path for lesson resources
+      const lessonResourcePath = `lesson-resources/${resourceId}/${cleanFileName}`;
+      
       const objectStorageService = new ObjectStorageService();
-      const uploadURL = await objectStorageService.getObjectEntityUploadURL();
-      res.json({ uploadURL });
+      const uploadURL = await objectStorageService.getLessonResourceUploadURL(lessonResourcePath);
+      
+      // Return both the upload URL and the resource info for the client
+      res.json({ 
+        uploadURL,
+        resourceId,
+        fileName: cleanFileName,
+        // This is the path the client should use to store in DB
+        resourcePath: `/lesson-resources/${resourceId}/${cleanFileName}`
+      });
     } catch (error) {
       console.error("Error getting lesson resource upload URL:", error);
       res.status(500).json({ message: "Error interno del servidor" });
@@ -741,7 +763,7 @@ export function registerSimpleRoutes(app: Express): Server {
   });
 
   // Create lesson resource (save metadata to database) - Admin only
-  app.post("/api/lessons/:lessonId/resources", simpleAdminAuth, isAdmin, async (req: Request, res: Response) => {
+  app.post("/api/lessons/:lessonId/resources", supabaseAdminAuth, async (req: AuthenticatedRequest, res: Response) => {
     try {
       const { lessonId } = req.params;
       
@@ -767,7 +789,7 @@ export function registerSimpleRoutes(app: Express): Server {
   });
 
   // Delete lesson resource - Admin only
-  app.delete("/api/resources/:id", simpleAdminAuth, isAdmin, async (req: Request, res: Response) => {
+  app.delete("/api/resources/:id", supabaseAdminAuth, async (req: AuthenticatedRequest, res: Response) => {
     try {
       const { id } = req.params;
       
