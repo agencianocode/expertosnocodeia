@@ -7,6 +7,12 @@ import { useState } from "react";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface CourseCardProps {
   course: any;
@@ -150,12 +156,6 @@ export default function CourseCard({ course, category, progress, variant = "defa
       >
         {/* Course Image */}
         <div className="w-20 h-14 bg-muted rounded-lg overflow-hidden flex-shrink-0 relative">
-          {/* Padlock overlay for non-authenticated users */}
-          {!isAuthenticated && (
-            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-10">
-              <Lock className="w-6 h-6 text-white" />
-            </div>
-          )}
           {course.coverImageUrl ? (
             <img 
               src={course.coverImageUrl} 
@@ -207,27 +207,57 @@ export default function CourseCard({ course, category, progress, variant = "defa
             {course.difficulty === 'intermediate' && '🟡'} 
             {course.difficulty === 'advanced' && '🔴'}
           </div>
-          <Button
-            size="sm"
-            variant="ghost"
-            className="w-8 h-8 p-0 hover:bg-muted/50"
-            onClick={(e) => {
-              e.stopPropagation();
-              if (!isAuthenticated) {
-                // Redirect to login only for bookmark action, not course navigation
-                window.location.href = "/api/login";
-                return;
-              }
-              saveCourseMutation.mutate();
-            }}
-            disabled={saveCourseMutation.isPending || !isAuthenticated}
-          >
-            {isSaved ? (
-              <BookmarkCheck className="w-4 h-4 text-foreground" />
-            ) : (
-              <Bookmark className="w-4 h-4 text-foreground" />
-            )}
-          </Button>
+          {isAuthenticated ? (
+            <Button
+              size="sm"
+              variant="ghost"
+              className="w-8 h-8 p-0 hover:bg-muted/50"
+              onClick={(e) => {
+                e.stopPropagation();
+                saveCourseMutation.mutate();
+              }}
+              disabled={saveCourseMutation.isPending}
+            >
+              {isSaved ? (
+                <BookmarkCheck className="w-4 h-4 text-foreground" />
+              ) : (
+                <Bookmark className="w-4 h-4 text-foreground" />
+              )}
+            </Button>
+          ) : (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="w-8 h-8 p-0 hover:bg-muted/50"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setLocation('/planes');
+                    }}
+                  >
+                    <Lock className="w-4 h-4 text-foreground" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" className="bg-card border border-border p-3 rounded-lg shadow-lg max-w-48">
+                  <div className="text-sm font-medium text-foreground mb-2">
+                    Exclusivo solo para miembros suscritos
+                  </div>
+                  <Button 
+                    size="sm" 
+                    className="w-full"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setLocation('/planes');
+                    }}
+                  >
+                    Inscribirse
+                  </Button>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
         </div>
       </div>
     );
@@ -305,19 +335,11 @@ export default function CourseCard({ course, category, progress, variant = "defa
           <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-black/10 to-black/15" />
         )}
         
-        {/* Padlock overlay for non-authenticated users */}
-        {!isAuthenticated && (
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-20">
-            <div className="bg-white/20 rounded-full p-4">
-              <Lock className="w-8 h-8 text-white" />
-            </div>
-          </div>
-        )}
         
-        {/* Save/Bookmark button - moved to top right with gray background */}
-        {isAuthenticated && (
-          <div className="absolute top-3 right-3 z-10">
-            <div className="bg-muted/90 backdrop-blur-sm rounded-lg border border-border p-1">
+        {/* Save/Bookmark button OR Lock button - moved to top right with gray background */}
+        <div className="absolute top-3 right-3 z-10">
+          <div className="bg-muted/90 backdrop-blur-sm rounded-lg border border-border p-1">
+            {isAuthenticated ? (
               <Button
                 size="sm"
                 variant="ghost"
@@ -328,15 +350,48 @@ export default function CourseCard({ course, category, progress, variant = "defa
                 }}
                 disabled={saveCourseMutation.isPending}
               >
-              {isSaved ? (
-                <BookmarkCheck className="w-4 h-4 text-foreground" />
-              ) : (
-                <Bookmark className="w-4 h-4 text-foreground" />
-              )}
+                {isSaved ? (
+                  <BookmarkCheck className="w-4 h-4 text-foreground" />
+                ) : (
+                  <Bookmark className="w-4 h-4 text-foreground" />
+                )}
               </Button>
-            </div>
+            ) : (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="w-8 h-8 p-0 hover:bg-muted/50"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setLocation('/planes');
+                      }}
+                    >
+                      <Lock className="w-4 h-4 text-foreground" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom" className="bg-card border border-border p-3 rounded-lg shadow-lg max-w-48">
+                    <div className="text-sm font-medium text-foreground mb-2">
+                      Exclusivo solo para miembros suscritos
+                    </div>
+                    <Button 
+                      size="sm" 
+                      className="w-full"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setLocation('/planes');
+                      }}
+                    >
+                      Inscribirse
+                    </Button>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
           </div>
-        )}
+        </div>
         
         {/* Course icon - only show if no custom image */}
         {!course.coverImageUrl && (
