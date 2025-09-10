@@ -766,6 +766,19 @@ export function registerSimpleRoutes(app: Express): Server {
     }
   });
 
+  // Delete lesson resource - Admin only
+  app.delete("/api/resources/:id", simpleAdminAuth, isAdmin, async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+      
+      await storage.deleteLessonResource(id);
+      res.json({ message: "Recurso eliminado correctamente" });
+    } catch (error) {
+      console.error("Error deleting lesson resource:", error);
+      res.status(500).json({ message: "Error interno del servidor" });
+    }
+  });
+
   // Helper function to determine file type
   function getFileType(fileName: string): string {
     const ext = fileName.toLowerCase().split('.').pop();
@@ -837,22 +850,40 @@ export function registerSimpleRoutes(app: Express): Server {
     }
   });
 
-  // Get lesson resource files from Object Storage (restored original behavior)
-  app.get("/api/lesson-resources/:resourceId/*", async (req: Request, res: Response) => {
+  // Get lesson resource files from Object Storage - requires authentication
+  app.get("/api/lesson-resources/:resourceId/*", legacyAuth, async (req: Request, res: Response) => {
     try {
       const resourceId = req.params.resourceId;
       const fileName = req.params[0]; // Gets the * part
       
       console.log(`Requesting lesson resource from Object Storage: lesson-resources/${resourceId}/${fileName}`);
       
-      // Use Object Storage directly (restored original behavior)
+      // Use Object Storage directly but with authentication
       const filePath = `lesson-resources/${resourceId}/${fileName}`;
       const objectStorageService = new ObjectStorageService();
-      const file = await objectStorageService.searchPublicObject(filePath);
+      
+      // Try to find the file in Object Storage
+      let file;
+      try {
+        file = await objectStorageService.searchPublicObject(filePath);
+      } catch (error) {
+        // File not found in public, try getting directly from private
+        try {
+          const objectEntityPath = `/objects/${filePath}`;
+          file = await objectStorageService.getObjectEntityFile(objectEntityPath);
+        } catch (entityError) {
+          // File not found anywhere
+          file = null;
+        }
+      }
       
       if (!file) {
         return res.status(404).json({ error: "File not found" });
       }
+      
+      // Set appropriate headers for download
+      res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+      res.setHeader('Content-Type', 'application/octet-stream');
       
       // Stream the file directly from Object Storage
       await objectStorageService.downloadObject(file, res);
