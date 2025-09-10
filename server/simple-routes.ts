@@ -553,6 +553,18 @@ export function registerSimpleRoutes(app: Express): Server {
     }
   });
 
+  // Lesson resources upload URL endpoint
+  app.post("/api/lesson-resources/upload-url", legacyAuth, async (req: Request, res: Response) => {
+    try {
+      const objectStorageService = new ObjectStorageService();
+      const uploadURL = await objectStorageService.getObjectEntityUploadURL();
+      res.json({ uploadURL });
+    } catch (error) {
+      console.error("Error getting lesson resource upload URL:", error);
+      res.status(500).json({ message: "Error interno del servidor" });
+    }
+  });
+
   // Admin courses endpoint for content management
   app.get("/api/admin/courses", simpleAdminAuth, isAdmin, async (req: Request, res: Response) => {
     try {
