@@ -493,6 +493,17 @@ body {
   color: hsl(262, 83%, 80%);
 }
 
+/* Specific styles for link class used in editor */
+.ProseMirror .prose-link {
+  color: hsl(262, 83%, 70%);
+  text-decoration: underline !important;
+}
+
+.ProseMirror .prose-link:hover {
+  color: hsl(262, 83%, 80%);
+  text-decoration: underline !important;
+}
+
 .ProseMirror table {
   width: 100%;
   border-collapse: collapse;
