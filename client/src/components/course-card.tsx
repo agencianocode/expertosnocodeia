@@ -161,6 +161,9 @@ export default function CourseCard({ course, category, progress, variant = "defa
               src={course.coverImageUrl} 
               alt={course.title}
               className="w-full h-full object-cover"
+              style={{ 
+                filter: 'brightness(1.2) contrast(1.1)'
+              } as React.CSSProperties}
               onError={(e) => {
                 e.currentTarget.style.display = 'none';
               }}
@@ -282,7 +285,8 @@ export default function CourseCard({ course, category, progress, variant = "defa
               className="w-full h-full object-cover"
               style={{ 
                 imageRendering: 'crisp-edges',
-                objectPosition: '50% 25%'
+                objectPosition: '50% 25%',
+                filter: 'brightness(1.2) contrast(1.1)'
               } as React.CSSProperties}
               onError={(e) => {
                 console.error('Image load error - URL:', course.coverImageUrl);
@@ -296,9 +300,9 @@ export default function CourseCard({ course, category, progress, variant = "defa
           </div>
         )}
         
-        {/* Gradient overlay for better text visibility on images */}
+        {/* Gradient overlay for better text visibility on images - reduced opacity for brighter images */}
         {course.coverImageUrl && (
-          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-black/30" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-black/10 to-black/15" />
         )}
         
         {/* Padlock overlay for non-authenticated users */}
