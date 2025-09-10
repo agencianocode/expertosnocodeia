@@ -214,6 +214,8 @@ export function RichTextEditor({ content, onChange, placeholder = "Escribe tu co
         orderedList: false,
         listItem: false,
         link: false, // Disable default link to avoid conflicts
+        strike: false, // Disable default strike to use custom
+        underline: false, // Disable default underline to use custom extension
       }),
       BulletList.configure({
         HTMLAttributes: {

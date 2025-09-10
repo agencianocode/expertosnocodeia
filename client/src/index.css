@@ -146,6 +146,17 @@ body {
   color: hsl(0, 0%, 85%) !important;
 }
 
+.markdown-content a {
+  color: hsl(262, 83%, 70%);
+  text-decoration: underline;
+  font-weight: 500;
+}
+
+.markdown-content a:hover {
+  color: hsl(262, 83%, 80%);
+  text-decoration: underline;
+}
+
 /* Markdown content styles - Light theme */
 .light .markdown-content {
   color: hsl(0, 0%, 25%);
@@ -175,6 +186,17 @@ body {
 
 .light .markdown-content li {
   color: hsl(0, 0%, 25%) !important;
+}
+
+.light .markdown-content a {
+  color: hsl(262, 83%, 58%);
+  text-decoration: underline;
+  font-weight: 500;
+}
+
+.light .markdown-content a:hover {
+  color: hsl(262, 83%, 48%);
+  text-decoration: underline;
 }
 
 .light .markdown-content strong {
