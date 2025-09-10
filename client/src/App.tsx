@@ -106,6 +106,11 @@ function Router() {
           <Route path="/curso/:id" component={Course} />
           <Route path="/taller/:id" component={Workshop} />
           
+          {/* Admin redirect - redirect to login if not authenticated */}
+          <Route path="/admin">
+            {() => <Redirect to="/login" />}
+          </Route>
+          
           {/* Authentication and support pages */}
           <Route path="/login" component={SimpleLogin} />
           <Route path="/planes" component={Planes} />
