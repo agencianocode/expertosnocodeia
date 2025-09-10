@@ -11,7 +11,7 @@ import CourseCard from "@/components/course-card";
 import TopicCard from "@/components/topic-card";
 import { SubscriptionStatus } from "@/components/subscription/SubscriptionBadge";
 import { Button } from "@/components/ui/button";
-import { Bell, ChevronLeft, ChevronRight, Plus, Shield } from "lucide-react";
+import { Bell, ChevronLeft, ChevronRight, Plus, Shield, Lightbulb, Zap, Users, CheckCircle } from "lucide-react";
 import { Link } from "wouter";
 
 export default function Dashboard() {
@@ -75,61 +75,149 @@ export default function Dashboard() {
         {/* Main Content */}
         <main className="flex-1 overflow-auto pb-20 lg:pb-0 lg:ml-[250px]">
         <div className="p-6 space-y-8">
-          {/* Continue Learning Section */}
+          {/* Continue Learning Section OR Premium Features Section */}
           <section>
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="font-semibold text-foreground text-[24px]">Continúa donde lo dejaste</h2>
-              <div className="flex space-x-2">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="w-8 h-8 rounded-full bg-card border border-border hover:bg-muted disabled:opacity-50"
-                  onClick={prevSlide}
-                  disabled={currentSlide <= 0}
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="w-8 h-8 rounded-full bg-card border border-border hover:bg-muted disabled:opacity-50"
-                  onClick={nextSlide}
-                  disabled={currentSlide >= maxSlidePosition}
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-
-            <div className="overflow-hidden">
-              <div 
-                className="flex transition-transform duration-500 ease-in-out"
-                style={{ 
-                  transform: `translateX(-${currentSlide * (100/4)}%)`,
-                  gap: '1.5rem'
-                }}
-              >
-                {continueCourses.slice(0, 8).map((item: any, index: number) => (
-                  <div 
-                    key={item.course?.id} 
-                    className="flex-shrink-0"
-                    style={{ width: 'calc(25% - 1.125rem)' }}
-                  >
-                    <CourseCard
-                      course={item.course}
-                      category={item.category}
-                      progress={item.progress}
-                      lastLessonId={item.lastLessonId} // Pass the last lesson ID for intelligent navigation
-                      showContinueText={true} // Enable "continue where you left off" navigation
-                      isAuthenticated={isAuthenticated}
-                    />
+            {isAuthenticated ? (
+              // Show "Continue Learning" for authenticated users
+              <>
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="font-semibold text-foreground text-[24px]">Continúa donde lo dejaste</h2>
+                  <div className="flex space-x-2">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="w-8 h-8 rounded-full bg-card border border-border hover:bg-muted disabled:opacity-50"
+                      onClick={prevSlide}
+                      disabled={currentSlide <= 0}
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="w-8 h-8 rounded-full bg-card border border-border hover:bg-muted disabled:opacity-50"
+                      onClick={nextSlide}
+                      disabled={currentSlide >= maxSlidePosition}
+                    >
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
                   </div>
-                ))}
-              </div>
-            </div>
-            {continueCourses.length === 0 && (
-              <div className="w-full text-center py-12 text-muted-foreground">
-                <p>No has visitado ningún curso aún. ¡Explora y comienza a aprender algo nuevo!</p>
+                </div>
+
+                <div className="overflow-hidden">
+                  <div 
+                    className="flex transition-transform duration-500 ease-in-out"
+                    style={{ 
+                      transform: `translateX(-${currentSlide * (100/4)}%)`,
+                      gap: '1.5rem'
+                    }}
+                  >
+                    {continueCourses.slice(0, 8).map((item: any, index: number) => (
+                      <div 
+                        key={item.course?.id} 
+                        className="flex-shrink-0"
+                        style={{ width: 'calc(25% - 1.125rem)' }}
+                      >
+                        <CourseCard
+                          course={item.course}
+                          category={item.category}
+                          progress={item.progress}
+                          lastLessonId={item.lastLessonId} // Pass the last lesson ID for intelligent navigation
+                          showContinueText={true} // Enable "continue where you left off" navigation
+                          isAuthenticated={isAuthenticated}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                {continueCourses.length === 0 && (
+                  <div className="w-full text-center py-12 text-muted-foreground">
+                    <p>No has visitado ningún curso aún. ¡Explora y comienza a aprender algo nuevo!</p>
+                  </div>
+                )}
+              </>
+            ) : (
+              // Show Premium Features section for non-authenticated users
+              <div className="bg-gradient-to-br from-gray-900 via-black to-gray-900 rounded-xl p-8">
+                {/* Main heading */}
+                <div className="text-center mb-12">
+                  <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
+                    Capacitar a mil millones de personas para el futuro
+                  </h2>
+                  <p className="text-lg text-gray-300 mb-6">
+                    Un mundo donde la IA es lo primero
+                  </p>
+                  <p className="text-base text-gray-400 max-w-3xl mx-auto">
+                    Obten formación en IA personalizada, adaptada a tu estilo de aprendizaje, objetivos profesionales y 
+                    necesidades del sector. Únete a más de 10,000 profesionales que ya están transformando sus carreras.
+                  </p>
+                </div>
+
+                {/* Features Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
+                  <div className="flex items-start space-x-4">
+                    <div className="flex-shrink-0 w-10 h-10 bg-blue-500/10 rounded-lg flex items-center justify-center">
+                      <Lightbulb className="w-5 h-5 text-blue-400" />
+                    </div>
+                    <div>
+                      <h3 className="text-base font-semibold text-white mb-2">Más de 300 casos de uso de IA</h3>
+                      <p className="text-sm text-gray-400">Tutoriales paso a paso para aplicación inmediata</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start space-x-4">
+                    <div className="flex-shrink-0 w-10 h-10 bg-green-500/10 rounded-lg flex items-center justify-center">
+                      <Zap className="w-5 h-5 text-green-400" />
+                    </div>
+                    <div>
+                      <h3 className="text-base font-semibold text-white mb-2">Contenido diario</h3>
+                      <p className="text-sm text-gray-400">Mantente a la vanguardia con las actualizaciones diarias de herramientas de IA</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start space-x-4">
+                    <div className="flex-shrink-0 w-10 h-10 bg-purple-500/10 rounded-lg flex items-center justify-center">
+                      <Users className="w-5 h-5 text-purple-400" />
+                    </div>
+                    <div>
+                      <h3 className="text-base font-semibold text-white mb-2">Comunidad exclusiva</h3>
+                      <p className="text-sm text-gray-400">Establece contactos con profesionales que priorizan la IA</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start space-x-4">
+                    <div className="flex-shrink-0 w-10 h-10 bg-orange-500/10 rounded-lg flex items-center justify-center">
+                      <CheckCircle className="w-5 h-5 text-orange-400" />
+                    </div>
+                    <div>
+                      <h3 className="text-base font-semibold text-white mb-2">Certificaciones de IA</h3>
+                      <p className="text-sm text-gray-400">Impulsa tu carrera con credenciales reconocidas</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* CTA Section */}
+                <div className="text-center">
+                  <Button 
+                    size="lg" 
+                    className="bg-white text-black hover:bg-gray-100 text-base px-6 py-3 rounded-lg mb-3"
+                    onClick={() => window.location.href = '/universidad-nocode-ia'}
+                  >
+                    Comience una prueba gratuita →
+                  </Button>
+                  <p className="text-xs text-gray-400 mb-6">
+                    <span className="text-green-400">✓</span> Más de 10,000 miembros • Prueba gratuita de 14 días
+                  </p>
+
+                  {/* Quote */}
+                  <div className="border-l-4 border-blue-500 pl-4 max-w-2xl mx-auto">
+                    <blockquote className="text-sm italic text-gray-300 mb-2">
+                      "La IA no reemplazará a los humanos, pero los humanos que 
+                      la usan reemplazarán a los humanos que no la usan"
+                    </blockquote>
+                    <cite className="text-xs text-gray-400 font-medium">— Fei-Fei Li</cite>
+                  </div>
+                </div>
               </div>
             )}
           </section>
