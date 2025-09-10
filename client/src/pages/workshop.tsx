@@ -302,7 +302,16 @@ export default function Workshop() {
                               className="text-gray-400 hover:text-white p-2"
                               onClick={() => {
                                 if (resource.fileUrl) {
-                                  window.open(resource.fileUrl, '_blank');
+                                  // Check if it's a cloud storage file (internal path) or external URL
+                                  if (resource.fileUrl.startsWith('/lesson-resources/')) {
+                                    // Internal cloud storage file - construct the correct API URL
+                                    const cleanPath = resource.fileUrl.substring(1); // Remove leading '/'
+                                    const downloadUrl = `/api/${cleanPath}`;
+                                    window.open(downloadUrl, '_blank');
+                                  } else {
+                                    // External URL - open in new tab
+                                    window.open(resource.fileUrl, '_blank');
+                                  }
                                 }
                               }}
                             >
