@@ -55,7 +55,6 @@ export default function Courses() {
     <div className="min-h-screen bg-background text-foreground">
       {/* Mobile Header */}
       <MobileHeader />
-      
       <div className="flex">
         {/* Sidebar */}
         <Sidebar />
@@ -71,7 +70,7 @@ export default function Courses() {
           </div>
 
           {/* Desktop Header */}
-          <div className="hidden lg:flex px-16 py-6 items-center justify-between">
+          <div className="hidden lg:flex px-16 py-6 items-center justify-between pt-[35px] pb-[35px] pl-[70px] pr-[70px]">
             <h1 className="text-2xl font-bold text-foreground">Cursos</h1>
             <div className="flex items-center space-x-4">
               <Select value={selectedCategory} onValueChange={setSelectedCategory}>
@@ -129,7 +128,6 @@ export default function Courses() {
           </div>
         </main>
       </div>
-      
       {/* Mobile Navigation */}
       <MobileNav />
     </div>
