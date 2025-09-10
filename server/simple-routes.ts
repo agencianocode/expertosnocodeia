@@ -8,6 +8,7 @@ import { SupabaseStorageService } from "./supabaseStorage";
 import { ObjectStorageService, ObjectNotFoundError } from "./objectStorage";
 import { supabaseAuth, optionalSupabaseAuth, supabaseAdminAuth, AuthenticatedRequest } from "./supabaseAuth";
 import { setupSupabaseAuthRoutes } from "./supabaseAuthRoutes";
+import { insertLessonResourceSchema } from "../shared/schema";
 
 // Legacy auth fallback (will be removed after migration)
 const legacyAuth = async (req: any, res: Response, next: any) => {
@@ -727,25 +728,40 @@ export function registerSimpleRoutes(app: Express): Server {
     }
   });
 
-  // Get lesson resources
+  // Get lesson resources from database
   app.get("/api/lessons/:lessonId/resources", async (req: Request, res: Response) => {
     try {
       const { lessonId } = req.params;
-      const objectStorageService = new ObjectStorageService();
-      
-      // List files with lesson-resources/lessonId/ prefix
-      const files = await objectStorageService.listFiles(`lesson-resources/${lessonId}/`);
-      
-      // Convert to resource objects with URLs
-      const resources = files.map(fileName => ({
-        name: fileName,
-        url: `/api/lesson-resources/${lessonId}/${fileName}`,
-        type: getFileType(fileName)
-      }));
-      
+      const resources = await storage.getLessonResources(lessonId);
       res.json(resources);
     } catch (error) {
       console.error("Error fetching lesson resources:", error);
+      res.status(500).json({ message: "Error interno del servidor" });
+    }
+  });
+
+  // Create lesson resource (save metadata to database) - Admin only
+  app.post("/api/lessons/:lessonId/resources", simpleAdminAuth, isAdmin, async (req: Request, res: Response) => {
+    try {
+      const { lessonId } = req.params;
+      
+      // Validate request body with Zod schema
+      const validationResult = insertLessonResourceSchema.omit({ id: true, createdAt: true, updatedAt: true }).safeParse({
+        ...req.body,
+        lessonId
+      });
+
+      if (!validationResult.success) {
+        return res.status(400).json({ 
+          message: "Datos inválidos",
+          errors: validationResult.error.errors
+        });
+      }
+
+      const resource = await storage.createLessonResource(validationResult.data);
+      res.status(201).json(resource);
+    } catch (error) {
+      console.error("Error creating lesson resource:", error);
       res.status(500).json({ message: "Error interno del servidor" });
     }
   });
