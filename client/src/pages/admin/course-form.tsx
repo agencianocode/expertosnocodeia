@@ -1,10 +1,10 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useRoute, Link } from "wouter";
+import { useRoute, Link, useLocation } from "wouter";
 import Sidebar from "@/components/layout/sidebar";
 import MobileNav from "@/components/layout/mobile-nav";
 import MobileHeader from "@/components/layout/mobile-header";
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
@@ -55,6 +55,7 @@ export default function CourseForm() {
   const { isAdmin, isLoading: adminLoading } = useAdmin();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [, navigate] = useLocation();
 
   const { data: categories } = useQuery({
     queryKey: ["/api/categories"],
@@ -112,11 +113,32 @@ export default function CourseForm() {
       return response.json();
     },
     onSuccess: (data) => {
+      const resultType = data.type || currentType;
+      const resultLabel = contentLabels[resultType as keyof typeof contentLabels];
+      
       toast({
         title: "¡Éxito!",
-        description: isEditing ? "Curso actualizado correctamente" : "Curso creado correctamente",
+        description: isEditing ? `${resultLabel} actualizado correctamente` : `${resultLabel} creado correctamente`,
       });
+      
+      // Invalidate relevant queries
       queryClient.invalidateQueries({ queryKey: ["/api/admin/courses"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/courses"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/guides"] });
+      
+      // Navigate to appropriate view if published
+      if (data.isPublished) {
+        if (resultType === 'guide') {
+          navigate('/guides');
+        } else if (resultType === 'workshop') {
+          navigate('/workshops');
+        } else {
+          navigate('/courses');
+        }
+      } else {
+        // Navigate to admin content list
+        navigate('/admin/content');
+      }
     },
     onError: (error: Error) => {
       toast({
@@ -150,6 +172,15 @@ export default function CourseForm() {
   const onSubmit = (data: CourseFormData) => {
     saveMutation.mutate(data);
   };
+
+  // Get current type for dynamic UI text
+  const currentType = form.watch('type') || course?.type || 'course';
+  const contentLabels = {
+    course: 'Curso',
+    guide: 'Guía', 
+    workshop: 'Taller'
+  };
+  const contentLabel = contentLabels[currentType as keyof typeof contentLabels];
 
   const typeOptions = [
     { value: "course", label: "Curso" },
@@ -186,10 +217,10 @@ export default function CourseForm() {
         </Link>
         <div className="flex-1">
           <h1 className="text-3xl font-bold text-white">
-            {isEditing ? "Editar Curso" : "Nuevo Curso"}
+            {isEditing ? `Editar ${contentLabel}` : `Nuevo ${contentLabel}`}
           </h1>
           <p className="text-gray-400 mt-1">
-            {isEditing ? "Modifica los datos del curso" : "Crea un nuevo curso para la plataforma"}
+            {isEditing ? `Modifica los datos del ${contentLabel.toLowerCase()}` : `Crea un nuevo ${contentLabel.toLowerCase()} para la plataforma`}
           </p>
         </div>
       </div>
@@ -201,7 +232,7 @@ export default function CourseForm() {
               <CardHeader>
                 <CardTitle className="text-white">Información Básica</CardTitle>
                 <CardDescription className="text-gray-400">
-                  Datos principales del curso
+                  Datos principales del {contentLabel.toLowerCase()}
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -212,6 +243,7 @@ export default function CourseForm() {
                     {...form.register("title")}
                     className="bg-slate-800 border-slate-600 text-white"
                     placeholder="Ej: IA para consultoría empresarial"
+                    data-testid="input-titulo"
                   />
                   {form.formState.errors.title && (
                     <p className="text-red-400 text-sm mt-1">{form.formState.errors.title.message}</p>
@@ -326,24 +358,34 @@ export default function CourseForm() {
               <CardHeader>
                 <CardTitle className="text-white">Configuración</CardTitle>
                 <CardDescription className="text-gray-400">
-                  Opciones del curso
+                  Opciones del {contentLabel.toLowerCase()}
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
                   <Label htmlFor="categoryId" className="text-white">Categoría *</Label>
-                  <Select onValueChange={(value) => form.setValue("categoryId", value)}>
-                    <SelectTrigger className="bg-slate-800 border-slate-600 text-white">
-                      <SelectValue placeholder="Selecciona una categoría" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {(categories as any)?.map((category: any) => (
-                        <SelectItem key={category.id} value={category.id}>
-                          {category.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Controller
+                    name="categoryId"
+                    control={form.control}
+                    render={({ field }) => (
+                      <Select
+                        value={field.value}
+                        onValueChange={field.onChange}
+                        data-testid="select-categoria"
+                      >
+                        <SelectTrigger className="bg-slate-800 border-slate-600 text-white">
+                          <SelectValue placeholder="Selecciona una categoría" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {(categories as any)?.map((category: any) => (
+                            <SelectItem key={category.id} value={category.id}>
+                              {category.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
+                  />
                   {form.formState.errors.categoryId && (
                     <p className="text-red-400 text-sm mt-1">{form.formState.errors.categoryId.message}</p>
                   )}
@@ -351,34 +393,54 @@ export default function CourseForm() {
 
                 <div>
                   <Label htmlFor="type" className="text-white">Tipo *</Label>
-                  <Select onValueChange={(value) => form.setValue("type", value as any)}>
-                    <SelectTrigger className="bg-slate-800 border-slate-600 text-white">
-                      <SelectValue placeholder="Selecciona el tipo" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {typeOptions.map((option) => (
-                        <SelectItem key={option.value} value={option.value}>
-                          {option.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Controller
+                    name="type"
+                    control={form.control}
+                    render={({ field }) => (
+                      <Select
+                        value={field.value}
+                        onValueChange={field.onChange}
+                        data-testid="select-tipo"
+                      >
+                        <SelectTrigger className="bg-slate-800 border-slate-600 text-white">
+                          <SelectValue placeholder="Selecciona el tipo" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {typeOptions.map((option) => (
+                            <SelectItem key={option.value} value={option.value}>
+                              {option.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
+                  />
                 </div>
 
                 <div>
                   <Label htmlFor="difficulty" className="text-white">Dificultad</Label>
-                  <Select onValueChange={(value) => form.setValue("difficulty", value as any)}>
-                    <SelectTrigger className="bg-slate-800 border-slate-600 text-white">
-                      <SelectValue placeholder="Selecciona la dificultad" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {difficultyOptions.map((option) => (
-                        <SelectItem key={option.value} value={option.value}>
-                          {option.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Controller
+                    name="difficulty"
+                    control={form.control}
+                    render={({ field }) => (
+                      <Select
+                        value={field.value || ""}
+                        onValueChange={field.onChange}
+                        data-testid="select-dificultad"
+                      >
+                        <SelectTrigger className="bg-slate-800 border-slate-600 text-white">
+                          <SelectValue placeholder="Selecciona la dificultad" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {difficultyOptions.map((option) => (
+                            <SelectItem key={option.value} value={option.value}>
+                              {option.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
+                  />
                 </div>
 
                 <div>
@@ -389,6 +451,7 @@ export default function CourseForm() {
                     min="1"
                     {...form.register("estimatedHours", { valueAsNumber: true })}
                     className="bg-slate-800 border-slate-600 text-white"
+                    data-testid="input-horas"
                   />
                   {form.formState.errors.estimatedHours && (
                     <p className="text-red-400 text-sm mt-1">{form.formState.errors.estimatedHours.message}</p>
@@ -402,6 +465,7 @@ export default function CourseForm() {
                       id="isPublished"
                       checked={form.watch("isPublished")}
                       onCheckedChange={(checked) => form.setValue("isPublished", checked)}
+                      data-testid="switch-publicado"
                     />
                   </div>
 
@@ -411,6 +475,7 @@ export default function CourseForm() {
                       id="hasCertificate"
                       checked={form.watch("hasCertificate")}
                       onCheckedChange={(checked) => form.setValue("hasCertificate", checked)}
+                      data-testid="switch-certificado"
                     />
                   </div>
                 </div>
@@ -424,6 +489,7 @@ export default function CourseForm() {
             type="submit"
             disabled={saveMutation.isPending}
             className="bg-purple-600 hover:bg-purple-700"
+            data-testid={`button-guardar-${currentType}`}
           >
             {saveMutation.isPending ? (
               <>
@@ -433,7 +499,7 @@ export default function CourseForm() {
             ) : (
               <>
                 <Save className="h-4 w-4 mr-2" />
-                {isEditing ? "Actualizar" : "Crear"} Curso
+{isEditing ? "Actualizar" : "Crear"} {contentLabel}
               </>
             )}
           </Button>
@@ -442,7 +508,7 @@ export default function CourseForm() {
             <Link href={`/course/${course.id}`}>
               <Button variant="outline">
                 <Eye className="h-4 w-4 mr-2" />
-                Ver Curso
+                Ver {contentLabel}
               </Button>
             </Link>
           )}
