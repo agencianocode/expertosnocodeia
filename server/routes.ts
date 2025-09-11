@@ -33,6 +33,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get all guides
+  app.get("/api/guides", async (req, res) => {
+    try {
+      const guides = await storage.getAllGuides();
+      res.json(guides);
+    } catch (error) {
+      console.error("Error fetching guides:", error);
+      res.status(500).json({ message: "Failed to fetch guides" });
+    }
+  });
+
+  // Get all workshops
+  app.get("/api/workshops", async (req, res) => {
+    try {
+      const workshops = await storage.getAllWorkshops();
+      res.json(workshops);
+    } catch (error) {
+      console.error("Error fetching workshops:", error);
+      res.status(500).json({ message: "Failed to fetch workshops" });
+    }
+  });
+
   // Get all categories
   app.get("/api/categories", async (req, res) => {
     try {

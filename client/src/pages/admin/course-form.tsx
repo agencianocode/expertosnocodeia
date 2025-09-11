@@ -417,7 +417,7 @@ export default function CourseForm() {
                                   id={`category-${category.id}`}
                                   checked={isChecked}
                                   onCheckedChange={(checked) => {
-                                    const currentValues = field.value || [];
+                                    const currentValues = Array.isArray(field.value) ? field.value : [];
                                     if (checked) {
                                       field.onChange([...currentValues, category.id]);
                                       // Also set primary category for compatibility

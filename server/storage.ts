@@ -85,6 +85,8 @@ export interface IStorage {
   
   // Course operations
   getAllCourses(): Promise<Course[]>;
+  getAllGuides(): Promise<Course[]>;
+  getAllWorkshops(): Promise<Course[]>;
   getCourseById(id: string): Promise<Course | undefined>;
   getCoursesByCategory(categoryId: string): Promise<Course[]>;
   getCoursesWithProgress(userId: string): Promise<any[]>;
@@ -311,7 +313,15 @@ export class DatabaseStorage implements IStorage {
 
   // Course operations
   async getAllCourses(): Promise<Course[]> {
-    return await db.select().from(courses).where(eq(courses.isPublished, true));
+    return await db.select().from(courses).where(and(eq(courses.isPublished, true), eq(courses.type, 'course')));
+  }
+
+  async getAllGuides(): Promise<Course[]> {
+    return await db.select().from(courses).where(and(eq(courses.isPublished, true), eq(courses.type, 'guide')));
+  }
+
+  async getAllWorkshops(): Promise<Course[]> {
+    return await db.select().from(courses).where(and(eq(courses.isPublished, true), eq(courses.type, 'workshop')));
   }
 
   async getCourseById(id: string): Promise<Course | undefined> {
