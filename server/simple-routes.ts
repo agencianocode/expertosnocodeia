@@ -614,7 +614,15 @@ export function registerSimpleRoutes(app: Express): Server {
       if (!course) {
         return res.status(404).json({ message: "Curso no encontrado" });
       }
-      res.json(course);
+      
+      // Include categories for guides
+      let courseWithCategories: any = course;
+      if (course.type === 'guide') {
+        const categories = await storage.getCourseCategories(courseId);
+        courseWithCategories = { ...course, categories };
+      }
+      
+      res.json(courseWithCategories);
     } catch (error) {
       console.error("Error fetching course:", error);
       res.status(500).json({ message: "Error interno del servidor" });
@@ -636,12 +644,19 @@ export function registerSimpleRoutes(app: Express): Server {
   // Create new course
   app.post("/api/admin/courses", simpleAdminAuth, isAdmin, async (req: Request, res: Response) => {
     try {
+      const { categoryIds, ...rest } = req.body;
       const courseData = {
-        ...req.body,
+        ...rest,
         id: randomUUID(),
       };
       
       const course = await storage.createCourse(courseData);
+      
+      // Handle multiple categories based on type and categoryIds presence
+      if (categoryIds && Array.isArray(categoryIds)) {
+        await storage.updateCourseCategories(course.id, categoryIds);
+      }
+      
       res.json(course);
     } catch (error) {
       console.error("Error creating course:", error);
@@ -653,11 +668,20 @@ export function registerSimpleRoutes(app: Express): Server {
   app.put("/api/admin/courses/:courseId", simpleAdminAuth, isAdmin, async (req: Request, res: Response) => {
     try {
       const { courseId } = req.params;
-      const courseData = req.body;
+      const { categoryIds, ...rest } = req.body;
+      const courseData = rest;
       
       const course = await storage.updateCourse(courseId, courseData);
       if (!course) {
         return res.status(404).json({ message: "Curso no encontrado" });
+      }
+      
+      // Handle multiple categories - always process if categoryIds provided
+      if (categoryIds && Array.isArray(categoryIds)) {
+        await storage.updateCourseCategories(courseId, categoryIds);
+      } else if (courseData.type && courseData.type !== 'guide') {
+        // If type is explicitly non-guide, clear multiple categories
+        await storage.updateCourseCategories(courseId, []);
       }
       
       res.json(course);

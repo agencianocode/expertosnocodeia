@@ -208,6 +208,10 @@ export interface IStorage {
     recentResponses: UserOnboardingResponse[];
   }>;
   getAllOnboardingResponses(limit?: number, offset?: number): Promise<UserOnboardingResponse[]>;
+  
+  // Multiple categories support for guides
+  getCourseCategories(courseId: string): Promise<string[]>;
+  updateCourseCategories(courseId: string, categoryIds: string[]): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -956,8 +960,26 @@ export class DatabaseStorage implements IStorage {
   }
   
   // Course Categories operations
-  async getCourseCategories(courseId: string): Promise<any[]> {
-    return await db.select().from(courseCategories).where(eq(courseCategories.courseId, courseId));
+  async getCourseCategories(courseId: string): Promise<string[]> {
+    const result = await db.select({ categoryId: courseCategories.categoryId })
+      .from(courseCategories)
+      .where(eq(courseCategories.courseId, courseId));
+    return result.map(r => r.categoryId).filter((id): id is string => id !== null);
+  }
+  
+  async updateCourseCategories(courseId: string, categoryIds: string[]): Promise<void> {
+    // Delete existing categories
+    await db.delete(courseCategories).where(eq(courseCategories.courseId, courseId));
+    
+    // Insert new categories
+    if (categoryIds.length > 0) {
+      await db.insert(courseCategories).values(
+        categoryIds.map(categoryId => ({
+          courseId: courseId,
+          categoryId: categoryId
+        }))
+      );
+    }
   }
 
   // Course Template operations

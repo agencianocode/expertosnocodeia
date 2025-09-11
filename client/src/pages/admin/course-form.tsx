@@ -20,6 +20,7 @@ import {
   SelectValue 
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { Checkbox } from "@/components/ui/checkbox";
 import { ObjectUploader } from "@/components/ObjectUploader";
 import { ArrowLeft, Save, Eye } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -29,7 +30,8 @@ import { apiRequest } from "@/lib/queryClient";
 const courseSchema = z.object({
   title: z.string().min(1, "El título es requerido"),
   description: z.string().min(1, "La descripción es requerida"),
-  categoryId: z.string().min(1, "La categoría es requerida"),
+  categoryId: z.string().optional(), // Made optional - will be set conditionally
+  selectedCategoryIds: z.array(z.string()).optional(), // For guides with multiple categories
   type: z.enum(["course", "guide", "workshop"]),
   difficulty: z.enum(["beginner", "intermediate", "advanced"]).optional(),
   estimatedHours: z.number().min(1, "Las horas estimadas son requeridas"),
@@ -37,6 +39,27 @@ const courseSchema = z.object({
   hasCertificate: z.boolean().default(false),
   coverImageUrl: z.string().optional(),
   prerequisites: z.string().optional(),
+}).superRefine((data, ctx) => {
+  // Conditional validation based on type
+  if (data.type === 'guide') {
+    // For guides, require selectedCategoryIds
+    if (!data.selectedCategoryIds || data.selectedCategoryIds.length === 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Las guías deben tener al menos una categoría seleccionada",
+        path: ["selectedCategoryIds"]
+      });
+    }
+  } else {
+    // For courses/workshops, require categoryId
+    if (!data.categoryId || data.categoryId.trim() === '') {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "La categoría es requerida",
+        path: ["categoryId"]
+      });
+    }
+  }
 });
 
 type CourseFormData = z.infer<typeof courseSchema>;
@@ -77,6 +100,7 @@ export default function CourseForm() {
       title: "",
       description: "",
       categoryId: "",
+      selectedCategoryIds: [],
       type: "course",
       difficulty: undefined,
       estimatedHours: 1,
@@ -93,6 +117,7 @@ export default function CourseForm() {
         title: course.title,
         description: course.description,
         categoryId: course.categoryId,
+        selectedCategoryIds: course.categories || [course.categoryId], // Use multiple categories if available, fallback to single
         type: course.type,
         difficulty: course.difficulty,
         estimatedHours: course.estimatedHours || 1,
@@ -170,7 +195,20 @@ export default function CourseForm() {
   }
 
   const onSubmit = (data: CourseFormData) => {
-    saveMutation.mutate(data);
+    // Prepare data for submission
+    const submitData = { ...data };
+    
+    // For guides, include categoryIds and ensure categoryId is set
+    if (data.type === 'guide' && data.selectedCategoryIds && data.selectedCategoryIds.length > 0) {
+      submitData.categoryIds = data.selectedCategoryIds;
+      submitData.categoryId = data.selectedCategoryIds[0]; // Set primary category
+    } else if (data.type !== 'guide') {
+      // For non-guides, clear categoryIds and keep only categoryId
+      delete submitData.selectedCategoryIds;
+      submitData.categoryIds = []; // Signal to clear multiple categories
+    }
+    
+    saveMutation.mutate(submitData);
   };
 
   // Get current type for dynamic UI text
@@ -362,34 +400,84 @@ export default function CourseForm() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div>
-                  <Label htmlFor="categoryId" className="text-white">Categoría *</Label>
-                  <Controller
-                    name="categoryId"
-                    control={form.control}
-                    render={({ field }) => (
-                      <Select
-                        value={field.value}
-                        onValueChange={field.onChange}
-                        data-testid="select-categoria"
-                      >
-                        <SelectTrigger className="bg-slate-800 border-slate-600 text-white">
-                          <SelectValue placeholder="Selecciona una categoría" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {(categories as any)?.map((category: any) => (
-                            <SelectItem key={category.id} value={category.id}>
-                              {category.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                {/* Category Selection - Multiple for guides, single for others */}
+                {currentType === 'guide' ? (
+                  <div>
+                    <Label className="text-white">Categorías * (Selecciona múltiples para guías)</Label>
+                    <Controller
+                      name="selectedCategoryIds"
+                      control={form.control}
+                      render={({ field }) => (
+                        <div className="space-y-3 mt-2 max-h-48 overflow-y-auto bg-slate-800/50 rounded-lg p-3 border border-slate-600" data-testid="select-categorias-multiple">
+                          {(categories as any)?.map((category: any) => {
+                            const isChecked = field.value?.includes(category.id) || false;
+                            return (
+                              <div key={category.id} className="flex items-center space-x-2">
+                                <Checkbox
+                                  id={`category-${category.id}`}
+                                  checked={isChecked}
+                                  onCheckedChange={(checked) => {
+                                    const currentValues = field.value || [];
+                                    if (checked) {
+                                      field.onChange([...currentValues, category.id]);
+                                      // Also set primary category for compatibility
+                                      if (currentValues.length === 0) {
+                                        form.setValue('categoryId', category.id);
+                                      }
+                                    } else {
+                                      const newValues = currentValues.filter((id: string) => id !== category.id);
+                                      field.onChange(newValues);
+                                      // Update primary category if this was the primary one
+                                      if (form.getValues('categoryId') === category.id && newValues.length > 0) {
+                                        form.setValue('categoryId', newValues[0]);
+                                      }
+                                    }
+                                  }}
+                                  data-testid={`checkbox-categoria-${category.id}`}
+                                />
+                                <Label htmlFor={`category-${category.id}`} className="text-white text-sm cursor-pointer">
+                                  {category.name}
+                                </Label>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    />
+                    {form.formState.errors.selectedCategoryIds && (
+                      <p className="text-red-400 text-sm mt-1">{form.formState.errors.selectedCategoryIds.message}</p>
                     )}
-                  />
-                  {form.formState.errors.categoryId && (
-                    <p className="text-red-400 text-sm mt-1">{form.formState.errors.categoryId.message}</p>
-                  )}
-                </div>
+                  </div>
+                ) : (
+                  <div>
+                    <Label htmlFor="categoryId" className="text-white">Categoría *</Label>
+                    <Controller
+                      name="categoryId"
+                      control={form.control}
+                      render={({ field }) => (
+                        <Select
+                          value={field.value}
+                          onValueChange={field.onChange}
+                          data-testid="select-categoria"
+                        >
+                          <SelectTrigger className="bg-slate-800 border-slate-600 text-white">
+                            <SelectValue placeholder="Selecciona una categoría" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {(categories as any)?.map((category: any) => (
+                              <SelectItem key={category.id} value={category.id}>
+                                {category.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      )}
+                    />
+                    {form.formState.errors.categoryId && (
+                      <p className="text-red-400 text-sm mt-1">{form.formState.errors.categoryId.message}</p>
+                    )}
+                  </div>
+                )}
 
                 <div>
                   <Label htmlFor="type" className="text-white">Tipo *</Label>
