@@ -15,6 +15,7 @@ import Guides from "@/pages/guides";
 import Workshops from "@/pages/workshops";
 import Workshop from "@/pages/workshop";
 import Course from "@/pages/course";
+import Guide from "@/pages/guide";
 import CategoryPage from "@/pages/category";
 import AdminDashboard from "@/pages/admin/dashboard";
 import ContentManagement from "@/pages/admin/content";
@@ -104,7 +105,7 @@ function Router() {
           {/* Course pages - show real content but locked for non-authenticated users */}
           <Route path="/course/:id" component={Course} />
           <Route path="/curso/:id" component={Course} />
-          <Route path="/guia/:id" component={Course} />
+          <Route path="/guia/:id" component={Guide} />
           <Route path="/taller/:id" component={Workshop} />
           
           {/* Admin redirect - redirect to login if not authenticated */}
@@ -143,7 +144,7 @@ function Router() {
           <Route path="/course/:courseId/lesson/:lessonId" component={Lesson} />
           <Route path="/course/:id" component={Course} />
           <Route path="/curso/:id" component={Course} />
-          <Route path="/guia/:id" component={Course} />
+          <Route path="/guia/:id" component={Guide} />
           <Route path="/admin" component={AdminDashboard} />
           <Route path="/admin/dashboard" component={AdminDashboard} />
           <Route path="/admin/onboarding" component={OnboardingAnalytics} />
