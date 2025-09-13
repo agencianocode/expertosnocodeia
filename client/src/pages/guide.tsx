@@ -6,19 +6,15 @@ import CourseSidebar from "@/components/layout/course-sidebar";
 import MobileNav from "@/components/layout/mobile-nav";
 import MobileHeader from "@/components/layout/mobile-header";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Separator } from "@/components/ui/separator";
-import { Clock, User, BookOpen, Calendar, ArrowLeft, FileText, Bookmark, BookmarkCheck } from "lucide-react";
+import { ArrowLeft, BookOpen, FileText, User, Calendar, Clock, Download } from "lucide-react";
 import { useSimpleAuth } from "@/hooks/use-simple-auth";
 import { cn } from "@/lib/utils";
-
-interface ContentBlock {
-  type: 'heading' | 'subheading' | 'step' | 'paragraph' | 'image';
-  content: string;
-  key: string;
-}
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import rehypeHighlight from 'rehype-highlight';
+import rehypeRaw from 'rehype-raw';
 
 export default function Guide() {
   const params = useParams();
@@ -62,7 +58,10 @@ export default function Guide() {
       <div className="min-h-screen bg-background flex">
         <CourseSidebar />
         <div className="flex-1 flex items-center justify-center lg:ml-[250px] lg:mr-[560px]">
-          <div className="text-foreground">Error cargando la guía</div>
+          <div className="text-foreground text-center">
+            <h2 className="text-2xl font-bold mb-4">Error cargando la guía</h2>
+            <p className="text-muted-foreground">Hubo un problema al cargar la guía. Intenta de nuevo más tarde.</p>
+          </div>
         </div>
       </div>
     );
@@ -73,7 +72,10 @@ export default function Guide() {
       <div className="min-h-screen bg-background flex">
         <CourseSidebar />
         <div className="flex-1 flex items-center justify-center lg:ml-[250px] lg:mr-[560px]">
-          <div className="text-foreground">Guía no encontrada</div>
+          <div className="text-foreground text-center">
+            <h2 className="text-2xl font-bold mb-4">Guía no encontrada</h2>
+            <p className="text-muted-foreground">La guía que buscas no existe o ha sido eliminada.</p>
+          </div>
         </div>
       </div>
     );
@@ -91,54 +93,6 @@ export default function Guide() {
       day: 'numeric'
     });
   };
-
-  // Dividir el contenido en párrafos y procesar imágenes
-  const processContent = (content: string): ContentBlock[] => {
-    if (!content) return [];
-    
-    // Dividir por párrafos y filtrar vacíos
-    const paragraphs = content.split('\n\n').filter(p => p.trim());
-    
-    return paragraphs.map((paragraph, index) => {
-      const trimmed = paragraph.trim();
-      
-      // Detectar títulos (líneas que terminan con : o son más cortas y en mayúsculas)
-      if (trimmed.length < 100 && (trimmed.endsWith(':') || trimmed === trimmed.toUpperCase())) {
-        return {
-          type: 'heading',
-          content: trimmed,
-          key: `heading-${index}`
-        };
-      }
-      
-      // Detectar imágenes (líneas que contienen .png, .jpg, etc.)
-      if (trimmed.includes('.png') || trimmed.includes('.jpg') || trimmed.includes('.jpeg') || trimmed.includes('Captura de pantalla')) {
-        return {
-          type: 'image',
-          content: trimmed,
-          key: `image-${index}`
-        };
-      }
-      
-      // Detectar pasos numerados (PASO 1:, PASO 2:, etc.)
-      if (/^PASO \d+:/i.test(trimmed)) {
-        return {
-          type: 'step',
-          content: trimmed,
-          key: `step-${index}`
-        };
-      }
-      
-      // Contenido normal
-      return {
-        type: 'paragraph',
-        content: trimmed,
-        key: `paragraph-${index}`
-      };
-    });
-  };
-
-  const contentBlocks = processContent(guide?.description || '');
 
   // Obtener categorías de la guía
   const guideCategoryIds = guide?.categories || [];
@@ -170,146 +124,94 @@ export default function Guide() {
               </Button>
             </div>
 
-            {/* Contenido principal */}
-            <div className="px-4 lg:px-6 py-6 lg:py-8">
-              {/* Hero Section */}
-              <div className="mb-8">
-                {/* Imagen de portada si existe */}
-                {guide?.coverImageUrl && (
-                  <div className="mb-6 rounded-xl overflow-hidden">
+            <div className="px-4 lg:px-8 pb-24 lg:pb-8 lg:pl-[45px] lg:pr-[15px]">
+              {/* Guide Content */}
+              <section>
+                {/* Media Area - Image/Video based on guide content */}
+                {guide?.coverImageUrl ? (
+                  <div className="relative rounded-lg overflow-hidden mb-6 lg:mb-8" style={{ paddingBottom: '56.25%' }}>
                     <img 
                       src={guide.coverImageUrl} 
                       alt={guide.title || 'Guía'}
-                      className="w-full h-48 lg:h-64 object-cover"
+                      className="absolute top-0 left-0 w-full h-full object-cover"
                     />
+                  </div>
+                ) : (
+                  // Placeholder media area if no cover image
+                  <div className="relative rounded-lg overflow-hidden mb-6 lg:mb-8 bg-muted/30" style={{ paddingBottom: '56.25%' }}>
+                    <div className="absolute top-0 left-0 w-full h-full flex items-center justify-center">
+                      <div className="text-center">
+                        <FileText className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+                        <p className="text-sm text-muted-foreground">Guía de texto</p>
+                      </div>
+                    </div>
                   </div>
                 )}
 
-                {/* Título y metadatos */}
-                <div className="space-y-4">
-                  <div>
-                    <Badge variant="secondary" className="mb-3">
-                      <FileText className="h-3 w-3 mr-1" />
-                      Guía
-                    </Badge>
-                    <h1 className="text-2xl lg:text-3xl font-bold text-foreground leading-tight">
-                      {guide?.title || 'Guía sin título'}
-                    </h1>
+                <div className="space-y-6 lg:space-y-8">
+                  <div className="bg-card rounded-xl p-4 lg:p-8 font-satoshi font-normal text-[14px] lg:text-[16px] leading-[22px] lg:leading-[26px] text-card-foreground">
+                    {/* Guide Title inside content card */}
+                    <div className="mb-4 lg:mb-6">
+                      <h2 className="text-lg lg:text-xl font-bold text-foreground mb-3 flex items-center font-satoshi" style={{fontSize: '24px'}}>
+                        <div className="w-8 h-8 rounded-lg mr-3 flex items-center justify-center flex-shrink-0" style={{backgroundColor: '#363636'}}>
+                          <FileText className="h-4 w-4 text-foreground" />
+                        </div>
+                        {guide?.title || 'Guía sin título'}
+                      </h2>
+                      {guide?.shortDescription && (
+                        <p className="text-muted-foreground text-sm lg:text-base">
+                          {guide.shortDescription}
+                        </p>
+                      )}
+                    </div>
+                    
+                    {/* Guide Content */}
+                    <div className="prose prose-sm lg:prose-base max-w-none">
+                      {guide?.description ? (
+                        <div className="markdown-content">
+                          <ReactMarkdown 
+                            remarkPlugins={[remarkGfm]}
+                            rehypePlugins={[rehypeHighlight, rehypeRaw]}
+                          >
+                            {guide.description}
+                          </ReactMarkdown>
+                        </div>
+                      ) : (
+                        <p className="text-muted-foreground italic">Contenido de la guía no disponible.</p>
+                      )}
+                    </div>
                   </div>
 
-                  {/* Metadatos del instructor */}
-                  {instructor?.name && (
-                    <div className="flex items-center gap-3">
-                      <Avatar className="h-10 w-10">
-                        <AvatarImage src={instructor.avatar} alt={instructor.name} />
-                        <AvatarFallback>
-                          <User className="h-5 w-5" />
-                        </AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <div className="font-medium text-foreground">{instructor.name}</div>
-                        {instructor.title && (
-                          <div className="text-sm text-muted-foreground">{instructor.title}</div>
-                        )}
+                  {/* Call to Action para usuarios no autenticados */}
+                  {!isAuthenticated && (
+                    <div className="bg-card rounded-xl p-4 lg:p-8">
+                      <div className="text-center">
+                        <h3 className="text-lg font-semibold text-foreground mb-3">
+                          ¿Te gustó esta guía?
+                        </h3>
+                        <p className="text-muted-foreground mb-4 text-sm">
+                          Únete a nuestra plataforma para acceder a más guías y cursos exclusivos
+                        </p>
+                        <Button 
+                          size="sm"
+                          onClick={() => setLocation('/login')}
+                          data-testid="button-join"
+                        >
+                          Comenzar Ahora
+                        </Button>
                       </div>
                     </div>
                   )}
-
-                  {/* Metadatos adicionales */}
-                  <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
-                    <div className="flex items-center gap-1">
-                      <Calendar className="h-4 w-4" />
-                      {guide?.createdAt && formatDate(guide.createdAt)}
-                    </div>
-                    
-                    {guide?.estimatedHours && (
-                      <div className="flex items-center gap-1">
-                        <Clock className="h-4 w-4" />
-                        {guide.estimatedHours} {guide.estimatedHours === 1 ? 'hora' : 'horas'} de lectura
-                      </div>
-                    )}
-                  </div>
                 </div>
-              </div>
-
-              {/* Contenido del artículo */}
-              <Card className="border-0 shadow-none bg-transparent">
-                <CardContent className="p-0">
-                  <div className="prose prose-lg max-w-none">
-                    {contentBlocks.map((block) => {
-                      switch (block.type) {
-                        case 'heading':
-                          return (
-                            <h2 key={block.key} className="text-xl lg:text-2xl font-bold text-foreground mt-8 mb-4 first:mt-0">
-                              {block.content}
-                            </h2>
-                          );
-                        
-                        case 'step':
-                          return (
-                            <div key={block.key} className="bg-primary/5 border border-primary/20 rounded-lg p-4 lg:p-6 my-6">
-                              <h3 className="text-lg font-semibold text-primary mb-3">
-                                {block.content.split(':')[0]}:
-                              </h3>
-                              <p className="text-foreground leading-relaxed">
-                                {block.content.split(':').slice(1).join(':').trim()}
-                              </p>
-                            </div>
-                          );
-                        
-                        case 'image':
-                          return (
-                            <div key={block.key} className="my-6 text-center">
-                              <div className="bg-muted/30 rounded-lg p-6 border-2 border-dashed border-muted-foreground/30">
-                                <BookOpen className="h-10 w-10 mx-auto mb-3 text-muted-foreground" />
-                                <p className="text-sm text-muted-foreground italic">
-                                  {block.content}
-                                </p>
-                              </div>
-                            </div>
-                          );
-                        
-                        case 'paragraph':
-                        default:
-                          return (
-                            <p key={block.key} className="text-foreground leading-relaxed mb-4 text-[15px] lg:text-[16px]">
-                              {block.content}
-                            </p>
-                          );
-                      }
-                    })}
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Call to Action final */}
-              {!isAuthenticated && (
-                <Card className="mt-8 bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/20">
-                  <CardContent className="p-6 text-center">
-                    <h3 className="text-lg font-semibold text-foreground mb-3">
-                      ¿Te gustó esta guía?
-                    </h3>
-                    <p className="text-muted-foreground mb-4 text-sm">
-                      Únete a nuestra plataforma para acceder a más guías y cursos exclusivos
-                    </p>
-                    <Button 
-                      size="sm"
-                      onClick={() => setLocation('/login')}
-                      data-testid="button-join"
-                    >
-                      Comenzar Ahora
-                    </Button>
-                  </CardContent>
-                </Card>
-              )}
+              </section>
             </div>
           </main>
         </div>
 
         {/* Right Sidebar - Guide Information */}
         <aside className="hidden lg:block w-[560px] bg-background fixed right-0 top-0 h-screen overflow-y-auto scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent">
-          {/* Header with back button */}
-          <div className="pl-6 pr-12 py-4 flex justify-between items-center border-b border-border">
+          {/* Header with back and save buttons */}
+          <div className="pl-6 pr-12 py-4 flex justify-between items-center">
             <Button
               variant="ghost"
               size="sm"
@@ -318,103 +220,97 @@ export default function Guide() {
               className="text-muted-foreground hover:text-foreground"
             >
               <ArrowLeft className="h-4 w-4 mr-2" />
-              Volver a Guías
+              Volver a las guías
             </Button>
             
             <Button 
               variant="ghost" 
               size="sm" 
-              className="text-muted-foreground hover:text-foreground bg-muted hover:bg-muted/80"
+              className="text-muted-foreground hover:text-foreground text-[16px] bg-muted hover:bg-muted/80 mt-[6px] mb-[6px]"
               data-testid="button-bookmark-guide"
             >
-              <Bookmark className="h-4 w-4 mr-1" />
-              Guardar guía
+              <BookOpen className="h-4 w-4 mr-1" />
+              Guía de guardado
             </Button>
           </div>
           
           <div className="pl-6 pr-12 pt-12 space-y-6">
-            {/* Guide Information Card */}
-            <div className="bg-card rounded-lg p-5">
-              <h3 className="font-satoshi font-medium text-foreground mb-4 text-[18px]">Información de la guía</h3>
-              
-              <div className="space-y-4">
-                {/* Categorías */}
-                {guideCategories.length > 0 && (
+            {/* Instructor Information Card */}
+            {instructor?.name && (
+              <div className="bg-card rounded-lg p-5">
+                <h3 className="font-satoshi font-medium text-foreground mb-4 text-[20px]">Instructores</h3>
+                <div className="flex items-center gap-3">
+                  <Avatar className="h-12 w-12">
+                    <AvatarImage src={instructor.avatar} alt={instructor.name} />
+                    <AvatarFallback>
+                      <User className="h-6 w-6" />
+                    </AvatarFallback>
+                  </Avatar>
                   <div>
-                    <h4 className="text-sm font-medium text-muted-foreground mb-2">Categorías</h4>
-                    <div className="flex flex-wrap gap-2">
-                      {guideCategories.map((category) => (
-                        <Badge key={category.id} variant="secondary" className="text-xs">
-                          {category.name}
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Dificultad */}
-                {guide?.difficulty && (
-                  <div>
-                    <h4 className="text-sm font-medium text-muted-foreground mb-2">Dificultad</h4>
-                    <Badge 
-                      variant={guide.difficulty === 'Principiante' ? 'default' : guide.difficulty === 'Intermedio' ? 'secondary' : 'destructive'}
-                      className="text-xs"
-                    >
-                      {guide.difficulty}
-                    </Badge>
-                  </div>
-                )}
-
-                {/* Tiempo estimado */}
-                {guide?.estimatedHours && (
-                  <div>
-                    <h4 className="text-sm font-medium text-muted-foreground mb-2">Tiempo de lectura</h4>
-                    <div className="flex items-center gap-2 text-sm">
-                      <Clock className="h-4 w-4 text-muted-foreground" />
-                      <span>{guide.estimatedHours} {guide.estimatedHours === 1 ? 'hora' : 'horas'}</span>
-                    </div>
-                  </div>
-                )}
-
-                {/* Fecha de publicación */}
-                <div>
-                  <h4 className="text-sm font-medium text-muted-foreground mb-2">Fecha de publicación</h4>
-                  <div className="flex items-center gap-2 text-sm">
-                    <Calendar className="h-4 w-4 text-muted-foreground" />
-                    <span>{guide?.createdAt && formatDate(guide.createdAt)}</span>
+                    <div className="font-satoshi font-medium text-foreground text-[15px]">{instructor.name}</div>
+                    {instructor.title && (
+                      <div className="text-muted-foreground text-[13px]">{instructor.title}</div>
+                    )}
                   </div>
                 </div>
+              </div>
+            )}
 
-                {/* Instructor */}
-                {instructor?.name && (
-                  <div>
-                    <h4 className="text-sm font-medium text-muted-foreground mb-2">Autor</h4>
-                    <div className="flex items-center gap-3">
-                      <Avatar className="h-8 w-8">
-                        <AvatarImage src={instructor.avatar} alt={instructor.name} />
-                        <AvatarFallback>
-                          <User className="h-4 w-4" />
-                        </AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <div className="font-medium text-sm text-foreground">{instructor.name}</div>
-                        {instructor.title && (
-                          <div className="text-xs text-muted-foreground">{instructor.title}</div>
-                        )}
+            {/* Publication Date Card */}
+            <div className="bg-card rounded-lg p-5">
+              <h3 className="font-satoshi font-medium text-foreground mb-4 text-[20px]">Publicado</h3>
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Calendar className="h-4 w-4" />
+                <span>{guide?.createdAt ? formatDate(guide.createdAt) : 'Fecha no disponible'}</span>
+              </div>
+              {guide?.estimatedHours && (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground mt-2">
+                  <Clock className="h-4 w-4" />
+                  <span>{guide.estimatedHours} {guide.estimatedHours === 1 ? 'hora' : 'horas'} de lectura</span>
+                </div>
+              )}
+            </div>
+
+            {/* Resources Card - Placeholder for future functionality */}
+            <div className="bg-card rounded-lg p-5">
+              <h3 className="font-satoshi font-medium text-foreground mb-4 text-[20px]">Recursos</h3>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded bg-primary/10 flex items-center justify-center">
+                      <FileText className="h-4 w-4 text-primary" />
+                    </div>
+                    <div>
+                      <div className="font-medium text-foreground text-[14px]">
+                        {guide?.title ? `${guide.title.substring(0, 40)}...` : 'Guía'} para una mejor retención
                       </div>
+                      <div className="text-xs text-muted-foreground">PDF - 1.2 MB</div>
                     </div>
                   </div>
-                )}
+                  <Button variant="ghost" size="sm" className="p-2">
+                    <Download className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
             </div>
 
-            {/* Guides relacionadas - placeholder para futuras funcionalidades */}
-            <div className="bg-card rounded-lg p-5">
-              <h3 className="font-satoshi font-medium text-foreground mb-4 text-[18px]">Guías relacionadas</h3>
-              <p className="text-sm text-muted-foreground">
-                Próximamente encontrarás aquí más guías relacionadas con este tema.
-              </p>
-            </div>
+            {/* Categories Card */}
+            {guideCategories.length > 0 && (
+              <div className="bg-card rounded-lg p-5">
+                <h3 className="font-satoshi font-medium text-foreground mb-4 text-[20px]">Categorías</h3>
+                <div className="space-y-2">
+                  {guideCategories.map((category) => (
+                    <Badge 
+                      key={category.id} 
+                      variant="secondary" 
+                      className="mr-2 mb-2 text-xs font-satoshi"
+                    >
+                      {category.name}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </aside>
       </div>
