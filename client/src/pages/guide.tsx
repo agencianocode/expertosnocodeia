@@ -124,48 +124,89 @@ export default function Guide() {
               </Button>
             </div>
 
+            {/* Guide Title */}
+            <div className="px-4 lg:px-8 pb-4">
+              <h1 className="text-xl lg:text-2xl font-bold text-foreground">{guide?.title || 'Guía sin título'}</h1>
+            </div>
+
             <div className="px-4 lg:px-8 pb-24 lg:pb-8 lg:pl-[45px] lg:pr-[15px]">
-              {/* Guide Content */}
-              <section>
-                {/* Media Area - Image/Video based on guide content */}
-                {guide?.coverImageUrl ? (
-                  <div className="relative rounded-lg overflow-hidden mb-6 lg:mb-8" style={{ paddingBottom: '56.25%' }}>
-                    <img 
-                      src={guide.coverImageUrl} 
-                      alt={guide.title || 'Guía'}
-                      className="absolute top-0 left-0 w-full h-full object-cover"
-                    />
+            {/* Guide Content */}
+            <section>
+              {/* Media Area - Image/Video based on guide content - Exact same structure as Course */}
+              {guide?.coverImageUrl ? (
+                <div className="relative rounded-lg overflow-hidden mb-6 lg:mb-8" style={{ paddingBottom: '56.25%' }}>
+                  <img 
+                    src={guide.coverImageUrl} 
+                    alt={guide.title || 'Guía'}
+                    className="absolute top-0 left-0 w-full h-full object-cover"
+                  />
+                </div>
+              ) : (
+                // Placeholder media area if no cover image - Same aspect ratio as Course
+                <div className="relative rounded-lg overflow-hidden mb-6 lg:mb-8 bg-muted/30" style={{ paddingBottom: '56.25%' }}>
+                  <div className="absolute top-0 left-0 w-full h-full flex items-center justify-center">
+                    <div className="text-center">
+                      <FileText className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+                      <p className="text-sm text-muted-foreground">Guía de texto</p>
+                    </div>
                   </div>
-                ) : (
-                  // Placeholder media area if no cover image
-                  <div className="relative rounded-lg overflow-hidden mb-6 lg:mb-8 bg-muted/30" style={{ paddingBottom: '56.25%' }}>
-                    <div className="absolute top-0 left-0 w-full h-full flex items-center justify-center">
-                      <div className="text-center">
-                        <FileText className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                        <p className="text-sm text-muted-foreground">Guía de texto</p>
+                </div>
+              )}
+
+              <div className="space-y-6 lg:space-y-8">
+                <div className="bg-card rounded-xl p-4 lg:p-8 font-satoshi font-normal text-[14px] lg:text-[16px] leading-[22px] lg:leading-[26px] text-card-foreground">
+                  {/* Guide Title inside content card - Exact same structure as Course */}
+                  <div className="mb-4 lg:mb-6">
+                    <h2 className="text-lg lg:text-xl font-bold text-foreground mb-3 flex items-center font-satoshi" style={{fontSize: '24px'}}>
+                      <div className="w-8 h-8 rounded-lg mr-3 flex items-center justify-center flex-shrink-0" style={{backgroundColor: '#363636'}}>
+                        <FileText className="h-4 w-4 text-foreground" />
+                      </div>
+                      {guide?.title || 'Guía sin título'}
+                    </h2>
+                    {guide?.shortDescription && (
+                      <p className="text-muted-foreground text-sm lg:text-base">
+                        {guide.shortDescription}
+                      </p>
+                    )}
+                  </div>
+                  
+                  {!isAuthenticated ? (
+                    // Blocked content for non-authenticated users
+                    <div className="prose prose-sm lg:prose-base max-w-none">
+                      {guide?.description ? (
+                        <div className="markdown-content">
+                          <ReactMarkdown 
+                            remarkPlugins={[remarkGfm]}
+                            rehypePlugins={[rehypeHighlight, rehypeRaw]}
+                          >
+                            {guide.description}
+                          </ReactMarkdown>
+                        </div>
+                      ) : (
+                        <p className="text-muted-foreground italic">Contenido de la guía no disponible.</p>
+                      )}
+                      
+                      {/* Call to Action dentro del card */}
+                      <div className="mt-8 p-6 bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/20 rounded-lg">
+                        <div className="text-center">
+                          <h3 className="text-lg font-semibold text-foreground mb-3">
+                            ¿Te gustó esta guía?
+                          </h3>
+                          <p className="text-muted-foreground mb-4 text-sm">
+                            Únete a nuestra plataforma para acceder a más guías y cursos exclusivos
+                          </p>
+                          <Button 
+                            size="sm"
+                            onClick={() => setLocation('/login')}
+                            data-testid="button-join"
+                          >
+                            Comenzar Ahora
+                          </Button>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                )}
-
-                <div className="space-y-6 lg:space-y-8">
-                  <div className="bg-card rounded-xl p-4 lg:p-8 font-satoshi font-normal text-[14px] lg:text-[16px] leading-[22px] lg:leading-[26px] text-card-foreground">
-                    {/* Guide Title inside content card */}
-                    <div className="mb-4 lg:mb-6">
-                      <h2 className="text-lg lg:text-xl font-bold text-foreground mb-3 flex items-center font-satoshi" style={{fontSize: '24px'}}>
-                        <div className="w-8 h-8 rounded-lg mr-3 flex items-center justify-center flex-shrink-0" style={{backgroundColor: '#363636'}}>
-                          <FileText className="h-4 w-4 text-foreground" />
-                        </div>
-                        {guide?.title || 'Guía sin título'}
-                      </h2>
-                      {guide?.shortDescription && (
-                        <p className="text-muted-foreground text-sm lg:text-base">
-                          {guide.shortDescription}
-                        </p>
-                      )}
-                    </div>
-                    
-                    {/* Guide Content */}
+                  ) : (
+                    // Normal content for authenticated users  
                     <div className="prose prose-sm lg:prose-base max-w-none">
                       {guide?.description ? (
                         <div className="markdown-content">
@@ -180,30 +221,10 @@ export default function Guide() {
                         <p className="text-muted-foreground italic">Contenido de la guía no disponible.</p>
                       )}
                     </div>
-                  </div>
-
-                  {/* Call to Action para usuarios no autenticados */}
-                  {!isAuthenticated && (
-                    <div className="bg-card rounded-xl p-4 lg:p-8">
-                      <div className="text-center">
-                        <h3 className="text-lg font-semibold text-foreground mb-3">
-                          ¿Te gustó esta guía?
-                        </h3>
-                        <p className="text-muted-foreground mb-4 text-sm">
-                          Únete a nuestra plataforma para acceder a más guías y cursos exclusivos
-                        </p>
-                        <Button 
-                          size="sm"
-                          onClick={() => setLocation('/login')}
-                          data-testid="button-join"
-                        >
-                          Comenzar Ahora
-                        </Button>
-                      </div>
-                    </div>
                   )}
                 </div>
-              </section>
+              </div>
+            </section>
             </div>
           </main>
         </div>
