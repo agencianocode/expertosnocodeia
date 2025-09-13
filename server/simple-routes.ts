@@ -302,6 +302,29 @@ export function registerSimpleRoutes(app: Express): Server {
     }
   });
 
+  // Get all guides
+  app.get("/api/guides", async (req: Request, res: Response) => {
+    try {
+      const guides = await storage.getAllGuides();
+      console.log('Guides from simple-routes:', guides.length, guides.map(g => ({id: g.id, title: g.title, type: g.type})));
+      res.json(guides);
+    } catch (error) {
+      console.error("Error fetching guides:", error);
+      res.status(500).json({ message: "Failed to fetch guides" });
+    }
+  });
+
+  // Get all workshops
+  app.get("/api/workshops", async (req: Request, res: Response) => {
+    try {
+      const workshops = await storage.getAllWorkshops();
+      res.json(workshops);
+    } catch (error) {
+      console.error("Error fetching workshops:", error);
+      res.status(500).json({ message: "Failed to fetch workshops" });
+    }
+  });
+
   // Get all categories
   app.get("/api/categories", async (req: Request, res: Response) => {
     try {
