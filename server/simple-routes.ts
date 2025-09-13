@@ -306,7 +306,6 @@ export function registerSimpleRoutes(app: Express): Server {
   app.get("/api/guides", async (req: Request, res: Response) => {
     try {
       const guides = await storage.getAllGuides();
-      console.log('Guides from simple-routes:', guides.length, guides.map(g => ({id: g.id, title: g.title, type: g.type})));
       res.json(guides);
     } catch (error) {
       console.error("Error fetching guides:", error);
