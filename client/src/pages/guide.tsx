@@ -1,14 +1,24 @@
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { useParams } from "wouter";
+import { useParams, useLocation } from "wouter";
+import { useAuth } from "@/hooks/useAuth";
+import CourseSidebar from "@/components/layout/course-sidebar";
+import MobileNav from "@/components/layout/mobile-nav";
+import MobileHeader from "@/components/layout/mobile-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
-import { Clock, User, BookOpen, Calendar, ArrowLeft } from "lucide-react";
+import { Clock, User, BookOpen, Calendar, ArrowLeft, FileText, Bookmark, BookmarkCheck } from "lucide-react";
 import { useSimpleAuth } from "@/hooks/use-simple-auth";
-import { useLocation } from "wouter";
+import { cn } from "@/lib/utils";
+
+interface ContentBlock {
+  type: 'heading' | 'subheading' | 'step' | 'paragraph' | 'image';
+  content: string;
+  key: string;
+}
 
 export default function Guide() {
   const params = useParams();
@@ -19,6 +29,10 @@ export default function Guide() {
   const { data: guide, isLoading: guideLoading, error } = useQuery<any>({
     queryKey: ['/api/courses', guideId],
     enabled: !!guideId,
+  });
+
+  const { data: categories = [], isLoading: categoriesLoading } = useQuery<any[]>({
+    queryKey: ['/api/categories'],
   });
 
   useEffect(() => {
@@ -34,24 +48,33 @@ export default function Guide() {
 
   if (isAuthLoading || guideLoading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-foreground">Cargando...</div>
+      <div className="min-h-screen bg-background flex">
+        <CourseSidebar />
+        <div className="flex-1 flex items-center justify-center lg:ml-[250px] lg:mr-[560px]">
+          <div className="text-foreground">Cargando...</div>
+        </div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-foreground">Error cargando la guía</div>
+      <div className="min-h-screen bg-background flex">
+        <CourseSidebar />
+        <div className="flex-1 flex items-center justify-center lg:ml-[250px] lg:mr-[560px]">
+          <div className="text-foreground">Error cargando la guía</div>
+        </div>
       </div>
     );
   }
 
   if (!guide) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-foreground">Guía no encontrada</div>
+      <div className="min-h-screen bg-background flex">
+        <CourseSidebar />
+        <div className="flex-1 flex items-center justify-center lg:ml-[250px] lg:mr-[560px]">
+          <div className="text-foreground">Guía no encontrada</div>
+        </div>
       </div>
     );
   }
@@ -70,7 +93,7 @@ export default function Guide() {
   };
 
   // Dividir el contenido en párrafos y procesar imágenes
-  const processContent = (content: string) => {
+  const processContent = (content: string): ContentBlock[] => {
     if (!content) return [];
     
     // Dividir por párrafos y filtrar vacíos
@@ -117,160 +140,287 @@ export default function Guide() {
 
   const contentBlocks = processContent(guide?.description || '');
 
+  // Obtener categorías de la guía
+  const guideCategoryIds = guide?.categories || [];
+  const guideCategories = categories.filter(cat => guideCategoryIds.includes(cat.id));
+
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header con botón de volver */}
-      <div className="border-b border-border/40 bg-background/95 backdrop-blur sticky top-0 z-10">
-        <div className="max-w-4xl mx-auto px-6 py-4">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setLocation('/guides')}
-            className="mb-2"
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Volver a Guías
-          </Button>
+    <>
+      {/* Mobile Header */}
+      <MobileHeader />
+      <div className="flex">
+        {/* Course Sidebar - Hidden on mobile */}
+        <div className="hidden lg:block">
+          <CourseSidebar />
         </div>
-      </div>
-
-      {/* Contenido principal */}
-      <div className="max-w-4xl mx-auto px-6 py-8">
-        {/* Hero Section */}
-        <div className="mb-12">
-          {/* Imagen de portada si existe */}
-          {guide?.coverImageUrl && (
-            <div className="mb-8 rounded-xl overflow-hidden">
-              <img 
-                src={guide.coverImageUrl} 
-                alt={guide.title || 'Guía'}
-                className="w-full h-64 object-cover"
-              />
-            </div>
-          )}
-
-          {/* Título y metadatos */}
-          <div className="space-y-6">
-            <div>
-              <Badge variant="secondary" className="mb-4">
-                <BookOpen className="h-3 w-3 mr-1" />
-                Guía
-              </Badge>
-              <h1 className="text-4xl font-bold text-foreground leading-tight">
-                {guide?.title || 'Guía sin título'}
-              </h1>
+        
+        <div className="flex-1 flex bg-background lg:ml-[250px] lg:mr-[560px] h-screen overflow-y-auto hide-scrollbar">
+          {/* Main Content - Center Column - Full width on mobile */}
+          <main className="flex-1 lg:w-[920px] bg-background overflow-y-auto hide-scrollbar h-screen">
+            {/* Header con navegación móvil */}
+            <div className="lg:hidden px-4 py-4 flex items-center justify-between border-b border-border">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setLocation('/guides')}
+                data-testid="button-back-guides"
+              >
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Volver a Guías
+              </Button>
             </div>
 
-            {/* Metadatos */}
-            <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
-              {instructor?.name && (
-                <div className="flex items-center gap-2">
-                  <Avatar className="h-8 w-8">
-                    <AvatarImage src={instructor.avatar} alt={instructor.name} />
-                    <AvatarFallback>
-                      <User className="h-4 w-4" />
-                    </AvatarFallback>
-                  </Avatar>
+            {/* Contenido principal */}
+            <div className="px-4 lg:px-6 py-6 lg:py-8">
+              {/* Hero Section */}
+              <div className="mb-8">
+                {/* Imagen de portada si existe */}
+                {guide?.coverImageUrl && (
+                  <div className="mb-6 rounded-xl overflow-hidden">
+                    <img 
+                      src={guide.coverImageUrl} 
+                      alt={guide.title || 'Guía'}
+                      className="w-full h-48 lg:h-64 object-cover"
+                    />
+                  </div>
+                )}
+
+                {/* Título y metadatos */}
+                <div className="space-y-4">
                   <div>
-                    <div className="font-medium text-foreground">{instructor.name}</div>
-                    {instructor.title && (
-                      <div className="text-xs">{instructor.title}</div>
+                    <Badge variant="secondary" className="mb-3">
+                      <FileText className="h-3 w-3 mr-1" />
+                      Guía
+                    </Badge>
+                    <h1 className="text-2xl lg:text-3xl font-bold text-foreground leading-tight">
+                      {guide?.title || 'Guía sin título'}
+                    </h1>
+                  </div>
+
+                  {/* Metadatos del instructor */}
+                  {instructor?.name && (
+                    <div className="flex items-center gap-3">
+                      <Avatar className="h-10 w-10">
+                        <AvatarImage src={instructor.avatar} alt={instructor.name} />
+                        <AvatarFallback>
+                          <User className="h-5 w-5" />
+                        </AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <div className="font-medium text-foreground">{instructor.name}</div>
+                        {instructor.title && (
+                          <div className="text-sm text-muted-foreground">{instructor.title}</div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Metadatos adicionales */}
+                  <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
+                    <div className="flex items-center gap-1">
+                      <Calendar className="h-4 w-4" />
+                      {guide?.createdAt && formatDate(guide.createdAt)}
+                    </div>
+                    
+                    {guide?.estimatedHours && (
+                      <div className="flex items-center gap-1">
+                        <Clock className="h-4 w-4" />
+                        {guide.estimatedHours} {guide.estimatedHours === 1 ? 'hora' : 'horas'} de lectura
+                      </div>
                     )}
                   </div>
                 </div>
-              )}
-              
-              <Separator orientation="vertical" className="h-6" />
-              
-              <div className="flex items-center gap-1">
-                <Calendar className="h-4 w-4" />
-                {guide?.createdAt && formatDate(guide.createdAt)}
               </div>
-              
-              {guide?.estimatedHours && (
-                <>
-                  <Separator orientation="vertical" className="h-6" />
-                  <div className="flex items-center gap-1">
-                    <Clock className="h-4 w-4" />
-                    {guide.estimatedHours} {guide.estimatedHours === 1 ? 'hora' : 'horas'} de lectura
+
+              {/* Contenido del artículo */}
+              <Card className="border-0 shadow-none bg-transparent">
+                <CardContent className="p-0">
+                  <div className="prose prose-lg max-w-none">
+                    {contentBlocks.map((block) => {
+                      switch (block.type) {
+                        case 'heading':
+                          return (
+                            <h2 key={block.key} className="text-xl lg:text-2xl font-bold text-foreground mt-8 mb-4 first:mt-0">
+                              {block.content}
+                            </h2>
+                          );
+                        
+                        case 'step':
+                          return (
+                            <div key={block.key} className="bg-primary/5 border border-primary/20 rounded-lg p-4 lg:p-6 my-6">
+                              <h3 className="text-lg font-semibold text-primary mb-3">
+                                {block.content.split(':')[0]}:
+                              </h3>
+                              <p className="text-foreground leading-relaxed">
+                                {block.content.split(':').slice(1).join(':').trim()}
+                              </p>
+                            </div>
+                          );
+                        
+                        case 'image':
+                          return (
+                            <div key={block.key} className="my-6 text-center">
+                              <div className="bg-muted/30 rounded-lg p-6 border-2 border-dashed border-muted-foreground/30">
+                                <BookOpen className="h-10 w-10 mx-auto mb-3 text-muted-foreground" />
+                                <p className="text-sm text-muted-foreground italic">
+                                  {block.content}
+                                </p>
+                              </div>
+                            </div>
+                          );
+                        
+                        case 'paragraph':
+                        default:
+                          return (
+                            <p key={block.key} className="text-foreground leading-relaxed mb-4 text-[15px] lg:text-[16px]">
+                              {block.content}
+                            </p>
+                          );
+                      }
+                    })}
                   </div>
-                </>
+                </CardContent>
+              </Card>
+
+              {/* Call to Action final */}
+              {!isAuthenticated && (
+                <Card className="mt-8 bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/20">
+                  <CardContent className="p-6 text-center">
+                    <h3 className="text-lg font-semibold text-foreground mb-3">
+                      ¿Te gustó esta guía?
+                    </h3>
+                    <p className="text-muted-foreground mb-4 text-sm">
+                      Únete a nuestra plataforma para acceder a más guías y cursos exclusivos
+                    </p>
+                    <Button 
+                      size="sm"
+                      onClick={() => setLocation('/login')}
+                      data-testid="button-join"
+                    >
+                      Comenzar Ahora
+                    </Button>
+                  </CardContent>
+                </Card>
               )}
             </div>
-          </div>
+          </main>
         </div>
 
-        {/* Contenido del artículo */}
-        <Card className="border-0 shadow-none bg-transparent">
-          <CardContent className="p-0">
-            <div className="prose prose-lg max-w-none">
-              {contentBlocks.map((block) => {
-                switch (block.type) {
-                  case 'heading':
-                    return (
-                      <h2 key={block.key} className="text-2xl font-bold text-foreground mt-12 mb-6 first:mt-0">
-                        {block.content}
-                      </h2>
-                    );
-                  
-                  case 'step':
-                    return (
-                      <div key={block.key} className="bg-primary/5 border border-primary/20 rounded-lg p-6 my-8">
-                        <h3 className="text-xl font-semibold text-primary mb-4">
-                          {block.content.split(':')[0]}:
-                        </h3>
-                        <p className="text-foreground leading-relaxed">
-                          {block.content.split(':').slice(1).join(':').trim()}
-                        </p>
-                      </div>
-                    );
-                  
-                  case 'image':
-                    return (
-                      <div key={block.key} className="my-8 text-center">
-                        <div className="bg-muted/30 rounded-lg p-8 border-2 border-dashed border-muted-foreground/30">
-                          <BookOpen className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                          <p className="text-sm text-muted-foreground italic">
-                            {block.content}
-                          </p>
-                        </div>
-                      </div>
-                    );
-                  
-                  case 'paragraph':
-                  default:
-                    return (
-                      <p key={block.key} className="text-foreground leading-relaxed mb-6 text-[16px]">
-                        {block.content}
-                      </p>
-                    );
-                }
-              })}
-            </div>
-          </CardContent>
-        </Card>
+        {/* Right Sidebar - Guide Information */}
+        <aside className="hidden lg:block w-[560px] bg-background fixed right-0 top-0 h-screen overflow-y-auto scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent">
+          {/* Header with back button */}
+          <div className="pl-6 pr-12 py-4 flex justify-between items-center border-b border-border">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setLocation('/guides')}
+              data-testid="button-back-guides-sidebar"
+              className="text-muted-foreground hover:text-foreground"
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Volver a Guías
+            </Button>
+            
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="text-muted-foreground hover:text-foreground bg-muted hover:bg-muted/80"
+              data-testid="button-bookmark-guide"
+            >
+              <Bookmark className="h-4 w-4 mr-1" />
+              Guardar guía
+            </Button>
+          </div>
+          
+          <div className="pl-6 pr-12 pt-12 space-y-6">
+            {/* Guide Information Card */}
+            <div className="bg-card rounded-lg p-5">
+              <h3 className="font-satoshi font-medium text-foreground mb-4 text-[18px]">Información de la guía</h3>
+              
+              <div className="space-y-4">
+                {/* Categorías */}
+                {guideCategories.length > 0 && (
+                  <div>
+                    <h4 className="text-sm font-medium text-muted-foreground mb-2">Categorías</h4>
+                    <div className="flex flex-wrap gap-2">
+                      {guideCategories.map((category) => (
+                        <Badge key={category.id} variant="secondary" className="text-xs">
+                          {category.name}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
-        {/* Call to Action final */}
-        {!isAuthenticated && (
-          <Card className="mt-12 bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/20">
-            <CardContent className="p-8 text-center">
-              <h3 className="text-xl font-semibold text-foreground mb-4">
-                ¿Te gustó esta guía?
-              </h3>
-              <p className="text-muted-foreground mb-6">
-                Únete a nuestra plataforma para acceder a más guías y cursos exclusivos
+                {/* Dificultad */}
+                {guide?.difficulty && (
+                  <div>
+                    <h4 className="text-sm font-medium text-muted-foreground mb-2">Dificultad</h4>
+                    <Badge 
+                      variant={guide.difficulty === 'Principiante' ? 'default' : guide.difficulty === 'Intermedio' ? 'secondary' : 'destructive'}
+                      className="text-xs"
+                    >
+                      {guide.difficulty}
+                    </Badge>
+                  </div>
+                )}
+
+                {/* Tiempo estimado */}
+                {guide?.estimatedHours && (
+                  <div>
+                    <h4 className="text-sm font-medium text-muted-foreground mb-2">Tiempo de lectura</h4>
+                    <div className="flex items-center gap-2 text-sm">
+                      <Clock className="h-4 w-4 text-muted-foreground" />
+                      <span>{guide.estimatedHours} {guide.estimatedHours === 1 ? 'hora' : 'horas'}</span>
+                    </div>
+                  </div>
+                )}
+
+                {/* Fecha de publicación */}
+                <div>
+                  <h4 className="text-sm font-medium text-muted-foreground mb-2">Fecha de publicación</h4>
+                  <div className="flex items-center gap-2 text-sm">
+                    <Calendar className="h-4 w-4 text-muted-foreground" />
+                    <span>{guide?.createdAt && formatDate(guide.createdAt)}</span>
+                  </div>
+                </div>
+
+                {/* Instructor */}
+                {instructor?.name && (
+                  <div>
+                    <h4 className="text-sm font-medium text-muted-foreground mb-2">Autor</h4>
+                    <div className="flex items-center gap-3">
+                      <Avatar className="h-8 w-8">
+                        <AvatarImage src={instructor.avatar} alt={instructor.name} />
+                        <AvatarFallback>
+                          <User className="h-4 w-4" />
+                        </AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <div className="font-medium text-sm text-foreground">{instructor.name}</div>
+                        {instructor.title && (
+                          <div className="text-xs text-muted-foreground">{instructor.title}</div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Guides relacionadas - placeholder para futuras funcionalidades */}
+            <div className="bg-card rounded-lg p-5">
+              <h3 className="font-satoshi font-medium text-foreground mb-4 text-[18px]">Guías relacionadas</h3>
+              <p className="text-sm text-muted-foreground">
+                Próximamente encontrarás aquí más guías relacionadas con este tema.
               </p>
-              <Button 
-                size="lg"
-                onClick={() => setLocation('/login')}
-                data-testid="button-join"
-              >
-                Comenzar Ahora
-              </Button>
-            </CardContent>
-          </Card>
-        )}
+            </div>
+          </div>
+        </aside>
       </div>
-    </div>
+
+      {/* Mobile Navigation */}
+      <MobileNav />
+    </>
   );
 }
