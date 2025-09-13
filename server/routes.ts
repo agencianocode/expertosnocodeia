@@ -37,6 +37,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/guides", async (req, res) => {
     try {
       const guides = await storage.getAllGuides();
+      console.log('Guides from storage:', guides.length, guides);
       res.json(guides);
     } catch (error) {
       console.error("Error fetching guides:", error);

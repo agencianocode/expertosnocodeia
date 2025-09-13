@@ -317,7 +317,10 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getAllGuides(): Promise<Course[]> {
-    return await db.select().from(courses).where(and(eq(courses.isPublished, true), eq(courses.type, 'guide')));
+    console.log('Getting guides with query: is_published = true AND type = guide');
+    const result = await db.select().from(courses).where(and(eq(courses.isPublished, true), eq(courses.type, 'guide')));
+    console.log('Guides found:', result.length, result.map(g => ({ id: g.id, title: g.title, type: g.type, isPublished: g.isPublished })));
+    return result;
   }
 
   async getAllWorkshops(): Promise<Course[]> {
