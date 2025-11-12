@@ -26,6 +26,7 @@ import {
   phaseContent,
   purchases,
   userAccess,
+  promoBanners,
   type User,
   type UpsertUser,
   type OnboardingData,
@@ -76,6 +77,8 @@ import {
   type InsertPurchase,
   type UserAccess,
   type InsertUserAccess,
+  type PromoBanner,
+  type InsertPromoBanner,
   type ContentType,
 } from "@shared/schema";
 import { db } from "./db";
@@ -1491,6 +1494,7 @@ export class DatabaseStorage implements IStorage {
       isLocked: boolean;
       content: Array<PhaseContent & { courseData?: Course }>;
     }>;
+    promoBanners: PromoBanner[];
     userHasAccess: boolean;
   } | undefined> {
     // Get room
@@ -1527,11 +1531,26 @@ export class DatabaseStorage implements IStorage {
       })
     );
 
+    // Get promo banners for this room
+    const banners = await this.getRoomPromoBanners(room.id);
+
     return {
       room,
       phases: phasesWithContent,
+      promoBanners: banners,
       userHasAccess,
     };
+  }
+
+  async getRoomPromoBanners(roomId: string): Promise<PromoBanner[]> {
+    return await db
+      .select()
+      .from(promoBanners)
+      .where(and(
+        eq(promoBanners.roomId, roomId),
+        eq(promoBanners.isActive, true)
+      ))
+      .orderBy(promoBanners.order);
   }
 
   async getPhaseContent(phaseId: string): Promise<Array<PhaseContent & { courseData?: Course }>> {
