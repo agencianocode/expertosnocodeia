@@ -30,7 +30,7 @@ import { apiRequest } from "@/lib/queryClient";
 const lessonSchema = z.object({
   title: z.string().min(1, "El título es requerido"),
   description: z.string().optional(),
-  content: z.string().optional(), // Optional for modules, required for sub-lessons
+  content: z.string().optional(),
   type: z.enum(["video", "text", "quiz", "interactive"]),
   duration: z.number().min(1, "La duración es requerida"),
   order: z.number().min(1, "El orden es requerido"),
@@ -42,13 +42,20 @@ const lessonSchema = z.object({
   objectives: z.string().optional(),
   parentLessonId: z.string().optional(), // Optional: if set, this is a sub-lesson under a module
 }).refine((data) => {
-  // If this is a sub-lesson (has parentLessonId), content is required
-  if (data.parentLessonId && (!data.content || data.content.trim() === '')) {
-    return false;
+  // If this is a sub-lesson (has parentLessonId), at least one content type is required
+  if (data.parentLessonId) {
+    const hasContent = data.content && data.content.trim() !== '';
+    const hasVideo = data.videoUrl && data.videoUrl.trim() !== '';
+    const hasImage = data.imageUrl && data.imageUrl.trim() !== '';
+    const hasAttachments = data.attachments && data.attachments.trim() !== '';
+    
+    if (!hasContent && !hasVideo && !hasImage && !hasAttachments) {
+      return false;
+    }
   }
   return true;
 }, {
-  message: "El contenido es requerido para sub-lecciones",
+  message: "Las sub-lecciones deben tener al menos contenido, video, imagen o archivos adjuntos",
   path: ["content"],
 });
 
@@ -376,15 +383,15 @@ export default function LessonForm() {
                 </CardTitle>
                 <CardDescription className="text-gray-400">
                   {!form.watch("parentLessonId") 
-                    ? "Los módulos son contenedores y no requieren contenido. Solo las sub-lecciones necesitan contenido completo."
-                    : "Contenido principal que aparecerá debajo del multimedia (requerido para sub-lecciones)"
+                    ? "Los módulos son contenedores y no requieren contenido."
+                    : "Contenido principal que aparecerá debajo del multimedia (sub-lecciones deben tener al menos: contenido, video, imagen o archivos)"
                   }
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
                   <Label htmlFor="content" className="text-white">
-                    Contenido {form.watch("parentLessonId") && "*"}
+                    Contenido
                   </Label>
                   <RichTextEditor
                     key={editorKey}
@@ -393,7 +400,7 @@ export default function LessonForm() {
                     placeholder={
                       !form.watch("parentLessonId")
                         ? "Opcional para módulos - Los módulos son solo contenedores organizadores"
-                        : "Escribe aquí el contenido completo de la lección. Usa la barra de herramientas para formatear el texto o pega contenido de otros lugares..."
+                        : "Escribe aquí el contenido de la sub-lección. Puedes dejarlo vacío si agregas video, imagen o archivos..."
                     }
                     className="mt-2"
                   />
@@ -403,7 +410,7 @@ export default function LessonForm() {
                   <p className="text-gray-400 text-xs mt-1">
                     {!form.watch("parentLessonId")
                       ? "💡 Módulos: Solo necesitas darle un título. El contenido se mostrará desde las sub-lecciones."
-                      : "Usa la barra de herramientas para formatear. Soporta pegar imágenes directamente desde el portapapeles."
+                      : "💡 Sub-lecciones: Puedes dejar el contenido vacío si agregas video, imagen o archivos adjuntos. Debe haber al menos una de estas opciones."
                     }
                   </p>
                 </div>

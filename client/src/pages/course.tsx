@@ -640,9 +640,9 @@ export default function Course() {
                               {currentLesson.content}
                             </ReactMarkdown>
                           </div>
-                        ) : (
+                        ) : (!currentLesson.videoUrl && !currentLesson.imageUrl) ? (
                           <p className="text-muted-foreground italic">Contenido de la lección no disponible.</p>
-                        )}
+                        ) : null}
                       </div>) : // Lecciones 2+: contenido bloqueado
                       (<div className="py-8">
                         <p className="text-muted-foreground mb-6">Debes registrarte en Universidad Expertos NoCode IA para ver esta lección.</p>
@@ -665,9 +665,9 @@ export default function Course() {
                               {currentLesson.content}
                             </ReactMarkdown>
                           </div>
-                        ) : (
+                        ) : (!currentLesson.videoUrl && !currentLesson.imageUrl) ? (
                           <p className="text-muted-foreground italic">Contenido de la lección no disponible.</p>
-                        )}
+                        ) : null}
                       </div>)
                     )}
                   </div>
