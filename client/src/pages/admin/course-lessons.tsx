@@ -191,10 +191,47 @@ export default function CourseLessons() {
     );
   }
 
-  const filteredLessons = (lessons as any)?.filter((lesson: any) =>
+  // Organize lessons into hierarchical structure
+  const allLessons = lessons || [];
+  const modules = (allLessons as any)?.filter((lesson: any) => !lesson.parentLessonId)
+    .sort((a: any, b: any) => a.order - b.order) || [];
+  const subLessons = (allLessons as any)?.filter((lesson: any) => lesson.parentLessonId) || [];
+  
+  // Create map of sub-lessons by parent ID
+  const subLessonsByParent = subLessons.reduce((acc: any, lesson: any) => {
+    if (!acc[lesson.parentLessonId]) {
+      acc[lesson.parentLessonId] = [];
+    }
+    acc[lesson.parentLessonId].push(lesson);
+    return acc;
+  }, {});
+
+  // Identify orphaned sub-lessons (parent doesn't exist)
+  const moduleIds = new Set(modules.map((m: any) => m.id));
+  const orphanedSubLessons = subLessons.filter((lesson: any) => !moduleIds.has(lesson.parentLessonId));
+
+  // Build flat list with hierarchy indicators for rendering
+  const hierarchicalLessons = modules.reduce((acc: any[], module: any) => {
+    // Add module
+    acc.push({ ...module, isModule: true, level: 0 });
+    // Add its sub-lessons (sorted by order)
+    const subs = (subLessonsByParent[module.id] || []).sort((a: any, b: any) => a.order - b.order);
+    subs.forEach((subLesson: any) => {
+      acc.push({ ...subLesson, isModule: false, level: 1, parentTitle: module.title });
+    });
+    return acc;
+  }, []);
+
+  // Add orphaned sub-lessons at the end with warning
+  orphanedSubLessons.forEach((orphan: any) => {
+    hierarchicalLessons.push({ ...orphan, isModule: false, level: 1, isOrphan: true, parentTitle: "Módulo no encontrado" });
+  });
+
+  // Filter by search term
+  const filteredLessons = hierarchicalLessons.filter((lesson: any) =>
     lesson.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
     lesson.description?.toLowerCase().includes(searchTerm.toLowerCase())
-  ) || [];
+  );
 
   const getTypeIcon = (type: string) => {
     switch (type) {
@@ -308,40 +345,63 @@ export default function CourseLessons() {
       <div className="space-y-4">
         {filteredLessons.map((lesson: any, index: number) => {
           const TypeIcon = getTypeIcon(lesson.type);
+          const isSubLesson = lesson.level === 1;
           return (
-            <Card key={lesson.id} className="bg-slate-900/50 border-slate-700">
-              <CardContent className="p-4">
-                <div className="flex items-start justify-between">
-                  <div className="flex items-start gap-4 flex-1">
-                    <div className="flex items-center justify-center w-8 h-8 rounded-full bg-slate-800 text-gray-400 text-sm font-medium">
-                      {lesson.order || index + 1}
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-2">
-                        <h3 className="text-white font-medium">{lesson.title}</h3>
-                        <Badge className={getTypeColor(lesson.type)}>
-                          <TypeIcon className="h-3 w-3 mr-1" />
-                          {getTypeText(lesson.type)}
-                        </Badge>
-                        {lesson.isPublished ? (
-                          <Badge variant="secondary" className="bg-green-500/20 text-green-400">
-                            Publicado
-                          </Badge>
-                        ) : (
-                          <Badge variant="secondary" className="bg-gray-500/20 text-gray-400">
-                            Borrador
-                          </Badge>
-                        )}
+            <div 
+              key={lesson.id} 
+              className={isSubLesson ? "ml-12" : ""}
+            >
+              <Card className={`bg-slate-900/50 border-slate-700 ${isSubLesson ? 'border-l-4 border-l-purple-500' : ''}`}>
+                <CardContent className="p-4">
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-start gap-4 flex-1">
+                      <div className="flex items-center justify-center w-8 h-8 rounded-full bg-slate-800 text-gray-400 text-sm font-medium">
+                        {lesson.order || index + 1}
                       </div>
-                      <p className="text-gray-400 text-sm mb-2">{lesson.description}</p>
-                      <div className="flex items-center gap-4 text-xs text-gray-500">
-                        {lesson.duration && (
-                          <div>Duración: {lesson.duration} min</div>
-                        )}
-                        <div>Creado: {new Date(lesson.createdAt).toLocaleDateString()}</div>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3 mb-2 flex-wrap">
+                          {lesson.isOrphan && (
+                            <Badge variant="secondary" className="bg-red-500/20 text-red-400 text-xs">
+                              ⚠️ Huérfana
+                            </Badge>
+                          )}
+                          {isSubLesson && !lesson.isOrphan && (
+                            <Badge variant="secondary" className="bg-purple-500/20 text-purple-400 text-xs">
+                              Sub-lección
+                            </Badge>
+                          )}
+                          {lesson.isModule && (
+                            <Badge variant="secondary" className="bg-orange-500/20 text-orange-400 text-xs">
+                              Módulo
+                            </Badge>
+                          )}
+                          <h3 className="text-white font-medium">{lesson.title}</h3>
+                          <Badge className={getTypeColor(lesson.type)}>
+                            <TypeIcon className="h-3 w-3 mr-1" />
+                            {getTypeText(lesson.type)}
+                          </Badge>
+                          {lesson.isPublished ? (
+                            <Badge variant="secondary" className="bg-green-500/20 text-green-400">
+                              Publicado
+                            </Badge>
+                          ) : (
+                            <Badge variant="secondary" className="bg-gray-500/20 text-gray-400">
+                              Borrador
+                            </Badge>
+                          )}
+                        </div>
+                        <p className="text-gray-400 text-sm mb-2">{lesson.description}</p>
+                        <div className="flex items-center gap-4 text-xs text-gray-500">
+                          {lesson.duration && (
+                            <div>Duración: {lesson.duration} min</div>
+                          )}
+                          <div>Creado: {new Date(lesson.createdAt).toLocaleDateString()}</div>
+                          {isSubLesson && lesson.parentTitle && (
+                            <div className="text-purple-400">↳ Parte de: {lesson.parentTitle}</div>
+                          )}
+                        </div>
                       </div>
                     </div>
-                  </div>
                   <div className="flex items-center gap-2">
                     {/* Reorder buttons */}
                     <div className="flex flex-col gap-1">
@@ -397,6 +457,7 @@ export default function CourseLessons() {
                 </div>
               </CardContent>
             </Card>
+            </div>
           );
         })}
 

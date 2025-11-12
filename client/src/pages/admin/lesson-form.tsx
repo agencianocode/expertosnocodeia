@@ -40,6 +40,7 @@ const lessonSchema = z.object({
   imageUrl: z.string().optional(),
   attachments: z.string().optional(),
   objectives: z.string().optional(),
+  parentLessonId: z.string().optional(), // Optional: if set, this is a sub-lesson under a module
 });
 
 type LessonFormData = z.infer<typeof lessonSchema>;
@@ -80,6 +81,11 @@ export default function LessonForm() {
     enabled: !!courseId,
   });
 
+  // Get available modules (lessons without parent) for this lesson to be a sub-lesson
+  const availableModules = existingLessons?.filter(l => 
+    !l.parentLessonId && l.id !== lessonId // Exclude self when editing
+  ) || [];
+
   const form = useForm<LessonFormData>({
     resolver: zodResolver(lessonSchema),
     defaultValues: {
@@ -94,6 +100,7 @@ export default function LessonForm() {
       videoUrl: "",
       attachments: "",
       objectives: "",
+      parentLessonId: undefined,
     },
   });
 
@@ -112,6 +119,7 @@ export default function LessonForm() {
         videoUrl: lesson.videoUrl || "",
         attachments: lesson.attachments || "",
         objectives: lesson.objectives || "",
+        parentLessonId: lesson.parentLessonId || undefined,
       });
       // Force RichTextEditor to re-render with new content
       setEditorKey(prev => prev + 1);
@@ -414,6 +422,33 @@ export default function LessonForm() {
                     </SelectContent>
                   </Select>
                 </div>
+
+                {availableModules.length > 0 && (
+                  <div>
+                    <Label htmlFor="parentLessonId" className="text-white">Módulo Padre (opcional)</Label>
+                    <Select 
+                      value={form.watch("parentLessonId") || "none"}
+                      onValueChange={(value) => form.setValue("parentLessonId", value === "none" ? undefined : value)}
+                    >
+                      <SelectTrigger className="bg-slate-800 border-slate-600 text-white">
+                        <SelectValue placeholder="Sin módulo padre (lección independiente)" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">
+                          Sin módulo padre (lección independiente)
+                        </SelectItem>
+                        {availableModules.map((module: any) => (
+                          <SelectItem key={module.id} value={module.id}>
+                            {module.title}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-gray-400 text-xs mt-1">
+                      Selecciona un módulo para que esta lección aparezca como sub-lección dentro de él
+                    </p>
+                  </div>
+                )}
 
                 <div>
                   <Label htmlFor="duration" className="text-white">Duración (minutos) *</Label>

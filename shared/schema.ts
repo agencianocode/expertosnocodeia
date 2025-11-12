@@ -113,6 +113,7 @@ export const userRecentActivity = pgTable("user_recent_activity", {
 export const lessons = pgTable("lessons", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   courseId: varchar("course_id").references(() => courses.id),
+  parentLessonId: varchar("parent_lesson_id"), // For nested structure: modules (null) contain sub-lessons (with parent ID)
   title: varchar("title").notNull(),
   description: text("description"),
   content: text("content"),

@@ -137,6 +137,8 @@ export interface IStorage {
   
   // Lesson operations
   getLessonsByCourse(courseId: string): Promise<Lesson[]>;
+  getModulesByCourse(courseId: string): Promise<Lesson[]>; // Get only parent lessons (modules)
+  getSubLessons(parentLessonId: string): Promise<Lesson[]>; // Get sub-lessons of a module
   getLessonById(id: string): Promise<Lesson | undefined>;
   createLesson(data: InsertLesson): Promise<Lesson>;
   updateLesson(id: string, data: Partial<InsertLesson>): Promise<Lesson>;
@@ -765,6 +767,27 @@ export class DatabaseStorage implements IStorage {
       .orderBy(lessons.order);
   }
 
+  async getModulesByCourse(courseId: string): Promise<Lesson[]> {
+    return await db
+      .select()
+      .from(lessons)
+      .where(
+        and(
+          eq(lessons.courseId, courseId),
+          isNull(lessons.parentLessonId)
+        )
+      )
+      .orderBy(lessons.order);
+  }
+
+  async getSubLessons(parentLessonId: string): Promise<Lesson[]> {
+    return await db
+      .select()
+      .from(lessons)
+      .where(eq(lessons.parentLessonId, parentLessonId))
+      .orderBy(lessons.order);
+  }
+
   async getLessonById(id: string): Promise<Lesson | undefined> {
     const [lesson] = await db.select().from(lessons).where(eq(lessons.id, id));
     return lesson;
@@ -794,18 +817,28 @@ export class DatabaseStorage implements IStorage {
     const [lesson] = await db.select().from(lessons).where(eq(lessons.id, id));
     if (!lesson || !lesson.courseId) return false;
 
-    // Get all lessons in the same course ordered by order
-    const courseLessons = await db
+    // Get all lessons at the same level (same parent) in the same course ordered by order
+    const whereConditions = lesson.parentLessonId
+      ? and(
+          eq(lessons.courseId, lesson.courseId),
+          eq(lessons.parentLessonId, lesson.parentLessonId)
+        )
+      : and(
+          eq(lessons.courseId, lesson.courseId),
+          isNull(lessons.parentLessonId)
+        );
+    
+    const sameLevelLessons = await db
       .select()
       .from(lessons)
-      .where(eq(lessons.courseId, lesson.courseId))
+      .where(whereConditions)
       .orderBy(lessons.order);
 
     // Find current position
-    const currentIndex = courseLessons.findIndex(l => l.id === id);
+    const currentIndex = sameLevelLessons.findIndex(l => l.id === id);
     if (currentIndex <= 0) return false; // Already at top or not found
 
-    const previousLesson = courseLessons[currentIndex - 1];
+    const previousLesson = sameLevelLessons[currentIndex - 1];
     
     // Swap orders
     await db.transaction(async (tx) => {
@@ -826,18 +859,28 @@ export class DatabaseStorage implements IStorage {
     const [lesson] = await db.select().from(lessons).where(eq(lessons.id, id));
     if (!lesson || !lesson.courseId) return false;
 
-    // Get all lessons in the same course ordered by order
-    const courseLessons = await db
+    // Get all lessons at the same level (same parent) in the same course ordered by order
+    const whereConditions = lesson.parentLessonId
+      ? and(
+          eq(lessons.courseId, lesson.courseId),
+          eq(lessons.parentLessonId, lesson.parentLessonId)
+        )
+      : and(
+          eq(lessons.courseId, lesson.courseId),
+          isNull(lessons.parentLessonId)
+        );
+    
+    const sameLevelLessons = await db
       .select()
       .from(lessons)
-      .where(eq(lessons.courseId, lesson.courseId))
+      .where(whereConditions)
       .orderBy(lessons.order);
 
     // Find current position
-    const currentIndex = courseLessons.findIndex(l => l.id === id);
-    if (currentIndex < 0 || currentIndex >= courseLessons.length - 1) return false; // At bottom or not found
+    const currentIndex = sameLevelLessons.findIndex(l => l.id === id);
+    if (currentIndex < 0 || currentIndex >= sameLevelLessons.length - 1) return false; // At bottom or not found
 
-    const nextLesson = courseLessons[currentIndex + 1];
+    const nextLesson = sameLevelLessons[currentIndex + 1];
     
     // Swap orders
     await db.transaction(async (tx) => {
