@@ -714,12 +714,34 @@ export const userAccess = pgTable("user_access", {
   index("idx_user_access_active").on(table.userId, table.accessType, table.accessId, table.isActive),
 ]);
 
+// Banners promocionales que se muestran entre fases en las salas
+export const promoBanners = pgTable("promo_banners", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  roomId: varchar("room_id").references(() => rooms.id, { onDelete: "cascade" }).notNull(),
+  title: varchar("title").notNull(),
+  subtitle: varchar("subtitle"),
+  description: text("description"),
+  backgroundImageUrl: varchar("background_image_url"),
+  backgroundColor: varchar("background_color").default("from-orange-600 to-red-600"),
+  ctaText: varchar("cta_text"),
+  ctaLink: varchar("cta_link"),
+  displayAfterPhaseOrder: integer("display_after_phase_order").notNull(), // Mostrar después de esta fase
+  order: integer("order").notNull().default(0),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
+}, (table) => [
+  index("idx_promo_banners_room").on(table.roomId),
+  index("idx_promo_banners_room_order").on(table.roomId, table.order),
+]);
+
 // ========================================
 // RELATIONS
 // ========================================
 
 export const roomsRelations = relations(rooms, ({ many }) => ({
   phases: many(phases),
+  promoBanners: many(promoBanners),
 }));
 
 export const phasesRelations = relations(phases, ({ one, many }) => ({
@@ -755,6 +777,13 @@ export const userAccessRelations = relations(userAccess, ({ one }) => ({
   }),
 }));
 
+export const promoBannersRelations = relations(promoBanners, ({ one }) => ({
+  room: one(rooms, {
+    fields: [promoBanners.roomId],
+    references: [rooms.id],
+  }),
+}));
+
 // ========================================
 // INSERT SCHEMAS & TYPES
 // ========================================
@@ -785,12 +814,19 @@ export const insertUserAccessSchema = createInsertSchema(userAccess).omit({
   grantedAt: true,
 });
 
+export const insertPromoBannerSchema = createInsertSchema(promoBanners).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 // Select Types
 export type Room = typeof rooms.$inferSelect;
 export type Phase = typeof phases.$inferSelect;
 export type PhaseContent = typeof phaseContent.$inferSelect;
 export type Purchase = typeof purchases.$inferSelect;
 export type UserAccess = typeof userAccess.$inferSelect;
+export type PromoBanner = typeof promoBanners.$inferSelect;
 
 // Insert Types
 export type InsertRoom = z.infer<typeof insertRoomSchema>;
@@ -798,3 +834,4 @@ export type InsertPhase = z.infer<typeof insertPhaseSchema>;
 export type InsertPhaseContent = z.infer<typeof insertPhaseContentSchema>;
 export type InsertPurchase = z.infer<typeof insertPurchaseSchema>;
 export type InsertUserAccess = z.infer<typeof insertUserAccessSchema>;
+export type InsertPromoBanner = z.infer<typeof insertPromoBannerSchema>;
