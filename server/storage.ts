@@ -1584,7 +1584,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async addContentToPhase(data: InsertPhaseContent): Promise<PhaseContent> {
-    const [created] = await db.insert(phaseContent).values(data).returning();
+    const [created] = await db.insert(phaseContent).values(data as any).returning();
     return created;
   }
 

@@ -154,6 +154,95 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ========================================
+  // ROOMS & PHASES ROUTES
+  // ========================================
+
+  // Get all published rooms
+  app.get("/api/rooms", async (req, res) => {
+    try {
+      const rooms = await storage.getPublishedRooms();
+      res.json(rooms);
+    } catch (error) {
+      console.error("Error fetching rooms:", error);
+      res.status(500).json({ message: "Failed to fetch rooms" });
+    }
+  });
+
+  // Get room detail with phases (public, but includes user access if authenticated)
+  app.get("/api/rooms/:slug", async (req: AuthenticatedRequest, res) => {
+    try {
+      const { slug } = req.params;
+      const userId = req.user?.id; // Optional userId if authenticated
+      
+      const roomDetail = await storage.getRoomDetailWithPhases(slug, userId);
+      
+      if (!roomDetail) {
+        return res.status(404).json({ message: "Room not found" });
+      }
+
+      res.json(roomDetail);
+    } catch (error) {
+      console.error("Error fetching room detail:", error);
+      res.status(500).json({ message: "Failed to fetch room detail" });
+    }
+  });
+
+  // ========================================
+  // ACCESS CONTROL ROUTES
+  // ========================================
+
+  // Get user's active access grants (authenticated)
+  app.get("/api/access", supabaseAuth, async (req: AuthenticatedRequest, res) => {
+    try {
+      const userId = req.user!.id;
+      const access = await storage.listActiveAccess(userId);
+      res.json(access);
+    } catch (error) {
+      console.error("Error fetching user access:", error);
+      res.status(500).json({ message: "Failed to fetch user access" });
+    }
+  });
+
+  // Check if user has access to specific content (authenticated)
+  app.get("/api/access/check", supabaseAuth, async (req: AuthenticatedRequest, res) => {
+    try {
+      const userId = req.user!.id;
+      const { accessType, accessId } = req.query;
+
+      if (!accessType || typeof accessType !== 'string') {
+        return res.status(400).json({ message: "accessType is required" });
+      }
+
+      const hasAccess = await storage.checkUserAccess(
+        userId, 
+        accessType, 
+        accessId as string | undefined
+      );
+
+      res.json({ hasAccess });
+    } catch (error) {
+      console.error("Error checking user access:", error);
+      res.status(500).json({ message: "Failed to check user access" });
+    }
+  });
+
+  // ========================================
+  // PURCHASES ROUTES (Stripe integration will be added later)
+  // ========================================
+
+  // Get user's purchases (authenticated)
+  app.get("/api/purchases", supabaseAuth, async (req: AuthenticatedRequest, res) => {
+    try {
+      const userId = req.user!.id;
+      const purchases = await storage.listPurchasesForUser(userId);
+      res.json(purchases);
+    } catch (error) {
+      console.error("Error fetching purchases:", error);
+      res.status(500).json({ message: "Failed to fetch purchases" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
