@@ -30,7 +30,7 @@ import { apiRequest } from "@/lib/queryClient";
 const lessonSchema = z.object({
   title: z.string().min(1, "El título es requerido"),
   description: z.string().optional(),
-  content: z.string().min(1, "El contenido es requerido"),
+  content: z.string().optional(), // Optional for modules, required for sub-lessons
   type: z.enum(["video", "text", "quiz", "interactive"]),
   duration: z.number().min(1, "La duración es requerida"),
   order: z.number().min(1, "El orden es requerido"),
@@ -41,6 +41,15 @@ const lessonSchema = z.object({
   attachments: z.string().optional(),
   objectives: z.string().optional(),
   parentLessonId: z.string().optional(), // Optional: if set, this is a sub-lesson under a module
+}).refine((data) => {
+  // If this is a sub-lesson (has parentLessonId), content is required
+  if (data.parentLessonId && (!data.content || data.content.trim() === '')) {
+    return false;
+  }
+  return true;
+}, {
+  message: "El contenido es requerido para sub-lecciones",
+  path: ["content"],
 });
 
 type LessonFormData = z.infer<typeof lessonSchema>;
@@ -287,9 +296,17 @@ export default function LessonForm() {
               <CardHeader>
                 <CardTitle className="text-white flex items-center gap-2">
                   🎬 Multimedia de la Lección
+                  {!form.watch("parentLessonId") && (
+                    <span className="text-xs font-normal text-gray-400 bg-slate-800 px-2 py-1 rounded">
+                      Opcional para módulos
+                    </span>
+                  )}
                 </CardTitle>
                 <CardDescription className="text-gray-400">
-                  Agrega videos, imágenes o GIFs que aparecerán arriba del contenido
+                  {!form.watch("parentLessonId") 
+                    ? "Los módulos pueden tener multimedia, pero es opcional. Solo el título es requerido."
+                    : "Agrega videos, imágenes o GIFs que aparecerán arriba del contenido"
+                  }
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -349,26 +366,45 @@ export default function LessonForm() {
 
             <Card className="bg-slate-900/50 border-slate-700 mt-6">
               <CardHeader>
-                <CardTitle className="text-white">Contenido de la Lección</CardTitle>
+                <CardTitle className="text-white flex items-center gap-2">
+                  Contenido de la Lección
+                  {!form.watch("parentLessonId") && (
+                    <span className="text-xs font-normal text-gray-400 bg-slate-800 px-2 py-1 rounded">
+                      Opcional para módulos
+                    </span>
+                  )}
+                </CardTitle>
                 <CardDescription className="text-gray-400">
-                  Contenido principal que aparecerá debajo del multimedia
+                  {!form.watch("parentLessonId") 
+                    ? "Los módulos son contenedores y no requieren contenido. Solo las sub-lecciones necesitan contenido completo."
+                    : "Contenido principal que aparecerá debajo del multimedia (requerido para sub-lecciones)"
+                  }
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
-                  <Label htmlFor="content" className="text-white">Contenido *</Label>
+                  <Label htmlFor="content" className="text-white">
+                    Contenido {form.watch("parentLessonId") && "*"}
+                  </Label>
                   <RichTextEditor
                     key={editorKey}
                     content={form.watch("content") || ""}
                     onChange={(content) => form.setValue("content", content)}
-                    placeholder="Escribe aquí el contenido completo de la lección. Usa la barra de herramientas para formatear el texto o pega contenido de otros lugares..."
+                    placeholder={
+                      !form.watch("parentLessonId")
+                        ? "Opcional para módulos - Los módulos son solo contenedores organizadores"
+                        : "Escribe aquí el contenido completo de la lección. Usa la barra de herramientas para formatear el texto o pega contenido de otros lugares..."
+                    }
                     className="mt-2"
                   />
                   {form.formState.errors.content && (
                     <p className="text-red-400 text-sm mt-1">{form.formState.errors.content.message}</p>
                   )}
                   <p className="text-gray-400 text-xs mt-1">
-                    Usa la barra de herramientas para formatear. Soporta pegar imágenes directamente desde el portapapeles.
+                    {!form.watch("parentLessonId")
+                      ? "💡 Módulos: Solo necesitas darle un título. El contenido se mostrará desde las sub-lecciones."
+                      : "Usa la barra de herramientas para formatear. Soporta pegar imágenes directamente desde el portapapeles."
+                    }
                   </p>
                 </div>
 
