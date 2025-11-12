@@ -212,92 +212,80 @@ export default function Room() {
                       </div>
                     </div>
 
-                    {/* Phase Content - Horizontal Scroll */}
-                    <div className="relative">
-                      <div className="flex gap-6 overflow-x-auto pb-4 scrollbar-hide snap-x snap-mandatory">
-                        {phase.content.map((content) => (
-                          <div key={content.id} className="flex-shrink-0 w-80 snap-start">
-                            {content.contentType === 'course' && content.courseData && (
-                              <div className={cn(isLockedForUser && "opacity-50 pointer-events-none")}>
-                                <CourseCard
-                                  course={content.courseData}
-                                  isAuthenticated={isAuthenticated}
-                                />
+                    {/* Phase Content - Netflix Style Grid */}
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+                      {phase.content.map((content) => {
+                        const getHref = () => {
+                          if (isLockedForUser) return "#";
+                          if (content.contentType === 'course') return `/curso/${content.contentId}`;
+                          if (content.contentType === 'workshop') return `/taller/${content.contentId}`;
+                          if (content.contentType === 'guide') return `/guia/${content.contentId}`;
+                          return "#";
+                        };
+
+                        const getBadgeText = () => {
+                          if (content.contentType === 'workshop') return 'Workshop';
+                          if (content.contentType === 'guide') return 'Guía';
+                          return 'Curso';
+                        };
+
+                        return (
+                          <div key={content.id} className="group">
+                            <Link href={getHref()}>
+                              <div className={cn(
+                                "relative aspect-[2/3] rounded-lg overflow-hidden cursor-pointer transition-all duration-300",
+                                "hover:scale-105 hover:z-10 hover:shadow-2xl",
+                                isLockedForUser && "opacity-50 cursor-not-allowed"
+                              )}>
+                                {/* Poster Image */}
+                                {content.courseData?.coverImageUrl ? (
+                                  <img 
+                                    src={content.courseData.coverImageUrl} 
+                                    alt={content.courseData.title}
+                                    className="w-full h-full object-cover"
+                                  />
+                                ) : (
+                                  <div className="w-full h-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
+                                    {content.contentType === 'workshop' && (
+                                      <Video className="h-16 w-16 text-primary/40" />
+                                    )}
+                                    {content.contentType === 'guide' && (
+                                      <BookOpen className="h-16 w-16 text-primary/40" />
+                                    )}
+                                    {content.contentType === 'course' && (
+                                      <Play className="h-16 w-16 text-primary/40" />
+                                    )}
+                                  </div>
+                                )}
+
+                                {/* Lock Overlay */}
+                                {isLockedForUser && (
+                                  <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                                    <Lock className="h-12 w-12 text-white" />
+                                  </div>
+                                )}
+
+                                {/* Bottom Gradient Overlay */}
+                                <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black/90 via-black/50 to-transparent" />
+
+                                {/* Title and Badge */}
+                                <div className="absolute inset-x-0 bottom-0 p-3">
+                                  <Badge className="mb-2 text-xs">{getBadgeText()}</Badge>
+                                  <h4 className="text-white font-semibold text-sm line-clamp-2 leading-tight">
+                                    {content.courseData?.title || 'Sin título'}
+                                  </h4>
+                                </div>
                               </div>
-                            )}
-                            
-                            {content.contentType === 'workshop' && content.courseData && (
-                              <Card className={cn(
-                                "h-full cursor-pointer transition-all hover:scale-105",
-                                isLockedForUser && "opacity-50 pointer-events-none"
-                              )}>
-                                <Link href={isLockedForUser ? "#" : `/taller/${content.contentId}`}>
-                                  <CardContent className="p-6">
-                                    <div className="flex items-start gap-3 mb-4">
-                                      <div className="p-3 rounded-lg bg-purple-500/10">
-                                        <Video className="h-6 w-6 text-purple-500" />
-                                      </div>
-                                      {isLockedForUser && (
-                                        <Lock className="h-5 w-5 text-muted-foreground ml-auto" />
-                                      )}
-                                    </div>
-                                    
-                                    <h4 className="font-bold text-lg mb-2 line-clamp-2">
-                                      {content.courseData.title}
-                                    </h4>
-                                    
-                                    {content.courseData.description && (
-                                      <p className="text-sm text-muted-foreground line-clamp-3 mb-4">
-                                        {content.courseData.description}
-                                      </p>
-                                    )}
-                                    
-                                    <Badge variant="secondary">Workshop</Badge>
-                                  </CardContent>
-                                </Link>
-                              </Card>
-                            )}
-                            
-                            {content.contentType === 'guide' && content.courseData && (
-                              <Card className={cn(
-                                "h-full cursor-pointer transition-all hover:scale-105",
-                                isLockedForUser && "opacity-50 pointer-events-none"
-                              )}>
-                                <Link href={isLockedForUser ? "#" : `/guia/${content.contentId}`}>
-                                  <CardContent className="p-6">
-                                    <div className="flex items-start gap-3 mb-4">
-                                      <div className="p-3 rounded-lg bg-blue-500/10">
-                                        <BookOpen className="h-6 w-6 text-blue-500" />
-                                      </div>
-                                      {isLockedForUser && (
-                                        <Lock className="h-5 w-5 text-muted-foreground ml-auto" />
-                                      )}
-                                    </div>
-                                    
-                                    <h4 className="font-bold text-lg mb-2 line-clamp-2">
-                                      {content.courseData.title}
-                                    </h4>
-                                    
-                                    {content.courseData.description && (
-                                      <p className="text-sm text-muted-foreground line-clamp-3 mb-4">
-                                        {content.courseData.description}
-                                      </p>
-                                    )}
-                                    
-                                    <Badge variant="secondary">Guía</Badge>
-                                  </CardContent>
-                                </Link>
-                              </Card>
-                            )}
+                            </Link>
                           </div>
-                        ))}
-                        
-                        {phase.content.length === 0 && (
-                          <div className="w-full p-8 text-center text-muted-foreground">
-                            <p>No hay contenido disponible en esta fase todavía</p>
-                          </div>
-                        )}
-                      </div>
+                        );
+                      })}
+                      
+                      {phase.content.length === 0 && (
+                        <div className="col-span-full p-12 text-center text-muted-foreground">
+                          <p>No hay contenido disponible en esta fase todavía</p>
+                        </div>
+                      )}
                     </div>
                   </div>
                 );
