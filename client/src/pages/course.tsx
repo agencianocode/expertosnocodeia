@@ -60,6 +60,9 @@ export default function Course() {
   
   // Mobile Lessons Modal State
   const [isMobileLessonsOpen, setIsMobileLessonsOpen] = useState(false);
+  
+  // Collapsed modules state (stores module IDs that are collapsed)
+  const [collapsedModules, setCollapsedModules] = useState<Set<number>>(new Set());
 
   // Sample exam questions
   const examQuestions = [
@@ -266,6 +269,38 @@ export default function Course() {
   // Ensure lessons is always an array
   const lessonsArray = Array.isArray(lessons) ? lessons : [];
 
+  // Organize lessons into hierarchical structure (modules + sub-lessons)
+  const modules = lessonsArray.filter((lesson: any) => !lesson.parentLessonId)
+    .sort((a: any, b: any) => a.order - b.order);
+  
+  const subLessonsByParent = lessonsArray
+    .filter((lesson: any) => lesson.parentLessonId)
+    .reduce((acc: any, lesson: any) => {
+      if (!acc[lesson.parentLessonId]) {
+        acc[lesson.parentLessonId] = [];
+      }
+      acc[lesson.parentLessonId].push(lesson);
+      return acc;
+    }, {});
+  
+  // Sort sub-lessons within each parent
+  Object.keys(subLessonsByParent).forEach(parentId => {
+    subLessonsByParent[parentId].sort((a: any, b: any) => a.order - b.order);
+  });
+  
+  // Toggle collapse state for a module
+  const toggleModuleCollapse = (moduleId: number) => {
+    setCollapsedModules(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(moduleId)) {
+        newSet.delete(moduleId);
+      } else {
+        newSet.add(moduleId);
+      }
+      return newSet;
+    });
+  };
+
   // Verificar si hay una lección guardada y redirigir automáticamente
   useEffect(() => {
     // console.log('🔍 Checking saved position...', { 
@@ -425,7 +460,14 @@ export default function Course() {
     lessons: lessonsArray
   };
 
-  const progressPercentage = lessonsArray.length > 0 ? (completedLessons.length / lessonsArray.length) * 100 : 0;
+  // Calculate progress based on leaf lessons only (sub-lessons or modules without children)
+  const leafLessons = lessonsArray.filter((lesson: any) => {
+    // Include if it's a sub-lesson OR a module without sub-lessons
+    return lesson.parentLessonId || !subLessonsByParent[lesson.id]?.length;
+  });
+  const leafLessonIds = new Set(leafLessons.map((l: any) => l.id));
+  const completedLeafLessons = completedLessons.filter((id: string) => leafLessonIds.has(id));
+  const progressPercentage = leafLessons.length > 0 ? (completedLeafLessons.length / leafLessons.length) * 100 : 0;
   const currentLesson = lessonsArray[currentLessonIndex];
 
   const handleLessonClick = (lessonIndex: number) => {
@@ -716,59 +758,143 @@ export default function Course() {
             <div className="bg-card rounded-lg p-5">
               <h3 className="font-satoshi font-medium text-foreground mb-5 text-[20px]">Contenido del curso</h3>
               <div className="space-y-2 max-h-[400px] overflow-y-auto scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent pr-2">
-                {lessonsArray.map((lesson: any, index: number) => (
-                  <div
-                    key={lesson.id}
-                    onClick={() => {
-                      handleLessonClick(index);
-                      // La lógica de contenido bloqueado se maneja en la vista principal
-                    }}
-                    className={cn(
-                      "py-5 px-4 rounded-lg transition-colors",
-                      isAuthenticated 
-                        ? cn(
-                            "cursor-pointer",
-                            index === currentLessonIndex 
-                              ? "bg-muted text-foreground border border-border" 
-                              : "hover:bg-muted/50 hover:border hover:border-border text-muted-foreground"
-                          )
-                        : "cursor-pointer hover:bg-muted/30 text-muted-foreground"
-                    )}
-                  >
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-start space-x-3">
-                        <div className="w-6 h-6 rounded border flex items-center justify-center font-medium flex-shrink-0 bg-muted text-foreground border-border text-[14px] mt-[0px] mb-[0px]">
-                          {!isAuthenticated ? (
-                            <Lock size={10} className="text-muted-foreground" />
-                          ) : isLessonCompleted(lesson.id) ? (
-                            <Check size={10} />
-                          ) : (
-                            index + 1
-                          )}
-                        </div>
-                        <div className="flex-1">
-                          <div className="font-satoshi font-medium text-foreground text-[15px]">
-                            {lesson.title}
+                {modules.map((module: any) => {
+                  const moduleIndex = lessonsArray.findIndex((l: any) => l.id === module.id);
+                  const subLessons = subLessonsByParent[module.id] || [];
+                  const isCollapsed = collapsedModules.has(module.id);
+                  const hasSubLessons = subLessons.length > 0;
+
+                  return (
+                    <div key={module.id} className="space-y-1">
+                      {/* Module Header */}
+                      <div
+                        className={cn(
+                          "py-4 px-4 rounded-lg transition-colors",
+                          isAuthenticated 
+                            ? cn(
+                                !hasSubLessons && "cursor-pointer",
+                                moduleIndex === currentLessonIndex 
+                                  ? "bg-muted text-foreground border border-border" 
+                                  : "hover:bg-muted/50 hover:border hover:border-border text-muted-foreground"
+                              )
+                            : !hasSubLessons ? "cursor-pointer hover:bg-muted/30 text-muted-foreground" : "text-muted-foreground"
+                        )}
+                      >
+                        <div className="flex items-start justify-between">
+                          <div 
+                            className="flex items-start space-x-3 flex-1 cursor-pointer"
+                            onClick={() => handleLessonClick(moduleIndex)}
+                          >
+                            <div className="w-6 h-6 rounded border flex items-center justify-center font-medium flex-shrink-0 bg-muted text-foreground border-border text-[14px]">
+                              {!isAuthenticated ? (
+                                <Lock size={10} className="text-muted-foreground" />
+                              ) : isLessonCompleted(module.id) ? (
+                                <Check size={10} />
+                              ) : (
+                                moduleIndex + 1
+                              )}
+                            </div>
+                            <div className="flex-1">
+                              <div className="font-satoshi font-medium text-foreground text-[15px]">
+                                {module.title}
+                              </div>
+                            </div>
+                          </div>
+                          
+                          <div className="flex items-center gap-2">
+                            {!isAuthenticated ? (
+                              <Lock size={14} className="text-muted-foreground mt-1" />
+                            ) : moduleIndex === currentLessonIndex && !isLessonCompleted(module.id) && (
+                              <div 
+                                className="flex items-center border border-border rounded px-2 py-1 cursor-pointer hover:bg-muted/20 transition-colors"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleMarkComplete(module.id);
+                                }}
+                              >
+                                <Check size={12} className="mr-1.5 text-muted-foreground" />
+                                <span className="text-muted-foreground font-satoshi text-[12px]">Marcar como completado</span>
+                              </div>
+                            )}
+                            
+                            {hasSubLessons && (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  toggleModuleCollapse(module.id);
+                                }}
+                                className="p-1 hover:bg-muted/30 rounded transition-colors"
+                              >
+                                <ChevronRight 
+                                  size={16} 
+                                  className={cn(
+                                    "text-muted-foreground transition-transform",
+                                    !isCollapsed && "rotate-90"
+                                  )}
+                                />
+                              </button>
+                            )}
                           </div>
                         </div>
                       </div>
-                      {!isAuthenticated ? (
-                        <Lock size={14} className="text-muted-foreground mt-1" />
-                      ) : index === currentLessonIndex && !isLessonCompleted(lesson.id) && (
-                        <div 
-                          className="flex items-center border border-border rounded px-2 py-1 ml-3 cursor-pointer hover:bg-muted/20 transition-colors"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleMarkComplete(lesson.id);
-                          }}
-                        >
-                          <Check size={12} className="mr-1.5 text-muted-foreground" />
-                          <span className="text-muted-foreground font-satoshi text-[12px]">Marcar como completado</span>
-                        </div>
-                      )}
+
+                      {/* Sub-lessons */}
+                      {hasSubLessons && !isCollapsed && subLessons.map((subLesson: any) => {
+                        const subIndex = lessonsArray.findIndex((l: any) => l.id === subLesson.id);
+                        return (
+                          <div
+                            key={subLesson.id}
+                            onClick={() => handleLessonClick(subIndex)}
+                            className={cn(
+                              "py-3 px-4 ml-6 rounded-lg transition-colors",
+                              isAuthenticated 
+                                ? cn(
+                                    "cursor-pointer",
+                                    subIndex === currentLessonIndex 
+                                      ? "bg-muted text-foreground border border-border" 
+                                      : "hover:bg-muted/50 hover:border hover:border-border text-muted-foreground"
+                                  )
+                                : "cursor-pointer hover:bg-muted/30 text-muted-foreground"
+                            )}
+                          >
+                            <div className="flex items-start justify-between">
+                              <div className="flex items-start space-x-3">
+                                <div className="w-5 h-5 rounded border flex items-center justify-center font-medium flex-shrink-0 bg-muted text-foreground border-border text-[12px]">
+                                  {!isAuthenticated ? (
+                                    <Lock size={8} className="text-muted-foreground" />
+                                  ) : isLessonCompleted(subLesson.id) ? (
+                                    <Check size={8} />
+                                  ) : (
+                                    subIndex + 1
+                                  )}
+                                </div>
+                                <div className="flex-1">
+                                  <div className="font-satoshi font-normal text-foreground text-[14px]">
+                                    {subLesson.title}
+                                  </div>
+                                </div>
+                              </div>
+                              {!isAuthenticated ? (
+                                <Lock size={12} className="text-muted-foreground mt-1" />
+                              ) : subIndex === currentLessonIndex && !isLessonCompleted(subLesson.id) && (
+                                <div 
+                                  className="flex items-center border border-border rounded px-2 py-1 ml-2 cursor-pointer hover:bg-muted/20 transition-colors"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleMarkComplete(subLesson.id);
+                                  }}
+                                >
+                                  <Check size={10} className="mr-1 text-muted-foreground" />
+                                  <span className="text-muted-foreground font-satoshi text-[11px]">Marcar</span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
 
               {/* Final Exam Button - Only show when currently on last lesson (Desktop) */}
@@ -1112,54 +1238,134 @@ export default function Course() {
             {/* Lessons List */}
             <div className="flex-1 overflow-y-auto">
               <div className="space-y-2 p-4">
-                {lessonsArray.map((lesson: any, index: number) => (
-                  <div
-                    key={lesson.id}
-                    onClick={() => {
-                      handleLessonClick(index);
-                      setIsMobileLessonsOpen(false);
-                      // La lógica de contenido bloqueado se maneja en la vista principal
-                    }}
-                    className={cn(
-                      "p-4 rounded-lg cursor-pointer transition-all",
-                      index === currentLessonIndex 
-                        ? "bg-[#262626] border border-[#404040]" 
-                        : "bg-transparent hover:bg-[#262626]/50"
-                    )}
-                  >
-                    <div className="flex items-start space-x-3">
-                      <div className="w-8 h-8 rounded-lg border flex items-center justify-center font-medium flex-shrink-0 bg-gray-600 text-white border-gray-600 text-sm">
-                        {isLessonCompleted(lesson.id) ? (
-                          <Check size={16} className="text-green-400" />
-                        ) : (
-                          index + 1
+                {modules.map((module: any) => {
+                  const moduleIndex = lessonsArray.findIndex((l: any) => l.id === module.id);
+                  const subLessons = subLessonsByParent[module.id] || [];
+                  const isCollapsed = collapsedModules.has(module.id);
+                  const hasSubLessons = subLessons.length > 0;
+
+                  return (
+                    <div key={module.id} className="space-y-1">
+                      {/* Module Header */}
+                      <div
+                        className={cn(
+                          "p-4 rounded-lg transition-all",
+                          moduleIndex === currentLessonIndex 
+                            ? "bg-[#262626] border border-[#404040]" 
+                            : "bg-transparent hover:bg-[#262626]/50"
                         )}
-                      </div>
-                      <div className="flex-1">
-                        <div className="text-white font-medium text-base mb-1">
-                          {lesson.title}
-                        </div>
-                        {isLessonCompleted(lesson.id) ? (
-                          <div className="flex items-center text-green-400 text-sm">
-                            <Check size={14} className="mr-1" />
-                            <span>Completado</span>
-                          </div>
-                        ) : index === currentLessonIndex && (
+                      >
+                        <div className="flex items-start justify-between">
                           <div 
-                            className="flex items-center border border-[#404040] rounded px-2 py-1 cursor-pointer hover:bg-[#404040]/20 transition-colors mt-1"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleMarkComplete(lesson.id);
+                            className="flex items-start space-x-3 flex-1 cursor-pointer"
+                            onClick={() => {
+                              handleLessonClick(moduleIndex);
+                              setIsMobileLessonsOpen(false);
                             }}
                           >
-                            <Check size={12} className="mr-1.5 text-gray-400" />
-                            <span className="text-gray-400 font-satoshi text-[12px]">Marcar como completado</span>
+                            <div className="w-8 h-8 rounded-lg border flex items-center justify-center font-medium flex-shrink-0 bg-gray-600 text-white border-gray-600 text-sm">
+                              {isLessonCompleted(module.id) ? (
+                                <Check size={16} className="text-green-400" />
+                              ) : (
+                                moduleIndex + 1
+                              )}
+                            </div>
+                            <div className="flex-1">
+                              <div className="text-white font-medium text-base">
+                                {module.title}
+                              </div>
+                            </div>
                           </div>
-                        )}
+                          
+                          <div className="flex items-center gap-2">
+                            {moduleIndex === currentLessonIndex && !isLessonCompleted(module.id) && (
+                              <div 
+                                className="flex items-center border border-[#404040] rounded px-2 py-1 cursor-pointer hover:bg-[#404040]/20 transition-colors"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleMarkComplete(module.id);
+                                }}
+                              >
+                                <Check size={12} className="mr-1 text-gray-400" />
+                                <span className="text-gray-400 font-satoshi text-[11px]">Marcar</span>
+                              </div>
+                            )}
+                            
+                            {hasSubLessons && (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  toggleModuleCollapse(module.id);
+                                }}
+                                className="p-1 hover:bg-[#404040]/30 rounded transition-colors"
+                              >
+                                <ChevronRight 
+                                  size={18} 
+                                  className={cn(
+                                    "text-gray-400 transition-transform",
+                                    !isCollapsed && "rotate-90"
+                                  )}
+                                />
+                              </button>
+                            )}
+                          </div>
+                        </div>
                       </div>
+
+                      {/* Sub-lessons */}
+                      {hasSubLessons && !isCollapsed && subLessons.map((subLesson: any) => {
+                        const subIndex = lessonsArray.findIndex((l: any) => l.id === subLesson.id);
+                        return (
+                          <div
+                            key={subLesson.id}
+                            onClick={() => {
+                              handleLessonClick(subIndex);
+                              setIsMobileLessonsOpen(false);
+                            }}
+                            className={cn(
+                              "p-3 ml-6 rounded-lg cursor-pointer transition-all",
+                              subIndex === currentLessonIndex 
+                                ? "bg-[#262626] border border-[#404040]" 
+                                : "bg-transparent hover:bg-[#262626]/50"
+                            )}
+                          >
+                            <div className="flex items-start space-x-3">
+                              <div className="w-7 h-7 rounded-lg border flex items-center justify-center font-medium flex-shrink-0 bg-gray-600 text-white border-gray-600 text-xs">
+                                {isLessonCompleted(subLesson.id) ? (
+                                  <Check size={14} className="text-green-400" />
+                                ) : (
+                                  subIndex + 1
+                                )}
+                              </div>
+                              <div className="flex-1">
+                                <div className="text-white font-normal text-sm mb-1">
+                                  {subLesson.title}
+                                </div>
+                                {isLessonCompleted(subLesson.id) ? (
+                                  <div className="flex items-center text-green-400 text-xs">
+                                    <Check size={12} className="mr-1" />
+                                    <span>Completado</span>
+                                  </div>
+                                ) : subIndex === currentLessonIndex && (
+                                  <div 
+                                    className="flex items-center border border-[#404040] rounded px-2 py-1 cursor-pointer hover:bg-[#404040]/20 transition-colors"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleMarkComplete(subLesson.id);
+                                    }}
+                                  >
+                                    <Check size={10} className="mr-1 text-gray-400" />
+                                    <span className="text-gray-400 font-satoshi text-[10px]">Marcar</span>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
 
                 {/* Final Exam Button - Only show when currently on last lesson (Mobile) */}
                 {lessonsArray.length > 0 && currentLessonIndex >= lessonsArray.length - 1 && (
