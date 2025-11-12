@@ -346,6 +346,46 @@ export function registerSimpleRoutes(app: Express): Server {
     }
   });
 
+  // Get room detail with phases (public, but includes user access if authenticated)
+  app.get("/api/rooms/:slug", async (req: Request, res: Response) => {
+    try {
+      const { slug } = req.params;
+      
+      // Try to get userId if authenticated (optional)
+      let userId: string | undefined;
+      const authHeader = req.headers.authorization;
+      const token = authHeader && authHeader.split(" ")[1];
+      
+      if (token) {
+        try {
+          if (token.startsWith('eyJ')) {
+            const parts = token.split('.');
+            if (parts.length === 3) {
+              const payload = JSON.parse(Buffer.from(parts[1], 'base64').toString());
+              userId = payload.userId || payload.sub;
+            }
+          } else {
+            const decoded = Buffer.from(token, 'base64').toString('utf-8');
+            [userId] = decoded.split(':');
+          }
+        } catch (e) {
+          // Ignore auth errors for room detail (it's public)
+        }
+      }
+      
+      const roomDetail = await storage.getRoomDetailWithPhases(slug, userId);
+      
+      if (!roomDetail) {
+        return res.status(404).json({ message: "Room not found" });
+      }
+
+      res.json(roomDetail);
+    } catch (error) {
+      console.error("Error fetching room detail:", error);
+      res.status(500).json({ message: "Failed to fetch room detail" });
+    }
+  });
+
   // Get user progress (with replit auth)
   app.get("/api/user-progress", legacyAuth, async (req: any, res: Response) => {
     try {
