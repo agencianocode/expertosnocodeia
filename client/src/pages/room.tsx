@@ -270,12 +270,14 @@ export default function Room() {
                             <div key={content.id} className="group">
                               <Link href={getHref()}>
                                 <div className={cn(
-                                  "relative rounded-lg overflow-hidden cursor-pointer transition-all duration-300 bg-black",
-                                  "hover:scale-105 hover:z-10 hover:shadow-2xl",
-                                  isLockedForUser && "opacity-50 cursor-not-allowed"
+                                  "relative cursor-pointer transition-all duration-300",
+                                  "hover:scale-105 hover:z-10 hover:shadow-2xl"
                                 )}>
                                   {/* Poster Image */}
-                                  <div className="relative aspect-[2/3]">
+                                  <div className={cn(
+                                    "relative aspect-[2/3] rounded-lg overflow-hidden group-hover:rounded-b-none",
+                                    isLockedForUser && "opacity-50 cursor-not-allowed"
+                                  )}>
                                     {content.courseData?.coverImageUrl ? (
                                       <img 
                                         src={content.courseData.coverImageUrl} 
@@ -305,11 +307,13 @@ export default function Room() {
                                   </div>
 
                                   {/* Title and Badge - Show below on hover */}
-                                  <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 p-3 space-y-1 bg-black">
-                                    <Badge className="text-xs">{getBadgeText()}</Badge>
-                                    <h4 className="text-white font-semibold text-sm line-clamp-2 leading-tight">
-                                      {content.courseData?.title || 'Sin título'}
-                                    </h4>
+                                  <div className="max-h-0 group-hover:max-h-40 overflow-hidden transition-all duration-300 bg-black rounded-b-lg">
+                                    <div className="p-3 space-y-1">
+                                      <Badge className="text-xs">{getBadgeText()}</Badge>
+                                      <h4 className="text-white font-semibold text-sm line-clamp-2 leading-tight">
+                                        {content.courseData?.title || 'Sin título'}
+                                      </h4>
+                                    </div>
                                   </div>
                                 </div>
                               </Link>
