@@ -156,6 +156,7 @@ export default function Sidebar() {
                         </div>
                       </div>
                       <button
+                        type="button"
                         onClick={() => setProgramasExpanded(!programasExpanded)}
                         className="hidden lg:flex p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
                       >

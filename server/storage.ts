@@ -82,7 +82,7 @@ import {
   type ContentType,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc, and, sql } from "drizzle-orm";
+import { eq, desc, and, sql, not, inArray } from "drizzle-orm";
 
 // Interface for storage operations
 export interface IStorage {
@@ -377,6 +377,28 @@ export class DatabaseStorage implements IStorage {
 
   // Course operations
   async getAllCourses(): Promise<Course[]> {
+    // Get all course IDs that are assigned to rooms (in phaseContent)
+    const roomCourseIds = await db
+      .select({ contentId: phaseContent.contentId })
+      .from(phaseContent)
+      .where(eq(phaseContent.contentType, 'course'));
+    
+    const excludedIds = roomCourseIds.map(rc => rc.contentId);
+    
+    // Return courses that are NOT in rooms
+    if (excludedIds.length > 0) {
+      return await db
+        .select()
+        .from(courses)
+        .where(
+          and(
+            eq(courses.isPublished, true),
+            eq(courses.type, 'course'),
+            not(inArray(courses.id, excludedIds))
+          )
+        );
+    }
+    
     return await db.select().from(courses).where(and(eq(courses.isPublished, true), eq(courses.type, 'course')));
   }
 
