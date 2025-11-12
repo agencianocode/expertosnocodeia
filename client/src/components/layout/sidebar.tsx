@@ -169,9 +169,9 @@ export default function Sidebar() {
                     </div>
                     
                     {/* Submenu - Salas/Programas */}
-                    {programasExpanded && roomsData && (roomsData as any).length > 0 && (
+                    {programasExpanded && roomsData && Array.isArray(roomsData) && roomsData.length > 0 && (
                       <ul className="hidden lg:block ml-8 mt-1 space-y-1">
-                        {(roomsData as any).map((room: any) => {
+                        {roomsData.map((room: any) => {
                           const roomPath = `/sala/${room.slug}`;
                           const isRoomItemActive = location === roomPath;
                           return (
