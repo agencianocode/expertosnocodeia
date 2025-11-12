@@ -269,46 +269,46 @@ export default function Room() {
                           return (
                             <div key={content.id} className="group">
                               <Link href={getHref()}>
-                                <div className={cn(
-                                  "relative aspect-[2/3] rounded-lg overflow-hidden cursor-pointer transition-all duration-300",
-                                  "hover:scale-105 hover:z-10 hover:shadow-2xl",
-                                  isLockedForUser && "opacity-50 cursor-not-allowed"
-                                )}>
-                                  {/* Poster Image */}
-                                  {content.courseData?.coverImageUrl ? (
-                                    <img 
-                                      src={content.courseData.coverImageUrl} 
-                                      alt={content.courseData.title}
-                                      className="w-full h-full object-cover"
-                                    />
-                                  ) : (
-                                    <div className="w-full h-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
-                                      {content.contentType === 'workshop' && (
-                                        <Video className="h-16 w-16 text-primary/40" />
-                                      )}
-                                      {content.contentType === 'guide' && (
-                                        <BookOpen className="h-16 w-16 text-primary/40" />
-                                      )}
-                                      {content.contentType === 'course' && (
-                                        <Play className="h-16 w-16 text-primary/40" />
-                                      )}
-                                    </div>
-                                  )}
+                                <div className="relative">
+                                  {/* Poster Card */}
+                                  <div className={cn(
+                                    "relative aspect-[2/3] rounded-lg overflow-hidden cursor-pointer transition-all duration-300",
+                                    "hover:scale-105 hover:z-10 hover:shadow-2xl",
+                                    isLockedForUser && "opacity-50 cursor-not-allowed"
+                                  )}>
+                                    {/* Poster Image */}
+                                    {content.courseData?.coverImageUrl ? (
+                                      <img 
+                                        src={content.courseData.coverImageUrl} 
+                                        alt={content.courseData.title}
+                                        className="w-full h-full object-cover"
+                                      />
+                                    ) : (
+                                      <div className="w-full h-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
+                                        {content.contentType === 'workshop' && (
+                                          <Video className="h-16 w-16 text-primary/40" />
+                                        )}
+                                        {content.contentType === 'guide' && (
+                                          <BookOpen className="h-16 w-16 text-primary/40" />
+                                        )}
+                                        {content.contentType === 'course' && (
+                                          <Play className="h-16 w-16 text-primary/40" />
+                                        )}
+                                      </div>
+                                    )}
 
-                                  {/* Lock Overlay */}
-                                  {isLockedForUser && (
-                                    <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
-                                      <Lock className="h-12 w-12 text-white" />
-                                    </div>
-                                  )}
+                                    {/* Lock Overlay */}
+                                    {isLockedForUser && (
+                                      <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                                        <Lock className="h-12 w-12 text-white" />
+                                      </div>
+                                    )}
+                                  </div>
 
-                                  {/* Bottom Gradient Overlay */}
-                                  <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black/90 via-black/50 to-transparent" />
-
-                                  {/* Title and Badge */}
-                                  <div className="absolute inset-x-0 bottom-0 p-3">
-                                    <Badge className="mb-2 text-xs">{getBadgeText()}</Badge>
-                                    <h4 className="text-white font-semibold text-sm line-clamp-2 leading-tight">
+                                  {/* Title and Badge - Show below on hover */}
+                                  <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 mt-2 space-y-1">
+                                    <Badge className="text-xs">{getBadgeText()}</Badge>
+                                    <h4 className="text-foreground font-semibold text-sm line-clamp-2 leading-tight">
                                       {content.courseData?.title || 'Sin título'}
                                     </h4>
                                   </div>
