@@ -346,6 +346,18 @@ export function registerSimpleRoutes(app: Express): Server {
     }
   });
 
+  // Get phases for a specific room
+  app.get("/api/rooms/:roomId/phases", async (req: Request, res: Response) => {
+    try {
+      const { roomId } = req.params;
+      const phases = await storage.getPhasesByRoom(roomId);
+      res.json(phases);
+    } catch (error) {
+      console.error("Error fetching phases:", error);
+      res.status(500).json({ message: "Failed to fetch phases" });
+    }
+  });
+
   // Get room detail with phases (public, but includes user access if authenticated)
   app.get("/api/rooms/:slug", async (req: Request, res: Response) => {
     try {
@@ -695,6 +707,16 @@ export function registerSimpleRoutes(app: Express): Server {
         courseWithCategories = { ...course, categories };
       }
       
+      // Include room/phase assignment if exists (using the course's actual type)
+      const phaseAssignment = await storage.getPhaseContentByCourse(courseId, course.type as any);
+      if (phaseAssignment) {
+        courseWithCategories = { 
+          ...courseWithCategories, 
+          roomId: phaseAssignment.roomId,
+          phaseId: phaseAssignment.phaseId
+        };
+      }
+      
       res.json(courseWithCategories);
     } catch (error) {
       console.error("Error fetching course:", error);
@@ -717,7 +739,7 @@ export function registerSimpleRoutes(app: Express): Server {
   // Create new course
   app.post("/api/admin/courses", simpleAdminAuth, isAdmin, async (req: Request, res: Response) => {
     try {
-      const { categoryIds, ...rest } = req.body;
+      const { categoryIds, roomId, phaseId, ...rest } = req.body;
       const courseData = {
         ...rest,
         id: randomUUID(),
@@ -728,6 +750,11 @@ export function registerSimpleRoutes(app: Express): Server {
       // Handle multiple categories based on type and categoryIds presence
       if (categoryIds && Array.isArray(categoryIds)) {
         await storage.updateCourseCategories(course.id, categoryIds);
+      }
+      
+      // Handle room/phase assignment
+      if (roomId && phaseId) {
+        await storage.upsertPhaseContentForCourse(course.id, roomId, phaseId, course.type as any);
       }
       
       res.json(course);
@@ -741,7 +768,7 @@ export function registerSimpleRoutes(app: Express): Server {
   app.put("/api/admin/courses/:courseId", simpleAdminAuth, isAdmin, async (req: Request, res: Response) => {
     try {
       const { courseId } = req.params;
-      const { categoryIds, ...rest } = req.body;
+      const { categoryIds, roomId, phaseId, ...rest } = req.body;
       const courseData = rest;
       
       const course = await storage.updateCourse(courseId, courseData);
@@ -756,6 +783,9 @@ export function registerSimpleRoutes(app: Express): Server {
         // If type is explicitly non-guide, clear multiple categories
         await storage.updateCourseCategories(courseId, []);
       }
+      
+      // Handle room/phase assignment (upsert will remove if not provided)
+      await storage.upsertPhaseContentForCourse(courseId, roomId, phaseId, course.type as any);
       
       res.json(course);
     } catch (error) {

@@ -39,6 +39,8 @@ const courseSchema = z.object({
   hasCertificate: z.boolean().default(false),
   coverImageUrl: z.string().optional(),
   prerequisites: z.string().optional(),
+  roomId: z.string().optional(), // Sala a la que pertenece
+  phaseId: z.string().optional(), // Fase dentro de la sala
 }).superRefine((data, ctx) => {
   // Conditional validation based on type
   if (data.type === 'guide') {
@@ -84,6 +86,10 @@ export default function CourseForm() {
     queryKey: ["/api/categories"],
   });
 
+  const { data: rooms } = useQuery({
+    queryKey: ["/api/rooms"],
+  });
+
   const { data: course, isLoading: courseLoading } = useQuery({
     queryKey: ["/api/admin/courses", courseId],
     queryFn: async () => {
@@ -108,7 +114,20 @@ export default function CourseForm() {
       hasCertificate: false,
       coverImageUrl: "",
       prerequisites: "",
+      roomId: "",
+      phaseId: "",
     },
+  });
+
+  const selectedRoomId = form.watch('roomId');
+  const { data: phases } = useQuery({
+    queryKey: ["/api/phases", selectedRoomId],
+    queryFn: async () => {
+      if (!selectedRoomId) return [];
+      const response = await apiRequest('GET', `/api/rooms/${selectedRoomId}/phases`);
+      return response.json();
+    },
+    enabled: !!selectedRoomId,
   });
 
   useEffect(() => {
@@ -125,6 +144,8 @@ export default function CourseForm() {
         hasCertificate: course.hasCertificate,
         coverImageUrl: course.coverImageUrl || "",
         prerequisites: course.prerequisites || "",
+        roomId: course.roomId || "",
+        phaseId: course.phaseId || "",
       });
     }
   }, [course, isEditing, form]);
@@ -529,6 +550,84 @@ export default function CourseForm() {
                       </Select>
                     )}
                   />
+                </div>
+
+                <div className="border-t border-slate-600 pt-4">
+                  <Label className="text-white font-semibold text-sm mb-3 block">Asignación a Sala y Fase (Opcional)</Label>
+                  <div className="space-y-4">
+                    <div>
+                      <Label htmlFor="roomId" className="text-white text-sm">Sala</Label>
+                      <div className="flex gap-2">
+                        <Controller
+                          name="roomId"
+                          control={form.control}
+                          render={({ field }) => (
+                            <Select
+                              value={field.value || undefined}
+                              onValueChange={(value) => {
+                                field.onChange(value);
+                                // Reset phase when room changes
+                                form.setValue("phaseId", "");
+                              }}
+                            >
+                              <SelectTrigger className="bg-slate-800 border-slate-600 text-white flex-1">
+                                <SelectValue placeholder="Ninguna - No asignar a sala" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {(rooms as any)?.map((room: any) => (
+                                  <SelectItem key={room.id} value={room.id}>
+                                    {room.title}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          )}
+                        />
+                        {form.watch("roomId") && (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              form.setValue("roomId", "");
+                              form.setValue("phaseId", "");
+                            }}
+                            className="text-gray-400 border-slate-600 hover:bg-slate-700"
+                          >
+                            Limpiar
+                          </Button>
+                        )}
+                      </div>
+                      <p className="text-xs text-gray-400 mt-1">Selecciona la sala a la que pertenece este contenido</p>
+                    </div>
+
+                    <div>
+                      <Label htmlFor="phaseId" className="text-white text-sm">Fase</Label>
+                      <Controller
+                        name="phaseId"
+                        control={form.control}
+                        render={({ field }) => (
+                          <Select
+                            value={field.value || undefined}
+                            onValueChange={field.onChange}
+                            disabled={!selectedRoomId}
+                          >
+                            <SelectTrigger className="bg-slate-800 border-slate-600 text-white">
+                              <SelectValue placeholder={selectedRoomId ? "Selecciona una fase" : "Primero selecciona una sala"} />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {(phases as any)?.map((phase: any) => (
+                                <SelectItem key={phase.id} value={phase.id}>
+                                  Fase {phase.order}: {phase.title}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        )}
+                      />
+                      <p className="text-xs text-gray-400 mt-1">Selecciona la fase dentro de la sala</p>
+                    </div>
+                  </div>
                 </div>
 
                 <div>

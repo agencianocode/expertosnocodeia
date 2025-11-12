@@ -1612,6 +1612,62 @@ export class DatabaseStorage implements IStorage {
     return true;
   }
 
+  async getPhasesByRoom(roomId: string): Promise<Phase[]> {
+    return await db
+      .select()
+      .from(phases)
+      .where(eq(phases.roomId, roomId))
+      .orderBy(phases.order);
+  }
+
+  async getPhaseContentByCourse(courseId: string, contentType: ContentType = 'course'): Promise<PhaseContent | undefined> {
+    const [content] = await db
+      .select()
+      .from(phaseContent)
+      .where(and(
+        eq(phaseContent.contentId, courseId),
+        eq(phaseContent.contentType, contentType)
+      ))
+      .limit(1);
+    return content;
+  }
+
+  async upsertPhaseContentForCourse(
+    courseId: string, 
+    roomId: string | null | undefined,
+    phaseId: string | null | undefined,
+    contentType: ContentType = 'course'
+  ): Promise<void> {
+    // Remove existing phase assignments for this course
+    await db
+      .delete(phaseContent)
+      .where(and(
+        eq(phaseContent.contentId, courseId),
+        eq(phaseContent.contentType, contentType)
+      ));
+
+    // If roomId and phaseId provided, create new assignment
+    if (roomId && phaseId) {
+      // Get current max order for this phase
+      const existingContent = await db
+        .select()
+        .from(phaseContent)
+        .where(eq(phaseContent.phaseId, phaseId))
+        .orderBy(phaseContent.order);
+      
+      const nextOrder = existingContent.length > 0 
+        ? Math.max(...existingContent.map(c => c.order)) + 1 
+        : 0;
+
+      await db.insert(phaseContent).values({
+        phaseId,
+        contentType,
+        contentId: courseId,
+        order: nextOrder,
+      });
+    }
+  }
+
   // ========================================
   // ACCESS CONTROL OPERATIONS
   // ========================================
