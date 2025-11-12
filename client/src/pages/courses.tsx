@@ -9,7 +9,8 @@ import MobileHeader from "@/components/layout/mobile-header";
 import CourseCard from "@/components/course-card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Menu } from "lucide-react";
+import { Menu, CheckCircle } from "lucide-react";
+import { Link } from "wouter";
 
 export default function Courses() {
   const { toast } = useToast();
@@ -26,6 +27,10 @@ export default function Courses() {
   const { data: categories } = useQuery({
     queryKey: ["/api/categories"],
     enabled: true, // Allow fetching for all users to show real content
+  });
+
+  const { data: roomsData } = useQuery({
+    queryKey: ["/api/rooms"],
   });
 
   if (isLoading || coursesLoading) {
@@ -61,12 +66,31 @@ export default function Courses() {
         
         {/* Main Content */}
         <main className="flex-1 overflow-auto pb-20 lg:pb-0 md:ml-16 lg:ml-[250px]">
-          {/* Mobile Header with Hamburger */}
-          <div className="lg:hidden px-4 py-4 flex items-center justify-between">
+          {/* Mobile Header with Filter */}
+          <div className="lg:hidden px-4 py-4 space-y-4">
             <h1 className="text-2xl font-bold text-foreground">Cursos</h1>
-            <Button variant="ghost" size="sm" className="p-2">
-              <Menu className="h-6 w-6 text-muted-foreground" />
-            </Button>
+            <div className="flex items-center gap-2">
+              <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                <SelectTrigger className="flex-1 bg-background border-border text-foreground">
+                  <SelectValue placeholder="Todas las categorías" />
+                </SelectTrigger>
+                <SelectContent className="bg-card border-border">
+                  <SelectItem value="all">Todas las categorías</SelectItem>
+                  {(categories as any)?.map((category: any) => (
+                    <SelectItem key={category.id} value={category.id}>
+                      {category.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Button 
+                variant="outline"
+                size="sm"
+                onClick={() => setSelectedCategory("all")}
+              >
+                Limpiar
+              </Button>
+            </div>
           </div>
 
           {/* Desktop Header */}
