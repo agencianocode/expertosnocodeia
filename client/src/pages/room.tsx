@@ -306,7 +306,7 @@ export default function Room() {
                                   </div>
 
                                   {/* Title and Badge - Show below on hover */}
-                                  <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 mt-2 space-y-1">
+                                  <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 mt-2 space-y-1 bg-card/95 backdrop-blur-sm rounded-lg p-3 border border-border/50">
                                     <Badge className="text-xs">{getBadgeText()}</Badge>
                                     <h4 className="text-foreground font-semibold text-sm line-clamp-2 leading-tight">
                                       {content.courseData?.title || 'Sin título'}
