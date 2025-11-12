@@ -43,7 +43,8 @@ const getYouTubeEmbedUrl = (url: string) => {
 export default function Course() {
   const { toast } = useToast();
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
-  const { id } = useParams();
+  const { id, roomSlug } = useParams<{ id: string; roomSlug?: string }>();
+  const isRoomContext = Boolean(roomSlug); // Detect if viewing from a room
   const [, setLocation] = useLocation();
   const [currentLessonIndex, setCurrentLessonIndex] = useState(0);
   const [hasCheckedSavedPosition, setHasCheckedSavedPosition] = useState(false);
@@ -904,10 +905,11 @@ export default function Course() {
               </div>
 
               {/* Final Exam Button - Only show when currently on last lesson (Desktop) */}
-              {lessonsArray.length > 0 && currentLessonIndex >= lessonsArray.length - 1 && (
+              {!isRoomContext && lessonsArray.length > 0 && currentLessonIndex >= lessonsArray.length - 1 && (
                 <div className="mt-4">
                   <button 
                     className="w-full bg-white hover:bg-gray-100 text-black font-satoshi font-medium py-4 px-6 rounded-lg transition-colors flex items-center justify-center text-[15px]"
+                    data-testid="button-final-exam-desktop"
                     onClick={() => {
                       setIsExamModalOpen(true);
                       setCurrentQuestionIndex(0);
@@ -926,7 +928,7 @@ export default function Course() {
       {/* Mobile Navigation */}
       <MobileNav />
       {/* Celebration Confetti */}
-      {isExamCompleted && (
+      {!isRoomContext && isExamCompleted && (
         <div className="fixed inset-0 pointer-events-none z-[60]">
           {/* Left side confetti */}
           <div className="absolute left-4 top-1/2 -translate-y-1/2">
@@ -986,7 +988,7 @@ export default function Course() {
         </div>
       )}
       {/* Exam Failed Modal */}
-      {isExamFailed && (
+      {!isRoomContext && isExamFailed && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50">
           <div className="bg-[#1e1e1e] rounded-lg p-8 max-w-md w-full mx-4 text-center relative">
             {/* Close Button */}
@@ -1030,7 +1032,7 @@ export default function Course() {
         </div>
       )}
       {/* Course Completion Modal */}
-      {isExamCompleted && (
+      {!isRoomContext && isExamCompleted && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50">
           <div className="bg-[#1e1e1e] rounded-lg p-8 max-w-md w-full mx-4 text-center relative">
             {/* Close Button */}
@@ -1095,7 +1097,7 @@ export default function Course() {
         </div>
       )}
       {/* Final Exam Modal */}
-      {isExamModalOpen && (
+      {!isRoomContext && isExamModalOpen && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50">
           <div className="bg-[#1e1e1e] rounded-lg p-8 max-w-2xl w-full mx-4 relative">
             {/* Close Button */}
@@ -1374,10 +1376,11 @@ export default function Course() {
                 })}
 
                 {/* Final Exam Button - Only show when currently on last lesson (Mobile) */}
-                {lessonsArray.length > 0 && currentLessonIndex >= lessonsArray.length - 1 && (
+                {!isRoomContext && lessonsArray.length > 0 && currentLessonIndex >= lessonsArray.length - 1 && (
                   <div className="p-4">
                     <button 
                       className="w-full bg-white hover:bg-gray-100 text-black font-satoshi font-medium py-4 px-6 rounded-lg transition-colors flex items-center justify-center text-[15px]"
+                      data-testid="button-final-exam-mobile"
                       onClick={() => {
                         setIsExamModalOpen(true);
                         setCurrentQuestionIndex(0);

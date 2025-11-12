@@ -200,8 +200,7 @@ export default function Room() {
               {phases.map((phase, index) => {
                 // Compute whether this phase is locked for the current user
                 // Phase is locked if: user doesn't have room access OR phase release date hasn't passed
-                // TEMPORARILY DISABLED FOR DEVELOPMENT
-                const isLockedForUser = false; // !hasAccess || phase.isLocked;
+                const isLockedForUser = !hasAccess || phase.isLocked;
                 
                 // Find promo banners that should display after this phase
                 const bannersAfterPhase = (promoBanners || []).filter(
@@ -254,7 +253,7 @@ export default function Room() {
                         {phase.content.map((content) => {
                           const getHref = () => {
                             if (isLockedForUser) return "#";
-                            if (content.contentType === 'course') return `/curso/${content.contentId}`;
+                            if (content.contentType === 'course') return `/rooms/${slug}/curso/${content.contentId}`;
                             if (content.contentType === 'workshop') return `/taller/${content.contentId}`;
                             if (content.contentType === 'guide') return `/guia/${content.contentId}`;
                             return "#";
