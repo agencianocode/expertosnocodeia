@@ -335,6 +335,17 @@ export function registerSimpleRoutes(app: Express): Server {
     }
   });
 
+  // Get all published rooms
+  app.get("/api/rooms", async (req: Request, res: Response) => {
+    try {
+      const rooms = await storage.getPublishedRooms();
+      res.json(rooms);
+    } catch (error) {
+      console.error("Error fetching rooms:", error);
+      res.status(500).json({ message: "Failed to fetch rooms" });
+    }
+  });
+
   // Get user progress (with replit auth)
   app.get("/api/user-progress", legacyAuth, async (req: any, res: Response) => {
     try {
