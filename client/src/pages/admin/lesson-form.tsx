@@ -423,32 +423,51 @@ export default function LessonForm() {
                   </Select>
                 </div>
 
-                {availableModules.length > 0 && (
-                  <div>
-                    <Label htmlFor="parentLessonId" className="text-white">Módulo Padre (opcional)</Label>
-                    <Select 
-                      value={form.watch("parentLessonId") || "none"}
-                      onValueChange={(value) => form.setValue("parentLessonId", value === "none" ? undefined : value)}
-                    >
-                      <SelectTrigger className="bg-slate-800 border-slate-600 text-white">
-                        <SelectValue placeholder="Sin módulo padre (lección independiente)" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="none">
-                          Sin módulo padre (lección independiente)
-                        </SelectItem>
-                        {availableModules.map((module: any) => (
-                          <SelectItem key={module.id} value={module.id}>
-                            {module.title}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <p className="text-gray-400 text-xs mt-1">
-                      Selecciona un módulo para que esta lección aparezca como sub-lección dentro de él
-                    </p>
-                  </div>
-                )}
+                <div className="bg-blue-900/20 border border-blue-700/50 rounded-lg p-4">
+                  <h4 className="text-blue-300 font-medium mb-2 flex items-center gap-2">
+                    📚 Estructura: Módulos y Lecciones
+                  </h4>
+                  <p className="text-blue-200 text-sm mb-2">
+                    <strong>Módulo:</strong> Contenedor principal (déjalo sin módulo padre)
+                  </p>
+                  <p className="text-blue-200 text-sm">
+                    <strong>Sub-lección:</strong> Lección dentro de un módulo (selecciona un módulo padre)
+                  </p>
+                </div>
+
+                <div>
+                  <Label htmlFor="parentLessonId" className="text-white">Módulo Padre</Label>
+                  <Select 
+                    value={form.watch("parentLessonId") || "none"}
+                    onValueChange={(value) => form.setValue("parentLessonId", value === "none" ? undefined : value)}
+                  >
+                    <SelectTrigger className="bg-slate-800 border-slate-600 text-white">
+                      <SelectValue placeholder="Sin módulo padre (crear MÓDULO)" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">
+                        ✨ Sin módulo padre → Crear MÓDULO principal
+                      </SelectItem>
+                      {availableModules.length > 0 && (
+                        <>
+                          <div className="px-2 py-1.5 text-xs font-semibold text-gray-400 bg-slate-800">
+                            Selecciona un módulo para crear una sub-lección:
+                          </div>
+                          {availableModules.map((module: any) => (
+                            <SelectItem key={module.id} value={module.id}>
+                              📂 {module.title}
+                            </SelectItem>
+                          ))}
+                        </>
+                      )}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-gray-400 text-xs mt-1">
+                    {form.watch("parentLessonId") 
+                      ? "✅ Esta será una sub-lección dentro del módulo seleccionado" 
+                      : "✅ Esta será un MÓDULO principal que puede contener sub-lecciones"}
+                  </p>
+                </div>
 
                 <div>
                   <Label htmlFor="duration" className="text-white">Duración (minutos) *</Label>
