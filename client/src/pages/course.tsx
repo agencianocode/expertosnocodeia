@@ -629,34 +629,39 @@ export default function Course() {
                     
                     {!isAuthenticated ? (
                       // Blocked content for non-authenticated users
-                      (currentLessonIndex === 0 ? // Primera lección: contenido completamente visible (esto se renderiza en las líneas anteriores)
-                      (<div className="prose prose-sm lg:prose-base max-w-none">
-                        {currentLesson.content ? (
-                          <div className="markdown-content">
-                            <ReactMarkdown 
-                              remarkPlugins={[remarkGfm]}
-                              rehypePlugins={[rehypeHighlight, rehypeRaw]}
-                            >
-                              {currentLesson.content}
-                            </ReactMarkdown>
-                          </div>
-                        ) : (!currentLesson.videoUrl && !currentLesson.imageUrl) ? (
-                          <p className="text-muted-foreground italic">Contenido de la lección no disponible.</p>
-                        ) : null}
-                      </div>) : // Lecciones 2+: contenido bloqueado
-                      (<div className="py-8">
-                        <p className="text-muted-foreground mb-6">Debes registrarte en Universidad Expertos NoCode IA para ver esta lección.</p>
-                        <Button 
-                          onClick={() => window.location.href = "/planes"}
-                          className="bg-primary text-primary-foreground hover:bg-primary/90"
-                        >
-                          Inscribirse
-                        </Button>
-                      </div>))
+                      currentLessonIndex === 0 ? (
+                        // Primera lección: contenido completamente visible
+                        <div className="prose prose-sm lg:prose-base max-w-none">
+                          {currentLesson.content && (
+                            <div className="markdown-content">
+                              <ReactMarkdown 
+                                remarkPlugins={[remarkGfm]}
+                                rehypePlugins={[rehypeHighlight, rehypeRaw]}
+                              >
+                                {currentLesson.content}
+                              </ReactMarkdown>
+                            </div>
+                          )}
+                          {!currentLesson.content && !currentLesson.videoUrl && !currentLesson.imageUrl && (
+                            <p className="text-muted-foreground italic">Contenido de la lección no disponible.</p>
+                          )}
+                        </div>
+                      ) : (
+                        // Lecciones 2+: contenido bloqueado
+                        <div className="py-8">
+                          <p className="text-muted-foreground mb-6">Debes registrarte en Universidad Expertos NoCode IA para ver esta lección.</p>
+                          <Button 
+                            onClick={() => window.location.href = "/planes"}
+                            className="bg-primary text-primary-foreground hover:bg-primary/90"
+                          >
+                            Inscribirse
+                          </Button>
+                        </div>
+                      )
                     ) : (
                       // Normal content for authenticated users  
-                      (<div className="prose prose-sm lg:prose-base max-w-none">
-                        {currentLesson.content ? (
+                      <div className="prose prose-sm lg:prose-base max-w-none">
+                        {currentLesson.content && (
                           <div className="markdown-content">
                             <ReactMarkdown 
                               remarkPlugins={[remarkGfm]}
@@ -665,10 +670,11 @@ export default function Course() {
                               {currentLesson.content}
                             </ReactMarkdown>
                           </div>
-                        ) : (!currentLesson.videoUrl && !currentLesson.imageUrl) ? (
+                        )}
+                        {!currentLesson.content && !currentLesson.videoUrl && !currentLesson.imageUrl && (
                           <p className="text-muted-foreground italic">Contenido de la lección no disponible.</p>
-                        ) : null}
-                      </div>)
+                        )}
+                      </div>
                     )}
                   </div>
                 </div>
