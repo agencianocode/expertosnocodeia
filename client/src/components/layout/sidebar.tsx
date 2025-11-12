@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
+import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { useSimpleAuth } from "@/hooks/use-simple-auth";
 import { useRoleSwitch } from "@/hooks/useRoleSwitch";
@@ -40,7 +41,9 @@ import {
   HelpCircle,
   LogOut,
   MoreHorizontal,
-  TrendingUp
+  TrendingUp,
+  ChevronDown,
+  ChevronRight
 } from "lucide-react";
 
 export default function Sidebar() {
@@ -51,6 +54,12 @@ export default function Sidebar() {
   const [searchQuery, setSearchQuery] = useState("");
   const { theme, changeTheme } = useTheme();
   const [onboardingOpen, setOnboardingOpen] = useState(false);
+  const [cursosExpanded, setCursosExpanded] = useState(false);
+
+  // Fetch rooms for the submenu
+  const { data: roomsData } = useQuery({
+    queryKey: ["/api/rooms"],
+  });
 
   const navigation = [
     { name: "Hogar", href: "/", icon: Home },
@@ -120,6 +129,72 @@ export default function Sidebar() {
         <ul className="space-y-2">
           {navigation.map((item) => {
             const isActive = location === item.href;
+            const isRoomActive = location.startsWith('/sala/');
+            
+            // Handle "Cursos" specially with submenu
+            if (item.name === "Cursos") {
+              return (
+                <li key={item.name}>
+                  {/* Main Cursos item */}
+                  <div className="flex flex-col">
+                    <div className="flex items-center">
+                      <Link href={item.href} className="flex-1">
+                        <div
+                          className={cn(
+                            "flex items-center justify-center lg:justify-start lg:space-x-3 p-2 rounded-lg transition-colors cursor-pointer font-satoshi font-normal text-[13px] leading-[20px]",
+                            isActive || isRoomActive
+                              ? "bg-primary/20 text-primary"
+                              : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                          )}
+                        >
+                          <item.icon className="h-5 w-5" />
+                          <span className="hidden lg:block flex-1">{item.name}</span>
+                        </div>
+                      </Link>
+                      <button
+                        onClick={() => setCursosExpanded(!cursosExpanded)}
+                        className="hidden lg:flex p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                      >
+                        {cursosExpanded ? (
+                          <ChevronDown className="h-4 w-4" />
+                        ) : (
+                          <ChevronRight className="h-4 w-4" />
+                        )}
+                      </button>
+                    </div>
+                    
+                    {/* Submenu - Salas */}
+                    {cursosExpanded && roomsData && (roomsData as any).length > 0 && (
+                      <ul className="hidden lg:block ml-8 mt-1 space-y-1">
+                        {(roomsData as any).map((room: any) => {
+                          const roomPath = `/sala/${room.slug}`;
+                          const isRoomItemActive = location === roomPath;
+                          return (
+                            <li key={room.id}>
+                              <Link href={roomPath}>
+                                <div
+                                  className={cn(
+                                    "flex items-center space-x-3 p-2 rounded-lg transition-colors cursor-pointer font-satoshi font-normal text-[12px] leading-[18px]",
+                                    isRoomItemActive
+                                      ? "bg-primary/10 text-primary"
+                                      : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                                  )}
+                                  data-testid={`sidebar-room-${room.slug}`}
+                                >
+                                  <span>{room.title}</span>
+                                </div>
+                              </Link>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    )}
+                  </div>
+                </li>
+              );
+            }
+            
+            // Regular nav items
             return (
               <li key={item.name}>
                 <Link href={item.href}>
