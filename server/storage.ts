@@ -82,7 +82,7 @@ import {
   type ContentType,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc, and, sql, not, inArray } from "drizzle-orm";
+import { eq, desc, and, sql, not, inArray, isNull } from "drizzle-orm";
 
 // Interface for storage operations
 export interface IStorage {
@@ -377,19 +377,26 @@ export class DatabaseStorage implements IStorage {
 
   // Course operations
   async getAllCourses(): Promise<Course[]> {
-    // Excluir solo el curso "Introducción Formación Agentes IA" que es específico de salas
-    const excludedCourseId = '09ada3b5-0858-4944-b203-675d6c5708be';
-    
-    return await db
-      .select()
+    // Excluir cursos que están asignados a salas (en phase_content)
+    const result = await db
+      .select({ course: courses })
       .from(courses)
+      .leftJoin(
+        phaseContent, 
+        and(
+          eq(phaseContent.contentType, 'course'),
+          eq(phaseContent.contentId, courses.id)
+        )
+      )
       .where(
         and(
           eq(courses.isPublished, true),
           eq(courses.type, 'course'),
-          not(eq(courses.id, excludedCourseId))
+          isNull(phaseContent.id) // Solo cursos que NO están en phase_content
         )
       );
+    
+    return result.map(r => r.course);
   }
 
   async getAllGuides(): Promise<Course[]> {
