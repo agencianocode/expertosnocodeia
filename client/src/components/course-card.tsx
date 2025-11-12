@@ -268,8 +268,8 @@ export default function CourseCard({ course, category, progress, variant = "defa
   return (
     <div 
       className={cn(
-        "relative cursor-pointer group transition-all duration-300",
-        isAuthenticated ? "hover:scale-105" : "opacity-90"
+        "bg-card border border-border rounded-xl transition-all duration-300 cursor-pointer group flex flex-col h-full relative",
+        isAuthenticated ? "hover:shadow-lg hover:shadow-primary/20 hover:scale-105" : "hover:shadow-md opacity-90"
       )}
       onClick={() => {
         // Allow navigation for both authenticated and non-authenticated users
@@ -289,11 +289,10 @@ export default function CourseCard({ course, category, progress, variant = "defa
         setLocation(courseUrl);
       }}
     >
-      {/* Image Container - Clean poster image */}
+      {/* Top section - Image or colored background */}
       <div className={cn(
-        "relative h-48 rounded-xl overflow-hidden shadow-lg transition-shadow duration-300",
-        isAuthenticated && "group-hover:shadow-xl group-hover:shadow-primary/30",
-        !course.coverImageUrl && "flex flex-col justify-center items-center p-6",
+        "relative h-48 flex flex-col justify-between overflow-hidden",
+        !course.coverImageUrl && "p-6",
         !course.coverImageUrl && typeColor === 'purple' && "bg-purple-500",
         !course.coverImageUrl && typeColor === 'blue' && "bg-blue-400",
         !course.coverImageUrl && typeColor === 'green' && "bg-green-500",
@@ -303,7 +302,7 @@ export default function CourseCard({ course, category, progress, variant = "defa
         
         {/* Progress bar - only show if there's progress */}
         {progress && progressPercentage > 0 && (
-          <div className="absolute bottom-0 left-0 right-0 h-1 bg-muted z-20">
+          <div className="absolute bottom-0 left-0 right-0 h-1 bg-muted">
             <div 
               className="h-full bg-destructive transition-all duration-300"
               style={{ width: `${progressPercentage}%` }}
@@ -335,7 +334,13 @@ export default function CourseCard({ course, category, progress, variant = "defa
           </div>
         )}
         
-        {/* Save/Bookmark button OR Lock button - top right */}
+        {/* Gradient overlay for better text visibility on images - reduced opacity for brighter images */}
+        {course.coverImageUrl && (
+          <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-black/10 to-black/15" />
+        )}
+        
+        
+        {/* Save/Bookmark button OR Lock button - moved to top right with gray background */}
         <div className="absolute top-3 right-3 z-10">
           <div className="bg-muted/90 backdrop-blur-sm rounded-lg border border-border p-1">
             {isAuthenticated ? (
@@ -400,17 +405,12 @@ export default function CourseCard({ course, category, progress, variant = "defa
             </div>
           </div>
         )}
+        
+
       </div>
       
-      {/* Info Panel - Appears below card on hover */}
-      <div className={cn(
-        "absolute left-0 right-0 top-full mt-2 p-4 bg-card/95 backdrop-blur-md border border-border rounded-xl shadow-xl z-50",
-        "transform transition-all duration-300 ease-out",
-        "opacity-0 translate-y-2 pointer-events-none",
-        "group-hover:opacity-100 group-hover:translate-y-0 group-hover:pointer-events-auto",
-        "md:opacity-0 md:group-hover:opacity-100", // Hide on desktop, show on hover
-        "max-md:opacity-100 max-md:translate-y-0 max-md:pointer-events-auto max-md:relative max-md:top-auto max-md:mt-3" // Always visible on mobile
-      )}>
+      {/* Bottom dark section */}
+      <div className="p-4 bg-card flex-1 flex flex-col">
         <div className="h-12 mb-2 flex items-start">
           <h3 className="font-semibold text-foreground line-clamp-2 leading-6">
             {course.title}
