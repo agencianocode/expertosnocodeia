@@ -54,7 +54,7 @@ export default function Sidebar() {
   const [searchQuery, setSearchQuery] = useState("");
   const { theme, changeTheme } = useTheme();
   const [onboardingOpen, setOnboardingOpen] = useState(false);
-  const [cursosExpanded, setCursosExpanded] = useState(false);
+  const [programasExpanded, setProgramasExpanded] = useState(false);
 
   // Fetch rooms for the submenu
   const { data: roomsData } = useQuery({
@@ -64,6 +64,7 @@ export default function Sidebar() {
   const navigation = [
     { name: "Hogar", href: "/", icon: Home },
     { name: "Cursos", href: "/courses", icon: BookOpen },
+    { name: "Programas", href: "#", icon: Brain },
     { name: "Guías", href: "/guides", icon: FileText },
     { name: "Talleres", href: "/talleres", icon: Calendar },
     { name: "Eventos", href: "/events", icon: CalendarDays },
@@ -131,15 +132,15 @@ export default function Sidebar() {
             const isActive = location === item.href;
             const isRoomActive = location.startsWith('/sala/');
             
-            // Handle "Cursos" specially with submenu
-            if (item.name === "Cursos") {
+            // Handle "Programas" specially with submenu for rooms
+            if (item.name === "Programas") {
               return (
                 <li key={item.name}>
-                  {/* Main Cursos item */}
+                  {/* Main Programas item */}
                   <div className="flex flex-col">
                     <div className="flex items-center">
                       <div 
-                        onClick={() => setCursosExpanded(!cursosExpanded)}
+                        onClick={() => setProgramasExpanded(!programasExpanded)}
                         className="flex-1"
                       >
                         <div
@@ -155,10 +156,10 @@ export default function Sidebar() {
                         </div>
                       </div>
                       <button
-                        onClick={() => setCursosExpanded(!cursosExpanded)}
+                        onClick={() => setProgramasExpanded(!programasExpanded)}
                         className="hidden lg:flex p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
                       >
-                        {cursosExpanded ? (
+                        {programasExpanded ? (
                           <ChevronDown className="h-4 w-4" />
                         ) : (
                           <ChevronRight className="h-4 w-4" />
@@ -166,8 +167,8 @@ export default function Sidebar() {
                       </button>
                     </div>
                     
-                    {/* Submenu - Salas */}
-                    {cursosExpanded && roomsData && (roomsData as any).length > 0 && (
+                    {/* Submenu - Salas/Programas */}
+                    {programasExpanded && roomsData && (roomsData as any).length > 0 && (
                       <ul className="hidden lg:block ml-8 mt-1 space-y-1">
                         {(roomsData as any).map((room: any) => {
                           const roomPath = `/sala/${room.slug}`;
