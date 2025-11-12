@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useParams, Link, useLocation } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
@@ -271,23 +271,30 @@ export default function Course() {
   const lessonsArray = Array.isArray(lessons) ? lessons : [];
 
   // Organize lessons into hierarchical structure (modules + sub-lessons)
-  const modules = lessonsArray.filter((lesson: any) => !lesson.parentLessonId)
-    .sort((a: any, b: any) => a.order - b.order);
+  // Memoize to prevent re-renders from changing object identity
+  const modules = useMemo(() => {
+    return lessonsArray.filter((lesson: any) => !lesson.parentLessonId)
+      .sort((a: any, b: any) => a.order - b.order);
+  }, [lessonsArray]);
   
-  const subLessonsByParent = lessonsArray
-    .filter((lesson: any) => lesson.parentLessonId)
-    .reduce((acc: any, lesson: any) => {
-      if (!acc[lesson.parentLessonId]) {
-        acc[lesson.parentLessonId] = [];
-      }
-      acc[lesson.parentLessonId].push(lesson);
-      return acc;
-    }, {});
-  
-  // Sort sub-lessons within each parent
-  Object.keys(subLessonsByParent).forEach(parentId => {
-    subLessonsByParent[parentId].sort((a: any, b: any) => a.order - b.order);
-  });
+  const subLessonsByParent = useMemo(() => {
+    const grouped = lessonsArray
+      .filter((lesson: any) => lesson.parentLessonId)
+      .reduce((acc: any, lesson: any) => {
+        if (!acc[lesson.parentLessonId]) {
+          acc[lesson.parentLessonId] = [];
+        }
+        acc[lesson.parentLessonId].push(lesson);
+        return acc;
+      }, {});
+    
+    // Sort sub-lessons within each parent
+    Object.keys(grouped).forEach(parentId => {
+      grouped[parentId].sort((a: any, b: any) => a.order - b.order);
+    });
+    
+    return grouped;
+  }, [lessonsArray]);
   
   // Toggle collapse state for a module
   const toggleModuleCollapse = (moduleId: number) => {
@@ -330,10 +337,24 @@ export default function Course() {
         }
       }
       
+      // No saved lesson found - find first playable lesson (first sub-lesson or first module without children)
+      const firstModule = modules[0];
+      if (firstModule) {
+        const firstModuleSubLessons = subLessonsByParent[firstModule.id];
+        if (firstModuleSubLessons && firstModuleSubLessons.length > 0) {
+          // If first module has sub-lessons, select the first sub-lesson
+          const firstSubLessonIndex = lessonsArray.findIndex((l: any) => l.id === firstModuleSubLessons[0].id);
+          if (firstSubLessonIndex !== -1) {
+            setCurrentLessonIndex(firstSubLessonIndex);
+          }
+        }
+        // If first module has no sub-lessons, default behavior (index 0) is already correct
+      }
+      
       // console.log('✅ Setting hasCheckedSavedPosition to true');
       setHasCheckedSavedPosition(true);
     }
-  }, [id, lessonsArray, hasCheckedSavedPosition, getSavedLessonPosition, setLocation]);
+  }, [id, lessonsArray, hasCheckedSavedPosition, getSavedLessonPosition, setLocation, modules, subLessonsByParent]);
 
   const markLessonCompleteMutation = useMutation({
     mutationFn: async (lessonId: string) => {
@@ -765,11 +786,12 @@ export default function Course() {
             <div className="bg-card rounded-lg p-5">
               <h3 className="font-satoshi font-medium text-foreground mb-5 text-[20px]">Contenido del curso</h3>
               <div className="space-y-2 max-h-[400px] overflow-y-auto scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent pr-2">
-                {modules.map((module: any) => {
+                {modules.map((module: any, moduleIdx: number) => {
                   const moduleIndex = lessonsArray.findIndex((l: any) => l.id === module.id);
                   const subLessons = subLessonsByParent[module.id] || [];
                   const isCollapsed = collapsedModules.has(module.id);
                   const hasSubLessons = subLessons.length > 0;
+                  const moduleNumber = moduleIdx + 1;
 
                   return (
                     <div key={module.id} className="space-y-1">
@@ -777,29 +799,28 @@ export default function Course() {
                       <div
                         className={cn(
                           "py-4 px-4 rounded-lg transition-colors",
-                          isAuthenticated 
-                            ? cn(
-                                !hasSubLessons && "cursor-pointer",
-                                moduleIndex === currentLessonIndex 
-                                  ? "bg-muted text-foreground border border-border" 
-                                  : "hover:bg-muted/50 hover:border hover:border-border text-muted-foreground"
-                              )
-                            : !hasSubLessons ? "cursor-pointer hover:bg-muted/30 text-muted-foreground" : "text-muted-foreground"
+                          hasSubLessons 
+                            ? "text-muted-foreground" 
+                            : isAuthenticated 
+                              ? cn(
+                                  "cursor-pointer",
+                                  moduleIndex === currentLessonIndex 
+                                    ? "bg-muted text-foreground border border-border" 
+                                    : "hover:bg-muted/50 hover:border hover:border-border text-muted-foreground"
+                                )
+                              : "cursor-pointer hover:bg-muted/30 text-muted-foreground"
                         )}
                       >
                         <div className="flex items-start justify-between">
                           <div 
-                            className="flex items-start space-x-3 flex-1 cursor-pointer"
-                            onClick={() => handleLessonClick(moduleIndex)}
+                            className={cn(
+                              "flex items-start space-x-3 flex-1",
+                              !hasSubLessons && "cursor-pointer"
+                            )}
+                            onClick={() => !hasSubLessons && handleLessonClick(moduleIndex)}
                           >
                             <div className="w-6 h-6 rounded border flex items-center justify-center font-medium flex-shrink-0 bg-muted text-foreground border-border text-[14px]">
-                              {!isAuthenticated ? (
-                                <Lock size={10} className="text-muted-foreground" />
-                              ) : isLessonCompleted(module.id) ? (
-                                <Check size={10} />
-                              ) : (
-                                moduleIndex + 1
-                              )}
+                              {moduleNumber}
                             </div>
                             <div className="flex-1">
                               <div className="font-satoshi font-medium text-foreground text-[15px]">
@@ -809,9 +830,11 @@ export default function Course() {
                           </div>
                           
                           <div className="flex items-center gap-2">
-                            {!isAuthenticated ? (
+                            {!hasSubLessons && !isAuthenticated && (
                               <Lock size={14} className="text-muted-foreground mt-1" />
-                            ) : moduleIndex === currentLessonIndex && !isLessonCompleted(module.id) && (
+                            )}
+                            
+                            {!hasSubLessons && isAuthenticated && moduleIndex === currentLessonIndex && !isLessonCompleted(module.id) && (
                               <div 
                                 className="flex items-center border border-border rounded px-2 py-1 cursor-pointer hover:bg-muted/20 transition-colors"
                                 onClick={(e) => {
@@ -846,8 +869,10 @@ export default function Course() {
                       </div>
 
                       {/* Sub-lessons */}
-                      {hasSubLessons && !isCollapsed && subLessons.map((subLesson: any) => {
+                      {hasSubLessons && !isCollapsed && subLessons.map((subLesson: any, subIdx: number) => {
                         const subIndex = lessonsArray.findIndex((l: any) => l.id === subLesson.id);
+                        const subLessonNumber = `${moduleNumber}.${subIdx + 1}`;
+                        
                         return (
                           <div
                             key={subLesson.id}
@@ -866,13 +891,13 @@ export default function Course() {
                           >
                             <div className="flex items-start justify-between">
                               <div className="flex items-start space-x-3">
-                                <div className="w-5 h-5 rounded border flex items-center justify-center font-medium flex-shrink-0 bg-muted text-foreground border-border text-[12px]">
+                                <div className="w-auto min-w-[28px] h-5 px-1.5 rounded border flex items-center justify-center font-medium flex-shrink-0 bg-muted text-foreground border-border text-[12px]">
                                   {!isAuthenticated ? (
                                     <Lock size={8} className="text-muted-foreground" />
                                   ) : isLessonCompleted(subLesson.id) ? (
                                     <Check size={8} />
                                   ) : (
-                                    subIndex + 1
+                                    subLessonNumber
                                   )}
                                 </div>
                                 <div className="flex-1">
@@ -1246,11 +1271,12 @@ export default function Course() {
             {/* Lessons List */}
             <div className="flex-1 overflow-y-auto">
               <div className="space-y-2 p-4">
-                {modules.map((module: any) => {
+                {modules.map((module: any, moduleIdx: number) => {
                   const moduleIndex = lessonsArray.findIndex((l: any) => l.id === module.id);
                   const subLessons = subLessonsByParent[module.id] || [];
                   const isCollapsed = collapsedModules.has(module.id);
                   const hasSubLessons = subLessons.length > 0;
+                  const moduleNumber = moduleIdx + 1;
 
                   return (
                     <div key={module.id} className="space-y-1">
@@ -1258,25 +1284,28 @@ export default function Course() {
                       <div
                         className={cn(
                           "p-4 rounded-lg transition-all",
-                          moduleIndex === currentLessonIndex 
-                            ? "bg-[#262626] border border-[#404040]" 
-                            : "bg-transparent hover:bg-[#262626]/50"
+                          hasSubLessons 
+                            ? "bg-transparent" 
+                            : moduleIndex === currentLessonIndex 
+                              ? "bg-[#262626] border border-[#404040]" 
+                              : "bg-transparent hover:bg-[#262626]/50"
                         )}
                       >
                         <div className="flex items-start justify-between">
                           <div 
-                            className="flex items-start space-x-3 flex-1 cursor-pointer"
+                            className={cn(
+                              "flex items-start space-x-3 flex-1",
+                              !hasSubLessons && "cursor-pointer"
+                            )}
                             onClick={() => {
-                              handleLessonClick(moduleIndex);
-                              setIsMobileLessonsOpen(false);
+                              if (!hasSubLessons) {
+                                handleLessonClick(moduleIndex);
+                                setIsMobileLessonsOpen(false);
+                              }
                             }}
                           >
                             <div className="w-8 h-8 rounded-lg border flex items-center justify-center font-medium flex-shrink-0 bg-gray-600 text-white border-gray-600 text-sm">
-                              {isLessonCompleted(module.id) ? (
-                                <Check size={16} className="text-green-400" />
-                              ) : (
-                                moduleIndex + 1
-                              )}
+                              {moduleNumber}
                             </div>
                             <div className="flex-1">
                               <div className="text-white font-medium text-base">
@@ -1286,7 +1315,7 @@ export default function Course() {
                           </div>
                           
                           <div className="flex items-center gap-2">
-                            {moduleIndex === currentLessonIndex && !isLessonCompleted(module.id) && (
+                            {!hasSubLessons && moduleIndex === currentLessonIndex && !isLessonCompleted(module.id) && (
                               <div 
                                 className="flex items-center border border-[#404040] rounded px-2 py-1 cursor-pointer hover:bg-[#404040]/20 transition-colors"
                                 onClick={(e) => {
@@ -1321,8 +1350,10 @@ export default function Course() {
                       </div>
 
                       {/* Sub-lessons */}
-                      {hasSubLessons && !isCollapsed && subLessons.map((subLesson: any) => {
+                      {hasSubLessons && !isCollapsed && subLessons.map((subLesson: any, subIdx: number) => {
                         const subIndex = lessonsArray.findIndex((l: any) => l.id === subLesson.id);
+                        const subLessonNumber = `${moduleNumber}.${subIdx + 1}`;
+                        
                         return (
                           <div
                             key={subLesson.id}
@@ -1338,11 +1369,11 @@ export default function Course() {
                             )}
                           >
                             <div className="flex items-start space-x-3">
-                              <div className="w-7 h-7 rounded-lg border flex items-center justify-center font-medium flex-shrink-0 bg-gray-600 text-white border-gray-600 text-xs">
+                              <div className="w-auto min-w-[32px] h-7 px-1.5 rounded-lg border flex items-center justify-center font-medium flex-shrink-0 bg-gray-600 text-white border-gray-600 text-xs">
                                 {isLessonCompleted(subLesson.id) ? (
                                   <Check size={14} className="text-green-400" />
                                 ) : (
-                                  subIndex + 1
+                                  subLessonNumber
                                 )}
                               </div>
                               <div className="flex-1">

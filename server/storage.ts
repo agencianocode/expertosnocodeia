@@ -1566,11 +1566,19 @@ export class DatabaseStorage implements IStorage {
     // Check user access
     let userHasAccess = false;
     if (userId) {
-      // Check for plan access (highest level)
-      const hasPlanAccess = await this.checkUserAccess(userId, 'plan');
-      // Check for room access
-      const hasRoomAccess = await this.checkUserAccess(userId, 'room', room.id);
-      userHasAccess = hasPlanAccess || hasRoomAccess;
+      // Check if user is admin (admins have access to all rooms)
+      const adminUser = await this.getAdminUser(userId);
+      const isAdmin = !!adminUser;
+      
+      if (isAdmin) {
+        userHasAccess = true;
+      } else {
+        // Check for plan access (highest level)
+        const hasPlanAccess = await this.checkUserAccess(userId, 'plan');
+        // Check for room access
+        const hasRoomAccess = await this.checkUserAccess(userId, 'room', room.id);
+        userHasAccess = hasPlanAccess || hasRoomAccess;
+      }
     }
 
     // Get phases for this room
