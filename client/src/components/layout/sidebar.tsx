@@ -138,11 +138,14 @@ export default function Sidebar() {
                   {/* Main Cursos item */}
                   <div className="flex flex-col">
                     <div className="flex items-center">
-                      <Link href={item.href} className="flex-1">
+                      <div 
+                        onClick={() => setCursosExpanded(!cursosExpanded)}
+                        className="flex-1"
+                      >
                         <div
                           className={cn(
                             "flex items-center justify-center lg:justify-start lg:space-x-3 p-2 rounded-lg transition-colors cursor-pointer font-satoshi font-normal text-[13px] leading-[20px]",
-                            isActive || isRoomActive
+                            isRoomActive
                               ? "bg-primary/20 text-primary"
                               : "text-muted-foreground hover:bg-muted hover:text-foreground"
                           )}
@@ -150,7 +153,7 @@ export default function Sidebar() {
                           <item.icon className="h-5 w-5" />
                           <span className="hidden lg:block flex-1">{item.name}</span>
                         </div>
-                      </Link>
+                      </div>
                       <button
                         onClick={() => setCursosExpanded(!cursosExpanded)}
                         className="hidden lg:flex p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
