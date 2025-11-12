@@ -615,3 +615,186 @@ export type LoginData = z.infer<typeof loginSchema>;
 export type RegisterData = z.infer<typeof registerSchema>;
 export type ForgotPasswordData = z.infer<typeof forgotPasswordSchema>;
 export type ResetPasswordData = z.infer<typeof resetPasswordSchema>;
+
+// ========================================
+// ROOMS & PHASES SYSTEM (Netflix-style learning paths)
+// ========================================
+
+// Content type enum for type safety
+export const contentTypes = ["course", "workshop", "guide"] as const;
+export type ContentType = typeof contentTypes[number];
+
+// Salas temáticas (Agentes IA, Vibe Coding, NoCode SaaS IA)
+export const rooms = pgTable("rooms", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  title: varchar("title").notNull(),
+  slug: varchar("slug").unique().notNull(), // agentes-ia, vibe-coding, nocode-saas
+  description: text("description"),
+  shortDescription: varchar("short_description", { length: 500 }),
+  coverImageUrl: varchar("cover_image_url"),
+  heroImageUrl: varchar("hero_image_url"), // Banner superior tipo Netflix
+  order: integer("order").notNull().default(0),
+  isPublished: boolean("is_published").default(true),
+  price: integer("price"), // Precio en centavos para comprar la sala completa
+  currency: varchar("currency", { length: 3 }).default("usd"),
+  metadata: jsonb("metadata").default({}), // Promo flags, features, etc
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
+}, (table) => [
+  index("idx_rooms_slug").on(table.slug),
+  index("idx_rooms_published_order").on(table.isPublished, table.order),
+]);
+
+// Fases dentro de cada sala (se liberan semanalmente)
+export const phases = pgTable("phases", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  roomId: varchar("room_id").references(() => rooms.id, { onDelete: "cascade" }).notNull(),
+  title: varchar("title").notNull(),
+  description: text("description"),
+  order: integer("order").notNull(),
+  releaseDate: timestamp("release_date", { withTimezone: true }).notNull(), // Liberación programada
+  metadata: jsonb("metadata").default({}), // Iconos, colores, badges especiales
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+}, (table) => [
+  index("idx_phases_room_order").on(table.roomId, table.order),
+  index("idx_phases_release_date").on(table.releaseDate),
+]);
+
+// Contenido dentro de fases (relación muchos a muchos con courses/workshops/guides)
+export const phaseContent = pgTable("phase_content", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  phaseId: varchar("phase_id").references(() => phases.id, { onDelete: "cascade" }).notNull(),
+  contentType: varchar("content_type").notNull().$type<ContentType>(), // 'course', 'workshop', 'guide'
+  contentId: varchar("content_id").notNull(), // ID del curso/workshop/guía
+  order: integer("order").notNull().default(0),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+}, (table) => [
+  // Composite unique key para evitar duplicados
+  index("idx_phase_content_unique").on(table.phaseId, table.contentType, table.contentId),
+  index("idx_phase_content_phase").on(table.phaseId),
+  index("idx_phase_content_content").on(table.contentId, table.contentType),
+]);
+
+// ========================================
+// PURCHASES & ACCESS CONTROL
+// ========================================
+
+// Registro de compras (ledger inmutable para auditoría)
+export const purchases = pgTable("purchases", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
+  productType: varchar("product_type").notNull(), // 'workshop', 'room', 'plan'
+  productId: varchar("product_id"), // ID del workshop o room, null si es plan general
+  amount: integer("amount").notNull(), // En centavos
+  currency: varchar("currency", { length: 3 }).default("usd"),
+  stripePaymentIntentId: varchar("stripe_payment_intent_id"),
+  stripeCustomerId: varchar("stripe_customer_id"),
+  status: varchar("status").default("completed"), // 'pending', 'completed', 'failed', 'refunded'
+  metadata: jsonb("metadata").default({}), // Snapshot de Stripe payload
+  purchasedAt: timestamp("purchased_at", { withTimezone: true }).defaultNow(),
+}, (table) => [
+  index("idx_purchases_user").on(table.userId),
+  index("idx_purchases_user_status").on(table.userId, table.status),
+  index("idx_purchases_stripe_intent").on(table.stripePaymentIntentId),
+]);
+
+// Control de acceso activo (grants que pueden expirar o revocarse)
+export const userAccess = pgTable("user_access", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
+  accessType: varchar("access_type").notNull(), // 'workshop', 'room', 'plan'
+  accessId: varchar("access_id"), // ID del workshop o room, null si es plan general
+  purchaseId: varchar("purchase_id").references(() => purchases.id), // Link a la compra original (nullable para grants manuales)
+  isActive: boolean("is_active").default(true), // Para soft delete de accesos
+  grantedAt: timestamp("granted_at", { withTimezone: true }).defaultNow(),
+  expiresAt: timestamp("expires_at", { withTimezone: true }), // null = acceso permanente
+}, (table) => [
+  index("idx_user_access_user").on(table.userId),
+  index("idx_user_access_user_type").on(table.userId, table.accessType),
+  index("idx_user_access_active").on(table.userId, table.accessType, table.accessId, table.isActive),
+]);
+
+// ========================================
+// RELATIONS
+// ========================================
+
+export const roomsRelations = relations(rooms, ({ many }) => ({
+  phases: many(phases),
+}));
+
+export const phasesRelations = relations(phases, ({ one, many }) => ({
+  room: one(rooms, {
+    fields: [phases.roomId],
+    references: [rooms.id],
+  }),
+  content: many(phaseContent),
+}));
+
+export const phaseContentRelations = relations(phaseContent, ({ one }) => ({
+  phase: one(phases, {
+    fields: [phaseContent.phaseId],
+    references: [phases.id],
+  }),
+}));
+
+export const purchasesRelations = relations(purchases, ({ one }) => ({
+  user: one(users, {
+    fields: [purchases.userId],
+    references: [users.id],
+  }),
+}));
+
+export const userAccessRelations = relations(userAccess, ({ one }) => ({
+  user: one(users, {
+    fields: [userAccess.userId],
+    references: [users.id],
+  }),
+  purchase: one(purchases, {
+    fields: [userAccess.purchaseId],
+    references: [purchases.id],
+  }),
+}));
+
+// ========================================
+// INSERT SCHEMAS & TYPES
+// ========================================
+
+export const insertRoomSchema = createInsertSchema(rooms).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertPhaseSchema = createInsertSchema(phases).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertPhaseContentSchema = createInsertSchema(phaseContent).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertPurchaseSchema = createInsertSchema(purchases).omit({
+  id: true,
+  purchasedAt: true,
+});
+
+export const insertUserAccessSchema = createInsertSchema(userAccess).omit({
+  id: true,
+  grantedAt: true,
+});
+
+// Select Types
+export type Room = typeof rooms.$inferSelect;
+export type Phase = typeof phases.$inferSelect;
+export type PhaseContent = typeof phaseContent.$inferSelect;
+export type Purchase = typeof purchases.$inferSelect;
+export type UserAccess = typeof userAccess.$inferSelect;
+
+// Insert Types
+export type InsertRoom = z.infer<typeof insertRoomSchema>;
+export type InsertPhase = z.infer<typeof insertPhaseSchema>;
+export type InsertPhaseContent = z.infer<typeof insertPhaseContentSchema>;
+export type InsertPurchase = z.infer<typeof insertPurchaseSchema>;
+export type InsertUserAccess = z.infer<typeof insertUserAccessSchema>;

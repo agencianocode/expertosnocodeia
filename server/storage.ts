@@ -19,6 +19,13 @@ import {
   subscriptionPlans,
   userSubscriptions,
   userUsage,
+  userOnboardingResponses,
+  // Rooms & Phases system
+  rooms,
+  phases,
+  phaseContent,
+  purchases,
+  userAccess,
   type User,
   type UpsertUser,
   type OnboardingData,
@@ -56,9 +63,20 @@ import {
   type InsertUserSubscription,
   type UserUsage,
   type InsertUserUsage,
-  userOnboardingResponses,
   type UserOnboardingResponse,
   type InsertUserOnboardingResponse,
+  // Rooms & Phases types
+  type Room,
+  type InsertRoom,
+  type Phase,
+  type InsertPhase,
+  type PhaseContent,
+  type InsertPhaseContent,
+  type Purchase,
+  type InsertPurchase,
+  type UserAccess,
+  type InsertUserAccess,
+  type ContentType,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, sql } from "drizzle-orm";
@@ -214,6 +232,49 @@ export interface IStorage {
   // Multiple categories support for guides
   getCourseCategories(courseId: string): Promise<string[]>;
   updateCourseCategories(courseId: string, categoryIds: string[]): Promise<void>;
+
+  // ========================================
+  // ROOMS & PHASES OPERATIONS
+  // ========================================
+  
+  // Room operations
+  getPublishedRooms(): Promise<Room[]>;
+  getRoomBySlug(slug: string): Promise<Room | undefined>;
+  getRoomDetailWithPhases(slug: string, userId?: string): Promise<{
+    room: Room;
+    phases: Array<Phase & {
+      isLocked: boolean;
+      content: Array<PhaseContent & { courseData?: Course }>;
+    }>;
+    userHasAccess: boolean;
+  } | undefined>;
+  getPhaseContent(phaseId: string): Promise<Array<PhaseContent & { courseData?: Course }>>;
+  createRoom(data: InsertRoom): Promise<Room>;
+  updateRoom(id: string, data: Partial<InsertRoom>): Promise<Room>;
+  
+  // Phase operations
+  createPhase(data: InsertPhase): Promise<Phase>;
+  updatePhase(id: string, data: Partial<InsertPhase>): Promise<Phase>;
+  addContentToPhase(data: InsertPhaseContent): Promise<PhaseContent>;
+  removeContentFromPhase(id: string): Promise<boolean>;
+  
+  // ========================================
+  // ACCESS CONTROL OPERATIONS
+  // ========================================
+  
+  checkUserAccess(userId: string, accessType: string, accessId?: string): Promise<boolean>;
+  grantUserAccess(data: InsertUserAccess): Promise<UserAccess>;
+  listActiveAccess(userId: string): Promise<UserAccess[]>;
+  revokeUserAccess(userId: string, accessType: string, accessId?: string): Promise<boolean>;
+  
+  // ========================================
+  // PURCHASES OPERATIONS
+  // ========================================
+  
+  createPurchase(data: InsertPurchase): Promise<Purchase>;
+  updatePurchaseStatus(id: string, status: string, metadata?: any): Promise<Purchase>;
+  listPurchasesForUser(userId: string): Promise<Purchase[]>;
+  getPurchaseByStripeIntent(stripePaymentIntentId: string): Promise<Purchase | undefined>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1402,6 +1463,249 @@ export class DatabaseStorage implements IStorage {
       .orderBy(desc(userOnboardingResponses.completedAt))
       .limit(limit)
       .offset(offset);
+  }
+
+  // ========================================
+  // ROOMS & PHASES OPERATIONS
+  // ========================================
+  
+  async getPublishedRooms(): Promise<Room[]> {
+    return await db
+      .select()
+      .from(rooms)
+      .where(eq(rooms.isPublished, true))
+      .orderBy(rooms.order);
+  }
+
+  async getRoomBySlug(slug: string): Promise<Room | undefined> {
+    const [room] = await db
+      .select()
+      .from(rooms)
+      .where(eq(rooms.slug, slug));
+    return room;
+  }
+
+  async getRoomDetailWithPhases(slug: string, userId?: string): Promise<{
+    room: Room;
+    phases: Array<Phase & {
+      isLocked: boolean;
+      content: Array<PhaseContent & { courseData?: Course }>;
+    }>;
+    userHasAccess: boolean;
+  } | undefined> {
+    // Get room
+    const room = await this.getRoomBySlug(slug);
+    if (!room) return undefined;
+
+    // Check user access
+    let userHasAccess = false;
+    if (userId) {
+      // Check for plan access (highest level)
+      const hasPlanAccess = await this.checkUserAccess(userId, 'plan');
+      // Check for room access
+      const hasRoomAccess = await this.checkUserAccess(userId, 'room', room.id);
+      userHasAccess = hasPlanAccess || hasRoomAccess;
+    }
+
+    // Get phases for this room
+    const phasesList = await db
+      .select()
+      .from(phases)
+      .where(eq(phases.roomId, room.id))
+      .orderBy(phases.order);
+
+    // For each phase, get content and check if locked
+    const now = new Date();
+    const phasesWithContent = await Promise.all(
+      phasesList.map(async (phase) => {
+        const content = await this.getPhaseContent(phase.id);
+        return {
+          ...phase,
+          isLocked: phase.releaseDate > now,
+          content,
+        };
+      })
+    );
+
+    return {
+      room,
+      phases: phasesWithContent,
+      userHasAccess,
+    };
+  }
+
+  async getPhaseContent(phaseId: string): Promise<Array<PhaseContent & { courseData?: Course }>> {
+    const content = await db
+      .select()
+      .from(phaseContent)
+      .where(eq(phaseContent.phaseId, phaseId))
+      .orderBy(phaseContent.order);
+
+    // Enrich with course data
+    const enrichedContent = await Promise.all(
+      content.map(async (item) => {
+        if (item.contentType === 'course' || item.contentType === 'workshop' || item.contentType === 'guide') {
+          const courseData = await this.getCourseById(item.contentId);
+          return { ...item, courseData };
+        }
+        return item;
+      })
+    );
+
+    return enrichedContent;
+  }
+
+  async createRoom(data: InsertRoom): Promise<Room> {
+    const [created] = await db.insert(rooms).values(data).returning();
+    return created;
+  }
+
+  async updateRoom(id: string, data: Partial<InsertRoom>): Promise<Room> {
+    const [updated] = await db
+      .update(rooms)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(rooms.id, id))
+      .returning();
+    return updated;
+  }
+
+  async createPhase(data: InsertPhase): Promise<Phase> {
+    const [created] = await db.insert(phases).values(data).returning();
+    return created;
+  }
+
+  async updatePhase(id: string, data: Partial<InsertPhase>): Promise<Phase> {
+    const [updated] = await db
+      .update(phases)
+      .set(data)
+      .where(eq(phases.id, id))
+      .returning();
+    return updated;
+  }
+
+  async addContentToPhase(data: InsertPhaseContent): Promise<PhaseContent> {
+    const [created] = await db.insert(phaseContent).values(data).returning();
+    return created;
+  }
+
+  async removeContentFromPhase(id: string): Promise<boolean> {
+    const result = await db.delete(phaseContent).where(eq(phaseContent.id, id));
+    return true;
+  }
+
+  // ========================================
+  // ACCESS CONTROL OPERATIONS
+  // ========================================
+
+  async checkUserAccess(userId: string, accessType: string, accessId?: string): Promise<boolean> {
+    const now = new Date();
+    
+    // Build conditions based on accessId
+    const conditions = accessId
+      ? and(
+          eq(userAccess.userId, userId),
+          eq(userAccess.accessType, accessType),
+          eq(userAccess.accessId, accessId),
+          eq(userAccess.isActive, true)
+        )
+      : and(
+          eq(userAccess.userId, userId),
+          eq(userAccess.accessType, accessType),
+          eq(userAccess.isActive, true)
+        );
+
+    const [access] = await db
+      .select()
+      .from(userAccess)
+      .where(conditions!)
+      .limit(1);
+
+    if (!access) return false;
+
+    // Check if expired
+    if (access.expiresAt && access.expiresAt < now) {
+      return false;
+    }
+
+    return true;
+  }
+
+  async grantUserAccess(data: InsertUserAccess): Promise<UserAccess> {
+    const [created] = await db.insert(userAccess).values(data).returning();
+    return created;
+  }
+
+  async listActiveAccess(userId: string): Promise<UserAccess[]> {
+    const now = new Date();
+    return await db
+      .select()
+      .from(userAccess)
+      .where(
+        and(
+          eq(userAccess.userId, userId),
+          eq(userAccess.isActive, true)
+        )
+      );
+  }
+
+  async revokeUserAccess(userId: string, accessType: string, accessId?: string): Promise<boolean> {
+    const conditions = accessId
+      ? and(
+          eq(userAccess.userId, userId),
+          eq(userAccess.accessType, accessType),
+          eq(userAccess.accessId, accessId)
+        )
+      : and(
+          eq(userAccess.userId, userId),
+          eq(userAccess.accessType, accessType)
+        );
+
+    await db
+      .update(userAccess)
+      .set({ isActive: false })
+      .where(conditions!);
+    
+    return true;
+  }
+
+  // ========================================
+  // PURCHASES OPERATIONS
+  // ========================================
+
+  async createPurchase(data: InsertPurchase): Promise<Purchase> {
+    const [created] = await db.insert(purchases).values(data).returning();
+    return created;
+  }
+
+  async updatePurchaseStatus(id: string, status: string, metadata?: any): Promise<Purchase> {
+    const updateData: any = { status };
+    if (metadata) {
+      updateData.metadata = metadata;
+    }
+
+    const [updated] = await db
+      .update(purchases)
+      .set(updateData)
+      .where(eq(purchases.id, id))
+      .returning();
+    
+    return updated;
+  }
+
+  async listPurchasesForUser(userId: string): Promise<Purchase[]> {
+    return await db
+      .select()
+      .from(purchases)
+      .where(eq(purchases.userId, userId))
+      .orderBy(desc(purchases.purchasedAt));
+  }
+
+  async getPurchaseByStripeIntent(stripePaymentIntentId: string): Promise<Purchase | undefined> {
+    const [purchase] = await db
+      .select()
+      .from(purchases)
+      .where(eq(purchases.stripePaymentIntentId, stripePaymentIntentId));
+    return purchase;
   }
 
 }
