@@ -16,6 +16,7 @@ import Workshops from "@/pages/workshops";
 import Workshop from "@/pages/workshop";
 import Course from "@/pages/course";
 import Guide from "@/pages/guide";
+import Room from "@/pages/room";
 import CategoryPage from "@/pages/category";
 import AdminDashboard from "@/pages/admin/dashboard";
 import ContentManagement from "@/pages/admin/content";
@@ -107,6 +108,7 @@ function Router() {
           <Route path="/curso/:id" component={Course} />
           <Route path="/guia/:id" component={Guide} />
           <Route path="/taller/:id" component={Workshop} />
+          <Route path="/sala/:slug" component={Room} />
           
           {/* Admin redirect - redirect to login if not authenticated */}
           <Route path="/admin">
@@ -145,6 +147,7 @@ function Router() {
           <Route path="/course/:id" component={Course} />
           <Route path="/curso/:id" component={Course} />
           <Route path="/guia/:id" component={Guide} />
+          <Route path="/sala/:slug" component={Room} />
           <Route path="/admin" component={AdminDashboard} />
           <Route path="/admin/dashboard" component={AdminDashboard} />
           <Route path="/admin/onboarding" component={OnboardingAnalytics} />
