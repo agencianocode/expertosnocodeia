@@ -52,7 +52,7 @@ export default function Room() {
   const { user, isAuthenticated } = useAuth();
 
   const { data: roomDetail, isLoading } = useQuery<RoomDetailResponse>({
-    queryKey: ['/api/rooms', slug],
+    queryKey: [`/api/rooms/${slug}`],
   });
 
   if (isLoading) {
@@ -157,8 +157,8 @@ export default function Room() {
         <div className="space-y-12">
           {phases.map((phase, index) => {
             // Compute whether this phase is locked for the current user
-            const isLockedForUser = phase.isLocked || !hasAccess;
-            const isFutureRelease = new Date(phase.releaseDate) > new Date();
+            // Phase is locked if: user doesn't have room access OR phase release date hasn't passed
+            const isLockedForUser = !hasAccess || phase.isLocked;
             
             return (
             <div key={phase.id} className="space-y-4">
@@ -177,16 +177,16 @@ export default function Room() {
                   <div className="flex items-center gap-3">
                     <h3 className="text-2xl font-bold">{phase.title}</h3>
                     
-                    {/* Show "Bloqueado" if user doesn't have access */}
+                    {/* Show "Bloqueado" if user doesn't have room access */}
                     {!hasAccess && (
                       <Badge variant="secondary" className="gap-1">
                         <Lock className="h-3 w-3" />
-                        Bloqueado
+                        Requiere acceso
                       </Badge>
                     )}
                     
-                    {/* Show release date for future phases (when user has access) */}
-                    {hasAccess && isFutureRelease && (
+                    {/* Show release date for locked phases (due to future release) */}
+                    {hasAccess && phase.isLocked && (
                       <Badge variant="outline" className="gap-1">
                         <Calendar className="h-3 w-3" />
                         Se desbloquea {new Date(phase.releaseDate).toLocaleDateString()}
