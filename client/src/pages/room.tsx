@@ -200,7 +200,8 @@ export default function Room() {
               {phases.map((phase, index) => {
                 // Compute whether this phase is locked for the current user
                 // Phase is locked if: user doesn't have room access OR phase release date hasn't passed
-                const isLockedForUser = !hasAccess || phase.isLocked;
+                // TEMPORARILY DISABLED FOR DEVELOPMENT
+                const isLockedForUser = false; // !hasAccess || phase.isLocked;
                 
                 // Find promo banners that should display after this phase
                 const bannersAfterPhase = (promoBanners || []).filter(
