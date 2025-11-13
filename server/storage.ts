@@ -21,6 +21,7 @@ import {
   userUsage,
   userOnboardingResponses,
   comments,
+  commentLikes,
   // Rooms & Phases system
   rooms,
   phases,
@@ -1903,9 +1904,10 @@ export class DatabaseStorage implements IStorage {
   // COMMENTS OPERATIONS
   // ========================================
 
-  async getLessonComments(lessonId: string): Promise<Array<Comment & { 
+  async getLessonComments(lessonId: string, userId?: string): Promise<Array<Comment & { 
     user: { firstName: string; lastName: string; profileImageUrl: string | null }; 
-    replies: Array<Comment & { user: { firstName: string; lastName: string; profileImageUrl: string | null } }> 
+    isLikedByCurrentUser?: boolean;
+    replies: Array<Comment & { user: { firstName: string; lastName: string; profileImageUrl: string | null }; isLikedByCurrentUser?: boolean }> 
   }>> {
     // Fetch all comments for the lesson with user data
     const allComments = await db
@@ -1922,9 +1924,13 @@ export class DatabaseStorage implements IStorage {
       .where(eq(comments.lessonId, lessonId))
       .orderBy(comments.createdAt);
 
+    // Get liked comment IDs if userId is provided
+    const likedCommentIds = userId ? await this.getUserLikedCommentIds(userId, lessonId) : new Set<string>();
+
     // Build nested structure: root comments with their replies
     const commentsMap = new Map<string, Comment & { 
       user: { firstName: string; lastName: string; profileImageUrl: string | null }; 
+      isLikedByCurrentUser?: boolean;
       replies: any[] 
     }>();
 
@@ -1937,6 +1943,7 @@ export class DatabaseStorage implements IStorage {
           lastName: user?.lastName || '',
           profileImageUrl: user?.profileImageUrl || null,
         },
+        isLikedByCurrentUser: likedCommentIds.has(comment.id),
         replies: [],
       });
     });
@@ -2106,6 +2113,72 @@ export class DatabaseStorage implements IStorage {
         title: course?.title || 'Curso eliminado',
       },
     }));
+  }
+
+  async toggleCommentLike(commentId: string, userId: string): Promise<{ liked: boolean; likeCount: number }> {
+    const [existingLike] = await db
+      .select()
+      .from(commentLikes)
+      .where(
+        and(
+          eq(commentLikes.commentId, commentId),
+          eq(commentLikes.userId, userId)
+        )
+      );
+
+    if (existingLike) {
+      await db
+        .delete(commentLikes)
+        .where(
+          and(
+            eq(commentLikes.commentId, commentId),
+            eq(commentLikes.userId, userId)
+          )
+        );
+
+      await db
+        .update(comments)
+        .set({ likeCount: sql`${comments.likeCount} - 1` })
+        .where(eq(comments.id, commentId));
+
+      const [updated] = await db
+        .select({ likeCount: comments.likeCount })
+        .from(comments)
+        .where(eq(comments.id, commentId));
+
+      return { liked: false, likeCount: updated?.likeCount || 0 };
+    } else {
+      await db
+        .insert(commentLikes)
+        .values({ commentId, userId });
+
+      await db
+        .update(comments)
+        .set({ likeCount: sql`${comments.likeCount} + 1` })
+        .where(eq(comments.id, commentId));
+
+      const [updated] = await db
+        .select({ likeCount: comments.likeCount })
+        .from(comments)
+        .where(eq(comments.id, commentId));
+
+      return { liked: true, likeCount: updated?.likeCount || 0 };
+    }
+  }
+
+  async getUserLikedCommentIds(userId: string, lessonId: string): Promise<Set<string>> {
+    const likes = await db
+      .select({ commentId: commentLikes.commentId })
+      .from(commentLikes)
+      .leftJoin(comments, eq(commentLikes.commentId, comments.id))
+      .where(
+        and(
+          eq(commentLikes.userId, userId),
+          eq(comments.lessonId, lessonId)
+        )
+      );
+
+    return new Set(likes.map(like => like.commentId));
   }
 
 }

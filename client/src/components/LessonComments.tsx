@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent } from "@/components/ui/card";
-import { MessageCircle, Send, Reply } from "lucide-react";
+import { MessageCircle, Send, Reply, Heart } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { es } from "date-fns/locale";
 
@@ -19,6 +19,8 @@ interface Comment {
   isAdminReviewed: boolean;
   depth: number;
   replyCount: number;
+  likeCount: number;
+  isLikedByCurrentUser?: boolean;
   user: {
     firstName: string;
     lastName: string;
@@ -63,6 +65,16 @@ export function LessonComments({ lessonId }: LessonCommentsProps) {
         return newContents;
       });
       // Force refetch instead of invalidation
+      await refetch();
+    },
+  });
+
+  const toggleLikeMutation = useMutation({
+    mutationFn: async (commentId: string) => {
+      return apiRequest<{ liked: boolean; likeCount: number }>('POST', `/api/comments/${commentId}/like`, {});
+    },
+    onSuccess: async () => {
+      // Force refetch to update like counts and state
       await refetch();
     },
   });
@@ -117,16 +129,32 @@ export function LessonComments({ lessonId }: LessonCommentsProps) {
               {comment.content}
             </p>
 
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-7 px-2 text-xs"
-              onClick={() => setReplyTo(isReplying ? null : comment.id)}
-              data-testid={`button-reply-${comment.id}`}
-            >
-              <Reply className="h-3 w-3 mr-1" />
-              Responder
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                className={`h-7 px-2 text-xs ${comment.isLikedByCurrentUser ? 'text-red-500' : ''}`}
+                onClick={() => toggleLikeMutation.mutate(comment.id)}
+                disabled={toggleLikeMutation.isPending}
+                data-testid={`button-like-${comment.id}`}
+              >
+                <Heart 
+                  className={`h-3 w-3 mr-1 ${comment.isLikedByCurrentUser ? 'fill-current' : ''}`}
+                />
+                {comment.likeCount > 0 && <span>{comment.likeCount}</span>}
+              </Button>
+
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 px-2 text-xs"
+                onClick={() => setReplyTo(isReplying ? null : comment.id)}
+                data-testid={`button-reply-${comment.id}`}
+              >
+                <Reply className="h-3 w-3 mr-1" />
+                Responder
+              </Button>
+            </div>
 
             {isReplying && (
               <div className="mt-3 space-y-2" data-testid={`reply-form-${comment.id}`}>

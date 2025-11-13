@@ -322,6 +322,7 @@ export const comments = pgTable("comments", {
   rootCommentId: varchar("root_comment_id"), // Top-level comment in the thread
   depth: integer("depth").default(0), // Nesting level (0 = root comment)
   replyCount: integer("reply_count").default(0), // Number of direct replies
+  likeCount: integer("like_count").default(0), // Number of likes (denormalized)
   isAdminReviewed: boolean("is_admin_reviewed").default(false), // For unread badge tracking
   metadata: jsonb("metadata").default({}), // For future extensions (attachments, flags, etc)
   createdAt: timestamp("created_at").defaultNow(),
@@ -330,6 +331,17 @@ export const comments = pgTable("comments", {
   index("idx_comments_lesson_root_created").on(table.lessonId, table.rootCommentId, table.createdAt),
   index("idx_comments_parent").on(table.parentCommentId),
   index("idx_comments_admin_reviewed").on(table.isAdminReviewed, table.createdAt),
+]);
+
+// Comment Likes (many-to-many relationship between users and comments)
+export const commentLikes = pgTable("comment_likes", {
+  commentId: varchar("comment_id").references(() => comments.id, { onDelete: 'cascade' }).notNull(),
+  userId: varchar("user_id").references(() => users.id).notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  sql`PRIMARY KEY (comment_id, user_id)`,
+  index("idx_comment_likes_comment").on(table.commentId),
+  index("idx_comment_likes_user").on(table.userId),
 ]);
 
 // Relations

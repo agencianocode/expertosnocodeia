@@ -1125,13 +1125,15 @@ export function registerSimpleRoutes(app: Express): Server {
   // ==================== COMMENT ROUTES ====================
   
   // GET comments for a lesson
-  app.get("/api/lessons/:lessonId/comments", async (req: Request, res: Response) => {
+  app.get("/api/lessons/:lessonId/comments", legacyAuth, async (req: Request, res: Response) => {
     try {
       console.log("📖 GET /api/lessons/:lessonId/comments called");
       const { lessonId } = req.params;
+      const userId = (req as any).user?.claims?.sub;
       console.log("📖 lessonId:", lessonId);
+      console.log("📖 userId:", userId);
       
-      const comments = await storage.getLessonComments(lessonId);
+      const comments = await storage.getLessonComments(lessonId, userId);
       console.log("📖 comments retrieved:", comments.length);
       
       res.json(comments);
@@ -1385,6 +1387,31 @@ export function registerSimpleRoutes(app: Express): Server {
         return res.status(404).json({ message: error.message });
       }
       res.status(500).json({ message: "Failed to mark comment as reviewed" });
+    }
+  });
+
+  // POST toggle like on a comment
+  app.post("/api/comments/:id/like", legacyAuth, async (req: Request, res: Response) => {
+    try {
+      console.log("❤️ POST /api/comments/:id/like called");
+      const { id: commentId } = req.params;
+      const userId = (req as any).user?.claims?.sub;
+      
+      console.log("❤️ commentId:", commentId);
+      console.log("❤️ userId:", userId);
+      
+      if (!userId) {
+        console.log("❌ No userId - 401");
+        return res.status(401).json({ message: "Usuario no autenticado" });
+      }
+
+      const result = await storage.toggleCommentLike(commentId, userId);
+      console.log("✅ Like toggled:", result);
+      
+      res.json(result);
+    } catch (error: any) {
+      console.error("❌ Error toggling comment like:", error);
+      res.status(500).json({ message: "Error al dar me gusta" });
     }
   });
 
