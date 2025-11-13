@@ -798,16 +798,11 @@ export default function Course() {
                       {/* Module Header */}
                       <div
                         className={cn(
-                          "py-4 px-4 rounded-lg transition-colors",
+                          "group py-4 px-4 rounded-lg transition-colors",
                           hasSubLessons 
                             ? "text-muted-foreground" 
                             : isAuthenticated 
-                              ? cn(
-                                  "cursor-pointer",
-                                  moduleIndex === currentLessonIndex 
-                                    ? "bg-muted text-foreground border border-border" 
-                                    : "hover:bg-muted/50 hover:border hover:border-border text-muted-foreground"
-                                )
+                              ? "cursor-pointer hover:bg-muted/50 hover:border hover:border-border text-muted-foreground"
                               : "cursor-pointer hover:bg-muted/30 text-muted-foreground"
                         )}
                       >
@@ -823,7 +818,10 @@ export default function Course() {
                               {moduleNumber}
                             </div>
                             <div className="flex-1">
-                              <div className="font-satoshi font-medium text-foreground text-[15px]">
+                              <div className={cn(
+                                "font-satoshi font-medium text-[15px]",
+                                !hasSubLessons && moduleIndex === currentLessonIndex ? "text-foreground" : "text-foreground"
+                              )}>
                                 {module.title}
                               </div>
                             </div>
@@ -834,9 +832,9 @@ export default function Course() {
                               <Lock size={14} className="text-muted-foreground mt-1" />
                             )}
                             
-                            {!hasSubLessons && isAuthenticated && moduleIndex === currentLessonIndex && !isLessonCompleted(module.id) && (
+                            {!hasSubLessons && isAuthenticated && !isLessonCompleted(module.id) && (
                               <div 
-                                className="flex items-center border border-border rounded px-2 py-1 cursor-pointer hover:bg-muted/20 transition-colors"
+                                className="opacity-0 group-hover:opacity-100 flex items-center border border-border rounded px-2 py-1 cursor-pointer hover:bg-muted/20 transition-all"
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   handleMarkComplete(module.id);
@@ -878,14 +876,9 @@ export default function Course() {
                             key={subLesson.id}
                             onClick={() => handleLessonClick(subIndex)}
                             className={cn(
-                              "py-3 px-4 ml-6 rounded-lg transition-colors",
+                              "group py-3 px-4 ml-6 rounded-lg transition-colors",
                               isAuthenticated 
-                                ? cn(
-                                    "cursor-pointer",
-                                    subIndex === currentLessonIndex 
-                                      ? "bg-muted text-foreground border border-border" 
-                                      : "hover:bg-muted/50 hover:border hover:border-border text-muted-foreground"
-                                  )
+                                ? "cursor-pointer hover:bg-muted/50 hover:border hover:border-border text-muted-foreground"
                                 : "cursor-pointer hover:bg-muted/30 text-muted-foreground"
                             )}
                           >
@@ -901,16 +894,19 @@ export default function Course() {
                                   )}
                                 </div>
                                 <div className="flex-1">
-                                  <div className="font-satoshi font-normal text-foreground text-[14px]">
+                                  <div className={cn(
+                                    "font-satoshi font-normal text-[14px]",
+                                    subIndex === currentLessonIndex ? "text-foreground" : "text-muted-foreground"
+                                  )}>
                                     {subLesson.title}
                                   </div>
                                 </div>
                               </div>
                               {!isAuthenticated ? (
                                 <Lock size={12} className="text-muted-foreground mt-1" />
-                              ) : subIndex === currentLessonIndex && !isLessonCompleted(subLesson.id) && (
+                              ) : !isLessonCompleted(subLesson.id) && (
                                 <div 
-                                  className="flex items-center border border-border rounded px-2 py-1 ml-2 cursor-pointer hover:bg-muted/20 transition-colors"
+                                  className="opacity-0 group-hover:opacity-100 flex items-center border border-border rounded px-2 py-1 ml-2 cursor-pointer hover:bg-muted/20 transition-all"
                                   onClick={(e) => {
                                     e.stopPropagation();
                                     handleMarkComplete(subLesson.id);
@@ -1283,12 +1279,10 @@ export default function Course() {
                       {/* Module Header */}
                       <div
                         className={cn(
-                          "p-4 rounded-lg transition-all",
+                          "group p-4 rounded-lg transition-all",
                           hasSubLessons 
                             ? "bg-transparent" 
-                            : moduleIndex === currentLessonIndex 
-                              ? "bg-[#262626] border border-[#404040]" 
-                              : "bg-transparent hover:bg-[#262626]/50"
+                            : "bg-transparent hover:bg-[#262626]/50"
                         )}
                       >
                         <div className="flex items-start justify-between">
@@ -1308,16 +1302,19 @@ export default function Course() {
                               {moduleNumber}
                             </div>
                             <div className="flex-1">
-                              <div className="text-white font-medium text-base">
+                              <div className={cn(
+                                "font-medium text-base",
+                                !hasSubLessons && moduleIndex === currentLessonIndex ? "text-white" : "text-white"
+                              )}>
                                 {module.title}
                               </div>
                             </div>
                           </div>
                           
                           <div className="flex items-center gap-2">
-                            {!hasSubLessons && moduleIndex === currentLessonIndex && !isLessonCompleted(module.id) && (
+                            {!hasSubLessons && !isLessonCompleted(module.id) && (
                               <div 
-                                className="flex items-center border border-[#404040] rounded px-2 py-1 cursor-pointer hover:bg-[#404040]/20 transition-colors"
+                                className="opacity-0 group-hover:opacity-100 flex items-center border border-[#404040] rounded px-2 py-1 cursor-pointer hover:bg-[#404040]/20 transition-all"
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   handleMarkComplete(module.id);
@@ -1361,43 +1358,38 @@ export default function Course() {
                               handleLessonClick(subIndex);
                               setIsMobileLessonsOpen(false);
                             }}
-                            className={cn(
-                              "p-3 ml-6 rounded-lg cursor-pointer transition-all",
-                              subIndex === currentLessonIndex 
-                                ? "bg-[#262626] border border-[#404040]" 
-                                : "bg-transparent hover:bg-[#262626]/50"
-                            )}
+                            className="group p-3 ml-6 rounded-lg cursor-pointer transition-all bg-transparent hover:bg-[#262626]/50"
                           >
-                            <div className="flex items-start space-x-3">
-                              <div className="w-auto min-w-[32px] h-7 px-1.5 rounded-lg border flex items-center justify-center font-medium flex-shrink-0 bg-gray-600 text-white border-gray-600 text-xs">
-                                {isLessonCompleted(subLesson.id) ? (
-                                  <Check size={14} className="text-green-400" />
-                                ) : (
-                                  subLessonNumber
-                                )}
-                              </div>
-                              <div className="flex-1">
-                                <div className="text-white font-normal text-sm mb-1">
-                                  {subLesson.title}
+                            <div className="flex items-start justify-between">
+                              <div className="flex items-start space-x-3 flex-1">
+                                <div className="w-auto min-w-[32px] h-7 px-1.5 rounded-lg border flex items-center justify-center font-medium flex-shrink-0 bg-gray-600 text-white border-gray-600 text-xs">
+                                  {isLessonCompleted(subLesson.id) ? (
+                                    <Check size={14} className="text-green-400" />
+                                  ) : (
+                                    subLessonNumber
+                                  )}
                                 </div>
-                                {isLessonCompleted(subLesson.id) ? (
-                                  <div className="flex items-center text-green-400 text-xs">
-                                    <Check size={12} className="mr-1" />
-                                    <span>Completado</span>
+                                <div className="flex-1">
+                                  <div className={cn(
+                                    "font-normal text-sm",
+                                    subIndex === currentLessonIndex ? "text-white" : "text-gray-300"
+                                  )}>
+                                    {subLesson.title}
                                   </div>
-                                ) : subIndex === currentLessonIndex && (
-                                  <div 
-                                    className="flex items-center border border-[#404040] rounded px-2 py-1 cursor-pointer hover:bg-[#404040]/20 transition-colors"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      handleMarkComplete(subLesson.id);
-                                    }}
-                                  >
-                                    <Check size={10} className="mr-1 text-gray-400" />
-                                    <span className="text-gray-400 font-satoshi text-[10px]">Marcar</span>
-                                  </div>
-                                )}
+                                </div>
                               </div>
+                              {!isLessonCompleted(subLesson.id) && (
+                                <div 
+                                  className="opacity-0 group-hover:opacity-100 flex items-center border border-[#404040] rounded px-2 py-1 cursor-pointer hover:bg-[#404040]/20 transition-all ml-2"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleMarkComplete(subLesson.id);
+                                  }}
+                                >
+                                  <Check size={10} className="mr-1 text-gray-400" />
+                                  <span className="text-gray-400 font-satoshi text-[10px]">Marcar</span>
+                                </div>
+                              )}
                             </div>
                           </div>
                         );
