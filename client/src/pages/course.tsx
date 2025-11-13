@@ -974,23 +974,14 @@ export default function Course() {
 
                         {/* Sub-lessons Timeline */}
                         {hasSubLessons && !isCollapsed && (
-                          <div className="relative px-6 py-4 flex flex-col gap-3">
+                          <div className="relative px-6 py-4 flex flex-col gap-4">
                             {subLessons.map((subLesson: any, subIdx: number) => {
                               const subIndex = lessonsArray.findIndex((l: any) => l.id === subLesson.id);
                               const isCurrentLesson = subIndex === currentLessonIndex;
                               const isCompleted = isLessonCompleted(subLesson.id);
-                              const isLast = subIdx === subLessons.length - 1;
 
                               return (
                                 <div key={subLesson.id} className="relative">
-                                  {/* Vertical Connector Line */}
-                                  {!isLast && (
-                                    <div className={cn(
-                                      "absolute left-[7px] top-4 bottom-[-12px] w-px",
-                                      isCompleted ? "bg-primary/40" : "bg-border"
-                                    )} />
-                                  )}
-                                  
                                   {/* Lesson Row */}
                                   <div
                                     className={cn(
@@ -1600,17 +1591,14 @@ export default function Course() {
 
                         {/* Sub-lessons Timeline */}
                         {hasSubLessons && !isCollapsed && (
-                          <div className="relative px-6 py-3 flex flex-col">
-                            {/* Continuous Vertical Line */}
-                            <div className="absolute left-[31px] top-6 bottom-3 w-[1.5px] bg-gray-700/50" />
-                            
+                          <div className="relative px-6 py-4 flex flex-col gap-3">
                             {subLessons.map((subLesson: any, subIdx: number) => {
                               const subIndex = lessonsArray.findIndex((l: any) => l.id === subLesson.id);
                               const isCurrentLesson = subIndex === currentLessonIndex;
                               const isCompleted = isLessonCompleted(subLesson.id);
 
                               return (
-                                <div key={subLesson.id} className="relative py-2">
+                                <div key={subLesson.id} className="relative">
                                   {/* Lesson Row */}
                                   <div
                                     className={cn(
