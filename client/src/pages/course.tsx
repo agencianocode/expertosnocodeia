@@ -936,33 +936,39 @@ export default function Course() {
 
                         {/* Sub-lessons Timeline */}
                         {hasSubLessons && !isCollapsed && (
-                          <div className="relative px-6 py-3 flex flex-col">
-                            {/* Continuous Vertical Line Behind All Circles */}
-                            <div className="absolute left-[31px] top-6 bottom-3 w-[1.5px] bg-gray-700/40" />
-                            
+                          <div className="relative px-6 py-4 flex flex-col gap-3">
                             {subLessons.map((subLesson: any, subIdx: number) => {
                               const subIndex = lessonsArray.findIndex((l: any) => l.id === subLesson.id);
                               const isCurrentLesson = subIndex === currentLessonIndex;
                               const isCompleted = isLessonCompleted(subLesson.id);
+                              const isLast = subIdx === subLessons.length - 1;
 
                               return (
-                                <div key={subLesson.id} className="relative py-2">
+                                <div key={subLesson.id} className="relative">
+                                  {/* Vertical Connector Line */}
+                                  {!isLast && (
+                                    <div className={cn(
+                                      "absolute left-[7px] top-4 bottom-[-12px] w-px",
+                                      isCompleted ? "bg-primary/40" : "bg-border"
+                                    )} />
+                                  )}
+                                  
                                   {/* Lesson Row */}
                                   <div
                                     className={cn(
-                                      "group relative flex items-center gap-4 min-h-[32px] rounded-lg px-2 py-1 -mx-2 transition-all"
+                                      "group relative flex items-start gap-3 min-h-[32px] rounded-lg px-2 py-1 -mx-2 transition-all"
                                     )}
                                   >
                                     {/* Circle Marker - Clickable to toggle completion */}
                                     <div 
                                       className={cn(
-                                        "h-5 w-5 rounded-full border-[2.5px] flex-shrink-0 transition-all relative z-10",
+                                        "h-4 w-4 rounded-full border-2 flex-shrink-0 transition-all relative z-10 mt-0.5",
                                         isCompleted 
-                                          ? "bg-primary border-primary shadow-lg shadow-primary/20" 
-                                          : "bg-black border-gray-600",
-                                        isCurrentLesson && "ring-2 ring-primary/30 ring-offset-2 ring-offset-black",
+                                          ? "bg-primary border-primary" 
+                                          : "bg-transparent border-border",
+                                        isCurrentLesson && "ring-2 ring-primary/40",
                                         !isAuthenticated && "bg-muted border-muted",
-                                        isAuthenticated && "cursor-pointer hover:scale-110 hover:border-primary/60"
+                                        isAuthenticated && "cursor-pointer hover:scale-110"
                                       )}
                                       onClick={(e) => {
                                         e.stopPropagation();
@@ -972,7 +978,7 @@ export default function Course() {
                                       }}
                                     >
                                       {isCompleted && (
-                                        <Check size={12} className="text-white absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2" />
+                                        <Check size={10} className="text-white absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2" />
                                       )}
                                     </div>
                                     
