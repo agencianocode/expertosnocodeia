@@ -11,7 +11,7 @@ import Sidebar from "@/components/layout/sidebar";
 import MobileNav from "@/components/layout/mobile-nav";
 import MobileHeader from "@/components/layout/mobile-header";
 import { Link } from "wouter";
-import { MessageCircle, CheckCircle, Filter, Reply, Eye } from "lucide-react";
+import { MessageCircle, CheckCircle, Filter, Reply, Eye, Trash2 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { es } from "date-fns/locale";
 
@@ -72,7 +72,17 @@ export default function AdminComments() {
 
   const markReviewedMutation = useMutation({
     mutationFn: async (commentId: string) => {
-      return apiRequest('PATCH', `/api/comments/${commentId}/review`, {});
+      return apiRequest('PATCH', `/api/admin/comments/${commentId}/status`, { status: 'approved' });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/comments/unread-count'], refetchType: 'active' });
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/comments'], refetchType: 'active' });
+    },
+  });
+
+  const deleteCommentMutation = useMutation({
+    mutationFn: async (commentId: string) => {
+      return apiRequest('DELETE', `/api/admin/comments/${commentId}`, {});
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/comments/unread-count'], refetchType: 'active' });
@@ -297,10 +307,10 @@ export default function AdminComments() {
                                   variant="outline"
                                   onClick={() => markReviewedMutation.mutate(comment.id)}
                                   disabled={markReviewedMutation.isPending}
-                                  data-testid={`button-mark-reviewed-${comment.id}`}
+                                  data-testid={`button-approve-${comment.id}`}
                                 >
                                   <CheckCircle className="h-3 w-3 mr-1" />
-                                  Marcar como revisado
+                                  Aprobar
                                 </Button>
                               )}
                               <Link href={`/course/${comment.lesson.courseId}/lesson/${comment.lesson.id}#comments`}>
@@ -309,6 +319,21 @@ export default function AdminComments() {
                                   Ver en contexto
                                 </Button>
                               </Link>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => {
+                                  if (confirm('¿Estás seguro de que quieres eliminar este comentario? Esta acción no se puede deshacer.')) {
+                                    deleteCommentMutation.mutate(comment.id);
+                                  }
+                                }}
+                                disabled={deleteCommentMutation.isPending}
+                                data-testid={`button-delete-${comment.id}`}
+                                className="text-red-400 hover:text-red-300 hover:bg-red-950"
+                              >
+                                <Trash2 className="h-3 w-3 mr-1" />
+                                Eliminar
+                              </Button>
                             </div>
                           </div>
                         </div>

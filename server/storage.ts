@@ -2041,6 +2041,35 @@ export class DatabaseStorage implements IStorage {
     return updated;
   }
 
+  async deleteComment(commentId: string): Promise<void> {
+    // First delete all likes for replies to this comment
+    const repliesToDelete = await db
+      .select({ id: comments.id })
+      .from(comments)
+      .where(eq(comments.parentCommentId, commentId));
+    
+    for (const reply of repliesToDelete) {
+      await db
+        .delete(commentLikes)
+        .where(eq(commentLikes.commentId, reply.id));
+    }
+    
+    // Delete all replies to this comment
+    await db
+      .delete(comments)
+      .where(eq(comments.parentCommentId, commentId));
+    
+    // Delete likes for the comment itself
+    await db
+      .delete(commentLikes)
+      .where(eq(commentLikes.commentId, commentId));
+    
+    // Finally delete the comment itself
+    await db
+      .delete(comments)
+      .where(eq(comments.id, commentId));
+  }
+
   async getCommentById(commentId: string): Promise<Comment | undefined> {
     const [comment] = await db
       .select()

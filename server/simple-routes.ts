@@ -981,6 +981,21 @@ export function registerSimpleRoutes(app: Express): Server {
     }
   });
 
+  // Get single lesson by courseId and lessonId
+  app.get("/api/courses/:courseId/lessons/:lessonId", async (req: Request, res: Response) => {
+    try {
+      const { lessonId } = req.params;
+      const lesson = await storage.getLessonById(lessonId);
+      if (!lesson) {
+        return res.status(404).json({ message: "Lección no encontrada" });
+      }
+      res.json(lesson);
+    } catch (error) {
+      console.error("Error fetching lesson:", error);
+      res.status(500).json({ message: "Error interno del servidor" });
+    }
+  });
+
   // Get user progress for a specific course (returns array of completed lesson IDs)
   app.get("/api/courses/:courseId/progress", legacyAuth, async (req: Request, res: Response) => {
     try {
@@ -1283,6 +1298,24 @@ export function registerSimpleRoutes(app: Express): Server {
     } catch (error) {
       console.error("❌ Error updating comment status:", error);
       res.status(500).json({ message: "Error al actualizar estado del comentario" });
+    }
+  });
+
+  // DELETE comment (admin only)
+  app.delete("/api/admin/comments/:commentId", simpleAdminAuth, isAdmin, async (req: Request, res: Response) => {
+    try {
+      console.log("👮 DELETE /api/admin/comments/:commentId called");
+      const { commentId } = req.params;
+      
+      console.log("👮 commentId:", commentId);
+      
+      await storage.deleteComment(commentId);
+      console.log("✅ Comment deleted");
+      
+      res.json({ success: true, message: "Comentario eliminado exitosamente" });
+    } catch (error) {
+      console.error("❌ Error deleting comment:", error);
+      res.status(500).json({ message: "Error al eliminar comentario" });
     }
   });
 
