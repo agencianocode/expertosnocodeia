@@ -320,13 +320,22 @@ export default function Course() {
 
   // Get indices of only navigable lessons (leaf lessons) in lessonsArray
   const navigableLessonIndices = useMemo(() => {
-    return lessonsArray
+    const indices = lessonsArray
       .map((lesson: any, index: number) => {
         // Include if it's a sub-lesson OR a module without sub-lessons
         const isNavigable = lesson.parentLessonId || !subLessonsByParent[lesson.id]?.length;
         return isNavigable ? index : -1;
       })
       .filter((index: number) => index !== -1);
+    
+    console.log('📊 Navigable Indices Updated:', {
+      totalLessons: lessonsArray.length,
+      navigableCount: indices.length,
+      indices,
+      lessonTitles: indices.map(idx => lessonsArray[idx]?.title)
+    });
+    
+    return indices;
   }, [lessonsArray, subLessonsByParent]);
   
   // Toggle collapse state for a module
@@ -569,26 +578,40 @@ export default function Course() {
     // Find current position in navigable lessons
     const currentPositionInNavigable = navigableLessonIndices.indexOf(currentLessonIndex);
     
+    console.log('⬅️ Previous Lesson Clicked:', {
+      currentLessonIndex,
+      currentLesson: lessonsArray[currentLessonIndex]?.title,
+      currentPositionInNavigable,
+      navigableLessonIndices,
+      canGoPrevious: currentPositionInNavigable > 0
+    });
+    
     if (currentPositionInNavigable === -1) {
       // Current lesson is not navigable (probably a module header)
       // Find the previous navigable lesson before currentLessonIndex
       const prevNavigable = [...navigableLessonIndices].reverse().find(idx => idx < currentLessonIndex);
       if (prevNavigable !== undefined) {
+        console.log('✅ Jumping to previous navigable:', prevNavigable, lessonsArray[prevNavigable]?.title);
         setCurrentLessonIndex(prevNavigable);
         const lesson = lessonsArray[prevNavigable];
         if (lesson && id) {
           saveLessonPosition(id, lesson.id);
         }
+      } else {
+        console.log('❌ No previous navigable lesson found');
       }
     } else if (currentPositionInNavigable > 0) {
       // Go to previous navigable lesson
       const newIndex = navigableLessonIndices[currentPositionInNavigable - 1];
+      console.log('✅ Going to previous navigable:', newIndex, lessonsArray[newIndex]?.title);
       setCurrentLessonIndex(newIndex);
       // Guardar la posición de la nueva lección
       const lesson = lessonsArray[newIndex];
       if (lesson && id) {
         saveLessonPosition(id, lesson.id);
       }
+    } else {
+      console.log('❌ Already at first lesson');
     }
   };
 
@@ -596,26 +619,41 @@ export default function Course() {
     // Find current position in navigable lessons
     const currentPositionInNavigable = navigableLessonIndices.indexOf(currentLessonIndex);
     
+    console.log('➡️ Next Lesson Clicked:', {
+      currentLessonIndex,
+      currentLesson: lessonsArray[currentLessonIndex]?.title,
+      currentPositionInNavigable,
+      navigableLessonIndices,
+      totalNavigable: navigableLessonIndices.length,
+      canGoNext: currentPositionInNavigable < navigableLessonIndices.length - 1
+    });
+    
     if (currentPositionInNavigable === -1) {
       // Current lesson is not navigable (probably a module header)
       // Find the next navigable lesson after currentLessonIndex
       const nextNavigable = navigableLessonIndices.find(idx => idx > currentLessonIndex);
       if (nextNavigable !== undefined) {
+        console.log('✅ Jumping to next navigable:', nextNavigable, lessonsArray[nextNavigable]?.title);
         setCurrentLessonIndex(nextNavigable);
         const lesson = lessonsArray[nextNavigable];
         if (lesson && id) {
           saveLessonPosition(id, lesson.id);
         }
+      } else {
+        console.log('❌ No next navigable lesson found');
       }
     } else if (currentPositionInNavigable < navigableLessonIndices.length - 1) {
       // Go to next navigable lesson
       const newIndex = navigableLessonIndices[currentPositionInNavigable + 1];
+      console.log('✅ Going to next navigable:', newIndex, lessonsArray[newIndex]?.title);
       setCurrentLessonIndex(newIndex);
       // Guardar la posición de la nueva lección
       const lesson = lessonsArray[newIndex];
       if (lesson && id) {
         saveLessonPosition(id, lesson.id);
       }
+    } else {
+      console.log('❌ Already at last lesson');
     }
   };
 
