@@ -5,7 +5,8 @@ import { storage } from "./storage";
 export const isAdmin: RequestHandler = async (req: any, res, next) => {
   try {
     console.log("isAdmin middleware - req.user:", req.user);
-    const userId = req.user?.claims?.sub;
+    // Get userId from req.user (set by supabaseAuth middleware)
+    const userId = req.user?.id || req.user?.claims?.sub;
     console.log("isAdmin middleware - userId:", userId);
     
     if (!userId) {

@@ -52,6 +52,12 @@ interface NotifyNewCommentParams {
 
 export async function sendNewCommentNotification(params: NotifyNewCommentParams): Promise<void> {
   try {
+    // Verify Resend is configured before proceeding
+    if (!process.env.REPLIT_CONNECTORS_HOSTNAME && !process.env.RESEND_API_KEY) {
+      console.warn('⚠️ Resend not configured, skipping email notification');
+      return;
+    }
+
     const { client, fromEmail } = await getUncachableResendClient();
     
     const subject = params.isReply 
@@ -112,21 +118,28 @@ Ver comentario: ${process.env.REPLIT_DOMAINS || 'http://localhost:5000'}/lesson/
 Expertos NoCode IA - Aprende a crear sin código
     `;
 
-    // Send to admins or specific recipients
-    for (const email of params.recipientEmails) {
-      await client.emails.send({
+    // Send to admins or specific recipients (fire-and-forget, don't await)
+    const emailPromises = params.recipientEmails.map(email => 
+      client.emails.send({
         from: fromEmail,
         to: email,
         subject: subject,
         html: htmlContent,
         text: textContent,
-      });
-    }
+      }).catch(err => {
+        console.error(`❌ Failed to send email to ${email}:`, err);
+        return null; // Don't propagate individual failures
+      })
+    );
 
-    console.log(`✅ Notification email sent for comment ${params.commentId} to ${params.recipientEmails.length} recipients`);
+    // Wait for all emails (but don't fail if some don't send)
+    const results = await Promise.allSettled(emailPromises);
+    const successCount = results.filter(r => r.status === 'fulfilled' && r.value).length;
+    
+    console.log(`✅ Sent ${successCount}/${params.recipientEmails.length} notification emails for comment ${params.commentId}`);
   } catch (error) {
-    console.error('❌ Failed to send comment notification email:', error);
-    throw error;
+    // Log but don't throw - email failures shouldn't break the API
+    console.error('❌ Failed to send comment notification emails:', error);
   }
 }
 
