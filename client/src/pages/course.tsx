@@ -802,7 +802,12 @@ export default function Course() {
                           hasSubLessons 
                             ? "text-muted-foreground" 
                             : isAuthenticated 
-                              ? "cursor-pointer hover:bg-muted/50 hover:border hover:border-border text-muted-foreground"
+                              ? cn(
+                                  "cursor-pointer text-muted-foreground",
+                                  moduleIndex === currentLessonIndex 
+                                    ? "bg-muted border border-border" 
+                                    : "hover:bg-muted/50 hover:border hover:border-border"
+                                )
                               : "cursor-pointer hover:bg-muted/30 text-muted-foreground"
                         )}
                       >
@@ -870,6 +875,7 @@ export default function Course() {
                       {hasSubLessons && !isCollapsed && subLessons.map((subLesson: any, subIdx: number) => {
                         const subIndex = lessonsArray.findIndex((l: any) => l.id === subLesson.id);
                         const subLessonNumber = `${moduleNumber}.${subIdx + 1}`;
+                        const isCurrentLesson = subIndex === currentLessonIndex;
                         
                         return (
                           <div
@@ -878,7 +884,12 @@ export default function Course() {
                             className={cn(
                               "group py-3 px-4 ml-6 rounded-lg transition-colors",
                               isAuthenticated 
-                                ? "cursor-pointer hover:bg-muted/50 hover:border hover:border-border text-muted-foreground"
+                                ? cn(
+                                    "cursor-pointer text-muted-foreground",
+                                    isCurrentLesson 
+                                      ? "bg-muted border border-border" 
+                                      : "hover:bg-muted/50 hover:border hover:border-border"
+                                  )
                                 : "cursor-pointer hover:bg-muted/30 text-muted-foreground"
                             )}
                           >
@@ -1282,7 +1293,11 @@ export default function Course() {
                           "group p-4 rounded-lg transition-all",
                           hasSubLessons 
                             ? "bg-transparent" 
-                            : "bg-transparent hover:bg-[#262626]/50"
+                            : cn(
+                                moduleIndex === currentLessonIndex 
+                                  ? "bg-[#262626] border border-[#404040]" 
+                                  : "bg-transparent hover:bg-[#262626]/50"
+                              )
                         )}
                       >
                         <div className="flex items-start justify-between">
@@ -1350,6 +1365,7 @@ export default function Course() {
                       {hasSubLessons && !isCollapsed && subLessons.map((subLesson: any, subIdx: number) => {
                         const subIndex = lessonsArray.findIndex((l: any) => l.id === subLesson.id);
                         const subLessonNumber = `${moduleNumber}.${subIdx + 1}`;
+                        const isCurrentLesson = subIndex === currentLessonIndex;
                         
                         return (
                           <div
@@ -1358,7 +1374,12 @@ export default function Course() {
                               handleLessonClick(subIndex);
                               setIsMobileLessonsOpen(false);
                             }}
-                            className="group p-3 ml-6 rounded-lg cursor-pointer transition-all bg-transparent hover:bg-[#262626]/50"
+                            className={cn(
+                              "group p-3 ml-6 rounded-lg cursor-pointer transition-all",
+                              isCurrentLesson 
+                                ? "bg-[#262626] border border-[#404040]" 
+                                : "bg-transparent hover:bg-[#262626]/50"
+                            )}
                           >
                             <div className="flex items-start justify-between">
                               <div className="flex items-start space-x-3 flex-1">

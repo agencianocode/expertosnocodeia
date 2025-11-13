@@ -142,11 +142,8 @@ export default function CourseCard({ course, category, progress, variant = "defa
             courseUrl = `/taller/${course.id}`;
           } else if (course.type === 'guide') {
             courseUrl = `/guia/${course.id}`;
-          } else if (lastLessonId && showContinueText && isAuthenticated) {
-            // Navigate to specific lesson for "Continue where you left off" (only when authenticated)
-            courseUrl = `/curso/${course.id}/leccion/${lastLessonId}`;
           } else {
-            // Normal course navigation
+            // Navigate to course - useLessonPosition will restore last viewed lesson
             courseUrl = `/curso/${course.id}`;
           }
           setLocation(courseUrl);
@@ -279,11 +276,8 @@ export default function CourseCard({ course, category, progress, variant = "defa
           courseUrl = `/taller/${course.id}`;
         } else if (course.type === 'guide') {
           courseUrl = `/guia/${course.id}`;
-        } else if (lastLessonId && showContinueText && isAuthenticated) {
-          // Navigate to specific lesson for "Continue where you left off" (only when authenticated)
-          courseUrl = `/curso/${course.id}/leccion/${lastLessonId}`;
         } else {
-          // Normal course navigation
+          // Navigate to course - useLessonPosition will restore last viewed lesson
           courseUrl = `/curso/${course.id}`;
         }
         setLocation(courseUrl);
