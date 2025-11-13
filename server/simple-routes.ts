@@ -1008,10 +1008,24 @@ export function registerSimpleRoutes(app: Express): Server {
         return res.status(401).json({ message: "Usuario no autenticado" });
       }
       
+      // Validate that lesson exists before marking as complete
+      const lesson = await storage.getLessonById(lessonId);
+      if (!lesson || !lesson.courseId) {
+        return res.status(404).json({ message: "Lección no encontrada o sin curso asociado" });
+      }
+      
       // Mark lesson as complete in database
       await storage.markLessonComplete(userId, lessonId);
       
-      res.json({ success: true, message: "Lección marcada como completada" });
+      // Get updated completed lessons for the course
+      const completedLessonIds = await storage.getCompletedLessons(userId, lesson.courseId);
+      
+      res.json({ 
+        success: true, 
+        message: "Lección marcada como completada",
+        completedLessonIds,
+        lessonId
+      });
     } catch (error) {
       console.error("Error marking lesson as complete:", error);
       res.status(500).json({ message: "Error al marcar la lección como completada" });
