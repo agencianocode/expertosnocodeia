@@ -9,6 +9,7 @@ import { ObjectStorageService, ObjectNotFoundError, objectStorageClient, parseOb
 import { supabaseAuth, optionalSupabaseAuth, supabaseAdminAuth, AuthenticatedRequest } from "./supabaseAuth";
 import { setupSupabaseAuthRoutes } from "./supabaseAuthRoutes";
 import { insertLessonResourceSchema } from "../shared/schema";
+import { sendNewCommentNotification, getAdminNotificationEmails } from "./emailNotifications";
 
 // Legacy auth fallback (will be removed after migration)
 const legacyAuth = async (req: any, res: Response, next: any) => {
@@ -1118,6 +1119,166 @@ export function registerSimpleRoutes(app: Express): Server {
     } catch (error) {
       console.error("Error fetching saved courses:", error);
       res.status(500).json({ message: "Error interno del servidor" });
+    }
+  });
+
+  // ==================== COMMENT ROUTES ====================
+  
+  // GET comments for a lesson
+  app.get("/api/lessons/:lessonId/comments", async (req: Request, res: Response) => {
+    try {
+      console.log("📖 GET /api/lessons/:lessonId/comments called");
+      const { lessonId } = req.params;
+      console.log("📖 lessonId:", lessonId);
+      
+      const comments = await storage.getLessonComments(lessonId);
+      console.log("📖 comments retrieved:", comments.length);
+      
+      res.json(comments);
+    } catch (error) {
+      console.error("❌ Error fetching comments:", error);
+      res.status(500).json({ message: "Error al obtener comentarios" });
+    }
+  });
+
+  // POST new comment
+  app.post("/api/lessons/:lessonId/comments", legacyAuth, async (req: Request, res: Response) => {
+    try {
+      console.log("📝 POST /api/lessons/:lessonId/comments called");
+      const { lessonId } = req.params;
+      const userId = (req as any).user?.claims?.sub;
+      
+      console.log("📝 lessonId:", lessonId);
+      console.log("📝 userId:", userId);
+      console.log("📝 req.body:", req.body);
+      
+      if (!userId) {
+        console.log("❌ No userId - 401");
+        return res.status(401).json({ message: "Usuario no autenticado" });
+      }
+
+      const { content, parentId } = req.body;
+      console.log("📝 content:", content);
+      console.log("📝 parentId:", parentId);
+      
+      if (!content || content.trim().length === 0) {
+        console.log("❌ No content - 400");
+        return res.status(400).json({ message: "El contenido del comentario es requerido" });
+      }
+
+      // Create comment or reply based on parentId
+      let newComment;
+      if (parentId) {
+        console.log("📝 Creating reply to parent:", parentId);
+        newComment = await storage.createReply(parentId, {
+          lessonId,
+          userId,
+          content: content.trim()
+        });
+      } else {
+        console.log("📝 Creating root comment...");
+        newComment = await storage.createComment({
+          lessonId,
+          userId,
+          content: content.trim()
+        });
+      }
+      
+      console.log("✅ Comment created:", newComment.id);
+
+      // Send email notification to admin (async, don't wait)
+      console.log("📧 Attempting to send email notification...");
+      (async () => {
+        try {
+          const [lesson, user, adminEmails] = await Promise.all([
+            storage.getLessonById(lessonId),
+            storage.getUser(userId),
+            getAdminNotificationEmails()
+          ]);
+          
+          if (!lesson || !user || adminEmails.length === 0) {
+            console.log("⚠️ Missing data for email notification");
+            return;
+          }
+
+          const course = lesson.courseId ? await storage.getCourseById(lesson.courseId) : null;
+          const authorName = user.firstName && user.lastName 
+            ? `${user.firstName} ${user.lastName}` 
+            : user.firstName || user.email;
+          
+          await sendNewCommentNotification({
+            commentId: newComment.id,
+            lessonId: lesson.id,
+            lessonTitle: lesson.title,
+            courseTitle: course?.title || 'Curso sin título',
+            authorName: authorName,
+            commentContent: newComment.content,
+            recipientEmails: adminEmails,
+            isReply: !!parentId
+          });
+          
+          console.log("✅ Email notification sent successfully");
+        } catch (emailError) {
+          console.error("❌ Error sending email notification:", emailError);
+        }
+      })();
+
+      res.json(newComment);
+    } catch (error) {
+      console.error("❌ Error creating comment:", error);
+      res.status(500).json({ message: "Error al crear comentario" });
+    }
+  });
+
+  // GET all comments for admin
+  app.get("/api/admin/comments", simpleAdminAuth, isAdmin, async (req: Request, res: Response) => {
+    try {
+      console.log("👮 GET /api/admin/comments called");
+      const comments = await storage.getAllComments();
+      console.log("👮 Total comments:", comments.length);
+      res.json(comments);
+    } catch (error) {
+      console.error("❌ Error fetching all comments:", error);
+      res.status(500).json({ message: "Error al obtener comentarios" });
+    }
+  });
+
+  // GET unread comment count for admin
+  app.get("/api/admin/comments/unread-count", simpleAdminAuth, isAdmin, async (req: Request, res: Response) => {
+    try {
+      const comments = await storage.getAllComments();
+      const unreadCount = comments.filter((c: any) => c.status === 'pending').length;
+      res.json({ count: unreadCount });
+    } catch (error) {
+      console.error("Error fetching unread comment count:", error);
+      res.status(500).json({ message: "Error al obtener contador de comentarios" });
+    }
+  });
+
+  // PATCH comment status (admin only)
+  app.patch("/api/admin/comments/:commentId/status", simpleAdminAuth, isAdmin, async (req: Request, res: Response) => {
+    try {
+      console.log("👮 PATCH /api/admin/comments/:commentId/status called");
+      const { commentId } = req.params;
+      const { status } = req.body;
+      
+      console.log("👮 commentId:", commentId);
+      console.log("👮 new status:", status);
+      
+      // For now, we only support marking as "reviewed" (approved)
+      // The storage method is markCommentReviewed which sets isAdminReviewed = true
+      if (status !== 'approved') {
+        console.log("⚠️ Only 'approved' status is supported currently");
+      }
+
+      console.log("👮 Marking comment as reviewed...");
+      const updatedComment = await storage.markCommentReviewed(commentId);
+      console.log("✅ Comment marked as reviewed");
+      
+      res.json(updatedComment);
+    } catch (error) {
+      console.error("❌ Error updating comment status:", error);
+      res.status(500).json({ message: "Error al actualizar estado del comentario" });
     }
   });
 
