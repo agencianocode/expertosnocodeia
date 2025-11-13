@@ -312,6 +312,26 @@ export const userOnboardingResponses = pgTable("user_onboarding_responses", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Lesson Comments (with nested threading support)
+export const comments = pgTable("comments", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  lessonId: varchar("lesson_id").references(() => lessons.id).notNull(),
+  userId: varchar("user_id").references(() => users.id).notNull(),
+  content: text("content").notNull(),
+  parentCommentId: varchar("parent_comment_id"), // Self-reference for replies
+  rootCommentId: varchar("root_comment_id"), // Top-level comment in the thread
+  depth: integer("depth").default(0), // Nesting level (0 = root comment)
+  replyCount: integer("reply_count").default(0), // Number of direct replies
+  isAdminReviewed: boolean("is_admin_reviewed").default(false), // For unread badge tracking
+  metadata: jsonb("metadata").default({}), // For future extensions (attachments, flags, etc)
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("idx_comments_lesson_root_created").on(table.lessonId, table.rootCommentId, table.createdAt),
+  index("idx_comments_parent").on(table.parentCommentId),
+  index("idx_comments_admin_reviewed").on(table.isAdminReviewed, table.createdAt),
+]);
+
 // Relations
 export const userSavedCoursesRelations = relations(userSavedCourses, ({ one }) => ({
   user: one(users, {
@@ -461,6 +481,25 @@ export const userOnboardingResponsesRelations = relations(userOnboardingResponse
   }),
 }));
 
+export const commentRelations = relations(comments, ({ one, many }) => ({
+  lesson: one(lessons, {
+    fields: [comments.lessonId],
+    references: [lessons.id],
+  }),
+  user: one(users, {
+    fields: [comments.userId],
+    references: [users.id],
+  }),
+  parentComment: one(comments, {
+    fields: [comments.parentCommentId],
+    references: [comments.id],
+    relationName: "parentReplies",
+  }),
+  replies: many(comments, {
+    relationName: "parentReplies",
+  }),
+}));
+
 // Update existing relations to include new CMS entities
 export const extendedCourseRelations = relations(courses, ({ one, many }) => ({
   category: one(categories, {
@@ -551,6 +590,8 @@ export type UserUsage = typeof userUsage.$inferSelect;
 export type InsertUserUsage = typeof userUsage.$inferInsert;
 export type UserOnboardingResponse = typeof userOnboardingResponses.$inferSelect;
 export type InsertUserOnboardingResponse = typeof userOnboardingResponses.$inferInsert;
+export type Comment = typeof comments.$inferSelect;
+export type InsertComment = typeof comments.$inferInsert;
 
 // Insert schemas
 export const insertCategorySchema = createInsertSchema(categories);
@@ -566,6 +607,14 @@ export const insertAdminUserSchema = createInsertSchema(adminUsers);
 export const insertMediaFileSchema = createInsertSchema(mediaFiles);
 export const insertContentBlockSchema = createInsertSchema(contentBlocks);
 export const insertTagSchema = createInsertSchema(tags);
+export const insertCommentSchema = createInsertSchema(comments).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  depth: true,
+  replyCount: true,
+  rootCommentId: true,
+});
 export const insertCourseTagSchema = createInsertSchema(courseTags);
 export const insertCourseTemplateSchema = createInsertSchema(courseTemplates);
 
