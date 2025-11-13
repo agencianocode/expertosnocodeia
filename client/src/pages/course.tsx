@@ -818,9 +818,9 @@ export default function Course() {
                     const progress = moduleProgress[module.id] || { total: 0, completed: 0, percentage: 0 };
 
                     return (
-                      <div key={module.id} className="mb-6">
+                      <div key={module.id} className="mb-4 border border-border rounded-lg overflow-hidden">
                         {/* Module Header with Circle and Progress */}
-                        <div className="flex items-start gap-3 mb-3">
+                        <div className="flex items-start gap-3 p-4 bg-black/40 border-b border-border">
                           <div className="h-3 w-3 rounded-full border border-primary/60 bg-transparent flex-shrink-0 mt-2" />
                           <div className="flex-1">
                             <div className="flex items-start justify-between">
@@ -853,7 +853,7 @@ export default function Course() {
 
                         {/* Sub-lessons Timeline */}
                         {hasSubLessons && !isCollapsed && (
-                          <div className="relative pl-6 flex flex-col gap-3">
+                          <div className="relative px-6 py-4 flex flex-col gap-3">
                             {subLessons.map((subLesson: any, subIdx: number) => {
                               const subIndex = lessonsArray.findIndex((l: any) => l.id === subLesson.id);
                               const isCurrentLesson = subIndex === currentLessonIndex;
@@ -872,39 +872,55 @@ export default function Course() {
                                   
                                   {/* Lesson Row */}
                                   <div
-                                    onClick={() => isAuthenticated && handleLessonClick(subIndex)}
                                     className={cn(
-                                      "relative flex items-start gap-3 min-h-[32px]",
-                                      isAuthenticated ? "cursor-pointer" : "cursor-default"
+                                      "group relative flex items-start gap-3 min-h-[32px] rounded-lg px-2 py-1 -mx-2 transition-all",
+                                      isAuthenticated && "cursor-pointer hover:bg-muted/30",
+                                      !isAuthenticated && "cursor-default"
                                     )}
                                   >
-                                    {/* Circle Marker */}
-                                    <div className={cn(
-                                      "h-4 w-4 rounded-full border-2 flex-shrink-0 transition-all relative z-10",
-                                      isCompleted 
-                                        ? "bg-primary border-primary" 
-                                        : "bg-transparent border-border",
-                                      isCurrentLesson && "ring-2 ring-primary/40",
-                                      !isAuthenticated && "bg-muted border-muted"
-                                    )}>
-                                      {isCompleted && (
-                                        <Check size={10} className="text-white absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2" />
-                                      )}
-                                    </div>
-                                    
-                                    {/* Lesson Text */}
-                                    <div className="flex-1 min-w-0">
+                                    <div 
+                                      className="flex items-start gap-3 flex-1 min-w-0"
+                                      onClick={() => isAuthenticated && handleLessonClick(subIndex)}
+                                    >
+                                      {/* Circle Marker */}
                                       <div className={cn(
-                                        "font-satoshi text-[14px] pr-2",
-                                        isCurrentLesson ? "text-foreground font-medium" : "text-muted-foreground"
+                                        "h-4 w-4 rounded-full border-2 flex-shrink-0 transition-all relative z-10 mt-0.5",
+                                        isCompleted 
+                                          ? "bg-primary border-primary" 
+                                          : "bg-transparent border-border",
+                                        isCurrentLesson && "ring-2 ring-primary/40",
+                                        !isAuthenticated && "bg-muted border-muted"
                                       )}>
-                                        {subLesson.title}
+                                        {isCompleted && (
+                                          <Check size={10} className="text-white absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2" />
+                                        )}
+                                      </div>
+                                      
+                                      {/* Lesson Text */}
+                                      <div className="flex-1 min-w-0">
+                                        <div className={cn(
+                                          "font-satoshi text-[14px] pr-2 transition-colors",
+                                          isCurrentLesson ? "text-primary font-medium" : "text-muted-foreground"
+                                        )}>
+                                          {subLesson.title}
+                                        </div>
                                       </div>
                                     </div>
                                     
-                                    {/* Lock Icon */}
-                                    {!isAuthenticated && (
+                                    {/* Lock Icon or Mark Complete Button */}
+                                    {!isAuthenticated ? (
                                       <Lock size={12} className="text-muted-foreground flex-shrink-0 mt-1" />
+                                    ) : !isCompleted && (
+                                      <div 
+                                        className="opacity-0 group-hover:opacity-100 flex items-center border border-border rounded px-2 py-0.5 cursor-pointer hover:bg-muted/20 transition-all flex-shrink-0"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleMarkComplete(subLesson.id);
+                                        }}
+                                      >
+                                        <Check size={10} className="mr-1 text-muted-foreground" />
+                                        <span className="text-muted-foreground font-satoshi text-[11px]">Marcar</span>
+                                      </div>
                                     )}
                                   </div>
                                 </div>
@@ -1420,9 +1436,9 @@ export default function Course() {
                     const progress = moduleProgress[module.id] || { total: 0, completed: 0, percentage: 0 };
 
                     return (
-                      <div key={module.id} className="mb-6">
+                      <div key={module.id} className="mb-4 border border-gray-700 rounded-lg overflow-hidden">
                         {/* Module Header with Circle and Progress */}
-                        <div className="flex items-start gap-3 mb-3">
+                        <div className="flex items-start gap-3 p-4 bg-black/40 border-b border-gray-700">
                           <div className="h-3 w-3 rounded-full border border-primary/60 bg-transparent flex-shrink-0 mt-2" />
                           <div className="flex-1">
                             <div className="flex items-start justify-between">
@@ -1455,7 +1471,7 @@ export default function Course() {
 
                         {/* Sub-lessons Timeline */}
                         {hasSubLessons && !isCollapsed && (
-                          <div className="relative pl-6 flex flex-col gap-3">
+                          <div className="relative px-6 py-4 flex flex-col gap-3">
                             {subLessons.map((subLesson: any, subIdx: number) => {
                               const subIndex = lessonsArray.findIndex((l: any) => l.id === subLesson.id);
                               const isCurrentLesson = subIndex === currentLessonIndex;
@@ -1474,34 +1490,54 @@ export default function Course() {
                                   
                                   {/* Lesson Row */}
                                   <div
-                                    onClick={() => {
-                                      handleLessonClick(subIndex);
-                                      setIsMobileLessonsOpen(false);
-                                    }}
-                                    className="relative flex items-start gap-3 min-h-[32px] cursor-pointer"
+                                    className={cn(
+                                      "group relative flex items-start gap-3 min-h-[32px] rounded-lg px-2 py-1 -mx-2 transition-all cursor-pointer hover:bg-[#404040]/30"
+                                    )}
                                   >
-                                    {/* Circle Marker */}
-                                    <div className={cn(
-                                      "h-4 w-4 rounded-full border-2 flex-shrink-0 transition-all relative z-10",
-                                      isCompleted 
-                                        ? "bg-primary border-primary" 
-                                        : "bg-transparent border-gray-600",
-                                      isCurrentLesson && "ring-2 ring-primary/40"
-                                    )}>
-                                      {isCompleted && (
-                                        <Check size={10} className="text-white absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2" />
-                                      )}
-                                    </div>
-                                    
-                                    {/* Lesson Text */}
-                                    <div className="flex-1 min-w-0">
+                                    <div 
+                                      className="flex items-start gap-3 flex-1 min-w-0"
+                                      onClick={() => {
+                                        handleLessonClick(subIndex);
+                                        setIsMobileLessonsOpen(false);
+                                      }}
+                                    >
+                                      {/* Circle Marker */}
                                       <div className={cn(
-                                        "font-satoshi text-[14px] pr-2",
-                                        isCurrentLesson ? "text-white font-medium" : "text-gray-300"
+                                        "h-4 w-4 rounded-full border-2 flex-shrink-0 transition-all relative z-10 mt-0.5",
+                                        isCompleted 
+                                          ? "bg-primary border-primary" 
+                                          : "bg-transparent border-gray-600",
+                                        isCurrentLesson && "ring-2 ring-primary/40"
                                       )}>
-                                        {subLesson.title}
+                                        {isCompleted && (
+                                          <Check size={10} className="text-white absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2" />
+                                        )}
+                                      </div>
+                                      
+                                      {/* Lesson Text */}
+                                      <div className="flex-1 min-w-0">
+                                        <div className={cn(
+                                          "font-satoshi text-[14px] pr-2 transition-colors",
+                                          isCurrentLesson ? "text-primary font-medium" : "text-gray-300"
+                                        )}>
+                                          {subLesson.title}
+                                        </div>
                                       </div>
                                     </div>
+                                    
+                                    {/* Mark Complete Button */}
+                                    {!isCompleted && (
+                                      <div 
+                                        className="opacity-0 group-hover:opacity-100 flex items-center border border-gray-600 rounded px-2 py-0.5 cursor-pointer hover:bg-[#404040]/20 transition-all flex-shrink-0"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleMarkComplete(subLesson.id);
+                                        }}
+                                      >
+                                        <Check size={10} className="mr-1 text-gray-400" />
+                                        <span className="text-gray-400 font-satoshi text-[11px]">Marcar</span>
+                                      </div>
+                                    )}
                                   </div>
                                 </div>
                               );
