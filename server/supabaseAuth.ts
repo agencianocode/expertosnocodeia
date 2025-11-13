@@ -47,10 +47,13 @@ export const supabaseAuth = async (
       // Legacy auth fallback for development without Supabase
       let userId;
       
-      if (token.startsWith('eyJ')) {
+      // Remove any "Legacy " prefix if present
+      const cleanToken = token.replace(/^Legacy\s+/i, '');
+      
+      if (cleanToken.startsWith('eyJ')) {
         // Handle JWT tokens - check 'sub' claim (standard JWT claim for user ID)
         try {
-          const parts = token.split('.');
+          const parts = cleanToken.split('.');
           if (parts.length === 3) {
             const payload = JSON.parse(Buffer.from(parts[1], 'base64').toString());
             userId = payload.sub || payload.userId; // Try both 'sub' and 'userId'
@@ -61,12 +64,13 @@ export const supabaseAuth = async (
       } else {
         // Handle simple base64 tokens - these encode JSON objects
         try {
-          const decoded = Buffer.from(token, 'base64').toString('utf-8');
+          const decoded = Buffer.from(cleanToken, 'base64').toString('utf-8');
           
           // Try parsing as JSON first (current simple-auth format)
           try {
             const tokenData = JSON.parse(decoded);
-            userId = tokenData.userId || tokenData.id;
+            // Check for nested claims structure first
+            userId = tokenData.claims?.sub || tokenData.userId || tokenData.id;
           } catch (jsonError) {
             // Fallback to colon-separated format (legacy)
             [userId] = decoded.split(':');
