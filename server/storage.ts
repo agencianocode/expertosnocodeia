@@ -20,6 +20,7 @@ import {
   userSubscriptions,
   userUsage,
   userOnboardingResponses,
+  comments,
   // Rooms & Phases system
   rooms,
   phases,
@@ -66,6 +67,8 @@ import {
   type InsertUserUsage,
   type UserOnboardingResponse,
   type InsertUserOnboardingResponse,
+  type Comment,
+  type InsertComment,
   // Rooms & Phases types
   type Room,
   type InsertRoom,
@@ -281,6 +284,19 @@ export interface IStorage {
   updatePurchaseStatus(id: string, status: string, metadata?: any): Promise<Purchase>;
   listPurchasesForUser(userId: string): Promise<Purchase[]>;
   getPurchaseByStripeIntent(stripePaymentIntentId: string): Promise<Purchase | undefined>;
+  
+  // ========================================
+  // COMMENTS OPERATIONS
+  // ========================================
+  
+  getLessonComments(lessonId: string): Promise<Array<Comment & { 
+    user: { firstName: string; lastName: string; profileImageUrl: string | null }; 
+    replies: Array<Comment & { user: { firstName: string; lastName: string; profileImageUrl: string | null } }> 
+  }>>;
+  createComment(data: Omit<InsertComment, 'depth' | 'replyCount' | 'rootCommentId' | 'metadata'>): Promise<Comment>;
+  createReply(parentCommentId: string, data: Omit<InsertComment, 'parentCommentId' | 'depth' | 'replyCount' | 'rootCommentId' | 'metadata'>): Promise<Comment>;
+  markCommentReviewed(commentId: string): Promise<Comment>;
+  getUnreadCommentCount(): Promise<number>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1880,6 +1896,150 @@ export class DatabaseStorage implements IStorage {
       .from(purchases)
       .where(eq(purchases.stripePaymentIntentId, stripePaymentIntentId));
     return purchase;
+  }
+
+  // ========================================
+  // COMMENTS OPERATIONS
+  // ========================================
+
+  async getLessonComments(lessonId: string): Promise<Array<Comment & { 
+    user: { firstName: string; lastName: string; profileImageUrl: string | null }; 
+    replies: Array<Comment & { user: { firstName: string; lastName: string; profileImageUrl: string | null } }> 
+  }>> {
+    // Fetch all comments for the lesson with user data
+    const allComments = await db
+      .select({
+        comment: comments,
+        user: {
+          firstName: users.firstName,
+          lastName: users.lastName,
+          profileImageUrl: users.profileImageUrl,
+        },
+      })
+      .from(comments)
+      .leftJoin(users, eq(comments.userId, users.id))
+      .where(eq(comments.lessonId, lessonId))
+      .orderBy(comments.createdAt);
+
+    // Build nested structure: root comments with their replies
+    const commentsMap = new Map<string, Comment & { 
+      user: { firstName: string; lastName: string; profileImageUrl: string | null }; 
+      replies: any[] 
+    }>();
+
+    // First pass: create all comment objects
+    allComments.forEach(({ comment, user }) => {
+      commentsMap.set(comment.id, {
+        ...comment,
+        user: {
+          firstName: user?.firstName || '',
+          lastName: user?.lastName || '',
+          profileImageUrl: user?.profileImageUrl || null,
+        },
+        replies: [],
+      });
+    });
+
+    // Second pass: organize into tree structure
+    const rootComments: any[] = [];
+    commentsMap.forEach((comment) => {
+      if (comment.parentCommentId) {
+        // This is a reply - add it to its parent's replies array
+        const parent = commentsMap.get(comment.parentCommentId);
+        if (parent) {
+          parent.replies.push(comment);
+        }
+      } else {
+        // This is a root comment
+        rootComments.push(comment);
+      }
+    });
+
+    return rootComments;
+  }
+
+  async createComment(data: Omit<InsertComment, 'depth' | 'replyCount' | 'rootCommentId' | 'metadata'>): Promise<Comment> {
+    // Root comments have depth 0 and no parent
+    const [created] = await db
+      .insert(comments)
+      .values({
+        ...data,
+        depth: 0,
+        replyCount: 0,
+        rootCommentId: null,
+        metadata: {},
+      })
+      .returning();
+
+    // Update rootCommentId to point to itself (for root comments)
+    const [updated] = await db
+      .update(comments)
+      .set({ rootCommentId: created.id })
+      .where(eq(comments.id, created.id))
+      .returning();
+
+    return updated;
+  }
+
+  async createReply(parentCommentId: string, data: Omit<InsertComment, 'parentCommentId' | 'depth' | 'replyCount' | 'rootCommentId' | 'metadata'>): Promise<Comment> {
+    // Get parent comment to determine depth and rootCommentId
+    const [parentComment] = await db
+      .select()
+      .from(comments)
+      .where(eq(comments.id, parentCommentId));
+
+    if (!parentComment) {
+      throw new Error('Parent comment not found');
+    }
+
+    const depth = (parentComment.depth || 0) + 1;
+    const rootCommentId = parentComment.rootCommentId || parentComment.id;
+
+    // Create the reply
+    const [created] = await db
+      .insert(comments)
+      .values({
+        ...data,
+        parentCommentId,
+        depth,
+        replyCount: 0,
+        rootCommentId,
+        metadata: {},
+      })
+      .returning();
+
+    // Update parent's reply count
+    await db
+      .update(comments)
+      .set({ 
+        replyCount: sql`${comments.replyCount} + 1` 
+      })
+      .where(eq(comments.id, parentCommentId));
+
+    return created;
+  }
+
+  async markCommentReviewed(commentId: string): Promise<Comment> {
+    const [updated] = await db
+      .update(comments)
+      .set({ isAdminReviewed: true })
+      .where(eq(comments.id, commentId))
+      .returning();
+
+    if (!updated) {
+      throw new Error('Comment not found');
+    }
+
+    return updated;
+  }
+
+  async getUnreadCommentCount(): Promise<number> {
+    const result = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(comments)
+      .where(eq(comments.isAdminReviewed, false));
+
+    return Number(result[0]?.count || 0);
   }
 
 }

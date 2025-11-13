@@ -3,6 +3,8 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { supabaseAuth, AuthenticatedRequest } from "./supabaseAuth";
 import { setupSupabaseAuthRoutes } from "./supabaseAuthRoutes";
+import { isAdmin } from "./adminMiddleware";
+import { insertCommentSchema } from "@shared/schema";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Setup Supabase authentication routes
@@ -240,6 +242,126 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching purchases:", error);
       res.status(500).json({ message: "Failed to fetch purchases" });
+    }
+  });
+
+  // ========================================
+  // COMMENTS ROUTES
+  // ========================================
+
+  // Get all comments for a lesson (authenticated)
+  app.get("/api/lessons/:lessonId/comments", supabaseAuth, async (req: AuthenticatedRequest, res) => {
+    try {
+      const { lessonId } = req.params;
+      const userId = req.user!.id;
+
+      // TODO: Add lesson access check
+      // const lesson = await storage.getLessonById(lessonId);
+      // if (!lesson) return res.status(404).json({ message: "Lesson not found" });
+      // Verify user has access to the course containing this lesson
+
+      const comments = await storage.getLessonComments(lessonId);
+      res.json(comments);
+    } catch (error) {
+      console.error("Error fetching lesson comments:", error);
+      res.status(500).json({ message: "Failed to fetch comments" });
+    }
+  });
+
+  // Create a new root comment on a lesson (authenticated)
+  app.post("/api/lessons/:lessonId/comments", supabaseAuth, async (req: AuthenticatedRequest, res) => {
+    try {
+      const { lessonId } = req.params;
+      const userId = req.user!.id;
+
+      // Validate request body
+      const validationSchema = insertCommentSchema.omit({
+        isAdminReviewed: true,
+        parentCommentId: true,
+      });
+      const validatedData = validationSchema.parse({
+        ...req.body,
+        lessonId,
+        userId,
+      });
+
+      const comment = await storage.createComment(validatedData);
+
+      // TODO: Send email notification (non-blocking)
+      // notifyOnNewComment({ comment, lesson, recipientList }).catch(err => 
+      //   console.error('Failed to send notification:', err)
+      // );
+
+      res.status(201).json(comment);
+    } catch (error: any) {
+      console.error("Error creating comment:", error);
+      if (error.name === 'ZodError') {
+        return res.status(400).json({ message: "Invalid comment data", errors: error.errors });
+      }
+      res.status(500).json({ message: "Failed to create comment" });
+    }
+  });
+
+  // Reply to a comment (authenticated)
+  app.post("/api/comments/:id/replies", supabaseAuth, async (req: AuthenticatedRequest, res) => {
+    try {
+      const { id: parentCommentId } = req.params;
+      const userId = req.user!.id;
+
+      // Validate request body
+      const validationSchema = insertCommentSchema.omit({
+        isAdminReviewed: true,
+        parentCommentId: true,
+      });
+      const validatedData = validationSchema.parse({
+        ...req.body,
+        userId,
+      });
+
+      const reply = await storage.createReply(parentCommentId, validatedData);
+
+      // TODO: Send email notification (non-blocking)
+      // notifyOnNewComment({ comment: reply, lesson, recipientList }).catch(err => 
+      //   console.error('Failed to send notification:', err)
+      // );
+
+      res.status(201).json(reply);
+    } catch (error: any) {
+      console.error("Error creating reply:", error);
+      if (error.name === 'ZodError') {
+        return res.status(400).json({ message: "Invalid reply data", errors: error.errors });
+      }
+      if (error.message === 'Parent comment not found') {
+        return res.status(404).json({ message: error.message });
+      }
+      res.status(500).json({ message: "Failed to create reply" });
+    }
+  });
+
+  // Mark comment as reviewed (admin only)
+  app.patch("/api/comments/:id/review", supabaseAuth, isAdmin, async (req: AuthenticatedRequest, res) => {
+    try {
+      const { id: commentId } = req.params;
+
+      const updated = await storage.markCommentReviewed(commentId);
+      res.json(updated);
+    } catch (error: any) {
+      console.error("Error marking comment as reviewed:", error);
+      if (error.message === 'Comment not found') {
+        return res.status(404).json({ message: error.message });
+      }
+      res.status(500).json({ message: "Failed to mark comment as reviewed" });
+    }
+  });
+
+  // Get unread comment count (admin only)
+  app.get("/api/admin/comments/unread-count", supabaseAuth, isAdmin, async (req: AuthenticatedRequest, res) => {
+    try {
+      const count = await storage.getUnreadCommentCount();
+      res.json({ count });
+    } catch (error) {
+      console.error("Error fetching unread comment count:", error);
+      res.status(500).json({ message: "Failed to fetch unread count" });
     }
   });
 
