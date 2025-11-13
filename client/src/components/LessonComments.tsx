@@ -33,6 +33,151 @@ interface LessonCommentsProps {
   lessonId: string;
 }
 
+interface CommentItemProps {
+  comment: Comment;
+  depth?: number;
+  replyTo: string | null;
+  setReplyTo: (id: string | null) => void;
+  replyContents: Record<string, string>;
+  setReplyContent: (commentId: string, content: string) => void;
+  getReplyContent: (commentId: string) => string;
+  handleSubmitReply: (parentId: string) => void;
+  toggleLikeMutation: any;
+  createReplyMutation: any;
+  setReplyContents: React.Dispatch<React.SetStateAction<Record<string, string>>>;
+}
+
+const CommentItem = ({ 
+  comment, 
+  depth = 0, 
+  replyTo, 
+  setReplyTo, 
+  getReplyContent, 
+  setReplyContent, 
+  handleSubmitReply, 
+  toggleLikeMutation, 
+  createReplyMutation,
+  setReplyContents
+}: CommentItemProps) => {
+  const initials = `${comment.user.firstName[0]}${comment.user.lastName[0]}`.toUpperCase();
+  const isReplying = replyTo === comment.id;
+
+  return (
+    <div 
+      className={`${depth > 0 ? 'ml-8 mt-4 border-l-2 border-border pl-4' : 'mb-6'}`}
+      data-testid={`comment-${comment.id}`}
+    >
+      <div className="flex gap-3">
+        <Avatar className="h-8 w-8">
+          <AvatarImage src={comment.user.profileImageUrl || undefined} />
+          <AvatarFallback className="text-xs">{initials}</AvatarFallback>
+        </Avatar>
+
+        <div className="flex-1">
+          <div className="flex items-baseline gap-2 mb-1">
+            <span className="font-medium text-sm" data-testid={`comment-author-${comment.id}`}>
+              {comment.user.firstName} {comment.user.lastName}
+            </span>
+            <span className="text-xs text-muted-foreground" data-testid={`comment-time-${comment.id}`}>
+              {formatDistanceToNow(new Date(comment.createdAt), { addSuffix: true, locale: es })}
+            </span>
+          </div>
+
+          <p className="text-sm mb-2 whitespace-pre-wrap" data-testid={`comment-content-${comment.id}`}>
+            {comment.content}
+          </p>
+
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              className={`h-7 px-2 text-xs ${comment.isLikedByCurrentUser ? 'text-red-500' : ''}`}
+              onClick={() => toggleLikeMutation.mutate(comment.id)}
+              disabled={toggleLikeMutation.isPending}
+              data-testid={`button-like-${comment.id}`}
+            >
+              <Heart 
+                className={`h-3 w-3 mr-1 ${comment.isLikedByCurrentUser ? 'fill-current' : ''}`}
+              />
+              {comment.likeCount > 0 && <span>{comment.likeCount}</span>}
+            </Button>
+
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 px-2 text-xs"
+              onClick={() => setReplyTo(isReplying ? null : comment.id)}
+              data-testid={`button-reply-${comment.id}`}
+            >
+              <Reply className="h-3 w-3 mr-1" />
+              Responder
+            </Button>
+          </div>
+
+          {isReplying && (
+            <div className="mt-3 space-y-2" data-testid={`reply-form-${comment.id}`}>
+              <Textarea
+                placeholder="Escribe tu respuesta..."
+                value={getReplyContent(comment.id)}
+                onChange={(e) => setReplyContent(comment.id, e.target.value)}
+                className="min-h-[80px] text-sm"
+                data-testid={`textarea-reply-${comment.id}`}
+              />
+              <div className="flex gap-2">
+                <Button
+                  size="sm"
+                  onClick={() => handleSubmitReply(comment.id)}
+                  disabled={createReplyMutation.isPending || !getReplyContent(comment.id).trim()}
+                  data-testid={`button-submit-reply-${comment.id}`}
+                >
+                  <Send className="h-3 w-3 mr-1" />
+                  {createReplyMutation.isPending ? 'Enviando...' : 'Enviar'}
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => {
+                    setReplyTo(null);
+                    setReplyContents(prev => {
+                      const newContents = { ...prev };
+                      delete newContents[comment.id];
+                      return newContents;
+                    });
+                  }}
+                  data-testid={`button-cancel-reply-${comment.id}`}
+                >
+                  Cancelar
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {comment.replies && comment.replies.length > 0 && (
+            <div className="mt-4">
+              {comment.replies.map((reply) => (
+                <CommentItem 
+                  key={reply.id} 
+                  comment={reply} 
+                  depth={depth + 1}
+                  replyTo={replyTo}
+                  setReplyTo={setReplyTo}
+                  replyContents={replyContents}
+                  getReplyContent={getReplyContent}
+                  setReplyContent={setReplyContent}
+                  handleSubmitReply={handleSubmitReply}
+                  toggleLikeMutation={toggleLikeMutation}
+                  createReplyMutation={createReplyMutation}
+                  setReplyContents={setReplyContents}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export function LessonComments({ lessonId }: LessonCommentsProps) {
   const [newComment, setNewComment] = useState("");
   const [replyTo, setReplyTo] = useState<string | null>(null);
@@ -71,7 +216,7 @@ export function LessonComments({ lessonId }: LessonCommentsProps) {
 
   const toggleLikeMutation = useMutation({
     mutationFn: async (commentId: string) => {
-      return apiRequest<{ liked: boolean; likeCount: number }>('POST', `/api/comments/${commentId}/like`, {});
+      return apiRequest('POST', `/api/comments/${commentId}/like`, {});
     },
     onSuccess: async () => {
       // Force refetch to update like counts and state
@@ -98,113 +243,6 @@ export function LessonComments({ lessonId }: LessonCommentsProps) {
 
   const getReplyContent = (commentId: string) => {
     return replyContents[commentId] || "";
-  };
-
-  const CommentItem = ({ comment, depth = 0 }: { comment: Comment; depth?: number }) => {
-    const initials = `${comment.user.firstName[0]}${comment.user.lastName[0]}`.toUpperCase();
-    const isReplying = replyTo === comment.id;
-
-    return (
-      <div 
-        className={`${depth > 0 ? 'ml-8 mt-4 border-l-2 border-border pl-4' : 'mb-6'}`}
-        data-testid={`comment-${comment.id}`}
-      >
-        <div className="flex gap-3">
-          <Avatar className="h-8 w-8">
-            <AvatarImage src={comment.user.profileImageUrl || undefined} />
-            <AvatarFallback className="text-xs">{initials}</AvatarFallback>
-          </Avatar>
-
-          <div className="flex-1">
-            <div className="flex items-baseline gap-2 mb-1">
-              <span className="font-medium text-sm" data-testid={`comment-author-${comment.id}`}>
-                {comment.user.firstName} {comment.user.lastName}
-              </span>
-              <span className="text-xs text-muted-foreground" data-testid={`comment-time-${comment.id}`}>
-                {formatDistanceToNow(new Date(comment.createdAt), { addSuffix: true, locale: es })}
-              </span>
-            </div>
-
-            <p className="text-sm mb-2 whitespace-pre-wrap" data-testid={`comment-content-${comment.id}`}>
-              {comment.content}
-            </p>
-
-            <div className="flex items-center gap-2">
-              <Button
-                variant="ghost"
-                size="sm"
-                className={`h-7 px-2 text-xs ${comment.isLikedByCurrentUser ? 'text-red-500' : ''}`}
-                onClick={() => toggleLikeMutation.mutate(comment.id)}
-                disabled={toggleLikeMutation.isPending}
-                data-testid={`button-like-${comment.id}`}
-              >
-                <Heart 
-                  className={`h-3 w-3 mr-1 ${comment.isLikedByCurrentUser ? 'fill-current' : ''}`}
-                />
-                {comment.likeCount > 0 && <span>{comment.likeCount}</span>}
-              </Button>
-
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-7 px-2 text-xs"
-                onClick={() => setReplyTo(isReplying ? null : comment.id)}
-                data-testid={`button-reply-${comment.id}`}
-              >
-                <Reply className="h-3 w-3 mr-1" />
-                Responder
-              </Button>
-            </div>
-
-            {isReplying && (
-              <div className="mt-3 space-y-2" data-testid={`reply-form-${comment.id}`}>
-                <Textarea
-                  placeholder="Escribe tu respuesta..."
-                  value={getReplyContent(comment.id)}
-                  onChange={(e) => setReplyContent(comment.id, e.target.value)}
-                  className="min-h-[80px] text-sm"
-                  data-testid={`textarea-reply-${comment.id}`}
-                />
-                <div className="flex gap-2">
-                  <Button
-                    size="sm"
-                    onClick={() => handleSubmitReply(comment.id)}
-                    disabled={createReplyMutation.isPending || !getReplyContent(comment.id).trim()}
-                    data-testid={`button-submit-reply-${comment.id}`}
-                  >
-                    <Send className="h-3 w-3 mr-1" />
-                    {createReplyMutation.isPending ? 'Enviando...' : 'Enviar'}
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => {
-                      setReplyTo(null);
-                      setReplyContents(prev => {
-                        const newContents = { ...prev };
-                        delete newContents[comment.id];
-                        return newContents;
-                      });
-                    }}
-                    data-testid={`button-cancel-reply-${comment.id}`}
-                  >
-                    Cancelar
-                  </Button>
-                </div>
-              </div>
-            )}
-
-            {comment.replies && comment.replies.length > 0 && (
-              <div className="mt-4">
-                {comment.replies.map((reply) => (
-                  <CommentItem key={reply.id} comment={reply} depth={depth + 1} />
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-    );
   };
 
   return (
@@ -256,7 +294,19 @@ export function LessonComments({ lessonId }: LessonCommentsProps) {
       ) : (
         <div className="space-y-4">
           {comments.map((comment) => (
-            <CommentItem key={comment.id} comment={comment} />
+            <CommentItem 
+              key={comment.id} 
+              comment={comment}
+              replyTo={replyTo}
+              setReplyTo={setReplyTo}
+              replyContents={replyContents}
+              setReplyContent={setReplyContent}
+              getReplyContent={getReplyContent}
+              handleSubmitReply={handleSubmitReply}
+              toggleLikeMutation={toggleLikeMutation}
+              createReplyMutation={createReplyMutation}
+              setReplyContents={setReplyContents}
+            />
           ))}
         </div>
       )}
