@@ -410,6 +410,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get all comments with filters (admin only)
+  app.get("/api/admin/comments", supabaseAuth, isAdmin, async (req: AuthenticatedRequest, res) => {
+    try {
+      const filter = (req.query.filter as 'all' | 'pending' | 'reviewed') || 'all';
+      const comments = await storage.getAllComments(filter);
+      res.json(comments);
+    } catch (error) {
+      console.error("Error fetching admin comments:", error);
+      res.status(500).json({ message: "Failed to fetch comments" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

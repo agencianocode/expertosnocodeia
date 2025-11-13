@@ -52,20 +52,31 @@ export default function AdminComments() {
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
   const [replyContent, setReplyContent] = useState("");
 
-  // Fetch all comments (we'll need to expand this endpoint to get all comments across all lessons)
+  // Fetch all comments with filters
+  const { data: commentsData = [], isLoading: commentsLoading } = useQuery<Array<Comment & {
+    lesson: { id: string; title: string; courseId: string };
+    course: { id: string; title: string };
+  }>>({
+    queryKey: ['/api/admin/comments', `?filter=${filter}`],
+    enabled: isAdmin,
+  });
+
   const { data: unreadData } = useQuery<{ count: number }>({
     queryKey: ['/api/admin/comments/unread-count'],
     enabled: isAdmin,
   });
 
   const unreadCount = unreadData?.count || 0;
+  const reviewedCount = commentsData.filter(c => c.isAdminReviewed).length;
+  const totalCount = commentsData.length;
 
   const markReviewedMutation = useMutation({
     mutationFn: async (commentId: string) => {
       return apiRequest('PATCH', `/api/comments/${commentId}/review`, {});
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/admin/comments/unread-count'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/comments/unread-count'], refetchType: 'active' });
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/comments'], refetchType: 'active' });
     },
   });
 
@@ -140,7 +151,7 @@ export default function AdminComments() {
                   <CheckCircle className="h-4 w-4 text-green-400" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold text-white">-</div>
+                  <div className="text-2xl font-bold text-white">{reviewedCount}</div>
                   <p className="text-xs text-gray-400">
                     Comentarios revisados
                   </p>
@@ -155,7 +166,7 @@ export default function AdminComments() {
                   <MessageCircle className="h-4 w-4 text-purple-400" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold text-white">-</div>
+                  <div className="text-2xl font-bold text-white">{totalCount}</div>
                   <p className="text-xs text-gray-400">
                     Todos los comentarios
                   </p>
@@ -191,45 +202,122 @@ export default function AdminComments() {
               </Button>
             </div>
 
-            {/* Placeholder for comments list */}
-            <Card className="bg-slate-900/50 border-slate-700">
-              <CardContent className="pt-6">
-                <div className="text-center py-12 text-gray-400">
-                  <MessageCircle className="h-16 w-16 mx-auto mb-4 opacity-50" />
-                  <p className="text-lg font-medium mb-2">
-                    Sistema de Comentarios en Desarrollo
-                  </p>
-                  <p className="text-sm">
-                    La lista completa de comentarios se mostrará aquí próximamente.
-                  </p>
-                  <div className="mt-6 text-left max-w-2xl mx-auto">
-                    <h3 className="font-semibold mb-3 text-white">Funcionalidades implementadas:</h3>
-                    <ul className="space-y-2 text-sm">
-                      <li className="flex items-start gap-2">
-                        <CheckCircle className="h-4 w-4 text-green-400 mt-0.5 flex-shrink-0" />
-                        <span>API backend completa (crear, responder, marcar revisado, contador)</span>
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <CheckCircle className="h-4 w-4 text-green-400 mt-0.5 flex-shrink-0" />
-                        <span>Componente de comentarios integrado en páginas de curso</span>
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <CheckCircle className="h-4 w-4 text-green-400 mt-0.5 flex-shrink-0" />
-                        <span>Notificaciones por email con Resend</span>
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <CheckCircle className="h-4 w-4 text-green-400 mt-0.5 flex-shrink-0" />
-                        <span>Sistema de hilos y respuestas anidadas</span>
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <CheckCircle className="h-4 w-4 text-green-400 mt-0.5 flex-shrink-0" />
-                        <span>Contador de comentarios sin revisar: {unreadCount}</span>
-                      </li>
-                    </ul>
+            {/* Comments list */}
+            {commentsLoading ? (
+              <div className="space-y-4">
+                {[1, 2, 3].map((i) => (
+                  <Card key={i} className="bg-slate-900/50 border-slate-700 animate-pulse">
+                    <CardContent className="pt-6">
+                      <div className="flex gap-3">
+                        <div className="h-10 w-10 rounded-full bg-slate-700" />
+                        <div className="flex-1 space-y-2">
+                          <div className="h-4 w-32 bg-slate-700 rounded" />
+                          <div className="h-16 bg-slate-700 rounded" />
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            ) : commentsData.length === 0 ? (
+              <Card className="bg-slate-900/50 border-slate-700">
+                <CardContent className="pt-6">
+                  <div className="text-center py-12 text-gray-400">
+                    <MessageCircle className="h-16 w-16 mx-auto mb-4 opacity-50" />
+                    <p className="text-lg font-medium mb-2">
+                      No hay comentarios {filter === 'pending' ? 'pendientes' : filter === 'reviewed' ? 'revisados' : ''}
+                    </p>
+                    <p className="text-sm">
+                      {filter === 'pending' 
+                        ? 'Todos los comentarios han sido revisados' 
+                        : 'Los comentarios aparecerán aquí cuando los estudiantes participen'}
+                    </p>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="space-y-4">
+                {commentsData.map((comment) => {
+                  const initials = `${comment.user.firstName[0]}${comment.user.lastName[0]}`.toUpperCase();
+                  const isReplying = replyingTo === comment.id;
+                  
+                  return (
+                    <Card 
+                      key={comment.id} 
+                      className="bg-slate-900/50 border-slate-700 hover:bg-slate-900/70 transition-colors"
+                      data-testid={`admin-comment-${comment.id}`}
+                    >
+                      <CardContent className="pt-6">
+                        <div className="flex gap-3">
+                          <Avatar className="h-10 w-10">
+                            <AvatarImage src={comment.user.profileImageUrl || undefined} />
+                            <AvatarFallback>{initials}</AvatarFallback>
+                          </Avatar>
+
+                          <div className="flex-1">
+                            <div className="flex items-start justify-between mb-2">
+                              <div>
+                                <div className="flex items-baseline gap-2 mb-1">
+                                  <span className="font-medium text-white">
+                                    {comment.user.firstName} {comment.user.lastName}
+                                  </span>
+                                  <span className="text-xs text-gray-400">
+                                    {formatDistanceToNow(new Date(comment.createdAt), { addSuffix: true, locale: es })}
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-2 text-sm text-gray-400">
+                                  <Link href={`/lesson/${comment.lesson.id}`}>
+                                    <span className="hover:text-purple-400 transition-colors">
+                                      {comment.course.title} • {comment.lesson.title}
+                                    </span>
+                                  </Link>
+                                </div>
+                              </div>
+
+                              <Badge 
+                                variant={comment.isAdminReviewed ? "default" : "secondary"}
+                                className={comment.isAdminReviewed ? "bg-green-600" : "bg-amber-600"}
+                              >
+                                {comment.isAdminReviewed ? (
+                                  <><CheckCircle className="h-3 w-3 mr-1" /> Revisado</>
+                                ) : (
+                                  <><Eye className="h-3 w-3 mr-1" /> Pendiente</>
+                                )}
+                              </Badge>
+                            </div>
+
+                            <p className="text-sm text-white mb-3 whitespace-pre-wrap">
+                              {comment.content}
+                            </p>
+
+                            <div className="flex gap-2">
+                              {!comment.isAdminReviewed && (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => markReviewedMutation.mutate(comment.id)}
+                                  disabled={markReviewedMutation.isPending}
+                                  data-testid={`button-mark-reviewed-${comment.id}`}
+                                >
+                                  <CheckCircle className="h-3 w-3 mr-1" />
+                                  Marcar como revisado
+                                </Button>
+                              )}
+                              <Link href={`/lesson/${comment.lesson.id}#comments`}>
+                                <Button size="sm" variant="ghost">
+                                  <MessageCircle className="h-3 w-3 mr-1" />
+                                  Ver en contexto
+                                </Button>
+                              </Link>
+                            </div>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+            )}
           </div>
         </main>
       </div>

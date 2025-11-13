@@ -2052,6 +2052,62 @@ export class DatabaseStorage implements IStorage {
     return Number(result[0]?.count || 0);
   }
 
+  async getAllComments(filter?: 'all' | 'pending' | 'reviewed'): Promise<Array<Comment & {
+    user: { firstName: string; lastName: string; profileImageUrl: string | null };
+    lesson: { id: string; title: string; courseId: string };
+    course: { id: string; title: string };
+  }>> {
+    let query = db
+      .select({
+        comment: comments,
+        user: {
+          firstName: users.firstName,
+          lastName: users.lastName,
+          profileImageUrl: users.profileImageUrl,
+        },
+        lesson: {
+          id: lessons.id,
+          title: lessons.title,
+          courseId: lessons.courseId,
+        },
+        course: {
+          id: courses.id,
+          title: courses.title,
+        },
+      })
+      .from(comments)
+      .leftJoin(users, eq(comments.userId, users.id))
+      .leftJoin(lessons, eq(comments.lessonId, lessons.id))
+      .leftJoin(courses, eq(lessons.courseId, courses.id))
+      .orderBy(desc(comments.createdAt));
+
+    if (filter === 'pending') {
+      query = query.where(eq(comments.isAdminReviewed, false)) as any;
+    } else if (filter === 'reviewed') {
+      query = query.where(eq(comments.isAdminReviewed, true)) as any;
+    }
+
+    const result = await query;
+
+    return result.map(({ comment, user, lesson, course }) => ({
+      ...comment,
+      user: {
+        firstName: user?.firstName || '',
+        lastName: user?.lastName || '',
+        profileImageUrl: user?.profileImageUrl || null,
+      },
+      lesson: {
+        id: lesson?.id || '',
+        title: lesson?.title || 'Lección eliminada',
+        courseId: lesson?.courseId || '',
+      },
+      course: {
+        id: course?.id || '',
+        title: course?.title || 'Curso eliminado',
+      },
+    }));
+  }
+
 }
 
 export const storage = new DatabaseStorage();

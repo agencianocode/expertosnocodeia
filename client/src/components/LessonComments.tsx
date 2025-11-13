@@ -45,7 +45,10 @@ export function LessonComments({ lessonId }: LessonCommentsProps) {
       return apiRequest('POST', `/api/lessons/${lessonId}/comments`, { content, lessonId });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/lessons', lessonId, 'comments'] });
+      queryClient.invalidateQueries({ 
+        queryKey: ['/api/lessons', lessonId, 'comments'],
+        refetchType: 'active' 
+      });
       setNewComment("");
     },
   });
@@ -55,7 +58,10 @@ export function LessonComments({ lessonId }: LessonCommentsProps) {
       return apiRequest('POST', `/api/comments/${parentId}/replies`, { content, lessonId });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/lessons', lessonId, 'comments'] });
+      queryClient.invalidateQueries({ 
+        queryKey: ['/api/lessons', lessonId, 'comments'],
+        refetchType: 'active'
+      });
       setReplyTo(null);
       setReplyContent("");
     },
