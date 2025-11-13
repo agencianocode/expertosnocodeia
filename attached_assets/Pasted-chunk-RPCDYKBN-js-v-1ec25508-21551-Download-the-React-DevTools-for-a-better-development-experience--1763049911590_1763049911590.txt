@@ -1,0 +1,54 @@
+chunk-RPCDYKBN.js?v=1ec25508:21551 Download the React DevTools for a better development experience: https://reactjs.org/link/react-devtools
+course.tsx:331 📊 Navigable Indices Updated: Object
+course.tsx:331 📊 Navigable Indices Updated: Object
+course.tsx:331 📊 Navigable Indices Updated: Object
+course.tsx:331 📊 Navigable Indices Updated: Object
+course.tsx:331 📊 Navigable Indices Updated: Object
+course.tsx:331 📊 Navigable Indices Updated: Object
+course-card.tsx:325 Image loaded successfully: /api/object-proxy/objects/uploads/b463392b-ccf1-491e-9eca-5ec1467a876e
+2course-card.tsx:325 Image loaded successfully: /api/object-proxy/objects/uploads/cf024f9e-27d5-48a7-ad06-637c25ff2f53
+course-card.tsx:325 Image loaded successfully: /api/object-proxy/objects/uploads/800122fe-871e-4290-93f1-ccc5e279d339
+course-card.tsx:325 Image loaded successfully: /api/object-proxy/objects/uploads/f96d4d6e-da91-48b3-b48e-fa69cf8976cd
+course-card.tsx:325 Image loaded successfully: /api/lesson-resources/5ff2ceb6-ed6e-49e8-8ea0-d55925c9cc50/media-upload.jpg
+3course-card.tsx:325 Image loaded successfully: /api/lesson-resources/c7e44edf-ceea-4577-b263-015c8d22581f/media-upload.jpg
+2course-card.tsx:325 Image loaded successfully: /api/lesson-resources/59a90f44-7086-4850-b9a7-2e3cac73eec1/media-upload.jpg
+course.tsx:331 📊 Navigable Indices Updated: Object
+course.tsx:331 📊 Navigable Indices Updated: Object
+course.tsx:581 ⬅️ Previous Lesson Clicked: {currentLessonIndex: 5, currentLesson: '2.3 - Ejemplos de proyectos de IA (Explorando la arquitectura)', currentPositionInNavigable: 3, navigableLessonIndices: Array(4), canGoPrevious: true}
+course.tsx:606 ✅ Going to previous navigable: 4 2.2 - Las mejores herramientas de IA y NoCode
+course.tsx:581 ⬅️ Previous Lesson Clicked: {currentLessonIndex: 4, currentLesson: '2.2 - Las mejores herramientas de IA y NoCode', currentPositionInNavigable: 2, navigableLessonIndices: Array(4), canGoPrevious: true}
+course.tsx:606 ✅ Going to previous navigable: 3 2.1 - Arquitectura de proyectos de software
+course.tsx:622 ➡️ Next Lesson Clicked: {currentLessonIndex: 3, currentLesson: '2.1 - Arquitectura de proyectos de software', currentPositionInNavigable: 1, navigableLessonIndices: Array(4), totalNavigable: 4, …}
+course.tsx:648 ✅ Going to next navigable: 4 2.2 - Las mejores herramientas de IA y NoCode
+course.tsx:622 ➡️ Next Lesson Clicked: {currentLessonIndex: 4, currentLesson: '2.2 - Las mejores herramientas de IA y NoCode', currentPositionInNavigable: 2, navigableLessonIndices: Array(4), totalNavigable: 4, …}
+course.tsx:648 ✅ Going to next navigable: 5 2.3 - Ejemplos de proyectos de IA (Explorando la arquitectura)
+course.tsx:581 ⬅️ Previous Lesson Clicked: {currentLessonIndex: 5, currentLesson: '2.3 - Ejemplos de proyectos de IA (Explorando la arquitectura)', currentPositionInNavigable: 3, navigableLessonIndices: Array(4), canGoPrevious: true}
+course.tsx:606 ✅ Going to previous navigable: 4 2.2 - Las mejores herramientas de IA y NoCode
+course.tsx:581 ⬅️ Previous Lesson Clicked: {currentLessonIndex: 4, currentLesson: '2.2 - Las mejores herramientas de IA y NoCode', currentPositionInNavigable: 2, navigableLessonIndices: Array(4), canGoPrevious: true}
+course.tsx:606 ✅ Going to previous navigable: 3 2.1 - Arquitectura de proyectos de software
+course.tsx:581 ⬅️ Previous Lesson Clicked: {currentLessonIndex: 3, currentLesson: '2.1 - Arquitectura de proyectos de software', currentPositionInNavigable: 1, navigableLessonIndices: Array(4), canGoPrevious: true}
+course.tsx:606 ✅ Going to previous navigable: 1 1.1 - Qué aprenderás y por qué este módulo es tan importante
+course.tsx:581 ⬅️ Previous Lesson Clicked: {currentLessonIndex: 1, currentLesson: '1.1 - Qué aprenderás y por qué este módulo es tan importante', currentPositionInNavigable: 0, navigableLessonIndices: Array(4), canGoPrevious: false}
+course.tsx:614 ❌ Already at first lesson
+course.tsx:622 ➡️ Next Lesson Clicked: {currentLessonIndex: 1, currentLesson: '1.1 - Qué aprenderás y por qué este módulo es tan importante', currentPositionInNavigable: 0, navigableLessonIndices: Array(4), totalNavigable: 4, …}
+course.tsx:648 ✅ Going to next navigable: 3 2.1 - Arquitectura de proyectos de software
+course.tsx:622 ➡️ Next Lesson Clicked: {currentLessonIndex: 3, currentLesson: '2.1 - Arquitectura de proyectos de software', currentPositionInNavigable: 1, navigableLessonIndices: Array(4), totalNavigable: 4, …}
+course.tsx:648 ✅ Going to next navigable: 4 2.2 - Las mejores herramientas de IA y NoCode
+course.tsx:581 ⬅️ Previous Lesson Clicked: {currentLessonIndex: 4, currentLesson: '2.2 - Las mejores herramientas de IA y NoCode', currentPositionInNavigable: 2, navigableLessonIndices: Array(4), canGoPrevious: true}
+course.tsx:606 ✅ Going to previous navigable: 3 2.1 - Arquitectura de proyectos de software
+course.tsx:581 ⬅️ Previous Lesson Clicked: {currentLessonIndex: 3, currentLesson: '2.1 - Arquitectura de proyectos de software', currentPositionInNavigable: 1, navigableLessonIndices: Array(4), canGoPrevious: true}
+course.tsx:606 ✅ Going to previous navigable: 1 1.1 - Qué aprenderás y por qué este módulo es tan importante
+course.tsx:581 ⬅️ Previous Lesson Clicked: {currentLessonIndex: 1, currentLesson: '1.1 - Qué aprenderás y por qué este módulo es tan importante', currentPositionInNavigable: 0, navigableLessonIndices: Array(4), canGoPrevious: false}
+course.tsx:614 ❌ Already at first lesson
+course.tsx:581 ⬅️ Previous Lesson Clicked: {currentLessonIndex: 1, currentLesson: '1.1 - Qué aprenderás y por qué este módulo es tan importante', currentPositionInNavigable: 0, navigableLessonIndices: Array(4), canGoPrevious: false}
+course.tsx:614 ❌ Already at first lesson
+course.tsx:581 ⬅️ Previous Lesson Clicked: {currentLessonIndex: 1, currentLesson: '1.1 - Qué aprenderás y por qué este módulo es tan importante', currentPositionInNavigable: 0, navigableLessonIndices: Array(4), canGoPrevious: false}
+course.tsx:614 ❌ Already at first lesson
+course.tsx:581 ⬅️ Previous Lesson Clicked: {currentLessonIndex: 1, currentLesson: '1.1 - Qué aprenderás y por qué este módulo es tan importante', currentPositionInNavigable: 0, navigableLessonIndices: Array(4), canGoPrevious: false}
+course.tsx:614 ❌ Already at first lesson
+course.tsx:622 ➡️ Next Lesson Clicked: {currentLessonIndex: 1, currentLesson: '1.1 - Qué aprenderás y por qué este módulo es tan importante', currentPositionInNavigable: 0, navigableLessonIndices: Array(4), totalNavigable: 4, …}
+course.tsx:648 ✅ Going to next navigable: 3 2.1 - Arquitectura de proyectos de software
+course.tsx:622 ➡️ Next Lesson Clicked: {currentLessonIndex: 3, currentLesson: '2.1 - Arquitectura de proyectos de software', currentPositionInNavigable: 1, navigableLessonIndices: Array(4), totalNavigable: 4, …}
+course.tsx:648 ✅ Going to next navigable: 4 2.2 - Las mejores herramientas de IA y NoCode
+course.tsx:622 ➡️ Next Lesson Clicked: {currentLessonIndex: 4, currentLesson: '2.2 - Las mejores herramientas de IA y NoCode', currentPositionInNavigable: 2, navigableLessonIndices: Array(4), totalNavigable: 4, …}
+course.tsx:648 ✅ Going to next navigable: 5 2.3 - Ejemplos de proyectos de IA (Explorando la arquitectura)
