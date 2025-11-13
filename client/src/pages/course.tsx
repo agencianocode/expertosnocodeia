@@ -825,7 +825,7 @@ export default function Course() {
                           <div className="flex-1">
                             <div className="flex items-start justify-between">
                               <h4 className="font-satoshi font-medium text-[15px] text-foreground">
-                                {moduleIdx + 1} - {module.title}
+                                {module.title}
                               </h4>
                               <span className="text-primary font-semibold text-sm ml-2 flex-shrink-0">
                                 {progress.percentage}%
@@ -898,7 +898,7 @@ export default function Course() {
                                         "font-satoshi text-[14px] pr-2",
                                         isCurrentLesson ? "text-foreground font-medium" : "text-muted-foreground"
                                       )}>
-                                        {moduleIdx + 1}.{subIdx + 1} - {subLesson.title}
+                                        {subLesson.title}
                                       </div>
                                     </div>
                                     
@@ -1427,7 +1427,7 @@ export default function Course() {
                           <div className="flex-1">
                             <div className="flex items-start justify-between">
                               <h4 className="font-satoshi font-medium text-[15px] text-white">
-                                {moduleIdx + 1} - {module.title}
+                                {module.title}
                               </h4>
                               <span className="text-primary font-semibold text-sm ml-2 flex-shrink-0">
                                 {progress.percentage}%
@@ -1499,7 +1499,7 @@ export default function Course() {
                                         "font-satoshi text-[14px] pr-2",
                                         isCurrentLesson ? "text-white font-medium" : "text-gray-300"
                                       )}>
-                                        {moduleIdx + 1}.{subIdx + 1} - {subLesson.title}
+                                        {subLesson.title}
                                       </div>
                                     </div>
                                   </div>
