@@ -63,6 +63,7 @@ export default function Course() {
   const [isMobileLessonsOpen, setIsMobileLessonsOpen] = useState(false);
   
   // Collapsed modules state (stores module IDs that are collapsed)
+  // Initialize with all modules collapsed except the first one
   const [collapsedModules, setCollapsedModules] = useState<Set<number>>(new Set());
 
   // Sample exam questions
@@ -315,6 +316,12 @@ export default function Course() {
       };
     });
     
+    console.log('🔄 Module Progress Recalculated:', {
+      completedLessonsCount: completedLessons.length,
+      completedLessons,
+      progress
+    });
+    
     return progress;
   }, [modules, subLessonsByParent, completedLessons]);
 
@@ -338,6 +345,15 @@ export default function Course() {
     return indices;
   }, [lessonsArray, subLessonsByParent]);
   
+  // Initialize collapsed modules - only keep first module open
+  useEffect(() => {
+    if (modules.length > 0 && collapsedModules.size === 0) {
+      // Collapse all modules except the first one
+      const modulesToCollapse = modules.slice(1).map((m: any) => m.id);
+      setCollapsedModules(new Set(modulesToCollapse));
+    }
+  }, [modules.length]); // Only run when modules are first loaded
+
   // Toggle collapse state for a module
   const toggleModuleCollapse = (moduleId: number) => {
     setCollapsedModules(prev => {
