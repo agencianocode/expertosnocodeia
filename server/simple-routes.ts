@@ -999,6 +999,25 @@ export function registerSimpleRoutes(app: Express): Server {
     }
   });
 
+  // Mark lesson as complete
+  app.post("/api/lessons/:lessonId/complete", legacyAuth, async (req: Request, res: Response) => {
+    try {
+      const { lessonId } = req.params;
+      const userId = (req as any).user?.claims?.sub;
+      if (!userId) {
+        return res.status(401).json({ message: "Usuario no autenticado" });
+      }
+      
+      // Mark lesson as complete in database
+      await storage.markLessonComplete(userId, lessonId);
+      
+      res.json({ success: true, message: "Lección marcada como completada" });
+    } catch (error) {
+      console.error("Error marking lesson as complete:", error);
+      res.status(500).json({ message: "Error al marcar la lección como completada" });
+    }
+  });
+
   // Get lesson resource files from Object Storage - public access for lesson resources
   app.get("/api/lesson-resources/:resourceId/*", async (req: Request, res: Response) => {
     try {
