@@ -6,7 +6,7 @@ import { useLessonPosition } from "@/hooks/useLessonPosition";
 import { useToast } from "@/hooks/use-toast";
 import { isUnauthorizedError } from "@/lib/authUtils";
 import { apiRequest } from "@/lib/queryClient";
-import CourseSidebar from "@/components/layout/course-sidebar";
+import Sidebar from "@/components/layout/sidebar";
 import MobileNav from "@/components/layout/mobile-nav";
 import MobileHeader from "@/components/layout/mobile-header";
 import { Button } from "@/components/ui/button";
@@ -442,7 +442,7 @@ export default function Course() {
   if (!course) {
     return (
       <div className="min-h-screen bg-dark-bg flex">
-        <CourseSidebar />
+        <Sidebar />
         <div className="flex-1 flex items-center justify-center ml-64">
           <div className="text-white text-center">
             <h2 className="text-2xl font-bold mb-4">Curso no encontrado</h2>
@@ -456,7 +456,7 @@ export default function Course() {
   if (!lessonsArray || lessonsArray.length === 0) {
     return (
       <div className="min-h-screen bg-dark-bg flex">
-        <CourseSidebar />
+        <Sidebar />
         <div className="flex-1 flex items-center justify-center ml-64">
           <div className="text-white text-center">
             <BookOpen className="h-16 w-16 mx-auto mb-4 text-gray-500" />
@@ -536,9 +536,9 @@ export default function Course() {
       {/* Mobile Header */}
       <MobileHeader />
       <div className="flex">
-        {/* Course Sidebar - Hidden on mobile */}
+        {/* Sidebar - Hidden on mobile */}
         <div className="hidden lg:block">
-          <CourseSidebar />
+          <Sidebar />
         </div>
         
       <div className="flex-1 flex bg-background lg:ml-[250px] lg:mr-[560px] h-screen overflow-y-auto hide-scrollbar">

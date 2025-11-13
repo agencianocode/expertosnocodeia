@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useParams, useLocation } from "wouter";
 import { useAuth } from "@/hooks/useAuth";
-import CourseSidebar from "@/components/layout/course-sidebar";
+import Sidebar from "@/components/layout/sidebar";
 import MobileNav from "@/components/layout/mobile-nav";
 import MobileHeader from "@/components/layout/mobile-header";
 import { Button } from "@/components/ui/button";
@@ -45,7 +45,7 @@ export default function Guide() {
   if (isAuthLoading || guideLoading) {
     return (
       <div className="min-h-screen bg-background flex">
-        <CourseSidebar />
+        <Sidebar />
         <div className="flex-1 flex items-center justify-center lg:ml-[250px] lg:mr-[560px]">
           <div className="text-foreground">Cargando...</div>
         </div>
@@ -56,7 +56,7 @@ export default function Guide() {
   if (error) {
     return (
       <div className="min-h-screen bg-background flex">
-        <CourseSidebar />
+        <Sidebar />
         <div className="flex-1 flex items-center justify-center lg:ml-[250px] lg:mr-[560px]">
           <div className="text-foreground text-center">
             <h2 className="text-2xl font-bold mb-4">Error cargando la guía</h2>
@@ -70,7 +70,7 @@ export default function Guide() {
   if (!guide) {
     return (
       <div className="min-h-screen bg-background flex">
-        <CourseSidebar />
+        <Sidebar />
         <div className="flex-1 flex items-center justify-center lg:ml-[250px] lg:mr-[560px]">
           <div className="text-foreground text-center">
             <h2 className="text-2xl font-bold mb-4">Guía no encontrada</h2>
@@ -105,7 +105,7 @@ export default function Guide() {
       <div className="flex">
         {/* Course Sidebar - Hidden on mobile */}
         <div className="hidden lg:block">
-          <CourseSidebar />
+          <Sidebar />
         </div>
         
         <div className="flex-1 flex bg-background lg:ml-[250px] lg:mr-[560px] h-screen overflow-y-auto hide-scrollbar">
