@@ -569,20 +569,11 @@ export default function Course() {
     // Find current position in navigable lessons
     const currentPositionInNavigable = navigableLessonIndices.indexOf(currentLessonIndex);
     
-    console.log('🔍 Previous Lesson Debug:', {
-      currentLessonIndex,
-      currentPositionInNavigable,
-      navigableLessonIndices,
-      totalNavigable: navigableLessonIndices.length,
-      currentLesson: currentLesson?.title
-    });
-    
     if (currentPositionInNavigable === -1) {
       // Current lesson is not navigable (probably a module header)
       // Find the previous navigable lesson before currentLessonIndex
       const prevNavigable = [...navigableLessonIndices].reverse().find(idx => idx < currentLessonIndex);
       if (prevNavigable !== undefined) {
-        console.log('✅ Jumping to previous navigable from non-navigable:', prevNavigable);
         setCurrentLessonIndex(prevNavigable);
         const lesson = lessonsArray[prevNavigable];
         if (lesson && id) {
@@ -592,7 +583,6 @@ export default function Course() {
     } else if (currentPositionInNavigable > 0) {
       // Go to previous navigable lesson
       const newIndex = navigableLessonIndices[currentPositionInNavigable - 1];
-      console.log('✅ Going to previous navigable:', newIndex);
       setCurrentLessonIndex(newIndex);
       // Guardar la posición de la nueva lección
       const lesson = lessonsArray[newIndex];
@@ -606,20 +596,11 @@ export default function Course() {
     // Find current position in navigable lessons
     const currentPositionInNavigable = navigableLessonIndices.indexOf(currentLessonIndex);
     
-    console.log('🔍 Next Lesson Debug:', {
-      currentLessonIndex,
-      currentPositionInNavigable,
-      navigableLessonIndices,
-      totalNavigable: navigableLessonIndices.length,
-      currentLesson: currentLesson?.title
-    });
-    
     if (currentPositionInNavigable === -1) {
       // Current lesson is not navigable (probably a module header)
       // Find the next navigable lesson after currentLessonIndex
       const nextNavigable = navigableLessonIndices.find(idx => idx > currentLessonIndex);
       if (nextNavigable !== undefined) {
-        console.log('✅ Jumping to next navigable from non-navigable:', nextNavigable);
         setCurrentLessonIndex(nextNavigable);
         const lesson = lessonsArray[nextNavigable];
         if (lesson && id) {
@@ -629,7 +610,6 @@ export default function Course() {
     } else if (currentPositionInNavigable < navigableLessonIndices.length - 1) {
       // Go to next navigable lesson
       const newIndex = navigableLessonIndices[currentPositionInNavigable + 1];
-      console.log('✅ Going to next navigable:', newIndex);
       setCurrentLessonIndex(newIndex);
       // Guardar la posición de la nueva lección
       const lesson = lessonsArray[newIndex];
@@ -1594,8 +1574,8 @@ export default function Course() {
                                   {/* Vertical Connector Line */}
                                   {!isLast && (
                                     <div className={cn(
-                                      "absolute left-[7px] top-4 bottom-[-12px] w-px",
-                                      isCompleted ? "bg-primary/40" : "bg-gray-600"
+                                      "absolute left-[7px] top-4 bottom-[-12px] w-[2px]",
+                                      isCompleted ? "bg-primary/30" : "bg-gray-700"
                                     )} />
                                   )}
                                   
