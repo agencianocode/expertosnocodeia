@@ -266,7 +266,7 @@ export default function AdminComments() {
                                   </span>
                                 </div>
                                 <div className="flex items-center gap-2 text-sm text-gray-400">
-                                  <Link href={`/lesson/${comment.lesson.id}`}>
+                                  <Link href={`/course/${comment.lesson.courseId}/lesson/${comment.lesson.id}`}>
                                     <span className="hover:text-purple-400 transition-colors">
                                       {comment.course.title} • {comment.lesson.title}
                                     </span>
@@ -303,7 +303,7 @@ export default function AdminComments() {
                                   Marcar como revisado
                                 </Button>
                               )}
-                              <Link href={`/lesson/${comment.lesson.id}#comments`}>
+                              <Link href={`/course/${comment.lesson.courseId}/lesson/${comment.lesson.id}#comments`}>
                                 <Button size="sm" variant="ghost">
                                   <MessageCircle className="h-3 w-3 mr-1" />
                                   Ver en contexto

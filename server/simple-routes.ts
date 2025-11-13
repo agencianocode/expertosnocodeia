@@ -1282,6 +1282,112 @@ export function registerSimpleRoutes(app: Express): Server {
     }
   });
 
+  // POST reply to a comment
+  app.post("/api/comments/:id/replies", legacyAuth, async (req: Request, res: Response) => {
+    try {
+      console.log("💬 POST /api/comments/:id/replies called");
+      const { id: parentCommentId } = req.params;
+      const userId = (req as any).user?.claims?.sub;
+      
+      console.log("💬 parentCommentId:", parentCommentId);
+      console.log("💬 userId:", userId);
+      console.log("💬 req.body:", req.body);
+      
+      if (!userId) {
+        console.log("❌ No userId - 401");
+        return res.status(401).json({ message: "Usuario no autenticado" });
+      }
+
+      const { content, lessonId } = req.body;
+      
+      if (!content || content.trim().length === 0) {
+        console.log("❌ No content - 400");
+        return res.status(400).json({ message: "El contenido es requerido" });
+      }
+
+      if (!lessonId) {
+        console.log("❌ No lessonId - 400");
+        return res.status(400).json({ message: "lessonId es requerido" });
+      }
+
+      console.log("💬 Creating reply...");
+      const reply = await storage.createReply(parentCommentId, {
+        lessonId,
+        userId,
+        content: content.trim()
+      });
+      
+      console.log("✅ Reply created:", reply.id);
+
+      // Send email notification (async, don't wait)
+      console.log("📧 Attempting to send reply notification...");
+      (async () => {
+        try {
+          const [lesson, user, parentComment, adminEmails] = await Promise.all([
+            storage.getLessonById(lessonId),
+            storage.getUser(userId),
+            storage.getCommentById(parentCommentId),
+            getAdminNotificationEmails()
+          ]);
+          
+          if (!lesson || !user || !parentComment || adminEmails.length === 0) {
+            console.log("⚠️ Missing data for reply notification");
+            return;
+          }
+
+          const course = lesson.courseId ? await storage.getCourseById(lesson.courseId) : null;
+          const authorName = user.firstName && user.lastName 
+            ? `${user.firstName} ${user.lastName}` 
+            : user.firstName || user.email;
+          
+          await sendNewCommentNotification({
+            commentId: reply.id,
+            lessonId: lesson.id,
+            lessonTitle: lesson.title,
+            courseTitle: course?.title || 'Curso sin título',
+            authorName: authorName,
+            commentContent: reply.content,
+            recipientEmails: adminEmails,
+            isReply: true
+          });
+          
+          console.log("✅ Reply notification sent successfully");
+        } catch (emailError) {
+          console.error("❌ Error sending reply notification:", emailError);
+        }
+      })();
+
+      res.json(reply);
+    } catch (error: any) {
+      console.error("❌ Error creating reply:", error);
+      if (error.message === 'Parent comment not found') {
+        return res.status(404).json({ message: error.message });
+      }
+      res.status(500).json({ message: "Error al crear respuesta" });
+    }
+  });
+
+  // PATCH mark comment as reviewed (admin only)
+  app.patch("/api/comments/:id/review", simpleAdminAuth, isAdmin, async (req: Request, res: Response) => {
+    try {
+      console.log("✅ PATCH /api/comments/:id/review called");
+      const { id: commentId } = req.params;
+      
+      console.log("✅ commentId:", commentId);
+      
+      const updated = await storage.markCommentReviewed(commentId);
+      console.log("✅ Comment marked as reviewed");
+      
+      res.json(updated);
+    } catch (error: any) {
+      console.error("❌ Error marking comment as reviewed:", error);
+      if (error.message === 'Comment not found') {
+        return res.status(404).json({ message: error.message });
+      }
+      res.status(500).json({ message: "Failed to mark comment as reviewed" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
