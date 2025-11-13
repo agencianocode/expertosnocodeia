@@ -296,6 +296,28 @@ export default function Course() {
     return grouped;
   }, [lessonsArray]);
   
+  // Calculate progress per module for room context timeline
+  const moduleProgress = useMemo(() => {
+    const progress: Record<number, { total: number; completed: number; percentage: number }> = {};
+    
+    modules.forEach((module: any) => {
+      const subLessons = subLessonsByParent[module.id] || [];
+      const playableLessons = subLessons.length > 0 ? subLessons : [module];
+      const total = playableLessons.length;
+      const completed = playableLessons.filter((lesson: any) => 
+        completedLessons.includes(lesson.id)
+      ).length;
+      
+      progress[module.id] = {
+        total,
+        completed,
+        percentage: total > 0 ? Math.round((completed / total) * 100) : 0
+      };
+    });
+    
+    return progress;
+  }, [modules, subLessonsByParent, completedLessons]);
+  
   // Toggle collapse state for a module
   const toggleModuleCollapse = (moduleId: number) => {
     setCollapsedModules(prev => {
@@ -786,7 +808,116 @@ export default function Course() {
             <div className="bg-card rounded-lg p-5">
               <h3 className="font-satoshi font-medium text-foreground mb-5 text-[20px]">Contenido del curso</h3>
               <div className="space-y-2 max-h-[400px] overflow-y-auto scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent pr-2">
-                {modules.map((module: any, moduleIdx: number) => {
+                {isRoomContext ? (
+                  /* Room Context Timeline Design */
+                  modules.map((module: any, moduleIdx: number) => {
+                    const moduleIndex = lessonsArray.findIndex((l: any) => l.id === module.id);
+                    const subLessons = subLessonsByParent[module.id] || [];
+                    const isCollapsed = collapsedModules.has(module.id);
+                    const hasSubLessons = subLessons.length > 0;
+                    const progress = moduleProgress[module.id] || { total: 0, completed: 0, percentage: 0 };
+
+                    return (
+                      <div key={module.id} className="mb-6">
+                        {/* Module Header with Circle and Progress */}
+                        <div className="flex items-start gap-3 mb-3">
+                          <div className="h-3 w-3 rounded-full border border-primary/60 bg-transparent flex-shrink-0 mt-2" />
+                          <div className="flex-1">
+                            <div className="flex items-start justify-between">
+                              <h4 className="font-satoshi font-medium text-[15px] text-foreground">
+                                {moduleIdx + 1} - {module.title}
+                              </h4>
+                              <span className="text-primary font-semibold text-sm ml-2 flex-shrink-0">
+                                {progress.percentage}%
+                              </span>
+                            </div>
+                          </div>
+                          {hasSubLessons && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                toggleModuleCollapse(module.id);
+                              }}
+                              className="p-1 hover:bg-muted/30 rounded transition-colors flex-shrink-0"
+                            >
+                              <ChevronRight 
+                                size={16} 
+                                className={cn(
+                                  "text-muted-foreground transition-transform",
+                                  !isCollapsed && "rotate-90"
+                                )}
+                              />
+                            </button>
+                          )}
+                        </div>
+
+                        {/* Sub-lessons Timeline */}
+                        {hasSubLessons && !isCollapsed && (
+                          <div className="relative pl-6 flex flex-col gap-3">
+                            {subLessons.map((subLesson: any, subIdx: number) => {
+                              const subIndex = lessonsArray.findIndex((l: any) => l.id === subLesson.id);
+                              const isCurrentLesson = subIndex === currentLessonIndex;
+                              const isCompleted = isLessonCompleted(subLesson.id);
+                              const isLast = subIdx === subLessons.length - 1;
+
+                              return (
+                                <div key={subLesson.id} className="relative">
+                                  {/* Vertical Connector Line */}
+                                  {!isLast && (
+                                    <div className={cn(
+                                      "absolute left-[7px] top-4 bottom-[-12px] w-px",
+                                      isCompleted ? "bg-primary/40" : "bg-border"
+                                    )} />
+                                  )}
+                                  
+                                  {/* Lesson Row */}
+                                  <div
+                                    onClick={() => isAuthenticated && handleLessonClick(subIndex)}
+                                    className={cn(
+                                      "relative flex items-start gap-3 min-h-[32px]",
+                                      isAuthenticated ? "cursor-pointer" : "cursor-default"
+                                    )}
+                                  >
+                                    {/* Circle Marker */}
+                                    <div className={cn(
+                                      "h-4 w-4 rounded-full border-2 flex-shrink-0 transition-all relative z-10",
+                                      isCompleted 
+                                        ? "bg-primary border-primary" 
+                                        : "bg-transparent border-border",
+                                      isCurrentLesson && "ring-2 ring-primary/40",
+                                      !isAuthenticated && "bg-muted border-muted"
+                                    )}>
+                                      {isCompleted && (
+                                        <Check size={10} className="text-white absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2" />
+                                      )}
+                                    </div>
+                                    
+                                    {/* Lesson Text */}
+                                    <div className="flex-1 min-w-0">
+                                      <div className={cn(
+                                        "font-satoshi text-[14px] pr-2",
+                                        isCurrentLesson ? "text-foreground font-medium" : "text-muted-foreground"
+                                      )}>
+                                        {moduleIdx + 1}.{subIdx + 1} - {subLesson.title}
+                                      </div>
+                                    </div>
+                                    
+                                    {/* Lock Icon */}
+                                    {!isAuthenticated && (
+                                      <Lock size={12} className="text-muted-foreground flex-shrink-0 mt-1" />
+                                    )}
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })
+                ) : (
+                  /* Original Design for Regular Courses */
+                  modules.map((module: any, moduleIdx: number) => {
                   const moduleIndex = lessonsArray.findIndex((l: any) => l.id === module.id);
                   const subLessons = subLessonsByParent[module.id] || [];
                   const isCollapsed = collapsedModules.has(module.id);
@@ -933,7 +1064,8 @@ export default function Course() {
                       })}
                     </div>
                   );
-                })}
+                })
+                )}
               </div>
 
               {/* Final Exam Button - Only show when currently on last lesson (Desktop) */}
@@ -1278,15 +1410,118 @@ export default function Course() {
             {/* Lessons List */}
             <div className="flex-1 overflow-y-auto">
               <div className="space-y-2 p-4">
-                {modules.map((module: any, moduleIdx: number) => {
-                  const moduleIndex = lessonsArray.findIndex((l: any) => l.id === module.id);
-                  const subLessons = subLessonsByParent[module.id] || [];
-                  const isCollapsed = collapsedModules.has(module.id);
-                  const hasSubLessons = subLessons.length > 0;
-                  const moduleNumber = moduleIdx + 1;
+                {isRoomContext ? (
+                  /* Room Context Timeline Design (Mobile) */
+                  modules.map((module: any, moduleIdx: number) => {
+                    const moduleIndex = lessonsArray.findIndex((l: any) => l.id === module.id);
+                    const subLessons = subLessonsByParent[module.id] || [];
+                    const isCollapsed = collapsedModules.has(module.id);
+                    const hasSubLessons = subLessons.length > 0;
+                    const progress = moduleProgress[module.id] || { total: 0, completed: 0, percentage: 0 };
 
-                  return (
-                    <div key={module.id} className="space-y-1">
+                    return (
+                      <div key={module.id} className="mb-6">
+                        {/* Module Header with Circle and Progress */}
+                        <div className="flex items-start gap-3 mb-3">
+                          <div className="h-3 w-3 rounded-full border border-primary/60 bg-transparent flex-shrink-0 mt-2" />
+                          <div className="flex-1">
+                            <div className="flex items-start justify-between">
+                              <h4 className="font-satoshi font-medium text-[15px] text-white">
+                                {moduleIdx + 1} - {module.title}
+                              </h4>
+                              <span className="text-primary font-semibold text-sm ml-2 flex-shrink-0">
+                                {progress.percentage}%
+                              </span>
+                            </div>
+                          </div>
+                          {hasSubLessons && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                toggleModuleCollapse(module.id);
+                              }}
+                              className="p-1 hover:bg-[#404040]/30 rounded transition-colors flex-shrink-0"
+                            >
+                              <ChevronRight 
+                                size={16} 
+                                className={cn(
+                                  "text-gray-400 transition-transform",
+                                  !isCollapsed && "rotate-90"
+                                )}
+                              />
+                            </button>
+                          )}
+                        </div>
+
+                        {/* Sub-lessons Timeline */}
+                        {hasSubLessons && !isCollapsed && (
+                          <div className="relative pl-6 flex flex-col gap-3">
+                            {subLessons.map((subLesson: any, subIdx: number) => {
+                              const subIndex = lessonsArray.findIndex((l: any) => l.id === subLesson.id);
+                              const isCurrentLesson = subIndex === currentLessonIndex;
+                              const isCompleted = isLessonCompleted(subLesson.id);
+                              const isLast = subIdx === subLessons.length - 1;
+
+                              return (
+                                <div key={subLesson.id} className="relative">
+                                  {/* Vertical Connector Line */}
+                                  {!isLast && (
+                                    <div className={cn(
+                                      "absolute left-[7px] top-4 bottom-[-12px] w-px",
+                                      isCompleted ? "bg-primary/40" : "bg-gray-600"
+                                    )} />
+                                  )}
+                                  
+                                  {/* Lesson Row */}
+                                  <div
+                                    onClick={() => {
+                                      handleLessonClick(subIndex);
+                                      setIsMobileLessonsOpen(false);
+                                    }}
+                                    className="relative flex items-start gap-3 min-h-[32px] cursor-pointer"
+                                  >
+                                    {/* Circle Marker */}
+                                    <div className={cn(
+                                      "h-4 w-4 rounded-full border-2 flex-shrink-0 transition-all relative z-10",
+                                      isCompleted 
+                                        ? "bg-primary border-primary" 
+                                        : "bg-transparent border-gray-600",
+                                      isCurrentLesson && "ring-2 ring-primary/40"
+                                    )}>
+                                      {isCompleted && (
+                                        <Check size={10} className="text-white absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2" />
+                                      )}
+                                    </div>
+                                    
+                                    {/* Lesson Text */}
+                                    <div className="flex-1 min-w-0">
+                                      <div className={cn(
+                                        "font-satoshi text-[14px] pr-2",
+                                        isCurrentLesson ? "text-white font-medium" : "text-gray-300"
+                                      )}>
+                                        {moduleIdx + 1}.{subIdx + 1} - {subLesson.title}
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })
+                ) : (
+                  /* Original Design for Regular Courses (Mobile) */
+                  modules.map((module: any, moduleIdx: number) => {
+                    const moduleIndex = lessonsArray.findIndex((l: any) => l.id === module.id);
+                    const subLessons = subLessonsByParent[module.id] || [];
+                    const isCollapsed = collapsedModules.has(module.id);
+                    const hasSubLessons = subLessons.length > 0;
+                    const moduleNumber = moduleIdx + 1;
+
+                    return (
+                      <div key={module.id} className="space-y-1">
                       {/* Module Header */}
                       <div
                         className={cn(
@@ -1417,7 +1652,8 @@ export default function Course() {
                       })}
                     </div>
                   );
-                })}
+                })
+                )}
 
                 {/* Final Exam Button - Only show when currently on last lesson (Mobile) */}
                 {!isRoomContext && lessonsArray.length > 0 && currentLessonIndex >= lessonsArray.length - 1 && (
