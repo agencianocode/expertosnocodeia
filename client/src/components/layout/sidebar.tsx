@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
@@ -54,12 +54,22 @@ export default function Sidebar() {
   const [searchQuery, setSearchQuery] = useState("");
   const { theme, changeTheme } = useTheme();
   const [onboardingOpen, setOnboardingOpen] = useState(false);
-  const [programasExpanded, setProgramasExpanded] = useState(false);
+  
+  // Auto-expand Programas if we're in any room route
+  const isInRoomRoute = location.startsWith('/sala/');
+  const [programasExpanded, setProgramasExpanded] = useState(isInRoomRoute);
 
   // Fetch rooms for the submenu
   const { data: roomsData } = useQuery({
     queryKey: ["/api/rooms"],
   });
+
+  // Keep programasExpanded in sync with location
+  useEffect(() => {
+    if (isInRoomRoute && !programasExpanded) {
+      setProgramasExpanded(true);
+    }
+  }, [isInRoomRoute, programasExpanded]);
 
   const navigation = [
     { name: "Hogar", href: "/", icon: Home },
@@ -173,7 +183,7 @@ export default function Sidebar() {
                       <ul className="hidden lg:block ml-8 mt-1 space-y-1">
                         {roomsData.map((room: any) => {
                           const roomPath = `/sala/${room.slug}`;
-                          const isRoomItemActive = location === roomPath;
+                          const isRoomItemActive = location.startsWith(roomPath);
                           return (
                             <li key={room.id}>
                               <Link href={roomPath}>

@@ -106,7 +106,7 @@ function Router() {
           {/* Course pages - show real content but locked for non-authenticated users */}
           <Route path="/course/:id" component={Course} />
           <Route path="/curso/:id" component={Course} />
-          <Route path="/rooms/:roomSlug/curso/:id" component={Course} />
+          <Route path="/sala/:slug/curso/:id" component={Course} />
           <Route path="/guia/:id" component={Guide} />
           <Route path="/taller/:id" component={Workshop} />
           <Route path="/sala/:slug" component={Room} />
@@ -147,7 +147,7 @@ function Router() {
           <Route path="/course/:courseId/lesson/:lessonId" component={Lesson} />
           <Route path="/course/:id" component={Course} />
           <Route path="/curso/:id" component={Course} />
-          <Route path="/rooms/:roomSlug/curso/:id" component={Course} />
+          <Route path="/sala/:slug/curso/:id" component={Course} />
           <Route path="/guia/:id" component={Guide} />
           <Route path="/sala/:slug" component={Room} />
           <Route path="/admin" component={AdminDashboard} />

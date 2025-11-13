@@ -253,7 +253,7 @@ export default function Room() {
                         {phase.content.map((content) => {
                           const getHref = () => {
                             if (isLockedForUser) return "#";
-                            if (content.contentType === 'course') return `/rooms/${slug}/curso/${content.contentId}`;
+                            if (content.contentType === 'course') return `/sala/${slug}/curso/${content.contentId}`;
                             if (content.contentType === 'workshop') return `/taller/${content.contentId}`;
                             if (content.contentType === 'guide') return `/guia/${content.contentId}`;
                             return "#";
