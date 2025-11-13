@@ -36,7 +36,7 @@ export function LessonComments({ lessonId }: LessonCommentsProps) {
   const [replyTo, setReplyTo] = useState<string | null>(null);
   const [replyContent, setReplyContent] = useState("");
 
-  const { data: comments = [], isLoading } = useQuery<Comment[]>({
+  const { data: comments = [], isLoading, refetch } = useQuery<Comment[]>({
     queryKey: ['/api/lessons', lessonId, 'comments'],
   });
 
@@ -44,12 +44,10 @@ export function LessonComments({ lessonId }: LessonCommentsProps) {
     mutationFn: async (content: string) => {
       return apiRequest('POST', `/api/lessons/${lessonId}/comments`, { content, lessonId });
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ 
-        queryKey: ['/api/lessons', lessonId, 'comments'],
-        refetchType: 'active' 
-      });
+    onSuccess: async () => {
       setNewComment("");
+      // Force refetch instead of invalidation
+      await refetch();
     },
   });
 
@@ -57,13 +55,11 @@ export function LessonComments({ lessonId }: LessonCommentsProps) {
     mutationFn: async ({ parentId, content }: { parentId: string; content: string }) => {
       return apiRequest('POST', `/api/comments/${parentId}/replies`, { content, lessonId });
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ 
-        queryKey: ['/api/lessons', lessonId, 'comments'],
-        refetchType: 'active'
-      });
+    onSuccess: async () => {
       setReplyTo(null);
       setReplyContent("");
+      // Force refetch instead of invalidation
+      await refetch();
     },
   });
 
