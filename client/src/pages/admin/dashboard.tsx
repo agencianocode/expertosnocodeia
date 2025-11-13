@@ -1,6 +1,6 @@
 import { useAdmin } from "@/hooks/useAdmin";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, BookOpen, FolderOpen, Image, ClipboardList } from "lucide-react";
+import { Users, BookOpen, FolderOpen, Image, ClipboardList, MessageSquare } from "lucide-react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import Sidebar from "@/components/layout/sidebar";
@@ -46,6 +46,13 @@ export default function AdminDashboard() {
       href: "/admin/categories",
     },
     {
+      title: "Comentarios",
+      value: (adminStats as any)?.totalComments || 0,
+      description: "Comentarios de estudiantes",
+      icon: MessageSquare,
+      href: "/admin/comentarios",
+    },
+    {
       title: "Respuestas Onboarding",
       value: (adminStats as any)?.totalOnboardingResponses || 0,
       description: "Usuarios que completaron onboarding",
@@ -85,7 +92,7 @@ export default function AdminDashboard() {
         </Link>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6 mb-8">
         {stats.map((stat, index) => {
           const Icon = stat.icon;
           return (
@@ -122,6 +129,12 @@ export default function AdminDashboard() {
               <Button className="w-full justify-start">
                 <BookOpen className="mr-2 h-4 w-4" />
                 Gestionar Contenido
+              </Button>
+            </Link>
+            <Link href="/admin/comentarios">
+              <Button variant="outline" className="w-full justify-start">
+                <MessageSquare className="mr-2 h-4 w-4" />
+                Gestionar Comentarios
               </Button>
             </Link>
             <Link href="/admin/content/course/new">

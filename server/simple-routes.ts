@@ -503,12 +503,14 @@ export function registerSimpleRoutes(app: Express): Server {
       const courses = await storage.getAllCourses();
       const categories = await storage.getAllCategories();
       const onboardingAnalytics = await storage.getOnboardingAnalytics();
+      const allComments = await storage.getAllComments('all');
       
       res.json({
         totalCourses: courses.length,
         totalUsers: 1, // You're the main user
         totalLessons: 35, // From your progress
         totalCategories: categories.length,
+        totalComments: allComments.length,
         // Add onboarding metrics
         totalOnboardingResponses: onboardingAnalytics.totalResponses,
         onboardingAnalytics: onboardingAnalytics
