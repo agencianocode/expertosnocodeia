@@ -1032,6 +1032,39 @@ export function registerSimpleRoutes(app: Express): Server {
     }
   });
 
+  // Unmark lesson as complete
+  app.delete("/api/lessons/:lessonId/complete", legacyAuth, async (req: Request, res: Response) => {
+    try {
+      const { lessonId } = req.params;
+      const userId = (req as any).user?.claims?.sub;
+      if (!userId) {
+        return res.status(401).json({ message: "Usuario no autenticado" });
+      }
+      
+      // Validate that lesson exists
+      const lesson = await storage.getLessonById(lessonId);
+      if (!lesson || !lesson.courseId) {
+        return res.status(404).json({ message: "Lección no encontrada o sin curso asociado" });
+      }
+      
+      // Unmark lesson as complete in database
+      await storage.unmarkLessonComplete(userId, lessonId);
+      
+      // Get updated completed lessons for the course
+      const completedLessonIds = await storage.getCompletedLessons(userId, lesson.courseId);
+      
+      res.json({ 
+        success: true, 
+        message: "Lección desmarcada como completada",
+        completedLessonIds,
+        lessonId
+      });
+    } catch (error) {
+      console.error("Error unmarking lesson as complete:", error);
+      res.status(500).json({ message: "Error al desmarcar la lección" });
+    }
+  });
+
   // Get lesson resource files from Object Storage - public access for lesson resources
   app.get("/api/lesson-resources/:resourceId/*", async (req: Request, res: Response) => {
     try {

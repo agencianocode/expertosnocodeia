@@ -148,6 +148,7 @@ export interface IStorage {
   
   // Lesson progress operations
   markLessonComplete(userId: string, lessonId: string): Promise<UserLessonProgress>;
+  unmarkLessonComplete(userId: string, lessonId: string): Promise<boolean>;
   getCompletedLessons(userId: string, courseId: string): Promise<string[]>;
   
   // Admin User operations
@@ -1201,6 +1202,34 @@ export class DatabaseStorage implements IStorage {
     }
 
     return lessonProgress;
+  }
+
+  async unmarkLessonComplete(userId: string, lessonId: string): Promise<boolean> {
+    // First get the lesson to find the course ID
+    const lesson = await this.getLessonById(lessonId);
+    if (!lesson) {
+      throw new Error('Lesson not found');
+    }
+
+    // Delete the progress record (or set isCompleted to false)
+    const result = await db
+      .update(userLessonProgress)
+      .set({
+        isCompleted: false,
+        completedAt: null,
+        updatedAt: new Date()
+      })
+      .where(and(
+        eq(userLessonProgress.userId, userId),
+        eq(userLessonProgress.lessonId, lessonId)
+      ));
+
+    // Update overall course progress
+    if (lesson.courseId) {
+      await this.updateCourseProgress(userId, lesson.courseId);
+    }
+
+    return (result.rowCount ?? 0) > 0;
   }
 
   async getCompletedLessons(userId: string, courseId: string): Promise<string[]> {

@@ -317,6 +317,17 @@ export default function Course() {
     
     return progress;
   }, [modules, subLessonsByParent, completedLessons]);
+
+  // Get indices of only navigable lessons (leaf lessons) in lessonsArray
+  const navigableLessonIndices = useMemo(() => {
+    return lessonsArray
+      .map((lesson: any, index: number) => {
+        // Include if it's a sub-lesson OR a module without sub-lessons
+        const isNavigable = lesson.parentLessonId || !subLessonsByParent[lesson.id]?.length;
+        return isNavigable ? index : -1;
+      })
+      .filter((index: number) => index !== -1);
+  }, [lessonsArray, subLessonsByParent]);
   
   // Toggle collapse state for a module
   const toggleModuleCollapse = (moduleId: number) => {
@@ -404,6 +415,37 @@ export default function Course() {
       toast({
         title: "Error",
         description: "No se pudo marcar la lección como completada. Inténtalo de nuevo.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const unmarkLessonCompleteMutation = useMutation({
+    mutationFn: async (lessonId: string) => {
+      return await apiRequest('DELETE', `/api/lessons/${lessonId}/complete`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/courses/${id}/progress`] });
+      toast({
+        title: "Lección desmarcada",
+        description: "Has desmarcado la lección como completada.",
+      });
+    },
+    onError: (error) => {
+      if (isUnauthorizedError(error)) {
+        toast({
+          title: "Unauthorized",
+          description: "You are logged out. Logging in again...",
+          variant: "destructive",
+        });
+        setTimeout(() => {
+          window.location.href = "/api/login";
+        }, 500);
+        return;
+      }
+      toast({
+        title: "Error",
+        description: "No se pudo desmarcar la lección. Inténtalo de nuevo.",
         variant: "destructive",
       });
     },
@@ -524,8 +566,12 @@ export default function Course() {
   };
 
   const handlePreviousLesson = () => {
-    if (currentLessonIndex > 0) {
-      const newIndex = currentLessonIndex - 1;
+    // Find current position in navigable lessons
+    const currentPositionInNavigable = navigableLessonIndices.indexOf(currentLessonIndex);
+    
+    if (currentPositionInNavigable > 0) {
+      // Go to previous navigable lesson
+      const newIndex = navigableLessonIndices[currentPositionInNavigable - 1];
       setCurrentLessonIndex(newIndex);
       // Guardar la posición de la nueva lección
       const lesson = lessonsArray[newIndex];
@@ -536,8 +582,12 @@ export default function Course() {
   };
 
   const handleNextLesson = () => {
-    if (currentLessonIndex < lessonsArray.length - 1) {
-      const newIndex = currentLessonIndex + 1;
+    // Find current position in navigable lessons
+    const currentPositionInNavigable = navigableLessonIndices.indexOf(currentLessonIndex);
+    
+    if (currentPositionInNavigable < navigableLessonIndices.length - 1) {
+      // Go to next navigable lesson
+      const newIndex = navigableLessonIndices[currentPositionInNavigable + 1];
       setCurrentLessonIndex(newIndex);
       // Guardar la posición de la nueva lección
       const lesson = lessonsArray[newIndex];
@@ -551,6 +601,17 @@ export default function Course() {
 
   const handleMarkComplete = (lessonId: string) => {
     markLessonCompleteMutation.mutate(lessonId);
+  };
+
+  const handleToggleComplete = (lessonId: string) => {
+    // Toggle completion status
+    if (isLessonCompleted(lessonId)) {
+      // Uncomplete the lesson
+      unmarkLessonCompleteMutation.mutate(lessonId);
+    } else {
+      // Complete the lesson
+      markLessonCompleteMutation.mutate(lessonId);
+    }
   };
 
   return (
@@ -873,37 +934,45 @@ export default function Course() {
                                   {/* Lesson Row */}
                                   <div
                                     className={cn(
-                                      "group relative flex items-start gap-3 min-h-[32px] rounded-lg px-2 py-1 -mx-2 transition-all",
-                                      isAuthenticated && "cursor-pointer hover:bg-muted/30",
-                                      !isAuthenticated && "cursor-default"
+                                      "group relative flex items-start gap-3 min-h-[32px] rounded-lg px-2 py-1 -mx-2 transition-all"
                                     )}
                                   >
+                                    {/* Circle Marker - Clickable to toggle completion */}
                                     <div 
-                                      className="flex items-start gap-3 flex-1 min-w-0"
-                                      onClick={() => isAuthenticated && handleLessonClick(subIndex)}
-                                    >
-                                      {/* Circle Marker */}
-                                      <div className={cn(
+                                      className={cn(
                                         "h-4 w-4 rounded-full border-2 flex-shrink-0 transition-all relative z-10 mt-0.5",
                                         isCompleted 
                                           ? "bg-primary border-primary" 
                                           : "bg-transparent border-border",
                                         isCurrentLesson && "ring-2 ring-primary/40",
-                                        !isAuthenticated && "bg-muted border-muted"
+                                        !isAuthenticated && "bg-muted border-muted",
+                                        isAuthenticated && "cursor-pointer hover:scale-110"
+                                      )}
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        if (isAuthenticated) {
+                                          handleToggleComplete(subLesson.id);
+                                        }
+                                      }}
+                                    >
+                                      {isCompleted && (
+                                        <Check size={10} className="text-white absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2" />
+                                      )}
+                                    </div>
+                                    
+                                    {/* Lesson Text - Clickable to navigate */}
+                                    <div 
+                                      className={cn(
+                                        "flex-1 min-w-0",
+                                        isAuthenticated && "cursor-pointer"
+                                      )}
+                                      onClick={() => isAuthenticated && handleLessonClick(subIndex)}
+                                    >
+                                      <div className={cn(
+                                        "font-satoshi text-[14px] pr-2 transition-colors",
+                                        isCurrentLesson ? "text-primary font-medium" : "text-muted-foreground"
                                       )}>
-                                        {isCompleted && (
-                                          <Check size={10} className="text-white absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2" />
-                                        )}
-                                      </div>
-                                      
-                                      {/* Lesson Text */}
-                                      <div className="flex-1 min-w-0">
-                                        <div className={cn(
-                                          "font-satoshi text-[14px] pr-2 transition-colors",
-                                          isCurrentLesson ? "text-primary font-medium" : "text-muted-foreground"
-                                        )}>
-                                          {subLesson.title}
-                                        </div>
+                                        {subLesson.title}
                                       </div>
                                     </div>
                                     
@@ -1491,37 +1560,42 @@ export default function Course() {
                                   {/* Lesson Row */}
                                   <div
                                     className={cn(
-                                      "group relative flex items-start gap-3 min-h-[32px] rounded-lg px-2 py-1 -mx-2 transition-all cursor-pointer hover:bg-[#404040]/30"
+                                      "group relative flex items-start gap-3 min-h-[32px] rounded-lg px-2 py-1 -mx-2 transition-all"
                                     )}
                                   >
+                                    {/* Circle Marker - Clickable to toggle completion */}
                                     <div 
-                                      className="flex items-start gap-3 flex-1 min-w-0"
+                                      className={cn(
+                                        "h-4 w-4 rounded-full border-2 flex-shrink-0 transition-all relative z-10 mt-0.5",
+                                        isCompleted 
+                                          ? "bg-primary border-primary" 
+                                          : "bg-transparent border-gray-600",
+                                        isCurrentLesson && "ring-2 ring-primary/40",
+                                        "cursor-pointer hover:scale-110"
+                                      )}
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleToggleComplete(subLesson.id);
+                                      }}
+                                    >
+                                      {isCompleted && (
+                                        <Check size={10} className="text-white absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2" />
+                                      )}
+                                    </div>
+                                    
+                                    {/* Lesson Text - Clickable to navigate */}
+                                    <div 
+                                      className="flex-1 min-w-0 cursor-pointer"
                                       onClick={() => {
                                         handleLessonClick(subIndex);
                                         setIsMobileLessonsOpen(false);
                                       }}
                                     >
-                                      {/* Circle Marker */}
                                       <div className={cn(
-                                        "h-4 w-4 rounded-full border-2 flex-shrink-0 transition-all relative z-10 mt-0.5",
-                                        isCompleted 
-                                          ? "bg-primary border-primary" 
-                                          : "bg-transparent border-gray-600",
-                                        isCurrentLesson && "ring-2 ring-primary/40"
+                                        "font-satoshi text-[14px] pr-2 transition-colors",
+                                        isCurrentLesson ? "text-primary font-medium" : "text-gray-300"
                                       )}>
-                                        {isCompleted && (
-                                          <Check size={10} className="text-white absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2" />
-                                        )}
-                                      </div>
-                                      
-                                      {/* Lesson Text */}
-                                      <div className="flex-1 min-w-0">
-                                        <div className={cn(
-                                          "font-satoshi text-[14px] pr-2 transition-colors",
-                                          isCurrentLesson ? "text-primary font-medium" : "text-gray-300"
-                                        )}>
-                                          {subLesson.title}
-                                        </div>
+                                        {subLesson.title}
                                       </div>
                                     </div>
                                     
