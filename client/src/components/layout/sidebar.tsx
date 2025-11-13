@@ -54,22 +54,21 @@ export default function Sidebar() {
   const [searchQuery, setSearchQuery] = useState("");
   const { theme, changeTheme } = useTheme();
   const [onboardingOpen, setOnboardingOpen] = useState(false);
+  const [programasExpanded, setProgramasExpanded] = useState(false);
   
-  // Auto-expand Programas if we're in any room route
+  // Auto-expand Programas when entering a room route
   const isInRoomRoute = location.startsWith('/sala/');
-  const [programasExpanded, setProgramasExpanded] = useState(isInRoomRoute);
+  
+  useEffect(() => {
+    if (isInRoomRoute) {
+      setProgramasExpanded(true);
+    }
+  }, [isInRoomRoute]);
 
   // Fetch rooms for the submenu
   const { data: roomsData } = useQuery({
     queryKey: ["/api/rooms"],
   });
-
-  // Keep programasExpanded in sync with location
-  useEffect(() => {
-    if (isInRoomRoute && !programasExpanded) {
-      setProgramasExpanded(true);
-    }
-  }, [isInRoomRoute, programasExpanded]);
 
   const navigation = [
     { name: "Hogar", href: "/", icon: Home },

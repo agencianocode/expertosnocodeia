@@ -43,9 +43,9 @@ const getYouTubeEmbedUrl = (url: string) => {
 export default function Course() {
   const { toast } = useToast();
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
-  const { id, roomSlug } = useParams<{ id: string; roomSlug?: string }>();
-  const isRoomContext = Boolean(roomSlug); // Detect if viewing from a room
-  const [, setLocation] = useLocation();
+  const { id } = useParams<{ id: string }>();
+  const [location, setLocation] = useLocation();
+  const isRoomContext = location.startsWith('/sala/'); // Detect if viewing from a room context
   const [currentLessonIndex, setCurrentLessonIndex] = useState(0);
   const [hasCheckedSavedPosition, setHasCheckedSavedPosition] = useState(false);
   const queryClient = useQueryClient();
