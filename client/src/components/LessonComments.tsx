@@ -34,7 +34,7 @@ interface LessonCommentsProps {
 export function LessonComments({ lessonId }: LessonCommentsProps) {
   const [newComment, setNewComment] = useState("");
   const [replyTo, setReplyTo] = useState<string | null>(null);
-  const [replyContent, setReplyContent] = useState("");
+  const [replyContents, setReplyContents] = useState<Record<string, string>>({});
 
   const { data: comments = [], isLoading, refetch } = useQuery<Comment[]>({
     queryKey: ['/api/lessons', lessonId, 'comments'],
@@ -55,9 +55,13 @@ export function LessonComments({ lessonId }: LessonCommentsProps) {
     mutationFn: async ({ parentId, content }: { parentId: string; content: string }) => {
       return apiRequest('POST', `/api/comments/${parentId}/replies`, { content, lessonId });
     },
-    onSuccess: async () => {
+    onSuccess: async (_, variables) => {
       setReplyTo(null);
-      setReplyContent("");
+      setReplyContents(prev => {
+        const newContents = { ...prev };
+        delete newContents[variables.parentId];
+        return newContents;
+      });
       // Force refetch instead of invalidation
       await refetch();
     },
@@ -70,9 +74,18 @@ export function LessonComments({ lessonId }: LessonCommentsProps) {
   };
 
   const handleSubmitReply = (parentId: string) => {
-    if (replyContent.trim()) {
-      createReplyMutation.mutate({ parentId, content: replyContent });
+    const content = replyContents[parentId] || "";
+    if (content.trim()) {
+      createReplyMutation.mutate({ parentId, content });
     }
+  };
+
+  const setReplyContent = (commentId: string, content: string) => {
+    setReplyContents(prev => ({ ...prev, [commentId]: content }));
+  };
+
+  const getReplyContent = (commentId: string) => {
+    return replyContents[commentId] || "";
   };
 
   const CommentItem = ({ comment, depth = 0 }: { comment: Comment; depth?: number }) => {
@@ -119,8 +132,8 @@ export function LessonComments({ lessonId }: LessonCommentsProps) {
               <div className="mt-3 space-y-2" data-testid={`reply-form-${comment.id}`}>
                 <Textarea
                   placeholder="Escribe tu respuesta..."
-                  value={replyContent}
-                  onChange={(e) => setReplyContent(e.target.value)}
+                  value={getReplyContent(comment.id)}
+                  onChange={(e) => setReplyContent(comment.id, e.target.value)}
                   className="min-h-[80px] text-sm"
                   data-testid={`textarea-reply-${comment.id}`}
                 />
@@ -128,7 +141,7 @@ export function LessonComments({ lessonId }: LessonCommentsProps) {
                   <Button
                     size="sm"
                     onClick={() => handleSubmitReply(comment.id)}
-                    disabled={createReplyMutation.isPending || !replyContent.trim()}
+                    disabled={createReplyMutation.isPending || !getReplyContent(comment.id).trim()}
                     data-testid={`button-submit-reply-${comment.id}`}
                   >
                     <Send className="h-3 w-3 mr-1" />
@@ -139,7 +152,11 @@ export function LessonComments({ lessonId }: LessonCommentsProps) {
                     variant="ghost"
                     onClick={() => {
                       setReplyTo(null);
-                      setReplyContent("");
+                      setReplyContents(prev => {
+                        const newContents = { ...prev };
+                        delete newContents[comment.id];
+                        return newContents;
+                      });
                     }}
                     data-testid={`button-cancel-reply-${comment.id}`}
                   >
