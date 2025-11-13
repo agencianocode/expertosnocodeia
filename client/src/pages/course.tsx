@@ -14,6 +14,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { LessonResources } from "@/components/lesson-resources";
+import { LessonComments } from "@/components/LessonComments";
 import { Award, Check, ChevronRight, ChevronLeft, Users, Bot, Code, Megaphone, Settings, DollarSign, Heart, Building, CheckSquare, Scale, BarChart, GraduationCap, PlayCircle, Clock, CheckCircle2, BookOpen, Play, Lock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import ReactMarkdown from 'react-markdown';
@@ -860,6 +861,10 @@ export default function Course() {
                   </div>
                 </div>
 
+                {/* Lesson Comments Section - Only for authenticated users */}
+                {isAuthenticated && currentLesson && (
+                  <LessonComments lessonId={currentLesson.id} />
+                )}
 
                 {/* Mobile & Tablet Lesson Navigation */}
                 <div className="lg:hidden mt-6">

@@ -1,0 +1,218 @@
+import { useState } from "react";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Card, CardContent } from "@/components/ui/card";
+import { MessageCircle, Send, Reply } from "lucide-react";
+import { formatDistanceToNow } from "date-fns";
+import { es } from "date-fns/locale";
+
+interface Comment {
+  id: string;
+  content: string;
+  createdAt: string;
+  userId: string;
+  lessonId: string;
+  parentCommentId: string | null;
+  isAdminReviewed: boolean;
+  depth: number;
+  replyCount: number;
+  user: {
+    firstName: string;
+    lastName: string;
+    profileImageUrl: string | null;
+  };
+  replies: Comment[];
+}
+
+interface LessonCommentsProps {
+  lessonId: string;
+}
+
+export function LessonComments({ lessonId }: LessonCommentsProps) {
+  const [newComment, setNewComment] = useState("");
+  const [replyTo, setReplyTo] = useState<string | null>(null);
+  const [replyContent, setReplyContent] = useState("");
+
+  const { data: comments = [], isLoading } = useQuery<Comment[]>({
+    queryKey: ['/api/lessons', lessonId, 'comments'],
+  });
+
+  const createCommentMutation = useMutation({
+    mutationFn: async (content: string) => {
+      return apiRequest('POST', `/api/lessons/${lessonId}/comments`, { content, lessonId });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/lessons', lessonId, 'comments'] });
+      setNewComment("");
+    },
+  });
+
+  const createReplyMutation = useMutation({
+    mutationFn: async ({ parentId, content }: { parentId: string; content: string }) => {
+      return apiRequest('POST', `/api/comments/${parentId}/replies`, { content, lessonId });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/lessons', lessonId, 'comments'] });
+      setReplyTo(null);
+      setReplyContent("");
+    },
+  });
+
+  const handleSubmitComment = () => {
+    if (newComment.trim()) {
+      createCommentMutation.mutate(newComment);
+    }
+  };
+
+  const handleSubmitReply = (parentId: string) => {
+    if (replyContent.trim()) {
+      createReplyMutation.mutate({ parentId, content: replyContent });
+    }
+  };
+
+  const CommentItem = ({ comment, depth = 0 }: { comment: Comment; depth?: number }) => {
+    const initials = `${comment.user.firstName[0]}${comment.user.lastName[0]}`.toUpperCase();
+    const isReplying = replyTo === comment.id;
+
+    return (
+      <div 
+        className={`${depth > 0 ? 'ml-8 mt-4 border-l-2 border-border pl-4' : 'mb-6'}`}
+        data-testid={`comment-${comment.id}`}
+      >
+        <div className="flex gap-3">
+          <Avatar className="h-8 w-8">
+            <AvatarImage src={comment.user.profileImageUrl || undefined} />
+            <AvatarFallback className="text-xs">{initials}</AvatarFallback>
+          </Avatar>
+
+          <div className="flex-1">
+            <div className="flex items-baseline gap-2 mb-1">
+              <span className="font-medium text-sm" data-testid={`comment-author-${comment.id}`}>
+                {comment.user.firstName} {comment.user.lastName}
+              </span>
+              <span className="text-xs text-muted-foreground" data-testid={`comment-time-${comment.id}`}>
+                {formatDistanceToNow(new Date(comment.createdAt), { addSuffix: true, locale: es })}
+              </span>
+            </div>
+
+            <p className="text-sm mb-2 whitespace-pre-wrap" data-testid={`comment-content-${comment.id}`}>
+              {comment.content}
+            </p>
+
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 px-2 text-xs"
+              onClick={() => setReplyTo(isReplying ? null : comment.id)}
+              data-testid={`button-reply-${comment.id}`}
+            >
+              <Reply className="h-3 w-3 mr-1" />
+              Responder
+            </Button>
+
+            {isReplying && (
+              <div className="mt-3 space-y-2" data-testid={`reply-form-${comment.id}`}>
+                <Textarea
+                  placeholder="Escribe tu respuesta..."
+                  value={replyContent}
+                  onChange={(e) => setReplyContent(e.target.value)}
+                  className="min-h-[80px] text-sm"
+                  data-testid={`textarea-reply-${comment.id}`}
+                />
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    onClick={() => handleSubmitReply(comment.id)}
+                    disabled={createReplyMutation.isPending || !replyContent.trim()}
+                    data-testid={`button-submit-reply-${comment.id}`}
+                  >
+                    <Send className="h-3 w-3 mr-1" />
+                    {createReplyMutation.isPending ? 'Enviando...' : 'Enviar'}
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => {
+                      setReplyTo(null);
+                      setReplyContent("");
+                    }}
+                    data-testid={`button-cancel-reply-${comment.id}`}
+                  >
+                    Cancelar
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {comment.replies && comment.replies.length > 0 && (
+              <div className="mt-4">
+                {comment.replies.map((reply) => (
+                  <CommentItem key={reply.id} comment={reply} depth={depth + 1} />
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <div className="mt-12 pt-8 border-t border-border" id="comments">
+      <div className="flex items-center gap-2 mb-6">
+        <MessageCircle className="h-5 w-5" />
+        <h2 className="text-xl font-semibold">
+          Comentarios ({comments.length})
+        </h2>
+      </div>
+
+      <Card className="mb-6">
+        <CardContent className="pt-6">
+          <Textarea
+            placeholder="Comparte tus dudas, ideas o experiencias sobre esta lección..."
+            value={newComment}
+            onChange={(e) => setNewComment(e.target.value)}
+            className="min-h-[120px] mb-3"
+            data-testid="textarea-new-comment"
+          />
+          <Button
+            onClick={handleSubmitComment}
+            disabled={createCommentMutation.isPending || !newComment.trim()}
+            data-testid="button-submit-comment"
+          >
+            <Send className="h-4 w-4 mr-2" />
+            {createCommentMutation.isPending ? 'Publicando...' : 'Publicar comentario'}
+          </Button>
+        </CardContent>
+      </Card>
+
+      {isLoading ? (
+        <div className="space-y-4">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="flex gap-3 animate-pulse">
+              <div className="h-8 w-8 rounded-full bg-muted" />
+              <div className="flex-1 space-y-2">
+                <div className="h-4 w-32 bg-muted rounded" />
+                <div className="h-12 bg-muted rounded" />
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : comments.length === 0 ? (
+        <div className="text-center py-12 text-muted-foreground">
+          <MessageCircle className="h-12 w-12 mx-auto mb-3 opacity-50" />
+          <p>Sé el primero en comentar esta lección</p>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {comments.map((comment) => (
+            <CommentItem key={comment.id} comment={comment} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
