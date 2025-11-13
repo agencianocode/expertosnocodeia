@@ -33,6 +33,7 @@ interface Comment {
   replyCount: number;
   user: CommentUser;
   replies: Comment[];
+  roomSlug?: string | null;
 }
 
 interface Lesson {
@@ -313,12 +314,21 @@ export default function AdminComments() {
                                   Aprobar
                                 </Button>
                               )}
-                              <Link href={`/course/${comment.lesson.courseId}/lesson/${comment.lesson.id}#comments`}>
-                                <Button size="sm" variant="ghost">
-                                  <MessageCircle className="h-3 w-3 mr-1" />
-                                  Ver en contexto
-                                </Button>
-                              </Link>
+                              {comment.roomSlug ? (
+                                <Link href={`/sala/${comment.roomSlug}/curso/${comment.lesson.courseId}`}>
+                                  <Button size="sm" variant="ghost">
+                                    <MessageCircle className="h-3 w-3 mr-1" />
+                                    Ver en contexto
+                                  </Button>
+                                </Link>
+                              ) : (
+                                <Link href={`/course/${comment.lesson.courseId}/lesson/${comment.lesson.id}#comments`}>
+                                  <Button size="sm" variant="ghost">
+                                    <MessageCircle className="h-3 w-3 mr-1" />
+                                    Ver en contexto
+                                  </Button>
+                                </Link>
+                              )}
                               <Button
                                 size="sm"
                                 variant="ghost"

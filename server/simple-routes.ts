@@ -711,12 +711,12 @@ export function registerSimpleRoutes(app: Express): Server {
       }
       
       // Include room/phase assignment if exists (using the course's actual type)
-      const phaseAssignment = await storage.getPhaseContentByCourse(courseId, course.type as any);
-      if (phaseAssignment) {
+      const roomAssignment = await storage.getCourseRoomAssignment(courseId, course.type as any);
+      if (roomAssignment) {
         courseWithCategories = { 
           ...courseWithCategories, 
-          roomId: phaseAssignment.roomId,
-          phaseId: phaseAssignment.phaseId
+          roomId: roomAssignment.roomId,
+          phaseId: roomAssignment.phaseId
         };
       }
       

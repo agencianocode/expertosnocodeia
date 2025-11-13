@@ -1749,6 +1749,28 @@ export class DatabaseStorage implements IStorage {
     return content;
   }
 
+  async getCourseRoomAssignment(
+    courseId: string, 
+    contentType: ContentType = 'course'
+  ): Promise<{ phaseContentId: string; phaseId: string; roomId: string; contentType: ContentType } | undefined> {
+    const [result] = await db
+      .select({
+        phaseContentId: phaseContent.id,
+        phaseId: phaseContent.phaseId,
+        roomId: phases.roomId,
+        contentType: phaseContent.contentType,
+      })
+      .from(phaseContent)
+      .innerJoin(phases, eq(phaseContent.phaseId, phases.id))
+      .where(and(
+        eq(phaseContent.contentId, courseId),
+        eq(phaseContent.contentType, contentType)
+      ))
+      .limit(1);
+    
+    return result as any;
+  }
+
   async upsertPhaseContentForCourse(
     courseId: string, 
     roomId: string | null | undefined,
@@ -2092,7 +2114,23 @@ export class DatabaseStorage implements IStorage {
     user: { firstName: string; lastName: string; profileImageUrl: string | null };
     lesson: { id: string; title: string; courseId: string };
     course: { id: string; title: string };
+    roomSlug: string | null;
   }>> {
+    // First, get the room slug for each course using a subquery
+    const roomSlugsSubquery = db
+      .select({
+        courseId: phaseContent.contentId,
+        roomSlug: rooms.slug,
+        phaseOrder: phases.order,
+        contentOrder: phaseContent.order,
+      })
+      .from(phaseContent)
+      .innerJoin(phases, eq(phaseContent.phaseId, phases.id))
+      .innerJoin(rooms, eq(phases.roomId, rooms.id))
+      .where(eq(phaseContent.contentType, 'course'))
+      .orderBy(phases.order, phaseContent.order)
+      .as('room_slugs');
+
     let query = db
       .select({
         comment: comments,
@@ -2110,11 +2148,13 @@ export class DatabaseStorage implements IStorage {
           id: courses.id,
           title: courses.title,
         },
+        roomSlug: roomSlugsSubquery.roomSlug,
       })
       .from(comments)
       .leftJoin(users, eq(comments.userId, users.id))
       .leftJoin(lessons, eq(comments.lessonId, lessons.id))
       .leftJoin(courses, eq(lessons.courseId, courses.id))
+      .leftJoin(roomSlugsSubquery, eq(courses.id, roomSlugsSubquery.courseId))
       .orderBy(desc(comments.createdAt));
 
     if (filter === 'pending') {
@@ -2125,23 +2165,34 @@ export class DatabaseStorage implements IStorage {
 
     const result = await query;
 
-    return result.map(({ comment, user, lesson, course }) => ({
-      ...comment,
-      user: {
-        firstName: user?.firstName || '',
-        lastName: user?.lastName || '',
-        profileImageUrl: user?.profileImageUrl || null,
-      },
-      lesson: {
-        id: lesson?.id || '',
-        title: lesson?.title || 'Lección eliminada',
-        courseId: lesson?.courseId || '',
-      },
-      course: {
-        id: course?.id || '',
-        title: course?.title || 'Curso eliminado',
-      },
-    }));
+    // Group by comment ID to get the first room slug (in case of duplicates)
+    const commentMap = new Map<string, any>();
+    
+    for (const row of result) {
+      const commentId = row.comment.id;
+      if (!commentMap.has(commentId)) {
+        commentMap.set(commentId, {
+          ...row.comment,
+          user: {
+            firstName: row.user?.firstName || '',
+            lastName: row.user?.lastName || '',
+            profileImageUrl: row.user?.profileImageUrl || null,
+          },
+          lesson: {
+            id: row.lesson?.id || '',
+            title: row.lesson?.title || 'Lección eliminada',
+            courseId: row.lesson?.courseId || '',
+          },
+          course: {
+            id: row.course?.id || '',
+            title: row.course?.title || 'Curso eliminado',
+          },
+          roomSlug: row.roomSlug || null,
+        });
+      }
+    }
+
+    return Array.from(commentMap.values());
   }
 
   async toggleCommentLike(commentId: string, userId: string): Promise<{ liked: boolean; likeCount: number }> {
