@@ -275,6 +275,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { lessonId } = req.params;
       const userId = req.user!.id;
 
+      console.log("📝 Creating comment - userId:", userId, "lessonId:", lessonId);
+      console.log("📝 Request body:", req.body);
+
       // Validate request body
       const validationSchema = insertCommentSchema.omit({
         isAdminReviewed: true,
@@ -286,7 +289,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         userId,
       });
 
+      console.log("✅ Validated data:", validatedData);
+
       const comment = await storage.createComment(validatedData);
+      console.log("✅ Comment created:", comment);
 
       // Send email notification (non-blocking)
       const lesson = lessonId ? await storage.getLessonById(lessonId) : null;
