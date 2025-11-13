@@ -5,8 +5,10 @@ import { useAuth } from "@/hooks/useAuth";
 import { useSimpleAuth } from "@/hooks/use-simple-auth";
 import { useRoleSwitch } from "@/hooks/useRoleSwitch";
 import { useTheme } from "@/hooks/useTheme";
+import { useAdmin } from "@/hooks/useAdmin";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 import OnboardingModal from "@/components/onboarding-modal";
 import {
   DropdownMenu,
@@ -43,7 +45,9 @@ import {
   MoreHorizontal,
   TrendingUp,
   ChevronDown,
-  ChevronRight
+  ChevronRight,
+  Shield,
+  MessageCircle
 } from "lucide-react";
 
 export default function Sidebar() {
@@ -55,6 +59,16 @@ export default function Sidebar() {
   const { theme, changeTheme } = useTheme();
   const [onboardingOpen, setOnboardingOpen] = useState(false);
   const [programasExpanded, setProgramasExpanded] = useState(false);
+  const { isAdmin } = useAdmin();
+  
+  // Fetch unread comments count for admin badge
+  const { data: unreadCommentsData } = useQuery<{ count: number }>({
+    queryKey: ['/api/admin/comments/unread-count'],
+    enabled: isAdmin,
+    refetchInterval: 30000, // Refetch every 30 seconds
+  });
+  
+  const unreadCommentsCount = unreadCommentsData?.count || 0;
   
   // Auto-expand Programas when entering a room route
   const isInRoomRoute = location.startsWith('/sala/');
@@ -315,6 +329,35 @@ export default function Sidebar() {
                         <User className="mr-2 h-4 w-4" />
                         <span>Mi perfil</span>
                       </DropdownMenuItem>
+                      
+                      {/* Admin Panel - Only visible to admins */}
+                      {isAdmin && (
+                        <>
+                          <DropdownMenuSeparator className="bg-border" />
+                          <DropdownMenuItem 
+                            className="text-purple-400 hover:bg-purple-500/10 hover:text-purple-300 cursor-pointer"
+                            onClick={() => window.location.href = "/admin"}
+                          >
+                            <Shield className="mr-2 h-4 w-4" />
+                            <span>Panel de Administración</span>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem 
+                            className="text-card-foreground hover:bg-muted hover:text-foreground cursor-pointer"
+                            onClick={() => window.location.href = "/admin/comentarios"}
+                          >
+                            <MessageCircle className="mr-2 h-4 w-4" />
+                            <div className="flex items-center justify-between flex-1">
+                              <span>Comentarios</span>
+                              {unreadCommentsCount > 0 && (
+                                <Badge variant="destructive" className="ml-2 h-5 min-w-5 flex items-center justify-center px-1.5 text-xs">
+                                  {unreadCommentsCount}
+                                </Badge>
+                              )}
+                            </div>
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator className="bg-border" />
+                        </>
+                      )}
                       
                       <DropdownMenuItem 
                         className="text-card-foreground hover:bg-muted hover:text-foreground cursor-pointer"
