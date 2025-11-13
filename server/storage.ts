@@ -293,6 +293,7 @@ export interface IStorage {
     user: { firstName: string; lastName: string; profileImageUrl: string | null }; 
     replies: Array<Comment & { user: { firstName: string; lastName: string; profileImageUrl: string | null } }> 
   }>>;
+  getCommentById(commentId: string): Promise<Comment | undefined>;
   createComment(data: Omit<InsertComment, 'depth' | 'replyCount' | 'rootCommentId' | 'metadata'>): Promise<Comment>;
   createReply(parentCommentId: string, data: Omit<InsertComment, 'parentCommentId' | 'depth' | 'replyCount' | 'rootCommentId' | 'metadata'>): Promise<Comment>;
   markCommentReviewed(commentId: string): Promise<Comment>;
@@ -2031,6 +2032,15 @@ export class DatabaseStorage implements IStorage {
     }
 
     return updated;
+  }
+
+  async getCommentById(commentId: string): Promise<Comment | undefined> {
+    const [comment] = await db
+      .select()
+      .from(comments)
+      .where(eq(comments.id, commentId));
+    
+    return comment;
   }
 
   async getUnreadCommentCount(): Promise<number> {

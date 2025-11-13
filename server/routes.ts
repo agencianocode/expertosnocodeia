@@ -5,6 +5,7 @@ import { supabaseAuth, AuthenticatedRequest } from "./supabaseAuth";
 import { setupSupabaseAuthRoutes } from "./supabaseAuthRoutes";
 import { isAdmin } from "./adminMiddleware";
 import { insertCommentSchema } from "@shared/schema";
+import { sendNewCommentNotification, getAdminNotificationEmails } from "./emailNotifications";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Setup Supabase authentication routes
@@ -287,10 +288,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const comment = await storage.createComment(validatedData);
 
-      // TODO: Send email notification (non-blocking)
-      // notifyOnNewComment({ comment, lesson, recipientList }).catch(err => 
-      //   console.error('Failed to send notification:', err)
-      // );
+      // Send email notification (non-blocking)
+      const lesson = lessonId ? await storage.getLessonById(lessonId) : null;
+      const course = lesson?.courseId ? await storage.getCourseById(lesson.courseId) : null;
+      
+      if (lesson && course) {
+        getAdminNotificationEmails().then(async (adminEmails) => {
+          if (adminEmails.length > 0) {
+            await sendNewCommentNotification({
+              commentId: comment.id,
+              lessonId: lesson.id,
+              lessonTitle: lesson.title,
+              courseTitle: course.title,
+              authorName: `${req.user!.firstName} ${req.user!.lastName}`,
+              commentContent: comment.content,
+              recipientEmails: adminEmails,
+              isReply: false,
+            });
+          }
+        }).catch(err => console.error('Failed to send notification:', err));
+      }
 
       res.status(201).json(comment);
     } catch (error: any) {
@@ -320,10 +337,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const reply = await storage.createReply(parentCommentId, validatedData);
 
-      // TODO: Send email notification (non-blocking)
-      // notifyOnNewComment({ comment: reply, lesson, recipientList }).catch(err => 
-      //   console.error('Failed to send notification:', err)
-      // );
+      // Send email notification (non-blocking)
+      const lesson = validatedData.lessonId ? await storage.getLessonById(validatedData.lessonId) : null;
+      const course = lesson?.courseId ? await storage.getCourseById(lesson.courseId) : null;
+      const parentComment = await storage.getCommentById(parentCommentId);
+      
+      if (lesson && course) {
+        getAdminNotificationEmails().then(async (adminEmails) => {
+          const recipientEmails = [...adminEmails];
+          
+          // Also notify the parent comment author if it's not the same user
+          if (parentComment && parentComment.userId !== userId) {
+            const parentAuthor = await storage.getUser(parentComment.userId);
+            if (parentAuthor?.email) {
+              recipientEmails.push(parentAuthor.email);
+            }
+          }
+
+          if (recipientEmails.length > 0) {
+            await sendNewCommentNotification({
+              commentId: reply.id,
+              lessonId: lesson.id,
+              lessonTitle: lesson.title,
+              courseTitle: course.title,
+              authorName: `${req.user!.firstName} ${req.user!.lastName}`,
+              commentContent: reply.content,
+              recipientEmails: recipientEmails,
+              isReply: true,
+              parentAuthorEmail: parentComment?.userId ? (await storage.getUser(parentComment.userId))?.email : undefined,
+            });
+          }
+        }).catch(err => console.error('Failed to send notification:', err));
+      }
 
       res.status(201).json(reply);
     } catch (error: any) {
