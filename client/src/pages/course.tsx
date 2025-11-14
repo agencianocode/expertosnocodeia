@@ -797,7 +797,7 @@ export default function Course() {
                   <div className="bg-card rounded-xl px-4 lg:px-8 py-3 lg:py-5 font-satoshi font-normal text-[14px] lg:text-[16px] leading-[22px] lg:leading-[26px] text-card-foreground pt-[2px] pb-[2px] pl-[20px] pr-[20px]">
                     {/* Lesson Title inside content card */}
                     <div className="mb-4 lg:mb-6">
-                      <h2 className="text-lg lg:text-xl font-bold text-foreground mb-3 flex items-center font-satoshi" style={{fontSize: '24px'}}>
+                      <h2 className="text-lg lg:text-xl font-bold text-foreground flex items-center font-satoshi mt-[0px] mb-[0px] pl-[0px] pr-[0px] ml-[0px] mr-[0px]" style={{fontSize: '24px'}}>
                         <div className="w-8 h-8 rounded-lg mr-3 flex items-center justify-center flex-shrink-0" style={{backgroundColor: '#363636'}}>
                           <GraduationCap className="h-4 w-4 text-foreground" />
                         </div>
