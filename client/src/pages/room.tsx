@@ -99,11 +99,6 @@ export default function Room() {
   const { room, phases, promoBanners, userHasAccess } = roomDetail;
   const hasAccess = userHasAccess;
 
-  // Format price
-  const formattedPrice = room.price 
-    ? `$${(room.price / 100).toFixed(2)} ${room.currency.toUpperCase()}`
-    : 'Gratis';
-
   return (
     <div className="min-h-screen bg-background text-foreground">
       {/* Mobile Header */}
@@ -115,80 +110,16 @@ export default function Room() {
         
         {/* Main Content */}
         <main className="flex-1 overflow-auto pb-20 lg:pb-0 md:ml-16 lg:ml-[250px]">
-          {/* Hero Section - Netflix Style */}
-          <div className="relative w-full h-[80vh] min-h-[600px] overflow-hidden">
-            {/* Background Image */}
-            {room.heroImageUrl && (
-              <div 
-                className="absolute inset-0 bg-cover bg-center"
-                style={{ backgroundImage: `url(${room.heroImageUrl})` }}
+          {/* Hero Banner - Full width image only */}
+          {room.heroImageUrl && (
+            <div className="relative w-full h-[400px] overflow-hidden">
+              <img 
+                src={room.heroImageUrl}
+                alt={room.title}
+                className="w-full h-full object-cover"
               />
-            )}
-            
-            {/* Gradient Overlays */}
-            <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent" />
-            <div className="absolute inset-0 bg-gradient-to-r from-background/90 via-background/50 to-transparent" />
-            
-            {/* Content */}
-            <div className="relative z-10 container mx-auto px-4 h-full flex flex-col justify-center md:justify-end pb-20 md:pb-24">
-              <div className="max-w-2xl">
-                <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold text-white mb-4 md:mb-6 drop-shadow-2xl">
-                  {room.title}
-                </h1>
-                
-                {room.shortDescription && (
-                  <p className="text-lg md:text-xl lg:text-2xl text-white/90 mb-6 md:mb-8 leading-relaxed drop-shadow-lg">
-                    {room.shortDescription}
-                  </p>
-                )}
-
-                <div className="flex flex-wrap items-center gap-3 mb-6 md:mb-8">
-                  <Badge className="text-base md:text-lg px-4 py-2 bg-primary text-primary-foreground">
-                    {formattedPrice}
-                  </Badge>
-                  {phases.length > 0 && (
-                    <Badge variant="outline" className="text-base md:text-lg px-4 py-2 text-white border-white/50 bg-white/10">
-                      {phases.length} fases
-                    </Badge>
-                  )}
-                </div>
-
-                <div className="flex flex-col sm:flex-row gap-3 md:gap-4">
-                  {hasAccess ? (
-                    <Button size="lg" className="text-base md:text-lg px-6 md:px-8 py-6 bg-white text-black hover:bg-white/90 font-semibold">
-                      <Play className="mr-2 h-5 w-5 fill-current" />
-                      Continuar aprendiendo
-                    </Button>
-                  ) : (
-                    <Button size="lg" className="text-base md:text-lg px-6 md:px-8 py-6 bg-white text-black hover:bg-white/90 font-semibold">
-                      Inscribirse ahora
-                    </Button>
-                  )}
-                  
-                  <Button 
-                    size="lg" 
-                    variant="outline" 
-                    className="text-base md:text-lg px-6 md:px-8 py-6 text-white border-white/50 bg-white/20 hover:bg-white/30 font-semibold"
-                  >
-                    Más información
-                  </Button>
-                </div>
-              </div>
-            </div>
-
-            {/* Bottom fade */}
-            <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-background to-transparent" />
-          </div>
-
-          {/* Description */}
-          {room.description && (
-            <div className="container mx-auto px-4 py-12">
-              <div className="max-w-4xl">
-                <h2 className="text-2xl font-bold mb-4">Acerca de esta sala</h2>
-                <p className="text-muted-foreground text-lg leading-relaxed">
-                  {room.description}
-                </p>
-              </div>
+              {/* Bottom fade to blend with content */}
+              <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-background to-transparent" />
             </div>
           )}
 
