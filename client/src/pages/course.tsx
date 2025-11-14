@@ -794,7 +794,7 @@ export default function Course() {
                 )}
 
                 <div className="space-y-6 lg:space-y-8">
-                  <div className="bg-card rounded-xl px-4 lg:px-8 py-3 lg:py-5 font-satoshi font-normal text-[14px] lg:text-[16px] leading-[22px] lg:leading-[26px] text-card-foreground">
+                  <div className="bg-card rounded-xl px-4 lg:px-8 py-3 lg:py-5 font-satoshi font-normal text-[14px] lg:text-[16px] leading-[22px] lg:leading-[26px] text-card-foreground pt-[10px] pb-[10px]">
                     {/* Lesson Title inside content card */}
                     <div className="mb-4 lg:mb-6">
                       <h2 className="text-lg lg:text-xl font-bold text-foreground mb-3 flex items-center font-satoshi" style={{fontSize: '24px'}}>
@@ -812,38 +812,8 @@ export default function Course() {
                     
                     {!isAuthenticated ? (
                       // Blocked content for non-authenticated users
-                      currentLessonIndex === 0 ? (
-                        // Primera lección: contenido completamente visible
-                        <div className="prose prose-sm lg:prose-base max-w-none">
-                          {currentLesson.content && (
-                            <div className="markdown-content">
-                              <ReactMarkdown 
-                                remarkPlugins={[remarkGfm]}
-                                rehypePlugins={[rehypeHighlight, rehypeRaw]}
-                              >
-                                {currentLesson.content}
-                              </ReactMarkdown>
-                            </div>
-                          )}
-                          {!currentLesson.content && !currentLesson.videoUrl && !currentLesson.imageUrl && (
-                            <p className="text-muted-foreground italic">Contenido de la lección no disponible.</p>
-                          )}
-                        </div>
-                      ) : (
-                        // Lecciones 2+: contenido bloqueado
-                        <div className="py-8">
-                          <p className="text-muted-foreground mb-6">Debes registrarte en Universidad Expertos NoCode IA para ver esta lección.</p>
-                          <Button 
-                            onClick={() => window.location.href = "/planes"}
-                            className="bg-primary text-primary-foreground hover:bg-primary/90"
-                          >
-                            Inscribirse
-                          </Button>
-                        </div>
-                      )
-                    ) : (
-                      // Normal content for authenticated users  
-                      <div className="prose prose-sm lg:prose-base max-w-none">
+                      (currentLessonIndex === 0 ? // Primera lección: contenido completamente visible
+                      (<div className="prose prose-sm lg:prose-base max-w-none">
                         {currentLesson.content && (
                           <div className="markdown-content">
                             <ReactMarkdown 
@@ -857,7 +827,33 @@ export default function Course() {
                         {!currentLesson.content && !currentLesson.videoUrl && !currentLesson.imageUrl && (
                           <p className="text-muted-foreground italic">Contenido de la lección no disponible.</p>
                         )}
-                      </div>
+                      </div>) : // Lecciones 2+: contenido bloqueado
+                      (<div className="py-8">
+                        <p className="text-muted-foreground mb-6">Debes registrarte en Universidad Expertos NoCode IA para ver esta lección.</p>
+                        <Button 
+                          onClick={() => window.location.href = "/planes"}
+                          className="bg-primary text-primary-foreground hover:bg-primary/90"
+                        >
+                          Inscribirse
+                        </Button>
+                      </div>))
+                    ) : (
+                      // Normal content for authenticated users  
+                      (<div className="prose prose-sm lg:prose-base max-w-none">
+                        {currentLesson.content && (
+                          <div className="markdown-content">
+                            <ReactMarkdown 
+                              remarkPlugins={[remarkGfm]}
+                              rehypePlugins={[rehypeHighlight, rehypeRaw]}
+                            >
+                              {currentLesson.content}
+                            </ReactMarkdown>
+                          </div>
+                        )}
+                        {!currentLesson.content && !currentLesson.videoUrl && !currentLesson.imageUrl && (
+                          <p className="text-muted-foreground italic">Contenido de la lección no disponible.</p>
+                        )}
+                      </div>)
                     )}
                   </div>
                 </div>
@@ -953,7 +949,7 @@ export default function Course() {
               <div className="space-y-2 max-h-[400px] overflow-y-auto scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent pr-2">
                 {isRoomContext ? (
                   /* Room Context Timeline Design */
-                  modules.map((module: any, moduleIdx: number) => {
+                  (modules.map((module: any, moduleIdx: number) => {
                     const moduleIndex = lessonsArray.findIndex((l: any) => l.id === module.id);
                     const subLessons = subLessonsByParent[module.id] || [];
                     const isCollapsed = collapsedModules.has(module.id);
@@ -1081,10 +1077,10 @@ export default function Course() {
                         )}
                       </div>
                     );
-                  })
+                  }))
                 ) : (
                   /* Original Design for Regular Courses */
-                  modules.map((module: any, moduleIdx: number) => {
+                  (modules.map((module: any, moduleIdx: number) => {
                   const moduleIndex = lessonsArray.findIndex((l: any) => l.id === module.id);
                   const subLessons = subLessonsByParent[module.id] || [];
                   const isCollapsed = collapsedModules.has(module.id);
@@ -1231,7 +1227,7 @@ export default function Course() {
                       })}
                     </div>
                   );
-                })
+                }))
                 )}
               </div>
 
@@ -1579,7 +1575,7 @@ export default function Course() {
               <div className="space-y-2 p-4">
                 {isRoomContext ? (
                   /* Room Context Timeline Design (Mobile) */
-                  modules.map((module: any, moduleIdx: number) => {
+                  (modules.map((module: any, moduleIdx: number) => {
                     const moduleIndex = lessonsArray.findIndex((l: any) => l.id === module.id);
                     const subLessons = subLessonsByParent[module.id] || [];
                     const isCollapsed = collapsedModules.has(module.id);
@@ -1693,10 +1689,10 @@ export default function Course() {
                         )}
                       </div>
                     );
-                  })
+                  }))
                 ) : (
                   /* Original Design for Regular Courses (Mobile) */
-                  modules.map((module: any, moduleIdx: number) => {
+                  (modules.map((module: any, moduleIdx: number) => {
                     const moduleIndex = lessonsArray.findIndex((l: any) => l.id === module.id);
                     const subLessons = subLessonsByParent[module.id] || [];
                     const isCollapsed = collapsedModules.has(module.id);
@@ -1835,7 +1831,7 @@ export default function Course() {
                       })}
                     </div>
                   );
-                })
+                }))
                 )}
 
                 {/* Final Exam Button - Only show when currently on last lesson (Mobile) */}
