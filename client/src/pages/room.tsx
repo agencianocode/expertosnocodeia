@@ -124,7 +124,7 @@ export default function Room() {
           )}
 
           {/* Phases Section */}
-          <div className="container mx-auto px-4 pb-16">
+          <div className="container mx-auto px-4 pb-16 -mt-32 relative z-10">
             <div className="space-y-12">
               {phases.map((phase, index) => {
                 // Compute whether this phase is locked for the current user
