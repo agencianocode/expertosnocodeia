@@ -13,6 +13,12 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { LessonResources } from "@/components/lesson-resources";
 import { LessonComments } from "@/components/LessonComments";
 import { Award, Check, ChevronRight, ChevronLeft, Users, Bot, Code, Megaphone, Settings, DollarSign, Heart, Building, CheckSquare, Scale, BarChart, GraduationCap, PlayCircle, Clock, CheckCircle2, BookOpen, Play, Lock } from "lucide-react";
@@ -268,6 +274,49 @@ export default function Course() {
   const { data: completedLessons = [] } = useQuery<string[]>({
     queryKey: [`/api/courses/${id}/progress`],
     enabled: isAuthenticated && !!id, // Only fetch progress if authenticated
+  });
+
+  // Check if course is saved/bookmarked
+  const { data: savedCourses } = useQuery({
+    queryKey: ['/api/users/saved-courses'],
+    enabled: isAuthenticated,
+    retry: false,
+  });
+  
+  const isSaved = Array.isArray(savedCourses) && savedCourses.some(
+    (savedCourse: any) => savedCourse.courseId === id
+  );
+  
+  // Save/unsave course mutation
+  const saveCourseMutation = useMutation({
+    mutationFn: async () => {
+      const method = isSaved ? 'DELETE' : 'POST';
+      const url = isSaved 
+        ? `/api/users/saved-courses/${id}`
+        : '/api/users/saved-courses';
+      
+      if (method === 'POST') {
+        return await apiRequest('POST', url, { courseId: id });
+      } else {
+        return await apiRequest('DELETE', url);
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/users/saved-courses'] });
+      toast({
+        title: isSaved ? "Curso removido" : "Curso guardado",
+        description: isSaved 
+          ? "El curso fue removido de tus favoritos" 
+          : "El curso fue guardado en tus favoritos",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "No se pudo guardar el curso",
+        variant: "destructive",
+      });
+    },
   });
 
   // Ensure lessons is always an array
@@ -797,11 +846,64 @@ export default function Course() {
                   <div className="bg-card rounded-xl px-4 lg:px-8 py-3 lg:py-5 font-satoshi font-normal text-[14px] lg:text-[16px] leading-[22px] lg:leading-[26px] text-card-foreground pl-[20px] pr-[20px] pt-[5px] pb-[5px]">
                     {/* Lesson Title inside content card */}
                     <div className="mb-4 lg:mb-6">
-                      <h2 className="text-lg lg:text-xl font-bold text-foreground flex items-center font-satoshi mt-[0px] mb-[0px] pl-[0px] pr-[0px] ml-[0px] mr-[0px]" style={{fontSize: '24px'}}>
-                        <div className="w-8 h-8 rounded-lg mr-3 flex items-center justify-center flex-shrink-0" style={{backgroundColor: '#363636'}}>
-                          <GraduationCap className="h-4 w-4 text-foreground" />
+                      <h2 className="text-lg lg:text-xl font-bold text-foreground flex items-center justify-between font-satoshi mt-[0px] mb-[0px] pl-[0px] pr-[0px] ml-[0px] mr-[0px]" style={{fontSize: '24px'}}>
+                        <div className="flex items-center flex-1">
+                          <div className="w-8 h-8 rounded-lg mr-3 flex items-center justify-center flex-shrink-0" style={{backgroundColor: '#363636'}}>
+                            <GraduationCap className="h-4 w-4 text-foreground" />
+                          </div>
+                          <span className="flex-1">{currentLesson.title}</span>
                         </div>
-                        {currentLesson.title}
+                        {isAuthenticated && (
+                          <TooltipProvider>
+                            <div className="flex gap-2 ml-4">
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => handleToggleComplete(currentLesson.id)}
+                                    disabled={markLessonCompleteMutation.isPending || unmarkLessonCompleteMutation.isPending}
+                                    data-testid="button-toggle-lesson-complete"
+                                    className="h-8 px-3"
+                                  >
+                                    {isLessonCompleted(currentLesson.id) ? (
+                                      <CheckCircle2 className="h-4 w-4 fill-current" />
+                                    ) : (
+                                      <CheckCircle2 className="h-4 w-4" />
+                                    )}
+                                    <span className="ml-2 hidden xl:inline">Completar</span>
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>{isLessonCompleted(currentLesson.id) ? 'Marcar como no completada' : 'Marcar como completada'}</p>
+                                </TooltipContent>
+                              </Tooltip>
+                              
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => saveCourseMutation.mutate()}
+                                    disabled={saveCourseMutation.isPending}
+                                    data-testid="button-save-course"
+                                    className="h-8 px-3"
+                                  >
+                                    {isSaved ? (
+                                      <Heart className="h-4 w-4 fill-current" />
+                                    ) : (
+                                      <Heart className="h-4 w-4" />
+                                    )}
+                                    <span className="ml-2 hidden xl:inline">Favorito</span>
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>{isSaved ? 'Remover de favoritos' : 'Guardar curso'}</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </div>
+                          </TooltipProvider>
+                        )}
                       </h2>
                       {currentLesson.description && (
                         <p className="text-muted-foreground text-sm lg:text-base">
