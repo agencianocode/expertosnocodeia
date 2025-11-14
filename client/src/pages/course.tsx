@@ -794,7 +794,7 @@ export default function Course() {
                 )}
 
                 <div className="space-y-6 lg:space-y-8">
-                  <div className="bg-card rounded-xl px-4 lg:px-8 py-3 lg:py-5 font-satoshi font-normal text-[14px] lg:text-[16px] leading-[22px] lg:leading-[26px] text-card-foreground pl-[20px] pr-[20px] pt-[0px] pb-[0px]">
+                  <div className="bg-card rounded-xl px-4 lg:px-8 py-3 lg:py-5 font-satoshi font-normal text-[14px] lg:text-[16px] leading-[22px] lg:leading-[26px] text-card-foreground pl-[20px] pr-[20px] pt-[5px] pb-[5px]">
                     {/* Lesson Title inside content card */}
                     <div className="mb-4 lg:mb-6">
                       <h2 className="text-lg lg:text-xl font-bold text-foreground flex items-center font-satoshi mt-[0px] mb-[0px] pl-[0px] pr-[0px] ml-[0px] mr-[0px]" style={{fontSize: '24px'}}>
