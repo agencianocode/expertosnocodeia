@@ -960,9 +960,14 @@ export default function Course() {
                     const progress = moduleProgress[module.id] || { total: 0, completed: 0, percentage: 0 };
 
                     return (
-                      <div key={module.id} className="mb-4 border border-border rounded-lg overflow-hidden">
+                      <div key={module.id} className="mb-4 border border-border/40 rounded-lg overflow-hidden">
                         {/* Module Header with Circle and Progress */}
-                        <div className="flex items-start gap-3 p-4 bg-black/40 border-b border-border">
+                        <div className={cn(
+                          "flex items-start gap-3 p-4 transition-colors",
+                          isCollapsed 
+                            ? "bg-transparent hover:bg-border/10" 
+                            : "bg-[#191919] border-b border-border/40"
+                        )}>
                           <div className="h-3 w-3 rounded-full border border-primary/60 bg-transparent flex-shrink-0 mt-2" />
                           <div className="flex-1">
                             <div className="flex items-start justify-between">
@@ -1007,10 +1012,10 @@ export default function Course() {
                                   <div
                                     className={cn(
                                       "group relative flex items-start gap-3 min-h-[32px] rounded-lg px-3 py-3 transition-all",
-                                      "bg-card/50 border border-border/30",
+                                      "bg-[#262626] border border-border/30",
                                       isCurrentLesson 
                                         ? "bg-primary/10 border-primary/40" 
-                                        : "hover:bg-card/80 hover:border-border/50"
+                                        : "hover:bg-[#2d2d2d] hover:border-border/50"
                                     )}
                                   >
                                     {/* Circle Marker - Clickable to toggle completion */}
