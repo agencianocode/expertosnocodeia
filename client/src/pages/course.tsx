@@ -1006,7 +1006,11 @@ export default function Course() {
                                   {/* Lesson Row */}
                                   <div
                                     className={cn(
-                                      "group relative flex items-start gap-3 min-h-[32px] rounded-lg px-2 py-1 -mx-2 transition-all"
+                                      "group relative flex items-start gap-3 min-h-[32px] rounded-lg px-3 py-3 transition-all",
+                                      "bg-card/50 border border-border/30",
+                                      isCurrentLesson 
+                                        ? "bg-primary/10 border-primary/40" 
+                                        : "hover:bg-card/80 hover:border-border/50"
                                     )}
                                   >
                                     {/* Circle Marker - Clickable to toggle completion */}
