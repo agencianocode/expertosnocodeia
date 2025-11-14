@@ -112,7 +112,7 @@ export default function Room() {
         <main className="flex-1 overflow-auto pb-20 lg:pb-0 md:ml-16 lg:ml-[250px]">
           {/* Hero Banner - Full width image only */}
           {room.heroImageUrl && (
-            <div className="relative w-full h-[400px] overflow-hidden">
+            <div className="relative w-full h-[clamp(300px,60vh,600px)] overflow-hidden">
               <img 
                 src={room.heroImageUrl}
                 alt={room.title}

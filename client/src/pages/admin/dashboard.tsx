@@ -1,6 +1,6 @@
 import { useAdmin } from "@/hooks/useAdmin";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, BookOpen, FolderOpen, Image, ClipboardList, MessageSquare } from "lucide-react";
+import { Users, BookOpen, FolderOpen, Image, ClipboardList, MessageSquare, DoorOpen } from "lucide-react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import Sidebar from "@/components/layout/sidebar";
@@ -135,6 +135,12 @@ export default function AdminDashboard() {
               <Button variant="outline" className="w-full justify-start">
                 <MessageSquare className="mr-2 h-4 w-4" />
                 Gestionar Comentarios
+              </Button>
+            </Link>
+            <Link href="/admin/rooms">
+              <Button variant="outline" className="w-full justify-start">
+                <DoorOpen className="mr-2 h-4 w-4" />
+                Gestionar Salas
               </Button>
             </Link>
             <Link href="/admin/content/course/new">

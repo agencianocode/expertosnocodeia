@@ -8,7 +8,7 @@ import { SupabaseStorageService } from "./supabaseStorage";
 import { ObjectStorageService, ObjectNotFoundError, objectStorageClient, parseObjectPath } from "./objectStorage";
 import { supabaseAuth, optionalSupabaseAuth, supabaseAdminAuth, AuthenticatedRequest } from "./supabaseAuth";
 import { setupSupabaseAuthRoutes } from "./supabaseAuthRoutes";
-import { insertLessonResourceSchema } from "../shared/schema";
+import { insertLessonResourceSchema, updateRoomSchema } from "../shared/schema";
 import { sendNewCommentNotification, getAdminNotificationEmails } from "./emailNotifications";
 
 // Legacy auth fallback (will be removed after migration)
@@ -396,6 +396,40 @@ export function registerSimpleRoutes(app: Express): Server {
     } catch (error) {
       console.error("Error fetching room detail:", error);
       res.status(500).json({ message: "Failed to fetch room detail" });
+    }
+  });
+
+  // Update room (admin only)
+  app.patch("/api/admin/rooms/:id", simpleAdminAuth, isAdmin, async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+      
+      // Validate request body
+      const validation = updateRoomSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ 
+          message: "Datos inválidos", 
+          errors: validation.error.errors 
+        });
+      }
+      
+      const roomData = validation.data;
+      
+      // If updating slug, check uniqueness
+      if (roomData.slug) {
+        const existingRoom = await storage.getRoomBySlug(roomData.slug);
+        if (existingRoom && existingRoom.id !== id) {
+          return res.status(400).json({ 
+            message: "El slug ya está en uso por otra sala" 
+          });
+        }
+      }
+      
+      const updatedRoom = await storage.updateRoom(id, roomData);
+      res.json(updatedRoom);
+    } catch (error) {
+      console.error("Error updating room:", error);
+      res.status(500).json({ message: "Error interno del servidor" });
     }
   });
 

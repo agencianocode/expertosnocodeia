@@ -73,6 +73,7 @@ import {
   // Rooms & Phases types
   type Room,
   type InsertRoom,
+  type UpdateRoom,
   type Phase,
   type InsertPhase,
   type PhaseContent,
@@ -249,6 +250,7 @@ export interface IStorage {
   
   // Room operations
   getPublishedRooms(): Promise<Room[]>;
+  getRoomById(id: string): Promise<Room | undefined>;
   getRoomBySlug(slug: string): Promise<Room | undefined>;
   getRoomDetailWithPhases(slug: string, userId?: string): Promise<{
     room: Room;
@@ -260,7 +262,7 @@ export interface IStorage {
   } | undefined>;
   getPhaseContent(phaseId: string): Promise<Array<PhaseContent & { courseData?: Course }>>;
   createRoom(data: InsertRoom): Promise<Room>;
-  updateRoom(id: string, data: Partial<InsertRoom>): Promise<Room>;
+  updateRoom(id: string, data: UpdateRoom): Promise<Room>;
   
   // Phase operations
   createPhase(data: InsertPhase): Promise<Phase>;
@@ -1589,6 +1591,14 @@ export class DatabaseStorage implements IStorage {
       .orderBy(rooms.order);
   }
 
+  async getRoomById(id: string): Promise<Room | undefined> {
+    const [room] = await db
+      .select()
+      .from(rooms)
+      .where(eq(rooms.id, id));
+    return room;
+  }
+
   async getRoomBySlug(slug: string): Promise<Room | undefined> {
     const [room] = await db
       .select()
@@ -1696,7 +1706,7 @@ export class DatabaseStorage implements IStorage {
     return created;
   }
 
-  async updateRoom(id: string, data: Partial<InsertRoom>): Promise<Room> {
+  async updateRoom(id: string, data: UpdateRoom): Promise<Room> {
     const [updated] = await db
       .update(rooms)
       .set({ ...data, updatedAt: new Date() })

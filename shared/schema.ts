@@ -882,6 +882,12 @@ export const insertPromoBannerSchema = createInsertSchema(promoBanners).omit({
   updatedAt: true,
 });
 
+// Update Schemas (for PATCH operations)
+export const updateRoomSchema = insertRoomSchema.partial().refine(
+  (data) => Object.keys(data).length > 0,
+  { message: 'At least one field must be provided' }
+);
+
 // Select Types
 export type Room = typeof rooms.$inferSelect;
 export type Phase = typeof phases.$inferSelect;
@@ -897,3 +903,6 @@ export type InsertPhaseContent = z.infer<typeof insertPhaseContentSchema>;
 export type InsertPurchase = z.infer<typeof insertPurchaseSchema>;
 export type InsertUserAccess = z.infer<typeof insertUserAccessSchema>;
 export type InsertPromoBanner = z.infer<typeof insertPromoBannerSchema>;
+
+// Update Types
+export type UpdateRoom = z.infer<typeof updateRoomSchema>;

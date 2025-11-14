@@ -29,6 +29,8 @@ import MediaUpload from "@/pages/admin/media-upload";
 import WorkshopEditor from "@/pages/admin/workshop-editor";
 import OnboardingAnalytics from "@/pages/admin/onboarding-analytics";
 import AdminComments from "@/pages/admin/comments";
+import RoomsManagement from "@/pages/admin/rooms";
+import RoomForm from "@/pages/admin/room-form";
 import Setup from "@/pages/setup";
 import Lesson from "@/pages/lesson";
 import Events from "@/pages/events";
@@ -165,6 +167,8 @@ function Router() {
           <Route path="/admin/media" component={AdminMedia} />
           <Route path="/admin/media/upload" component={MediaUpload} />
           <Route path="/admin/comentarios" component={AdminComments} />
+          <Route path="/admin/rooms" component={RoomsManagement} />
+          <Route path="/admin/rooms/:id/edit" component={RoomForm} />
           <Route path="/setup" component={Setup} />
           <Route path="/debug" component={DebugPage} />
           <Route component={NotFound} />
