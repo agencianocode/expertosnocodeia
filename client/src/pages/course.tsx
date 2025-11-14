@@ -44,9 +44,10 @@ const getYouTubeEmbedUrl = (url: string) => {
 export default function Course() {
   const { toast } = useToast();
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
-  const { id } = useParams<{ id: string }>();
+  const { id, roomSlug } = useParams<{ id: string; roomSlug?: string }>();
   const [location, setLocation] = useLocation();
   const isRoomContext = location.startsWith('/sala/'); // Detect if viewing from a room context
+  const backUrl = isRoomContext && roomSlug ? `/sala/${roomSlug}` : '/courses';
   const [currentLessonIndex, setCurrentLessonIndex] = useState(0);
   const [hasCheckedSavedPosition, setHasCheckedSavedPosition] = useState(false);
   const queryClient = useQueryClient();
@@ -706,10 +707,10 @@ export default function Course() {
         <main className="flex-1 lg:w-[920px] bg-background overflow-y-auto hide-scrollbar h-screen">
           {/* Top Navigation Bar */}
           <div className="px-4 lg:px-8 py-4 flex items-center justify-between">
-            <Link href="/courses" className="flex-1 mt-[5px] mb-[5px]">
+            <Link href={backUrl} className="flex-1 mt-[5px] mb-[5px]">
               <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground">
                 <ChevronLeft className="h-4 w-4 mr-1" />
-                Volver a los cursos
+                {isRoomContext ? 'Volver a la sala' : 'Volver a los cursos'}
               </Button>
             </Link>
             {/* Save Course Button - Only on mobile */}
