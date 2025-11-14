@@ -120,6 +120,7 @@ export default function Saved() {
                         key={item.courseId}
                         course={item.course}
                         category={item.category}
+                        roomSlug={item.roomSlug}
                       />
                     ))}
                   </div>
@@ -139,6 +140,7 @@ export default function Saved() {
                         key={item.courseId}
                         course={item.course}
                         category={item.category}
+                        roomSlug={item.roomSlug}
                       />
                     ))}
                   </div>

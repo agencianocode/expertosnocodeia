@@ -22,9 +22,10 @@ interface CourseCardProps {
   lastLessonId?: string; // For "Continue where you left off" navigation
   showContinueText?: boolean; // Show "Continuar" text instead of normal navigation
   isAuthenticated?: boolean; // Whether user is authenticated - shows padlock if false
+  roomSlug?: string | null; // Optional room context for navigation
 }
 
-export default function CourseCard({ course, category, progress, variant = "default", lastLessonId, showContinueText = false, isAuthenticated = true }: CourseCardProps) {
+export default function CourseCard({ course, category, progress, variant = "default", lastLessonId, showContinueText = false, isAuthenticated = true, roomSlug }: CourseCardProps) {
   if (!course) return null;
   
   const [, setLocation] = useLocation();
@@ -49,7 +50,10 @@ export default function CourseCard({ course, category, progress, variant = "defa
         : '/api/users/saved-courses';
       
       if (method === 'POST') {
-        return await apiRequest('POST', url, { courseId: course.id });
+        return await apiRequest('POST', url, { 
+          courseId: course.id,
+          roomSlug: roomSlug || null, // Include room context if available
+        });
       } else {
         return await apiRequest('DELETE', url);
       }
@@ -139,12 +143,12 @@ export default function CourseCard({ course, category, progress, variant = "defa
           // Non-authenticated users will see blocked content in the course page
           let courseUrl;
           if (course.type === 'workshop') {
-            courseUrl = `/taller/${course.id}`;
+            courseUrl = roomSlug ? `/sala/${roomSlug}/taller/${course.id}` : `/taller/${course.id}`;
           } else if (course.type === 'guide') {
-            courseUrl = `/guia/${course.id}`;
+            courseUrl = roomSlug ? `/sala/${roomSlug}/guia/${course.id}` : `/guia/${course.id}`;
           } else {
             // Navigate to course - useLessonPosition will restore last viewed lesson
-            courseUrl = `/curso/${course.id}`;
+            courseUrl = roomSlug ? `/sala/${roomSlug}/curso/${course.id}` : `/curso/${course.id}`;
           }
           setLocation(courseUrl);
         }}
@@ -273,12 +277,12 @@ export default function CourseCard({ course, category, progress, variant = "defa
         // Non-authenticated users will see blocked content in the course page
         let courseUrl;
         if (course.type === 'workshop') {
-          courseUrl = `/taller/${course.id}`;
+          courseUrl = roomSlug ? `/sala/${roomSlug}/taller/${course.id}` : `/taller/${course.id}`;
         } else if (course.type === 'guide') {
-          courseUrl = `/guia/${course.id}`;
+          courseUrl = roomSlug ? `/sala/${roomSlug}/guia/${course.id}` : `/guia/${course.id}`;
         } else {
           // Navigate to course - useLessonPosition will restore last viewed lesson
-          courseUrl = `/curso/${course.id}`;
+          courseUrl = roomSlug ? `/sala/${roomSlug}/curso/${course.id}` : `/curso/${course.id}`;
         }
         setLocation(courseUrl);
       }}

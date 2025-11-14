@@ -1171,6 +1171,7 @@ export function registerSimpleRoutes(app: Express): Server {
         .select({
           id: userSavedCourses.id,
           courseId: userSavedCourses.courseId,
+          roomSlug: userSavedCourses.roomSlug,
           createdAt: userSavedCourses.createdAt,
           course: courses,
         })
@@ -1194,7 +1195,7 @@ export function registerSimpleRoutes(app: Express): Server {
         return res.status(401).json({ message: "Usuario no autenticado" });
       }
       
-      const { courseId } = req.body;
+      const { courseId, roomSlug } = req.body;
       if (!courseId) {
         return res.status(400).json({ message: "courseId es requerido" });
       }
@@ -1210,13 +1211,24 @@ export function registerSimpleRoutes(app: Express): Server {
         .limit(1);
       
       if (existing.length > 0) {
+        // Update roomSlug if it changed
+        if (roomSlug && existing[0].roomSlug !== roomSlug) {
+          await db
+            .update(userSavedCourses)
+            .set({ roomSlug })
+            .where(and(
+              eq(userSavedCourses.userId, userId),
+              eq(userSavedCourses.courseId, courseId)
+            ));
+        }
         return res.json({ message: "Curso ya guardado" });
       }
       
-      // Save the course
+      // Save the course with optional roomSlug
       await db.insert(userSavedCourses).values({
         userId,
         courseId,
+        roomSlug: roomSlug || null,
       });
       
       res.json({ message: "Curso guardado exitosamente" });

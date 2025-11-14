@@ -296,7 +296,10 @@ export default function Course() {
         : '/api/users/saved-courses';
       
       if (method === 'POST') {
-        return await apiRequest('POST', url, { courseId: id });
+        return await apiRequest('POST', url, { 
+          courseId: id,
+          roomSlug: roomSlug || null, // Include room context if available
+        });
       } else {
         return await apiRequest('DELETE', url);
       }

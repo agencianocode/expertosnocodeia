@@ -95,6 +95,7 @@ export const userSavedCourses = pgTable("user_saved_courses", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id").references(() => users.id),
   courseId: varchar("course_id").references(() => courses.id),
+  roomSlug: varchar("room_slug"), // Optional: tracks if saved from a room context
   createdAt: timestamp("created_at").defaultNow(),
 });
 
