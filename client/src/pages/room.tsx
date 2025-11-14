@@ -141,15 +141,6 @@ export default function Room() {
                     <div className="space-y-4">
                       {/* Phase Header */}
                       <div className="flex items-center gap-4">
-                        <div className={cn(
-                          "flex items-center justify-center w-12 h-12 rounded-full text-xl font-bold",
-                          isLockedForUser 
-                            ? "bg-muted text-muted-foreground" 
-                            : "bg-primary text-primary-foreground"
-                        )}>
-                          {index + 1}
-                        </div>
-                        
                         <div className="flex-1">
                           <div className="flex items-center gap-3">
                             <h3 className="text-2xl font-bold">{phase.title}</h3>
