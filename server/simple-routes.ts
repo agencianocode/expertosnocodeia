@@ -8,8 +8,10 @@ import { SupabaseStorageService } from "./supabaseStorage";
 import { ObjectStorageService, ObjectNotFoundError, objectStorageClient, parseObjectPath } from "./objectStorage";
 import { supabaseAuth, optionalSupabaseAuth, supabaseAdminAuth, AuthenticatedRequest } from "./supabaseAuth";
 import { setupSupabaseAuthRoutes } from "./supabaseAuthRoutes";
-import { insertLessonResourceSchema, updateRoomSchema } from "../shared/schema";
+import { insertLessonResourceSchema, updateRoomSchema, userSavedCourses, courses } from "../shared/schema";
 import { sendNewCommentNotification, getAdminNotificationEmails } from "./emailNotifications";
+import { db } from "./db";
+import { eq, desc, and } from "drizzle-orm";
 
 // Legacy auth fallback (will be removed after migration)
 const legacyAuth = async (req: any, res: Response, next: any) => {
@@ -1164,11 +1166,86 @@ export function registerSimpleRoutes(app: Express): Server {
       if (!userId) {
         return res.status(401).json({ message: "Usuario no autenticado" });
       }
-      // For now, return empty array since this method might not exist
-      const savedCourses: any[] = [];
+      
+      const savedCourses = await db
+        .select({
+          id: userSavedCourses.id,
+          courseId: userSavedCourses.courseId,
+          createdAt: userSavedCourses.createdAt,
+          course: courses,
+        })
+        .from(userSavedCourses)
+        .innerJoin(courses, eq(userSavedCourses.courseId, courses.id))
+        .where(eq(userSavedCourses.userId, userId))
+        .orderBy(desc(userSavedCourses.createdAt));
+      
       res.json(savedCourses);
     } catch (error) {
       console.error("Error fetching saved courses:", error);
+      res.status(500).json({ message: "Error interno del servidor" });
+    }
+  });
+
+  // Save a course for user
+  app.post("/api/users/saved-courses", legacyAuth, async (req: Request, res: Response) => {
+    try {
+      const userId = (req as any).user?.claims?.sub;
+      if (!userId) {
+        return res.status(401).json({ message: "Usuario no autenticado" });
+      }
+      
+      const { courseId } = req.body;
+      if (!courseId) {
+        return res.status(400).json({ message: "courseId es requerido" });
+      }
+      
+      // Check if already saved
+      const existing = await db
+        .select()
+        .from(userSavedCourses)
+        .where(and(
+          eq(userSavedCourses.userId, userId),
+          eq(userSavedCourses.courseId, courseId)
+        ))
+        .limit(1);
+      
+      if (existing.length > 0) {
+        return res.json({ message: "Curso ya guardado" });
+      }
+      
+      // Save the course
+      await db.insert(userSavedCourses).values({
+        userId,
+        courseId,
+      });
+      
+      res.json({ message: "Curso guardado exitosamente" });
+    } catch (error) {
+      console.error("Error saving course:", error);
+      res.status(500).json({ message: "Error interno del servidor" });
+    }
+  });
+
+  // Remove a saved course
+  app.delete("/api/users/saved-courses/:courseId", legacyAuth, async (req: Request, res: Response) => {
+    try {
+      const userId = (req as any).user?.claims?.sub;
+      if (!userId) {
+        return res.status(401).json({ message: "Usuario no autenticado" });
+      }
+      
+      const { courseId } = req.params;
+      
+      await db
+        .delete(userSavedCourses)
+        .where(and(
+          eq(userSavedCourses.userId, userId),
+          eq(userSavedCourses.courseId, courseId)
+        ));
+      
+      res.json({ message: "Curso eliminado de guardados" });
+    } catch (error) {
+      console.error("Error removing saved course:", error);
       res.status(500).json({ message: "Error interno del servidor" });
     }
   });
