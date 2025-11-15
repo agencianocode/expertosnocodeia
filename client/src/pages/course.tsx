@@ -1395,7 +1395,7 @@ export default function Course() {
               {/* Next Course Card - Desktop - Only show in room context when there is a next course */}
               {isRoomContext && nextCourse && (
                 <Link href={`/sala/${roomSlug}/curso/${nextCourse.courseId}`}>
-                  <div className="mt-4 p-4 bg-[#1a1a1a] border border-[#faa318] rounded-lg cursor-pointer hover:bg-[#1a1a1a]/80 transition-all">
+                  <div className="p-4 bg-[#1a1a1a] border border-[#faa318] rounded-lg cursor-pointer hover:bg-[#1a1a1a]/80 transition-all pt-[6px] pb-[6px] mt-[16px] mb-[16px]">
                     <div className="text-xs text-gray-400 mb-2 font-satoshi">Próximo contenido</div>
                     <div className="flex items-center gap-3">
                       {nextCourse.coverImageUrl && (
