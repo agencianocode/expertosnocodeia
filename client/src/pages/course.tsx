@@ -765,7 +765,7 @@ export default function Course() {
                 size="sm" 
                 className={cn(
                   "text-muted-foreground hover:text-foreground",
-                  isRoomContext && "text-[#faa318] hover:text-[#faa318]/90"
+                  isRoomContext && "text-[#faa318] hover:text-[#faa318] hover:bg-black"
                 )}
               >
                 <ChevronLeft className="h-4 w-4 mr-1" />
@@ -876,6 +876,7 @@ export default function Course() {
                                     data-testid="button-toggle-lesson-complete"
                                     className={cn(
                                       "h-8 px-3",
+                                      isRoomContext && !isLessonCompleted(currentLesson.id) && "hover:bg-black hover:text-white",
                                       isLessonCompleted(currentLesson.id) && "bg-[#faa318] text-white border-[#faa318] hover:bg-[#faa318]/90"
                                     )}
                                   >
@@ -902,6 +903,7 @@ export default function Course() {
                                     data-testid="button-save-course"
                                     className={cn(
                                       "h-8 px-3",
+                                      isRoomContext && !isSaved && "hover:bg-black hover:text-white",
                                       isSaved && "bg-[#faa318] text-white border-[#faa318] hover:bg-[#faa318]/90"
                                     )}
                                   >
