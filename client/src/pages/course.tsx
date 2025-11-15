@@ -1064,12 +1064,21 @@ export default function Course() {
                     return (
                       <div key={module.id} className="mb-4 border border-border/40 rounded-lg overflow-hidden">
                         {/* Module Header with Circle and Progress */}
-                        <div className={cn(
-                          "flex items-start gap-3 p-4 transition-colors",
-                          isCollapsed 
-                            ? "bg-transparent hover:bg-border/10" 
-                            : "bg-[#191919] border-b border-border/40"
-                        )}>
+                        <div 
+                          className={cn(
+                            "flex items-start gap-3 p-4 transition-colors cursor-pointer",
+                            isCollapsed 
+                              ? "bg-transparent hover:bg-border/10" 
+                              : "bg-[#191919] border-b border-border/40"
+                          )}
+                          onClick={() => {
+                            if (!hasSubLessons) {
+                              isAuthenticated && handleLessonClick(moduleIndex);
+                            } else {
+                              toggleModuleCollapse(module.id);
+                            }
+                          }}
+                        >
                           <div className="h-3 w-3 rounded-full border border-primary/60 bg-transparent flex-shrink-0 mt-2" />
                           <div className="flex-1">
                             <div className="flex items-start justify-between">
@@ -1197,26 +1206,29 @@ export default function Course() {
                       {/* Module Header */}
                       <div
                         className={cn(
-                          "group py-4 px-4 rounded-lg transition-colors",
+                          "group py-4 px-4 rounded-lg transition-colors cursor-pointer",
                           hasSubLessons 
-                            ? "text-muted-foreground" 
+                            ? "text-muted-foreground hover:bg-muted/30" 
                             : isAuthenticated 
                               ? cn(
-                                  "cursor-pointer text-muted-foreground",
+                                  "text-muted-foreground",
                                   moduleIndex === currentLessonIndex 
                                     ? "bg-muted border border-border" 
                                     : "hover:bg-muted/50 hover:border hover:border-border"
                                 )
-                              : "cursor-pointer hover:bg-muted/30 text-muted-foreground"
+                              : "hover:bg-muted/30 text-muted-foreground"
                         )}
+                        onClick={() => {
+                          if (!hasSubLessons) {
+                            handleLessonClick(moduleIndex);
+                          } else {
+                            toggleModuleCollapse(module.id);
+                          }
+                        }}
                       >
                         <div className="flex items-start justify-between">
                           <div 
-                            className={cn(
-                              "flex items-start space-x-3 flex-1",
-                              !hasSubLessons && "cursor-pointer"
-                            )}
-                            onClick={() => !hasSubLessons && handleLessonClick(moduleIndex)}
+                            className="flex items-start space-x-3 flex-1"
                           >
                             <div className="w-6 h-6 rounded border flex items-center justify-center font-medium flex-shrink-0 bg-muted text-foreground border-border text-[14px]">
                               {moduleNumber}
@@ -1690,7 +1702,17 @@ export default function Course() {
                     return (
                       <div key={module.id} className="mb-4 border border-gray-700 rounded-lg overflow-hidden">
                         {/* Module Header with Circle and Progress */}
-                        <div className="flex items-start gap-3 p-4 bg-black/40 border-b border-gray-700">
+                        <div 
+                          className="flex items-start gap-3 p-4 bg-black/40 border-b border-gray-700 cursor-pointer hover:bg-black/50 transition-colors"
+                          onClick={() => {
+                            if (!hasSubLessons) {
+                              isAuthenticated && handleLessonClick(moduleIndex);
+                              setIsMobileLessonsOpen(false);
+                            } else {
+                              toggleModuleCollapse(module.id);
+                            }
+                          }}
+                        >
                           <div className="h-3 w-3 rounded-full border border-primary/60 bg-transparent flex-shrink-0 mt-2" />
                           <div className="flex-1">
                             <div className="flex items-start justify-between">
@@ -1809,28 +1831,27 @@ export default function Course() {
                       {/* Module Header */}
                       <div
                         className={cn(
-                          "group p-4 rounded-lg transition-all",
+                          "group p-4 rounded-lg transition-all cursor-pointer",
                           hasSubLessons 
-                            ? "bg-transparent" 
+                            ? "bg-transparent hover:bg-[#262626]/30" 
                             : cn(
                                 moduleIndex === currentLessonIndex 
                                   ? "bg-[#262626] border border-[#404040]" 
                                   : "bg-transparent hover:bg-[#262626]/50"
                               )
                         )}
+                        onClick={() => {
+                          if (!hasSubLessons) {
+                            handleLessonClick(moduleIndex);
+                            setIsMobileLessonsOpen(false);
+                          } else {
+                            toggleModuleCollapse(module.id);
+                          }
+                        }}
                       >
                         <div className="flex items-start justify-between">
                           <div 
-                            className={cn(
-                              "flex items-start space-x-3 flex-1",
-                              !hasSubLessons && "cursor-pointer"
-                            )}
-                            onClick={() => {
-                              if (!hasSubLessons) {
-                                handleLessonClick(moduleIndex);
-                                setIsMobileLessonsOpen(false);
-                              }
-                            }}
+                            className="flex items-start space-x-3 flex-1"
                           >
                             <div className="w-8 h-8 rounded-lg border flex items-center justify-center font-medium flex-shrink-0 bg-gray-600 text-white border-gray-600 text-sm">
                               {moduleNumber}
