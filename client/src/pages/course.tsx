@@ -893,7 +893,10 @@ export default function Course() {
                                     onClick={() => saveCourseMutation.mutate()}
                                     disabled={saveCourseMutation.isPending}
                                     data-testid="button-save-course"
-                                    className="h-8 px-3"
+                                    className={cn(
+                                      "h-8 px-3",
+                                      isSaved && "bg-[#faa318] text-white border-[#faa318] hover:bg-[#faa318]/90"
+                                    )}
                                   >
                                     {isSaved ? (
                                       <Heart className="h-4 w-4 fill-current" />
