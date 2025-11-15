@@ -189,13 +189,13 @@ export default function Room() {
                             <div key={content.id} className="group">
                               <Link href={getHref()}>
                                 <div className={cn(
-                                  "relative cursor-pointer transition-all duration-300",
-                                  "hover:scale-105 hover:z-10 hover:shadow-2xl"
+                                  "relative transition-all duration-300",
+                                  isLockedForUser ? "cursor-not-allowed" : "cursor-pointer hover:scale-105 hover:z-10 hover:shadow-2xl"
                                 )}>
                                   {/* Poster Image */}
                                   <div className={cn(
                                     "relative aspect-[2/3] rounded-lg overflow-hidden group-hover:rounded-b-none",
-                                    isLockedForUser && "opacity-50 cursor-not-allowed"
+                                    isLockedForUser && "opacity-50"
                                   )}>
                                     {content.courseData?.coverImageUrl ? (
                                       <img 
