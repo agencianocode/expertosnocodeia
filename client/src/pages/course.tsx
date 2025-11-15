@@ -1085,7 +1085,7 @@ export default function Course() {
                               <h4 className="font-satoshi font-medium text-[15px] text-foreground">
                                 {module.title}
                               </h4>
-                              <span className="text-[#23262f] font-semibold text-sm ml-2 flex-shrink-0">
+                              <span className="text-[#faa318] font-semibold text-sm ml-2 flex-shrink-0">
                                 {progress.percentage}%
                               </span>
                             </div>
@@ -1134,9 +1134,9 @@ export default function Course() {
                                       className={cn(
                                         "h-4 w-4 rounded-full border-2 flex-shrink-0 transition-all relative z-10 mt-0.5",
                                         isCompleted 
-                                          ? "bg-[#23262f] border-[#23262f]" 
+                                          ? "bg-[#faa318] border-[#faa318]" 
                                           : "bg-transparent border-border",
-                                        isCurrentLesson && "ring-2 ring-[#23262f]/40",
+                                        isCurrentLesson && "ring-2 ring-[#faa318]/40",
                                         !isAuthenticated && "bg-muted border-muted",
                                         isAuthenticated && "cursor-pointer hover:scale-110"
                                       )}
@@ -1161,8 +1161,8 @@ export default function Course() {
                                       onClick={() => isAuthenticated && handleLessonClick(subIndex)}
                                     >
                                       <div className={cn(
-                                        "font-satoshi text-[14px] pr-2 transition-colors hover:text-[#23262f]",
-                                        isCurrentLesson ? "text-[#23262f] font-medium" : "text-muted-foreground"
+                                        "font-satoshi text-[14px] pr-2 transition-colors hover:text-[#faa318]",
+                                        isCurrentLesson ? "text-[#faa318] font-medium" : "text-muted-foreground"
                                       )}>
                                         {subLesson.title}
                                       </div>
@@ -1719,7 +1719,7 @@ export default function Course() {
                               <h4 className="font-satoshi font-medium text-[15px] text-white">
                                 {module.title}
                               </h4>
-                              <span className="text-[#23262f] font-semibold text-sm ml-2 flex-shrink-0">
+                              <span className="text-[#faa318] font-semibold text-sm ml-2 flex-shrink-0">
                                 {progress.percentage}%
                               </span>
                             </div>
@@ -1764,10 +1764,10 @@ export default function Course() {
                                       className={cn(
                                         "h-5 w-5 rounded-full border-[2.5px] flex-shrink-0 transition-all relative z-10",
                                         isCompleted 
-                                          ? "bg-[#23262f] border-[#23262f] shadow-lg shadow-[#23262f]/20" 
+                                          ? "bg-[#faa318] border-[#faa318] shadow-lg shadow-[#faa318]/20" 
                                           : "bg-black border-gray-600",
-                                        isCurrentLesson && "ring-2 ring-[#23262f]/40 ring-offset-2 ring-offset-black",
-                                        "cursor-pointer hover:scale-110 hover:border-[#23262f]/60"
+                                        isCurrentLesson && "ring-2 ring-[#faa318]/40 ring-offset-2 ring-offset-black",
+                                        "cursor-pointer hover:scale-110 hover:border-[#faa318]/60"
                                       )}
                                       onClick={(e) => {
                                         e.stopPropagation();
