@@ -385,6 +385,12 @@ export default function Course() {
     return progress;
   }, [modules, subLessonsByParent, completedLessons]);
 
+  // Reset saved position check when course ID changes
+  useEffect(() => {
+    setHasCheckedSavedPosition(false);
+    setCurrentLessonIndex(0);
+  }, [id]);
+
   // Get indices of only navigable lessons (leaf lessons) in lessonsArray
   const navigableLessonIndices = useMemo(() => {
     const indices = lessonsArray
