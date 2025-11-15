@@ -1406,7 +1406,7 @@ export default function Course() {
                         />
                       )}
                       <div className="flex-1">
-                        <div className="text-[#faa318] font-medium text-sm font-satoshi">
+                        <div className="text-[#faa318] font-satoshi text-[16px] font-bold">
                           {nextCourse.title}
                         </div>
                       </div>
