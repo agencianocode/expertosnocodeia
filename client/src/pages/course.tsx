@@ -1085,7 +1085,7 @@ export default function Course() {
                               <h4 className="font-satoshi font-medium text-[15px] text-foreground">
                                 {module.title}
                               </h4>
-                              <span className="text-primary font-semibold text-sm ml-2 flex-shrink-0">
+                              <span className="text-[#151515] font-semibold text-sm ml-2 flex-shrink-0">
                                 {progress.percentage}%
                               </span>
                             </div>
@@ -1161,8 +1161,8 @@ export default function Course() {
                                       onClick={() => isAuthenticated && handleLessonClick(subIndex)}
                                     >
                                       <div className={cn(
-                                        "font-satoshi text-[14px] pr-2 transition-colors",
-                                        isCurrentLesson ? "text-primary font-medium" : "text-muted-foreground"
+                                        "font-satoshi text-[14px] pr-2 transition-colors hover:text-[#151515]",
+                                        isCurrentLesson ? "text-[#151515] font-medium" : "text-muted-foreground"
                                       )}>
                                         {subLesson.title}
                                       </div>
@@ -1719,7 +1719,7 @@ export default function Course() {
                               <h4 className="font-satoshi font-medium text-[15px] text-white">
                                 {module.title}
                               </h4>
-                              <span className="text-primary font-semibold text-sm ml-2 flex-shrink-0">
+                              <span className="text-[#151515] font-semibold text-sm ml-2 flex-shrink-0">
                                 {progress.percentage}%
                               </span>
                             </div>
@@ -1788,8 +1788,8 @@ export default function Course() {
                                       }}
                                     >
                                       <div className={cn(
-                                        "font-satoshi text-[14px] pr-2 transition-colors",
-                                        isCurrentLesson ? "text-primary font-medium" : "text-gray-300"
+                                        "font-satoshi text-[14px] pr-2 transition-colors hover:text-[#151515]",
+                                        isCurrentLesson ? "text-[#151515] font-medium" : "text-gray-300"
                                       )}>
                                         {subLesson.title}
                                       </div>
