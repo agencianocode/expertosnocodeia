@@ -268,6 +268,7 @@ export function LessonComments({ lessonId }: LessonCommentsProps) {
             onClick={handleSubmitComment}
             disabled={createCommentMutation.isPending || !newComment.trim()}
             data-testid="button-submit-comment"
+            className="bg-[#faa318] text-white hover:bg-[#faa318]/90"
           >
             <Send className="h-4 w-4 mr-2" />
             {createCommentMutation.isPending ? 'Publicando...' : 'Publicar comentario'}

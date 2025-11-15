@@ -867,7 +867,10 @@ export default function Course() {
                                     onClick={() => handleToggleComplete(currentLesson.id)}
                                     disabled={markLessonCompleteMutation.isPending || unmarkLessonCompleteMutation.isPending}
                                     data-testid="button-toggle-lesson-complete"
-                                    className="h-8 px-3"
+                                    className={cn(
+                                      "h-8 px-3",
+                                      isLessonCompleted(currentLesson.id) && "bg-[#faa318] text-white border-[#faa318] hover:bg-[#faa318]/90"
+                                    )}
                                   >
                                     {isLessonCompleted(currentLesson.id) ? (
                                       <CheckCircle2 className="h-4 w-4 fill-current" />
@@ -975,7 +978,7 @@ export default function Course() {
                     <button 
                       onClick={handleNextLesson}
                       disabled={currentLessonIndex >= lessonsArray.length - 1}
-                      className="w-full bg-primary text-primary-foreground font-medium py-3 px-4 rounded-lg transition-colors disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center"
+                      className="w-full bg-[#faa318] text-white hover:bg-[#faa318]/90 font-medium py-3 px-4 rounded-lg transition-colors disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center"
                     >
                       Próxima lección
                       <ChevronRight className="ml-2" size={16} />
@@ -1006,11 +1009,11 @@ export default function Course() {
                     Lección anterior
                   </Button>
                   
-                  {/* Next Lesson Button - White */}
+                  {/* Next Lesson Button - Orange */}
                   <Button 
                     onClick={handleNextLesson}
                     disabled={currentLessonIndex >= lessonsArray.length - 1}
-                    className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90 font-medium py-3 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-primary"
+                    className="flex-1 bg-[#faa318] text-white hover:bg-[#faa318]/90 font-medium py-3 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-[#faa318]"
                   >
                     Próxima lección
                     <ChevronRight className="ml-2" size={16} />
@@ -1040,7 +1043,7 @@ export default function Course() {
                   {isAuthenticated ? `${Math.round(progressPercentage)}% Completado` : "0% Completado"}
                 </span>
               </div>
-              <Progress value={isAuthenticated ? progressPercentage : 0} className="h-2 bg-muted" />
+              <Progress value={isAuthenticated ? progressPercentage : 0} className="h-2 bg-muted [&>div]:bg-[#faa318]" />
             </div>
 
             {/* Lesson Resources Card - Show only if current lesson has resources */}
