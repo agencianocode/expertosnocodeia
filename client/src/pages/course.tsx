@@ -760,7 +760,14 @@ export default function Course() {
           {/* Top Navigation Bar */}
           <div className="px-4 lg:px-8 py-4 flex items-center justify-between">
             <Link href={backUrl} className="flex-1 mt-[5px] mb-[5px]">
-              <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className={cn(
+                  "text-muted-foreground hover:text-foreground",
+                  isRoomContext && "text-[#faa318] hover:text-[#faa318]/90"
+                )}
+              >
                 <ChevronLeft className="h-4 w-4 mr-1" />
                 {isRoomContext ? 'Volver a la sala' : 'Volver a los cursos'}
               </Button>
@@ -926,7 +933,7 @@ export default function Course() {
                       (currentLessonIndex === 0 ? // Primera lección: contenido completamente visible
                       (<div className="prose prose-sm lg:prose-base max-w-none">
                         {currentLesson.content && (
-                          <div className="markdown-content">
+                          <div className={cn("markdown-content", isRoomContext && "room-context")}>
                             <ReactMarkdown 
                               remarkPlugins={[remarkGfm]}
                               rehypePlugins={[rehypeHighlight, rehypeRaw]}
@@ -952,7 +959,7 @@ export default function Course() {
                       // Normal content for authenticated users  
                       (<div className="prose prose-sm lg:prose-base max-w-none">
                         {currentLesson.content && (
-                          <div className="markdown-content">
+                          <div className={cn("markdown-content", isRoomContext && "room-context")}>
                             <ReactMarkdown 
                               remarkPlugins={[remarkGfm]}
                               rehypePlugins={[rehypeHighlight, rehypeRaw]}

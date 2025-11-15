@@ -157,6 +157,19 @@ body {
   text-decoration: underline;
 }
 
+/* Room context link styles - Dark theme */
+.markdown-content.room-context a {
+  color: #faa318;
+  text-decoration: underline;
+  font-weight: 500;
+}
+
+.markdown-content.room-context a:hover {
+  color: #faa318;
+  opacity: 0.9;
+  text-decoration: underline;
+}
+
 /* Markdown content styles - Light theme */
 .light .markdown-content {
   color: hsl(0, 0%, 25%);
@@ -196,6 +209,19 @@ body {
 
 .light .markdown-content a:hover {
   color: hsl(262, 83%, 48%);
+  text-decoration: underline;
+}
+
+/* Room context link styles - Light theme */
+.light .markdown-content.room-context a {
+  color: #faa318;
+  text-decoration: underline;
+  font-weight: 500;
+}
+
+.light .markdown-content.room-context a:hover {
+  color: #faa318;
+  opacity: 0.9;
   text-decoration: underline;
 }
 
