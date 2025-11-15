@@ -261,6 +261,7 @@ export interface IStorage {
     userHasAccess: boolean;
   } | undefined>;
   getPhaseContent(phaseId: string): Promise<Array<PhaseContent & { courseData?: Course }>>;
+  getNextCourseInRoom(roomSlug: string, currentCourseId: string): Promise<{ courseId: string; title: string; coverImageUrl: string | null } | null>;
   createRoom(data: InsertRoom): Promise<Room>;
   updateRoom(id: string, data: UpdateRoom): Promise<Room>;
   
@@ -1699,6 +1700,56 @@ export class DatabaseStorage implements IStorage {
     );
 
     return enrichedContent;
+  }
+
+  async getNextCourseInRoom(roomSlug: string, currentCourseId: string): Promise<{ courseId: string; title: string; coverImageUrl: string | null } | null> {
+    // Get room
+    const room = await this.getRoomBySlug(roomSlug);
+    if (!room) return null;
+
+    // Get all phases with content
+    const phasesList = await db
+      .select()
+      .from(phases)
+      .where(eq(phases.roomId, room.id))
+      .orderBy(phases.order);
+
+    // Flatten all courses in order
+    const allCourses: Array<{ contentId: string; title: string; coverImageUrl: string | null }> = [];
+    
+    for (const phase of phasesList) {
+      const content = await db
+        .select()
+        .from(phaseContent)
+        .where(eq(phaseContent.phaseId, phase.id))
+        .orderBy(phaseContent.order);
+
+      for (const item of content) {
+        if (item.contentType === 'course') {
+          const courseData = await this.getCourseById(item.contentId);
+          if (courseData) {
+            allCourses.push({
+              contentId: item.contentId,
+              title: courseData.title,
+              coverImageUrl: courseData.coverImageUrl,
+            });
+          }
+        }
+      }
+    }
+
+    // Find current course index and return next one
+    const currentIndex = allCourses.findIndex(c => c.contentId === currentCourseId);
+    if (currentIndex === -1 || currentIndex === allCourses.length - 1) {
+      return null; // Current course not found or is last course
+    }
+
+    const nextCourse = allCourses[currentIndex + 1];
+    return {
+      courseId: nextCourse.contentId,
+      title: nextCourse.title,
+      coverImageUrl: nextCourse.coverImageUrl,
+    };
   }
 
   async createRoom(data: InsertRoom): Promise<Room> {

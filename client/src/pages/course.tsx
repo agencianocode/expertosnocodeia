@@ -266,6 +266,12 @@ export default function Course() {
     enabled: !!id, // Allow fetching for all users to show real course info
   });
 
+  // Get next course in room if in room context
+  const { data: nextCourse } = useQuery<{ courseId: string; title: string; coverImageUrl: string | null } | null>({
+    queryKey: [`/api/rooms/${roomSlug}/next-course/${id}`],
+    enabled: !!roomSlug && !!id && isRoomContext,
+  });
+
   const { data: lessons, isLoading: lessonsLoading } = useQuery({
     queryKey: [`/api/courses/${id}/lessons`],
     enabled: !!id, // Allow fetching for all users to show real lesson list
@@ -1991,6 +1997,32 @@ export default function Course() {
                       🎓 Tomar el examen final
                     </button>
                   </div>
+                )}
+
+                {/* Next Course Card - Only show in room context when there is a next course */}
+                {isRoomContext && nextCourse && (
+                  <Link href={`/sala/${roomSlug}/curso/${nextCourse.courseId}`}>
+                    <div className="mt-4 p-4 bg-[#1a1a1a] border border-[#faa318] rounded-lg cursor-pointer hover:bg-[#1a1a1a]/80 transition-all">
+                      <div className="text-xs text-gray-400 mb-2 font-satoshi">Próximo contenido</div>
+                      <div className="flex items-center gap-3">
+                        {nextCourse.coverImageUrl && (
+                          <img 
+                            src={nextCourse.coverImageUrl} 
+                            alt={nextCourse.title}
+                            className="w-12 h-16 object-cover rounded"
+                          />
+                        )}
+                        <div className="flex-1">
+                          <div className="text-[#faa318] font-medium text-sm font-satoshi">
+                            {nextCourse.title}
+                          </div>
+                        </div>
+                        <div className="text-[#faa318]">
+                          <ChevronRight size={20} />
+                        </div>
+                      </div>
+                    </div>
+                  </Link>
                 )}
               </div>
             </div>

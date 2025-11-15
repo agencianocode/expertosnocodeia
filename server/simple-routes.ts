@@ -401,6 +401,18 @@ export function registerSimpleRoutes(app: Express): Server {
     }
   });
 
+  // Get next course in room
+  app.get("/api/rooms/:slug/next-course/:courseId", async (req: Request, res: Response) => {
+    try {
+      const { slug, courseId } = req.params;
+      const nextCourse = await storage.getNextCourseInRoom(slug, courseId);
+      res.json(nextCourse);
+    } catch (error) {
+      console.error("Error fetching next course in room:", error);
+      res.status(500).json({ message: "Failed to fetch next course" });
+    }
+  });
+
   // Update room (admin only)
   app.patch("/api/admin/rooms/:id", simpleAdminAuth, isAdmin, async (req: Request, res: Response) => {
     try {
