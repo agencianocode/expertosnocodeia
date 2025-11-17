@@ -172,19 +172,7 @@ export default function CourseForm() {
       queryClient.invalidateQueries({ queryKey: ["/api/courses"] });
       queryClient.invalidateQueries({ queryKey: ["/api/guides"] });
       
-      // Navigate to appropriate view if published
-      if (data.isPublished) {
-        if (resultType === 'guide') {
-          navigate('/guides');
-        } else if (resultType === 'workshop') {
-          navigate('/workshops');
-        } else {
-          navigate('/courses');
-        }
-      } else {
-        // Navigate to admin content list
-        navigate('/admin/content');
-      }
+      // Stay on current page - no navigation
     },
     onError: (error: Error) => {
       toast({

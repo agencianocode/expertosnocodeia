@@ -166,9 +166,7 @@ export default function LessonForm() {
         queryClient.invalidateQueries({ queryKey: ["/api/admin/lessons", lessonId] });
       }
       
-      if (!isEditing && courseId) {
-        setLocation(`/admin/content/course/${courseId}/lessons`);
-      }
+      // Stay on current page - no navigation
     },
     onError: (error: Error) => {
       toast({
