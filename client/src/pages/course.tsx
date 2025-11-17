@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/tooltip";
 import { LessonResources } from "@/components/lesson-resources";
 import { LessonComments } from "@/components/LessonComments";
-import { Award, Check, ChevronRight, ChevronLeft, Users, Bot, Code, Megaphone, Settings, DollarSign, Heart, Building, CheckSquare, Scale, BarChart, GraduationCap, PlayCircle, Clock, CheckCircle2, BookOpen, Play, Lock } from "lucide-react";
+import { Award, Check, ChevronRight, ChevronLeft, Menu, Users, Bot, Code, Megaphone, Settings, DollarSign, Heart, Building, CheckSquare, Scale, BarChart, GraduationCap, PlayCircle, Clock, CheckCircle2, BookOpen, Play, Lock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -56,6 +56,7 @@ export default function Course() {
   const backUrl = isRoomContext && roomSlug ? `/sala/${roomSlug}` : '/courses';
   const [currentLessonIndex, setCurrentLessonIndex] = useState(0);
   const [hasCheckedSavedPosition, setHasCheckedSavedPosition] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
   const queryClient = useQueryClient();
   const { getSavedLessonPosition, saveLessonPosition } = useLessonPosition();
 
@@ -760,13 +761,35 @@ export default function Course() {
     <div className="min-h-screen bg-background text-foreground">
       {/* Mobile Header */}
       <MobileHeader />
-      <div className="flex">
-        {/* Sidebar - Hidden on mobile */}
-        <div className="hidden lg:block">
+      <div className="flex relative">
+        {/* Sidebar - Hidden on mobile, with toggle on desktop */}
+        <div className={cn(
+          "hidden lg:block transition-transform duration-300 ease-in-out",
+          !sidebarOpen && "lg:-translate-x-full"
+        )}>
           <Sidebar />
         </div>
         
-      <div className="flex-1 flex bg-background lg:ml-[250px] lg:mr-[560px] h-screen overflow-y-auto hide-scrollbar">
+        {/* Toggle Button - Only visible on desktop */}
+        <button
+          onClick={() => setSidebarOpen(!sidebarOpen)}
+          className={cn(
+            "hidden lg:flex fixed top-4 z-50 items-center justify-center w-10 h-10 bg-card hover:bg-accent text-foreground rounded-full shadow-lg transition-all duration-300",
+            sidebarOpen ? "left-[260px]" : "left-4"
+          )}
+          data-testid="toggle-sidebar-button"
+        >
+          {sidebarOpen ? (
+            <ChevronLeft className="h-5 w-5" />
+          ) : (
+            <Menu className="h-5 w-5" />
+          )}
+        </button>
+        
+      <div className={cn(
+        "flex-1 flex bg-background lg:mr-[560px] h-screen overflow-y-auto hide-scrollbar transition-all duration-300",
+        sidebarOpen ? "lg:ml-[250px]" : "lg:ml-0"
+      )}>
         {/* Main Content - Center Column - Full width on mobile */}
         <main className="flex-1 lg:w-[920px] bg-background overflow-y-auto hide-scrollbar h-screen">
           {/* Top Navigation Bar */}

@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Lock, Play, BookOpen, Video, Calendar, Clock } from "lucide-react";
+import { Lock, Play, BookOpen, Video, Calendar, Clock, Menu, ChevronLeft } from "lucide-react";
 import { cn } from "@/lib/utils";
 import CourseCard from "@/components/course-card";
 import Sidebar from "@/components/layout/sidebar";
@@ -14,6 +14,7 @@ import MobileHeader from "@/components/layout/mobile-header";
 import { PromoBanner } from "@/components/PromoBanner";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
+import { useState } from "react";
 
 interface Phase {
   id: string;
@@ -73,6 +74,7 @@ interface RoomDetailResponse {
 export default function Room() {
   const { slug } = useParams();
   const { user, isAuthenticated } = useAuth();
+  const [sidebarOpen, setSidebarOpen] = useState(true);
 
   const { data: roomDetail, isLoading } = useQuery<RoomDetailResponse>({
     queryKey: [`/api/rooms/${slug}`],
@@ -113,12 +115,37 @@ export default function Room() {
       {/* Mobile Header */}
       <MobileHeader />
       
-      <div className="flex">
-        {/* Sidebar */}
-        <Sidebar />
+      <div className="flex relative">
+        {/* Sidebar with toggle functionality */}
+        <div className={cn(
+          "transition-transform duration-300 ease-in-out",
+          !sidebarOpen && "hidden lg:block lg:-translate-x-full"
+        )}>
+          <Sidebar />
+        </div>
+        
+        {/* Toggle Button - Only visible on desktop */}
+        <button
+          onClick={() => setSidebarOpen(!sidebarOpen)}
+          className={cn(
+            "hidden lg:flex fixed top-4 z-50 items-center justify-center w-10 h-10 bg-card hover:bg-accent text-foreground rounded-full shadow-lg transition-all duration-300",
+            sidebarOpen ? "left-[260px]" : "left-4"
+          )}
+          data-testid="toggle-sidebar-button"
+        >
+          {sidebarOpen ? (
+            <ChevronLeft className="h-5 w-5" />
+          ) : (
+            <Menu className="h-5 w-5" />
+          )}
+        </button>
         
         {/* Main Content */}
-        <main className="flex-1 overflow-auto pb-20 lg:pb-0 md:ml-16 lg:ml-[250px]">
+        <main className={cn(
+          "flex-1 overflow-auto pb-20 lg:pb-0 transition-all duration-300",
+          "md:ml-16",
+          sidebarOpen ? "lg:ml-[250px]" : "lg:ml-0"
+        )}>
           {/* Hero Banner - Full width image only */}
           {room.heroImageUrl && (
             <div className="relative w-full h-[clamp(300px,60vh,600px)] overflow-hidden">
