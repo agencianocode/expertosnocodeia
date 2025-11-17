@@ -466,8 +466,8 @@ export function registerSimpleRoutes(app: Express): Server {
         // Calculate subscription expiration date
         let subscriptionExpiresAt = userSubscription?.endsAt || null;
         
-        // If no subscription but user has accessed the course, show a default date (30 days from now as example)
-        if (!subscriptionExpiresAt && progress?.lastAccessedAt) {
+        // If no subscription, show a default date (30 days from now as example)
+        if (!subscriptionExpiresAt) {
           const expirationDate = new Date();
           expirationDate.setDate(expirationDate.getDate() + 30);
           subscriptionExpiresAt = expirationDate;
