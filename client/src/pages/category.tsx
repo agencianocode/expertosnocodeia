@@ -116,7 +116,7 @@ export default function CategoryPage() {
   const currentCategory = getCategoryFromSlug(categorySlug || '', (categories as any) || []);
   
   const { data: programRooms, isLoading: roomsLoading } = useQuery({
-    queryKey: ["/api/rooms/by-course-category", currentCategory?.id],
+    queryKey: [`/api/rooms/by-course-category/${currentCategory?.id}`],
     enabled: isAuthenticated && !!currentCategory?.id,
   });
 
