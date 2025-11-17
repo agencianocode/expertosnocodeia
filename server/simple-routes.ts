@@ -371,6 +371,18 @@ export function registerSimpleRoutes(app: Express): Server {
     }
   });
 
+  // Get rooms by category
+  app.get("/api/rooms/category/:categoryId", async (req: Request, res: Response) => {
+    try {
+      const { categoryId } = req.params;
+      const rooms = await storage.getRoomsByCategory(categoryId);
+      res.json(rooms);
+    } catch (error) {
+      console.error("Error fetching rooms by category:", error);
+      res.status(500).json({ message: "Failed to fetch rooms by category" });
+    }
+  });
+
   // Get phases for a specific room
   app.get("/api/rooms/:roomId/phases", async (req: Request, res: Response) => {
     try {
