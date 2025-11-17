@@ -765,25 +765,21 @@ export default function Course() {
         {/* Sidebar - Hidden on mobile, with toggle on desktop */}
         {sidebarOpen && (
           <div className="hidden lg:block">
-            <Sidebar />
+            <Sidebar onToggle={() => setSidebarOpen(false)} />
           </div>
         )}
         
-        {/* Toggle Button - Only visible on desktop */}
-        <button
-          onClick={() => setSidebarOpen(!sidebarOpen)}
-          className={cn(
-            "hidden lg:flex fixed top-4 z-50 items-center justify-center w-8 h-8 bg-muted/50 hover:bg-muted text-muted-foreground hover:text-foreground rounded-md shadow-sm transition-all duration-300",
-            sidebarOpen ? "left-[260px]" : "left-4"
-          )}
-          data-testid="toggle-sidebar-button"
-        >
-          {sidebarOpen ? (
-            <ChevronLeft className="h-4 w-4" />
-          ) : (
-            <Menu className="h-4 w-4" />
-          )}
-        </button>
+        {/* Reopen Button - Only visible when sidebar is closed */}
+        {!sidebarOpen && (
+          <button
+            onClick={() => setSidebarOpen(true)}
+            className="hidden lg:flex fixed top-4 left-4 z-50 items-center justify-center w-10 h-10 bg-card hover:bg-muted text-muted-foreground hover:text-foreground rounded-lg shadow-lg transition-all"
+            title="Mostrar sidebar"
+            data-testid="sidebar-reopen-button"
+          >
+            <Menu className="h-5 w-5" />
+          </button>
+        )}
         
       <div className={cn(
         "flex-1 flex bg-background lg:mr-[560px] h-screen overflow-y-auto hide-scrollbar transition-all duration-300",

@@ -46,11 +46,16 @@ import {
   TrendingUp,
   ChevronDown,
   ChevronRight,
+  ChevronLeft,
   Shield,
   MessageCircle
 } from "lucide-react";
 
-export default function Sidebar() {
+interface SidebarProps {
+  onToggle?: () => void;
+}
+
+export default function Sidebar({ onToggle }: SidebarProps = {}) {
   const [location] = useLocation();
   const { user } = useAuth();
   const { logout } = useSimpleAuth();
@@ -119,13 +124,24 @@ export default function Sidebar() {
     <aside className="hidden md:flex w-16 lg:w-[250px] bg-card border-r border-border flex-col fixed h-screen top-0 left-0 z-40">
       {/* Logo */}
       <div className="px-4 py-4 border-b border-border">
-        <div className="flex items-center justify-center lg:justify-start">
+        <div className="flex items-center justify-between">
           <div className="hidden lg:block">
             <h1 className="font-satoshi font-bold text-[14px]">
               <span className="bg-gradient-to-r from-purple-accent to-blue-accent bg-clip-text text-transparent">Universidad</span>
               <span className="text-foreground"> Expertos NoCode IA</span>
             </h1>
           </div>
+          {/* Collapse button - only visible on desktop when onToggle is provided */}
+          {onToggle && (
+            <button
+              onClick={onToggle}
+              className="hidden lg:flex items-center justify-center w-8 h-8 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+              title="Ocultar sidebar"
+              data-testid="sidebar-collapse-button"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </button>
+          )}
         </div>
       </div>
       {/* Search */}
