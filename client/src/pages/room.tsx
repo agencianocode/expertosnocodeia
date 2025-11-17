@@ -237,7 +237,6 @@ export default function Room() {
                               {/* Title and Badge - Show below on hover */}
                               <div className="max-h-0 group-hover:max-h-40 overflow-hidden transition-all duration-300 bg-black rounded-b-lg">
                                 <div className="p-3 space-y-1">
-                                  <Badge className="text-xs">{getBadgeText()}</Badge>
                                   <h4 className="text-white font-semibold text-sm line-clamp-2 leading-tight">
                                     {content.courseData?.title || 'Sin título'}
                                   </h4>
@@ -250,10 +249,10 @@ export default function Room() {
                                           {courseProgress.lastLessonTitle}
                                         </p>
                                       )}
-                                      {courseProgress.lastAccessedAt && (
+                                      {courseProgress.subscriptionExpiresAt && (
                                         <p className="text-white/60 text-xs flex items-center gap-1">
                                           <Clock className="h-3 w-3" />
-                                          Accesso até {format(new Date(courseProgress.lastAccessedAt), "dd/MM/yy", { locale: es })}
+                                          Acceso hasta {format(new Date(courseProgress.subscriptionExpiresAt), "dd/MM/yy", { locale: es })}
                                         </p>
                                       )}
                                       {/* Progress bar */}

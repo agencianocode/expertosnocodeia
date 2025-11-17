@@ -429,6 +429,9 @@ export function registerSimpleRoutes(app: Express): Server {
         return res.status(404).json({ message: "Sala no encontrada" });
       }
 
+      // Get user subscription info to determine expiration date
+      const userSubscription = await storage.getUserActiveSubscription(userId);
+      
       // Collect all course IDs from all phases
       const courseIds = new Set<string>();
       for (const phase of roomDetail.phases) {
@@ -468,6 +471,7 @@ export function registerSimpleRoutes(app: Express): Server {
           lastLessonTitle: lastLessonTitle,
           completedLessons: progress?.completedLessons || 0,
           totalLessons: progress?.totalLessons || 0,
+          subscriptionExpiresAt: userSubscription?.endsAt || null,
         };
       }
 
