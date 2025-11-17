@@ -15,7 +15,12 @@ import {
   CheckSquare,
   MoreHorizontal,
   FileText,
-  Building2
+  Building2,
+  Sparkles,
+  Zap,
+  Bot,
+  Brain,
+  Cloud
 } from "lucide-react";
 
 interface TopicCardProps {
@@ -39,6 +44,11 @@ export default function TopicCard({ category }: TopicCardProps) {
       "Análisis de datos": "analisis-datos",
       "Gestión de proyectos": "gestion-proyectos",
       "Otros": "otros",
+      "No Code": "no-code",
+      "Vibe Coding": "vibe-coding",
+      "Agentes IA": "agentes-ia",
+      "Inteligencia Artificial": "inteligencia-artificial",
+      "SaaS": "saas",
     };
     return slugMap[categoryName] || categoryName.toLowerCase().replace(/\s+/g, '-');
   };
@@ -62,6 +72,11 @@ export default function TopicCard({ category }: TopicCardProps) {
       "Análisis de datos": BarChart3,
       "Gestión de proyectos": FileText,
       "Otros": MoreHorizontal,
+      "No Code": Sparkles,
+      "Vibe Coding": Zap,
+      "Agentes IA": Bot,
+      "Inteligencia Artificial": Brain,
+      "SaaS": Cloud,
     };
     return iconMap[name] || Users;
   };
@@ -80,6 +95,11 @@ export default function TopicCard({ category }: TopicCardProps) {
       "Análisis de datos": "blue",
       "Gestión de proyectos": "blue",
       "Otros": "gray",
+      "No Code": "purple",
+      "Vibe Coding": "orange",
+      "Agentes IA": "cyan",
+      "Inteligencia Artificial": "pink",
+      "SaaS": "green",
     };
     return colorMap[name] || "blue";
   };
@@ -101,6 +121,11 @@ export default function TopicCard({ category }: TopicCardProps) {
       "Análisis de datos": "text-blue-400",
       "Gestión de proyectos": "text-blue-400",
       "Otros": "text-gray-400",
+      "No Code": "text-purple-400",
+      "Vibe Coding": "text-orange-400",
+      "Agentes IA": "text-cyan-400",
+      "Inteligencia Artificial": "text-pink-400",
+      "SaaS": "text-green-400",
     };
     return colorMap[name] || "text-blue-400";
   };
