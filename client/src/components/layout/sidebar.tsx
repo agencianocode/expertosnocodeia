@@ -506,14 +506,14 @@ export default function Sidebar({ onToggle }: SidebarProps = {}) {
         
         {/* Collapse button - at bottom of sidebar, only visible when onToggle is provided */}
         {onToggle && (
-          <div className="hidden lg:block px-4 pb-4">
+          <div className="hidden lg:block px-4 pb-3">
             <button
               onClick={onToggle}
-              className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition-colors text-sm"
+              className="w-full flex items-center justify-center gap-2 py-1.5 px-3 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition-colors text-xs"
               title="Ocultar sidebar"
               data-testid="sidebar-collapse-button"
             >
-              <ChevronLeft className="h-4 w-4" />
+              <ChevronLeft className="h-3.5 w-3.5" />
               <span>Ocultar menú</span>
             </button>
           </div>
