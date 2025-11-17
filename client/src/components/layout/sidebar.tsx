@@ -124,9 +124,9 @@ export default function Sidebar({ onToggle }: SidebarProps = {}) {
     <aside className="hidden md:flex w-16 lg:w-[250px] bg-card border-r border-border flex-col fixed h-screen top-0 left-0 z-40">
       {/* Logo */}
       <div className="px-4 py-4 border-b border-border">
-        <div className="flex items-center justify-between">
-          <div className="hidden lg:block">
-            <h1 className="font-satoshi font-bold text-[14px]">
+        <div className="flex items-center justify-between gap-2">
+          <div className="hidden lg:block flex-1 min-w-0">
+            <h1 className="font-satoshi font-bold text-[14px] whitespace-nowrap overflow-hidden text-ellipsis">
               <span className="bg-gradient-to-r from-purple-accent to-blue-accent bg-clip-text text-transparent">Universidad</span>
               <span className="text-foreground"> Expertos NoCode IA</span>
             </h1>
@@ -135,7 +135,7 @@ export default function Sidebar({ onToggle }: SidebarProps = {}) {
           {onToggle && (
             <button
               onClick={onToggle}
-              className="hidden lg:flex items-center justify-center w-8 h-8 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+              className="hidden lg:flex items-center justify-center w-7 h-7 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition-colors flex-shrink-0"
               title="Ocultar sidebar"
               data-testid="sidebar-collapse-button"
             >
