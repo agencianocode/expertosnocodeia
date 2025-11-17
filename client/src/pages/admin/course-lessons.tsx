@@ -83,8 +83,12 @@ export default function CourseLessons() {
 
   const deleteMutation = useMutation({
     mutationFn: async (lessonId: string) => {
+      const token = localStorage.getItem('simpleAuthToken');
       const response = await fetch(`/api/admin/lessons/${lessonId}`, {
         method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
       });
       if (!response.ok) {
         throw new Error('Error al eliminar la lección');
@@ -109,8 +113,12 @@ export default function CourseLessons() {
 
   const moveLessonUpMutation = useMutation({
     mutationFn: async (lessonId: string) => {
+      const token = localStorage.getItem('simpleAuthToken');
       const response = await fetch(`/api/admin/lessons/${lessonId}/move-up`, {
         method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
       });
       if (!response.ok) {
         throw new Error('Error al mover la lección hacia arriba');
@@ -135,8 +143,12 @@ export default function CourseLessons() {
 
   const moveLessonDownMutation = useMutation({
     mutationFn: async (lessonId: string) => {
+      const token = localStorage.getItem('simpleAuthToken');
       const response = await fetch(`/api/admin/lessons/${lessonId}/move-down`, {
         method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
       });
       if (!response.ok) {
         throw new Error('Error al mover la lección hacia abajo');
