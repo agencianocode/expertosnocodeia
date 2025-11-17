@@ -463,6 +463,16 @@ export function registerSimpleRoutes(app: Express): Server {
           }
         }
         
+        // Calculate subscription expiration date
+        let subscriptionExpiresAt = userSubscription?.endsAt || null;
+        
+        // If no subscription but user has accessed the course, show a default date (30 days from now as example)
+        if (!subscriptionExpiresAt && progress?.lastAccessedAt) {
+          const expirationDate = new Date();
+          expirationDate.setDate(expirationDate.getDate() + 30);
+          subscriptionExpiresAt = expirationDate;
+        }
+        
         progressData[courseId] = {
           progressPercentage: progress?.totalLessons && progress.totalLessons > 0
             ? Math.round(((progress.completedLessons || 0) / progress.totalLessons) * 100)
@@ -471,7 +481,7 @@ export function registerSimpleRoutes(app: Express): Server {
           lastLessonTitle: lastLessonTitle,
           completedLessons: progress?.completedLessons || 0,
           totalLessons: progress?.totalLessons || 0,
-          subscriptionExpiresAt: userSubscription?.endsAt || null,
+          subscriptionExpiresAt: subscriptionExpiresAt,
         };
       }
 
