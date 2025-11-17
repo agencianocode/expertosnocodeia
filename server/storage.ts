@@ -830,8 +830,12 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteLesson(id: string): Promise<boolean> {
-    const result = await db.delete(lessons).where(eq(lessons.id, id));
-    return (result.rowCount ?? 0) > 0;
+    await db.transaction(async (tx) => {
+      await tx.delete(userRecentActivity).where(eq(userRecentActivity.lastLessonId, id));
+      
+      await tx.delete(lessons).where(eq(lessons.id, id));
+    });
+    return true;
   }
 
   async moveLessonUp(id: string): Promise<boolean> {

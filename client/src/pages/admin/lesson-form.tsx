@@ -166,7 +166,10 @@ export default function LessonForm() {
         queryClient.invalidateQueries({ queryKey: ["/api/admin/lessons", lessonId] });
       }
       
-      // Stay on current page - no navigation
+      // Navigate back to lessons list after creating a new lesson
+      if (!isEditing && courseId) {
+        setLocation(`/admin/content/course/${courseId}/lessons`);
+      }
     },
     onError: (error: Error) => {
       toast({
