@@ -763,12 +763,11 @@ export default function Course() {
       <MobileHeader />
       <div className="flex relative">
         {/* Sidebar - Hidden on mobile, with toggle on desktop */}
-        <div className={cn(
-          "hidden lg:block transition-transform duration-300 ease-in-out",
-          !sidebarOpen && "lg:-translate-x-full"
-        )}>
-          <Sidebar />
-        </div>
+        {sidebarOpen && (
+          <div className="hidden lg:block">
+            <Sidebar />
+          </div>
+        )}
         
         {/* Toggle Button - Only visible on desktop */}
         <button

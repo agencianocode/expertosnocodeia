@@ -117,12 +117,9 @@ export default function Room() {
       
       <div className="flex relative">
         {/* Sidebar with toggle functionality */}
-        <div className={cn(
-          "transition-transform duration-300 ease-in-out",
-          !sidebarOpen && "hidden lg:block lg:-translate-x-full"
-        )}>
+        {sidebarOpen && (
           <Sidebar />
-        </div>
+        )}
         
         {/* Toggle Button - Only visible on desktop */}
         <button
