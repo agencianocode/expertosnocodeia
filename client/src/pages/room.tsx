@@ -4,13 +4,16 @@ import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { Lock, Play, BookOpen, Video, Calendar } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Lock, Play, BookOpen, Video, Calendar, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import CourseCard from "@/components/course-card";
 import Sidebar from "@/components/layout/sidebar";
 import MobileNav from "@/components/layout/mobile-nav";
 import MobileHeader from "@/components/layout/mobile-header";
 import { PromoBanner } from "@/components/PromoBanner";
+import { format } from "date-fns";
+import { es } from "date-fns/locale";
 
 interface Phase {
   id: string;
@@ -73,6 +76,12 @@ export default function Room() {
 
   const { data: roomDetail, isLoading } = useQuery<RoomDetailResponse>({
     queryKey: [`/api/rooms/${slug}`],
+  });
+
+  // Get user progress for all courses in this room
+  const { data: userProgress } = useQuery<Record<string, any>>({
+    queryKey: [`/api/rooms/${slug}/user-progress`],
+    enabled: isAuthenticated && !!slug,
   });
 
   if (isLoading) {
@@ -185,56 +194,91 @@ export default function Room() {
                             return 'Curso';
                           };
 
+                          const courseProgress = content.contentType === 'course' && userProgress?.[content.contentId];
+                          
+                          const CardContent = (
+                            <div className={cn(
+                              "relative transition-all duration-300",
+                              isLockedForUser ? "cursor-not-allowed" : "cursor-pointer hover:scale-105 hover:z-10 hover:shadow-2xl"
+                            )}>
+                              {/* Poster Image */}
+                              <div className={cn(
+                                "relative aspect-[2/3] rounded-lg overflow-hidden group-hover:rounded-b-none",
+                                isLockedForUser && "opacity-50"
+                              )}>
+                                {content.courseData?.coverImageUrl ? (
+                                  <img 
+                                    src={content.courseData.coverImageUrl} 
+                                    alt={content.courseData.title}
+                                    className="w-full h-full object-cover"
+                                  />
+                                ) : (
+                                  <div className="w-full h-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
+                                    {content.contentType === 'workshop' && (
+                                      <Video className="h-16 w-16 text-primary/40" />
+                                    )}
+                                    {content.contentType === 'guide' && (
+                                      <BookOpen className="h-16 w-16 text-primary/40" />
+                                    )}
+                                    {content.contentType === 'course' && (
+                                      <Play className="h-16 w-16 text-primary/40" />
+                                    )}
+                                  </div>
+                                )}
+
+                                {/* Lock Overlay */}
+                                {isLockedForUser && (
+                                  <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                                    <Lock className="h-12 w-12 text-white" />
+                                  </div>
+                                )}
+                              </div>
+
+                              {/* Title and Badge - Show below on hover */}
+                              <div className="max-h-0 group-hover:max-h-40 overflow-hidden transition-all duration-300 bg-black rounded-b-lg">
+                                <div className="p-3 space-y-1">
+                                  <Badge className="text-xs">{getBadgeText()}</Badge>
+                                  <h4 className="text-white font-semibold text-sm line-clamp-2 leading-tight">
+                                    {content.courseData?.title || 'Sin título'}
+                                  </h4>
+                                  
+                                  {/* Progress info shown on hover */}
+                                  {courseProgress && (
+                                    <>
+                                      {courseProgress.lastLessonTitle && (
+                                        <p className="text-white/70 text-xs line-clamp-1">
+                                          {courseProgress.lastLessonTitle}
+                                        </p>
+                                      )}
+                                      {courseProgress.lastAccessedAt && (
+                                        <p className="text-white/60 text-xs flex items-center gap-1">
+                                          <Clock className="h-3 w-3" />
+                                          Accesso até {format(new Date(courseProgress.lastAccessedAt), "dd/MM/yy", { locale: es })}
+                                        </p>
+                                      )}
+                                      {/* Progress bar */}
+                                      <div className="mt-2 space-y-1">
+                                        <div className="h-1 bg-white/20 rounded-full overflow-hidden">
+                                          <div 
+                                            className="h-full bg-[#faa318] transition-all duration-300"
+                                            style={{ width: `${courseProgress.progressPercentage}%` }}
+                                          />
+                                        </div>
+                                        <p className="text-white/60 text-xs text-right">
+                                          {courseProgress.progressPercentage}%
+                                        </p>
+                                      </div>
+                                    </>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          );
+
                           return (
                             <div key={content.id} className="group">
                               <Link href={getHref()}>
-                                <div className={cn(
-                                  "relative transition-all duration-300",
-                                  isLockedForUser ? "cursor-not-allowed" : "cursor-pointer hover:scale-105 hover:z-10 hover:shadow-2xl"
-                                )}>
-                                  {/* Poster Image */}
-                                  <div className={cn(
-                                    "relative aspect-[2/3] rounded-lg overflow-hidden group-hover:rounded-b-none",
-                                    isLockedForUser && "opacity-50"
-                                  )}>
-                                    {content.courseData?.coverImageUrl ? (
-                                      <img 
-                                        src={content.courseData.coverImageUrl} 
-                                        alt={content.courseData.title}
-                                        className="w-full h-full object-cover"
-                                      />
-                                    ) : (
-                                      <div className="w-full h-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
-                                        {content.contentType === 'workshop' && (
-                                          <Video className="h-16 w-16 text-primary/40" />
-                                        )}
-                                        {content.contentType === 'guide' && (
-                                          <BookOpen className="h-16 w-16 text-primary/40" />
-                                        )}
-                                        {content.contentType === 'course' && (
-                                          <Play className="h-16 w-16 text-primary/40" />
-                                        )}
-                                      </div>
-                                    )}
-
-                                    {/* Lock Overlay */}
-                                    {isLockedForUser && (
-                                      <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
-                                        <Lock className="h-12 w-12 text-white" />
-                                      </div>
-                                    )}
-                                  </div>
-
-                                  {/* Title and Badge - Show below on hover */}
-                                  <div className="max-h-0 group-hover:max-h-40 overflow-hidden transition-all duration-300 bg-black rounded-b-lg">
-                                    <div className="p-3 space-y-1">
-                                      <Badge className="text-xs">{getBadgeText()}</Badge>
-                                      <h4 className="text-white font-semibold text-sm line-clamp-2 leading-tight">
-                                        {content.courseData?.title || 'Sin título'}
-                                      </h4>
-                                    </div>
-                                  </div>
-                                </div>
+                                {CardContent}
                               </Link>
                             </div>
                           );

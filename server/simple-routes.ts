@@ -413,6 +413,69 @@ export function registerSimpleRoutes(app: Express): Server {
     }
   });
 
+  // Get user progress for all courses in a room (requires auth)
+  app.get("/api/rooms/:slug/user-progress", legacyAuth, async (req: any, res: Response) => {
+    try {
+      const { slug } = req.params;
+      const userId = req.user?.claims?.sub;
+      
+      if (!userId) {
+        return res.status(401).json({ message: "Usuario no autenticado" });
+      }
+
+      // Get room details to access course IDs
+      const roomDetail = await storage.getRoomDetailWithPhases(slug, userId);
+      if (!roomDetail) {
+        return res.status(404).json({ message: "Sala no encontrada" });
+      }
+
+      // Collect all course IDs from all phases
+      const courseIds = new Set<string>();
+      for (const phase of roomDetail.phases) {
+        for (const content of phase.content) {
+          if (content.contentType === 'course') {
+            courseIds.add(content.contentId);
+          }
+        }
+      }
+
+      // Get progress and recent activity for each course
+      const progressData: Record<string, any> = {};
+      
+      // Get all recent activity for user
+      const recentActivity = await storage.getContinueCourses(userId);
+      
+      for (const courseId of Array.from(courseIds)) {
+        // Get user progress for this course
+        const progress = await storage.getUserProgress(userId, courseId) as any;
+        
+        // Find activity for this specific course
+        const courseActivity = recentActivity.continueCourses?.find((act: any) => act.course?.id === courseId);
+        
+        // Get course lessons to find the last accessed lesson title
+        const lessons = await storage.getLessonsByCourse(courseId);
+        const lastLesson = courseActivity?.lastLessonId 
+          ? lessons.find((l: any) => l.id === courseActivity.lastLessonId)
+          : null;
+        
+        progressData[courseId] = {
+          progressPercentage: progress?.totalLessons && progress.totalLessons > 0
+            ? Math.round(((progress.completedLessons || 0) / progress.totalLessons) * 100)
+            : 0,
+          lastAccessedAt: courseActivity?.lastAccessed || progress?.lastAccessedAt || null,
+          lastLessonTitle: lastLesson?.title || null,
+          completedLessons: progress?.completedLessons || 0,
+          totalLessons: progress?.totalLessons || 0,
+        };
+      }
+
+      res.json(progressData);
+    } catch (error) {
+      console.error("Error fetching room user progress:", error);
+      res.status(500).json({ message: "Failed to fetch user progress" });
+    }
+  });
+
   // Update room (admin only)
   app.patch("/api/admin/rooms/:id", simpleAdminAuth, isAdmin, async (req: Request, res: Response) => {
     try {
