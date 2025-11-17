@@ -1710,12 +1710,24 @@ export class DatabaseStorage implements IStorage {
       .orderBy(rooms.order);
   }
 
-  async getRoomsByCategory(categoryId: string): Promise<Room[]> {
-    return await db
-      .select()
+  async getRoomsByCourseCategory(categoryId: string): Promise<Room[]> {
+    // Get rooms that contain courses with the specified category
+    const roomsWithCategory = await db
+      .selectDistinctOn([rooms.id])
       .from(rooms)
-      .where(and(eq(rooms.categoryId, categoryId), eq(rooms.isPublished, true)))
+      .innerJoin(phases, eq(phases.roomId, rooms.id))
+      .innerJoin(phaseContent, eq(phaseContent.phaseId, phases.id))
+      .innerJoin(courses, and(
+        eq(phaseContent.contentId, courses.id),
+        eq(phaseContent.contentType, 'course')
+      ))
+      .where(and(
+        eq(courses.categoryId, categoryId),
+        eq(rooms.isPublished, true)
+      ))
       .orderBy(rooms.order);
+
+    return roomsWithCategory.map(row => row.rooms);
   }
 
   async getRoomById(id: string): Promise<Room | undefined> {
