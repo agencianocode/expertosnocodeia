@@ -439,27 +439,24 @@ export function registerSimpleRoutes(app: Express): Server {
         }
       }
 
-      // Get progress and recent activity for each course
+      // Get progress for each course
       const progressData: Record<string, any> = {};
-      
-      // Get all recent courses for user
-      const recentCourses = await storage.getUserContinueCourses(userId);
       
       for (const courseId of Array.from(courseIds)) {
         // Get user progress for this course
         const progress = await storage.getUserProgress(userId, courseId) as any;
         
-        // Find activity for this specific course
-        const courseData = recentCourses.find((item: any) => item.course?.id === courseId);
-        
-        // Get the last accessed lesson from userRecentActivity table
+        // Get last accessed lesson from course lessons
         let lastLessonTitle = null;
-        if (courseData) {
-          // Query the userRecentActivity to get the last lesson
-          const activities = await storage.getUserRecentActivity(userId);
-          const courseActivity = activities.find((act: any) => act.course?.id === courseId);
-          if (courseActivity && courseActivity.lastLesson) {
-            lastLessonTitle = courseActivity.lastLesson.title;
+        if (progress?.lastAccessedAt) {
+          const lessons = await storage.getLessonsByCourse(courseId);
+          // Get the first lesson as default (we can improve this later to track actual last lesson)
+          if (lessons && lessons.length > 0) {
+            // Find first navigable lesson (not a module header)
+            const firstLesson = lessons.find((l: any) => l.parentLessonId || lessons.filter((sub: any) => sub.parentLessonId === l.id).length === 0);
+            if (firstLesson) {
+              lastLessonTitle = firstLesson.title;
+            }
           }
         }
         
@@ -467,7 +464,7 @@ export function registerSimpleRoutes(app: Express): Server {
           progressPercentage: progress?.totalLessons && progress.totalLessons > 0
             ? Math.round(((progress.completedLessons || 0) / progress.totalLessons) * 100)
             : 0,
-          lastAccessedAt: courseData?.progress?.lastAccessedAt || progress?.lastAccessedAt || null,
+          lastAccessedAt: progress?.lastAccessedAt || null,
           lastLessonTitle: lastLessonTitle,
           completedLessons: progress?.completedLessons || 0,
           totalLessons: progress?.totalLessons || 0,
