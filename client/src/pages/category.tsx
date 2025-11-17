@@ -123,15 +123,20 @@ export default function CategoryPage() {
   const currentCategory = getCategoryFromSlug(categorySlug || '', (categories as any) || []);
   
   // Filter content by category and type
+  // EXCLUDE courses that belong to rooms (roomContext.length > 0) to avoid confusion
+  // Only show standalone courses/guides that are not part of a room
   const allCourses = (courses as any) || [];
   const allGuides = (guides as any) || [];
   
   const filteredCourses = allCourses.filter((item: any) => 
-    item.categoryId === currentCategory?.id && item.type === 'course'
+    item.categoryId === currentCategory?.id && 
+    item.type === 'course' &&
+    (!item.roomContext || item.roomContext.length === 0) // Only standalone courses
   );
   
   const filteredGuides = allGuides.filter((item: any) => 
-    item.categoryId === currentCategory?.id
+    item.categoryId === currentCategory?.id &&
+    (!item.roomContext || item.roomContext.length === 0) // Only standalone guides
   );
 
   // Count total content
