@@ -442,28 +442,33 @@ export function registerSimpleRoutes(app: Express): Server {
       // Get progress and recent activity for each course
       const progressData: Record<string, any> = {};
       
-      // Get all recent activity for user
-      const recentActivity = await storage.getContinueCourses(userId);
+      // Get all recent courses for user
+      const recentCourses = await storage.getUserContinueCourses(userId);
       
       for (const courseId of Array.from(courseIds)) {
         // Get user progress for this course
         const progress = await storage.getUserProgress(userId, courseId) as any;
         
         // Find activity for this specific course
-        const courseActivity = recentActivity.continueCourses?.find((act: any) => act.course?.id === courseId);
+        const courseData = recentCourses.find((item: any) => item.course?.id === courseId);
         
-        // Get course lessons to find the last accessed lesson title
-        const lessons = await storage.getLessonsByCourse(courseId);
-        const lastLesson = courseActivity?.lastLessonId 
-          ? lessons.find((l: any) => l.id === courseActivity.lastLessonId)
-          : null;
+        // Get the last accessed lesson from userRecentActivity table
+        let lastLessonTitle = null;
+        if (courseData) {
+          // Query the userRecentActivity to get the last lesson
+          const activities = await storage.getUserRecentActivity(userId);
+          const courseActivity = activities.find((act: any) => act.course?.id === courseId);
+          if (courseActivity && courseActivity.lastLesson) {
+            lastLessonTitle = courseActivity.lastLesson.title;
+          }
+        }
         
         progressData[courseId] = {
           progressPercentage: progress?.totalLessons && progress.totalLessons > 0
             ? Math.round(((progress.completedLessons || 0) / progress.totalLessons) * 100)
             : 0,
-          lastAccessedAt: courseActivity?.lastAccessed || progress?.lastAccessedAt || null,
-          lastLessonTitle: lastLesson?.title || null,
+          lastAccessedAt: courseData?.progress?.lastAccessedAt || progress?.lastAccessedAt || null,
+          lastLessonTitle: lastLessonTitle,
           completedLessons: progress?.completedLessons || 0,
           totalLessons: progress?.totalLessons || 0,
         };
