@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
@@ -15,6 +15,7 @@ export default function CategoryPage() {
   const { isAuthenticated, isLoading } = useAuth();
   const [match, params] = useRoute("/categoria/:categorySlug");
   const categorySlug = params?.categorySlug;
+  const [activeFilter, setActiveFilter] = useState<"all" | "courses" | "guides" | "workshops" | "programs">("all");
 
   const getCategoryFromSlug = (slug: string, categories: any[]) => {
     const slugMap: { [key: string]: string } = {
@@ -111,16 +112,15 @@ export default function CategoryPage() {
     enabled: isAuthenticated,
   });
 
-  // Fetch rooms for "Programas" category
+  // Fetch rooms that contain courses from this category
   const currentCategory = getCategoryFromSlug(categorySlug || '', (categories as any) || []);
-  const isProgramasCategory = currentCategory?.name === "Programas";
   
-  const { data: rooms, isLoading: roomsLoading } = useQuery({
-    queryKey: ["/api/rooms/category", currentCategory?.id],
-    enabled: isAuthenticated && isProgramasCategory && !!currentCategory?.id,
+  const { data: programRooms, isLoading: roomsLoading } = useQuery({
+    queryKey: ["/api/rooms/by-course-category", currentCategory?.id],
+    enabled: isAuthenticated && !!currentCategory?.id,
   });
 
-  if (isLoading || coursesLoading || guidesLoading || (isProgramasCategory && roomsLoading)) {
+  if (isLoading || coursesLoading || guidesLoading || roomsLoading) {
     return (
       <div className="min-h-screen bg-dark-bg flex">
         <div className="w-64 bg-dark-card border-r border-dark-border"></div>
@@ -132,29 +132,31 @@ export default function CategoryPage() {
   }
   
   // Filter content by category and type
-  // For "Programas" category, show rooms instead of courses/guides
-  // For other categories, EXCLUDE courses that belong to rooms (roomContext.length > 0) to avoid confusion
-  const allRooms = (rooms as any) || [];
+  // EXCLUDE courses that belong to rooms (roomContext.length > 0) to avoid confusion
+  const allRooms = (programRooms as any) || [];
   const allCourses = (courses as any) || [];
   const allGuides = (guides as any) || [];
   
-  const filteredRooms = isProgramasCategory ? allRooms : [];
+  const filteredRooms = allRooms; // Rooms that contain courses from this category
   
-  const filteredCourses = !isProgramasCategory ? allCourses.filter((item: any) => 
+  const filteredCourses = allCourses.filter((item: any) => 
     item.categoryId === currentCategory?.id && 
     item.type === 'course' &&
     (!item.roomContext || item.roomContext.length === 0) // Only standalone courses
-  ) : [];
+  );
   
-  const filteredGuides = !isProgramasCategory ? allGuides.filter((item: any) => 
+  const filteredGuides = allGuides.filter((item: any) => 
     item.categoryId === currentCategory?.id &&
     (!item.roomContext || item.roomContext.length === 0) // Only standalone guides
-  ) : [];
+  );
 
   // Count total content
-  const totalContent = isProgramasCategory 
-    ? filteredRooms.length 
-    : filteredCourses.length + filteredGuides.length;
+  const totalContent = filteredCourses.length + filteredGuides.length + filteredRooms.length;
+  
+  // Get content to display based on active filter
+  const displayedCourses = activeFilter === "all" || activeFilter === "courses" ? filteredCourses : [];
+  const displayedGuides = activeFilter === "all" || activeFilter === "guides" ? filteredGuides : [];
+  const displayedPrograms = activeFilter === "all" || activeFilter === "programs" ? filteredRooms : [];
   
   // Get category icon and color
   const CategoryIcon = getCategoryIcon(currentCategory?.name || '');
@@ -192,26 +194,61 @@ export default function CategoryPage() {
 
             {/* Filter Tabs */}
             <div className="flex items-center space-x-1">
-              <button className="px-4 py-2 text-sm bg-white text-black rounded-lg font-medium">
+              <button 
+                onClick={() => setActiveFilter("all")}
+                className={`px-4 py-2 text-sm rounded-lg font-medium ${
+                  activeFilter === "all" 
+                    ? "bg-white text-black" 
+                    : "text-gray-400 hover:text-white"
+                }`}
+                data-testid="filter-all"
+              >
                 Todos ({totalContent})
               </button>
-              {isProgramasCategory ? (
-                <button className="px-4 py-2 text-sm text-gray-400 hover:text-white rounded-lg">
-                  Programas ({filteredRooms.length})
-                </button>
-              ) : (
-                <>
-                  <button className="px-4 py-2 text-sm text-gray-400 hover:text-white rounded-lg">
-                    Cursos ({filteredCourses.length})
-                  </button>
-                  <button className="px-4 py-2 text-sm text-gray-400 hover:text-white rounded-lg">
-                    Guías ({filteredGuides.length})
-                  </button>
-                  <button className="px-4 py-2 text-sm text-gray-400 hover:text-white rounded-lg">
-                    Talleres (0)
-                  </button>
-                </>
-              )}
+              <button 
+                onClick={() => setActiveFilter("courses")}
+                className={`px-4 py-2 text-sm rounded-lg ${
+                  activeFilter === "courses" 
+                    ? "bg-white text-black font-medium" 
+                    : "text-gray-400 hover:text-white"
+                }`}
+                data-testid="filter-courses"
+              >
+                Cursos ({filteredCourses.length})
+              </button>
+              <button 
+                onClick={() => setActiveFilter("guides")}
+                className={`px-4 py-2 text-sm rounded-lg ${
+                  activeFilter === "guides" 
+                    ? "bg-white text-black font-medium" 
+                    : "text-gray-400 hover:text-white"
+                }`}
+                data-testid="filter-guides"
+              >
+                Guías ({filteredGuides.length})
+              </button>
+              <button 
+                onClick={() => setActiveFilter("workshops")}
+                className={`px-4 py-2 text-sm rounded-lg ${
+                  activeFilter === "workshops" 
+                    ? "bg-white text-black font-medium" 
+                    : "text-gray-400 hover:text-white"
+                }`}
+                data-testid="filter-workshops"
+              >
+                Talleres (0)
+              </button>
+              <button 
+                onClick={() => setActiveFilter("programs")}
+                className={`px-4 py-2 text-sm rounded-lg ${
+                  activeFilter === "programs" 
+                    ? "bg-white text-black font-medium" 
+                    : "text-gray-400 hover:text-white"
+                }`}
+                data-testid="filter-programs"
+              >
+                Programas ({filteredRooms.length})
+              </button>
             </div>
           </div>
 
@@ -219,11 +256,11 @@ export default function CategoryPage() {
           <div className="px-4 lg:px-16 pb-6 space-y-12">
             
             {/* Programas Section */}
-            {isProgramasCategory && filteredRooms.length > 0 && (
+            {displayedPrograms.length > 0 && (
               <section>
                 <h2 className="text-xl font-semibold mb-6 text-white">Programas</h2>
                 <div className="space-y-6">
-                  {filteredRooms.map((room: any) => (
+                  {displayedPrograms.map((room: any) => (
                     <div key={room.id} className="bg-dark-card rounded-xl border border-dark-border overflow-hidden hover:shadow-lg transition-shadow">
                       <CourseCard
                         course={{
@@ -247,11 +284,11 @@ export default function CategoryPage() {
             )}
 
             {/* Cursos Section */}
-            {!isProgramasCategory && filteredCourses.length > 0 && (
+            {displayedCourses.length > 0 && (
               <section>
                 <h2 className="text-xl font-semibold mb-6 text-white">Cursos</h2>
                 <div className="space-y-6">
-                  {filteredCourses.map((course: any) => (
+                  {displayedCourses.map((course: any) => (
                     <div key={course.id} className="bg-dark-card rounded-xl border border-dark-border overflow-hidden hover:shadow-lg transition-shadow">
                       <CourseCard
                         course={course}
@@ -265,11 +302,11 @@ export default function CategoryPage() {
             )}
 
             {/* Talleres Section */}
-            {!isProgramasCategory && filteredGuides.length > 0 && (
+            {displayedGuides.length > 0 && (
               <section>
                 <h2 className="text-xl font-semibold mb-6 text-white">Talleres</h2>
                 <div className="space-y-6">
-                  {filteredGuides.map((guide: any) => (
+                  {displayedGuides.map((guide: any) => (
                     <div key={guide.id} className="bg-dark-card rounded-xl border border-dark-border overflow-hidden hover:shadow-lg transition-shadow">
                       <CourseCard
                         course={guide}
@@ -283,14 +320,14 @@ export default function CategoryPage() {
             )}
 
             {/* Empty State */}
-            {totalContent === 0 && (
+            {displayedCourses.length === 0 && displayedGuides.length === 0 && displayedPrograms.length === 0 && (
               <div className="text-center py-20">
                 <div className="text-6xl mb-4">📚</div>
                 <h3 className="text-xl font-semibold mb-2">No hay contenido disponible</h3>
                 <p className="text-gray-400 mb-6">
-                  {isProgramasCategory 
+                  {activeFilter === "programs" 
                     ? "Aún no hay programas en esta categoría."
-                    : "Aún no hay cursos o talleres en esta categoría."}
+                    : "Aún no hay contenido en este filtro."}
                 </p>
               </div>
             )}

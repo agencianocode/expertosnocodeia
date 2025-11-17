@@ -167,24 +167,22 @@ export default function Sidebar({ onToggle }: SidebarProps = {}) {
                   {/* Main Programas item */}
                   <div className="flex flex-col">
                     <div className="flex items-center">
-                      <Link 
-                        to="/categoria/programas"
+                      <div 
+                        onClick={() => setProgramasExpanded(!programasExpanded)}
                         className="flex-1"
                       >
                         <div
                           className={cn(
                             "flex items-center justify-center lg:justify-start lg:space-x-3 p-2 rounded-lg transition-colors cursor-pointer font-satoshi font-normal text-[13px] leading-[20px]",
-                            location === "/categoria/programas"
+                            isRoomActive
                               ? "bg-primary/20 text-primary"
-                              : isRoomActive
-                                ? "bg-primary/20 text-primary"
-                                : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                              : "text-muted-foreground hover:bg-muted hover:text-foreground"
                           )}
                         >
                           <item.icon className="h-5 w-5" />
                           <span className="hidden lg:block flex-1">{item.name}</span>
                         </div>
-                      </Link>
+                      </div>
                       <button
                         type="button"
                         onClick={() => setProgramasExpanded(!programasExpanded)}
