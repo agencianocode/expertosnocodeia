@@ -30,6 +30,12 @@ export default function CategoryPage() {
       "analisis-datos": "Análisis de datos",
       "gestion-proyectos": "Gestión de proyectos",
       "otros": "Otros",
+      "no-code": "No Code",
+      "vibe-coding": "Vibe Coding",
+      "agentes-ia": "Agentes IA",
+      "inteligencia-artificial": "Inteligencia Artificial",
+      "saas": "SaaS",
+      "automatizaciones": "Automatizaciones",
     };
     const categoryName = slugMap[slug] || slug;
     return categories?.find((cat: any) => cat.name === categoryName);
@@ -86,14 +92,14 @@ export default function CategoryPage() {
     }
   }, [isAuthenticated, isLoading, toast]);
 
-  // Fetch all content (courses and guides)
+  // Fetch all content (courses and guides) - INCLUDING those in rooms for category filtering
   const { data: courses, isLoading: coursesLoading } = useQuery({
-    queryKey: ["/api/courses"],
+    queryKey: ["/api/courses/all"],
     enabled: isAuthenticated,
   });
 
   const { data: guides, isLoading: guidesLoading } = useQuery({
-    queryKey: ["/api/guides"], 
+    queryKey: ["/api/guides/all"], 
     enabled: isAuthenticated,
   });
 

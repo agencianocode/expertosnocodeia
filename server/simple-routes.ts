@@ -305,6 +305,17 @@ export function registerSimpleRoutes(app: Express): Server {
     }
   });
 
+  // Get all courses including those in rooms (for category filtering)
+  app.get("/api/courses/all", async (req: Request, res: Response) => {
+    try {
+      const courses = await storage.getAllCoursesIncludingRooms();
+      res.json(courses);
+    } catch (error) {
+      console.error("Error fetching all courses:", error);
+      res.status(500).json({ message: "Failed to fetch all courses" });
+    }
+  });
+
   // Get all guides
   app.get("/api/guides", async (req: Request, res: Response) => {
     try {
@@ -313,6 +324,17 @@ export function registerSimpleRoutes(app: Express): Server {
     } catch (error) {
       console.error("Error fetching guides:", error);
       res.status(500).json({ message: "Failed to fetch guides" });
+    }
+  });
+
+  // Get all guides including those in rooms (for category filtering)
+  app.get("/api/guides/all", async (req: Request, res: Response) => {
+    try {
+      const guides = await storage.getAllGuidesIncludingRooms();
+      res.json(guides);
+    } catch (error) {
+      console.error("Error fetching all guides:", error);
+      res.status(500).json({ message: "Failed to fetch all guides" });
     }
   });
 
@@ -464,7 +486,7 @@ export function registerSimpleRoutes(app: Express): Server {
         }
         
         // Calculate subscription expiration date
-        let subscriptionExpiresAt = userSubscription?.endsAt || null;
+        let subscriptionExpiresAt = userSubscription?.endDate || null;
         
         // If no subscription, show a default date (30 days from now as example)
         if (!subscriptionExpiresAt) {

@@ -111,7 +111,9 @@ export interface IStorage {
   
   // Course operations
   getAllCourses(): Promise<Course[]>;
+  getAllCoursesIncludingRooms(): Promise<Course[]>; // Includes courses from rooms
   getAllGuides(): Promise<Course[]>;
+  getAllGuidesIncludingRooms(): Promise<Course[]>; // Includes guides from rooms
   getAllWorkshops(): Promise<Course[]>;
   getCourseById(id: string): Promise<Course | undefined>;
   getCoursesByCategory(categoryId: string): Promise<Course[]>;
@@ -423,8 +425,34 @@ export class DatabaseStorage implements IStorage {
     return result.map(r => r.course);
   }
 
+  async getAllCoursesIncludingRooms(): Promise<Course[]> {
+    // Incluir TODOS los cursos, incluyendo los que están en salas
+    return await db
+      .select()
+      .from(courses)
+      .where(
+        and(
+          eq(courses.isPublished, true),
+          eq(courses.type, 'course')
+        )
+      );
+  }
+
   async getAllGuides(): Promise<Course[]> {
     return await db.select().from(courses).where(and(eq(courses.isPublished, true), eq(courses.type, 'guide')));
+  }
+
+  async getAllGuidesIncludingRooms(): Promise<Course[]> {
+    // Incluir TODAS las guías, incluyendo las que están en salas
+    return await db
+      .select()
+      .from(courses)
+      .where(
+        and(
+          eq(courses.isPublished, true),
+          eq(courses.type, 'guide')
+        )
+      );
   }
 
   async getAllWorkshops(): Promise<Course[]> {
