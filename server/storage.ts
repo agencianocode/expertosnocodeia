@@ -462,14 +462,19 @@ export class DatabaseStorage implements IStorage {
         });
       }
       
-      // Add room info if exists
-      if (row.room) {
+      // Add room info if exists and is not null
+      if (row.room && row.room.id) {
         const courseData = coursesMap.get(row.course.id);
-        courseData.roomContext.push({
-          roomId: row.room.id,
-          roomSlug: row.room.slug,
-          roomTitle: row.room.title,
-        });
+        const roomData = row.room; // Capture for TypeScript
+        // Avoid adding duplicate room contexts
+        const existingRoom = courseData.roomContext.find((r: any) => r.roomId === roomData.id);
+        if (!existingRoom) {
+          courseData.roomContext.push({
+            roomId: roomData.id,
+            roomSlug: roomData.slug,
+            roomTitle: roomData.title,
+          });
+        }
       }
     }
     
@@ -517,14 +522,19 @@ export class DatabaseStorage implements IStorage {
         });
       }
       
-      // Add room info if exists
-      if (row.room) {
+      // Add room info if exists and is not null
+      if (row.room && row.room.id) {
         const guideData = guidesMap.get(row.course.id);
-        guideData.roomContext.push({
-          roomId: row.room.id,
-          roomSlug: row.room.slug,
-          roomTitle: row.room.title,
-        });
+        const roomData = row.room; // Capture for TypeScript
+        // Avoid adding duplicate room contexts
+        const existingRoom = guideData.roomContext.find((r: any) => r.roomId === roomData.id);
+        if (!existingRoom) {
+          guideData.roomContext.push({
+            roomId: roomData.id,
+            roomSlug: roomData.slug,
+            roomTitle: roomData.title,
+          });
+        }
       }
     }
     
