@@ -20,7 +20,8 @@ import {
   Zap,
   Bot,
   Brain,
-  Cloud
+  Cloud,
+  Workflow
 } from "lucide-react";
 
 interface TopicCardProps {
@@ -49,6 +50,7 @@ export default function TopicCard({ category }: TopicCardProps) {
       "Agentes IA": "agentes-ia",
       "Inteligencia Artificial": "inteligencia-artificial",
       "SaaS": "saas",
+      "Automatizaciones": "automatizaciones",
     };
     return slugMap[categoryName] || categoryName.toLowerCase().replace(/\s+/g, '-');
   };
@@ -77,6 +79,7 @@ export default function TopicCard({ category }: TopicCardProps) {
       "Agentes IA": Bot,
       "Inteligencia Artificial": Brain,
       "SaaS": Cloud,
+      "Automatizaciones": Workflow,
     };
     return iconMap[name] || Users;
   };
@@ -100,6 +103,7 @@ export default function TopicCard({ category }: TopicCardProps) {
       "Agentes IA": "cyan",
       "Inteligencia Artificial": "pink",
       "SaaS": "green",
+      "Automatizaciones": "purple",
     };
     return colorMap[name] || "blue";
   };
@@ -126,6 +130,7 @@ export default function TopicCard({ category }: TopicCardProps) {
       "Agentes IA": "text-cyan-400",
       "Inteligencia Artificial": "text-pink-400",
       "SaaS": "text-green-400",
+      "Automatizaciones": "text-purple-400",
     };
     return colorMap[name] || "text-blue-400";
   };

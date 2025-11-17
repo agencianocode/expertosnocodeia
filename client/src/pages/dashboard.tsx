@@ -11,7 +11,7 @@ import CourseCard from "@/components/course-card";
 import TopicCard from "@/components/topic-card";
 import { SubscriptionStatus } from "@/components/subscription/SubscriptionBadge";
 import { Button } from "@/components/ui/button";
-import { Bell, ChevronLeft, ChevronRight, ChevronDown, Plus, Shield, Lightbulb, Zap, Users, CheckCircle } from "lucide-react";
+import { Bell, ChevronLeft, ChevronRight, ChevronDown, Plus, Shield, Lightbulb, Zap, Users, CheckCircle, Settings } from "lucide-react";
 import { Link } from "wouter";
 
 export default function Dashboard() {
@@ -78,9 +78,11 @@ export default function Dashboard() {
     ? ((dashboardData as any)?.recommendedCourses || []) 
     : [...publicCourses, ...publicGuides, ...publicWorkshops];
     
-  const categories = isAuthenticated 
+  // Filter out the "Otros" category (cat-12) from the list as it's used only as an expand button
+  const categories = (isAuthenticated 
     ? ((dashboardData as any)?.categories || []) 
-    : (categoriesData as any) || [];
+    : (categoriesData as any) || [])
+    .filter((cat: any) => cat.id !== 'cat-12');
 
   const cardsPerView = 4;
   // Use the correct data source for carousel navigation
@@ -470,9 +472,7 @@ export default function Dashboard() {
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-3">
-                      <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center">
-                        <span className="text-lg">⚙️</span>
-                      </div>
+                      <Settings className="h-5 w-5 text-gray-400" />
                       <span className="font-medium text-foreground">Otros</span>
                     </div>
                     <ChevronDown 
