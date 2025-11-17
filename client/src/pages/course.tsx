@@ -773,7 +773,7 @@ export default function Course() {
         <button
           onClick={() => setSidebarOpen(!sidebarOpen)}
           className={cn(
-            "hidden lg:flex fixed top-4 z-50 items-center justify-center w-10 h-10 bg-card hover:bg-accent text-foreground rounded-full shadow-lg transition-all duration-300",
+            "hidden lg:flex fixed top-20 z-50 items-center justify-center w-10 h-10 bg-card hover:bg-accent text-foreground rounded-full shadow-lg transition-all duration-300",
             sidebarOpen ? "left-[260px]" : "left-4"
           )}
           data-testid="toggle-sidebar-button"
