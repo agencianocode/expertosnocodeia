@@ -425,34 +425,110 @@ export class DatabaseStorage implements IStorage {
     return result.map(r => r.course);
   }
 
-  async getAllCoursesIncludingRooms(): Promise<Course[]> {
-    // Incluir TODOS los cursos, incluyendo los que están en salas
-    return await db
-      .select()
+  async getAllCoursesIncludingRooms(): Promise<any[]> {
+    // Incluir TODOS los cursos con información de la sala si pertenecen a una
+    const result = await db
+      .select({
+        course: courses,
+        phaseContent: phaseContent,
+        phase: phases,
+        room: rooms,
+      })
       .from(courses)
+      .leftJoin(
+        phaseContent,
+        and(
+          eq(phaseContent.contentType, 'course'),
+          eq(phaseContent.contentId, courses.id)
+        )
+      )
+      .leftJoin(phases, eq(phases.id, phaseContent.phaseId))
+      .leftJoin(rooms, eq(rooms.id, phases.roomId))
       .where(
         and(
           eq(courses.isPublished, true),
           eq(courses.type, 'course')
         )
       );
+
+    // Group by course and aggregate room info
+    const coursesMap = new Map<string, any>();
+    
+    for (const row of result) {
+      if (!coursesMap.has(row.course.id)) {
+        coursesMap.set(row.course.id, {
+          ...row.course,
+          roomContext: []
+        });
+      }
+      
+      // Add room info if exists
+      if (row.room) {
+        const courseData = coursesMap.get(row.course.id);
+        courseData.roomContext.push({
+          roomId: row.room.id,
+          roomSlug: row.room.slug,
+          roomTitle: row.room.title,
+        });
+      }
+    }
+    
+    return Array.from(coursesMap.values());
   }
 
   async getAllGuides(): Promise<Course[]> {
     return await db.select().from(courses).where(and(eq(courses.isPublished, true), eq(courses.type, 'guide')));
   }
 
-  async getAllGuidesIncludingRooms(): Promise<Course[]> {
-    // Incluir TODAS las guías, incluyendo las que están en salas
-    return await db
-      .select()
+  async getAllGuidesIncludingRooms(): Promise<any[]> {
+    // Incluir TODAS las guías con información de la sala si pertenecen a una
+    const result = await db
+      .select({
+        course: courses,
+        phaseContent: phaseContent,
+        phase: phases,
+        room: rooms,
+      })
       .from(courses)
+      .leftJoin(
+        phaseContent,
+        and(
+          eq(phaseContent.contentType, 'guide'),
+          eq(phaseContent.contentId, courses.id)
+        )
+      )
+      .leftJoin(phases, eq(phases.id, phaseContent.phaseId))
+      .leftJoin(rooms, eq(rooms.id, phases.roomId))
       .where(
         and(
           eq(courses.isPublished, true),
           eq(courses.type, 'guide')
         )
       );
+
+    // Group by guide and aggregate room info
+    const guidesMap = new Map<string, any>();
+    
+    for (const row of result) {
+      if (!guidesMap.has(row.course.id)) {
+        guidesMap.set(row.course.id, {
+          ...row.course,
+          roomContext: []
+        });
+      }
+      
+      // Add room info if exists
+      if (row.room) {
+        const guideData = guidesMap.get(row.course.id);
+        guideData.roomContext.push({
+          roomId: row.room.id,
+          roomSlug: row.room.slug,
+          roomTitle: row.room.title,
+        });
+      }
+    }
+    
+    return Array.from(guidesMap.values());
   }
 
   async getAllWorkshops(): Promise<Course[]> {
