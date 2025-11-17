@@ -124,24 +124,13 @@ export default function Sidebar({ onToggle }: SidebarProps = {}) {
     <aside className="hidden md:flex w-16 lg:w-[250px] bg-card border-r border-border flex-col fixed h-screen top-0 left-0 z-40">
       {/* Logo */}
       <div className="px-4 py-4 border-b border-border">
-        <div className="flex items-center justify-between gap-2">
-          <div className="hidden lg:block flex-1 min-w-0">
-            <h1 className="font-satoshi font-bold text-[14px] whitespace-nowrap overflow-hidden text-ellipsis">
+        <div className="flex items-center justify-center lg:justify-start">
+          <div className="hidden lg:block">
+            <h1 className="font-satoshi font-bold text-[14px]">
               <span className="bg-gradient-to-r from-purple-accent to-blue-accent bg-clip-text text-transparent">Universidad</span>
               <span className="text-foreground"> Expertos NoCode IA</span>
             </h1>
           </div>
-          {/* Collapse button - only visible on desktop when onToggle is provided */}
-          {onToggle && (
-            <button
-              onClick={onToggle}
-              className="hidden lg:flex items-center justify-center w-7 h-7 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition-colors flex-shrink-0"
-              title="Ocultar sidebar"
-              data-testid="sidebar-collapse-button"
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </button>
-          )}
         </div>
       </div>
       {/* Search */}
@@ -512,6 +501,21 @@ export default function Sidebar({ onToggle }: SidebarProps = {}) {
             >
               Acceso
             </Button>
+          </div>
+        )}
+        
+        {/* Collapse button - at bottom of sidebar, only visible when onToggle is provided */}
+        {onToggle && (
+          <div className="hidden lg:block px-4 pb-4">
+            <button
+              onClick={onToggle}
+              className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition-colors text-sm"
+              title="Ocultar sidebar"
+              data-testid="sidebar-collapse-button"
+            >
+              <ChevronLeft className="h-4 w-4" />
+              <span>Ocultar menú</span>
+            </button>
           </div>
         )}
       </div>
