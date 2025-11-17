@@ -694,6 +694,7 @@ export const rooms = pgTable("rooms", {
   slug: varchar("slug").unique().notNull(), // agentes-ia, vibe-coding, nocode-saas
   description: text("description"),
   shortDescription: varchar("short_description", { length: 500 }),
+  categoryId: varchar("category_id").references(() => categories.id), // Categoría asociada (ej: "Programas")
   coverImageUrl: varchar("cover_image_url"),
   heroImageUrl: varchar("hero_image_url"), // Banner superior tipo Netflix
   order: integer("order").notNull().default(0),
