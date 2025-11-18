@@ -1076,7 +1076,7 @@ export default function Course() {
             </Button>
           </div>
           
-          <div className="pl-6 pr-12 pt-12 space-y-6">
+          <div className="pl-6 pr-12 pt-4 space-y-6">
             {/* Progress Card - Aligned with video */}
             <div className="bg-card rounded-lg p-5">
               <div className="flex justify-between items-center mb-3">
