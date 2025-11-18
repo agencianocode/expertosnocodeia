@@ -799,6 +799,9 @@ export class DatabaseStorage implements IStorage {
         category: categories,
         progress: userProgress,
         lastLesson: lessons,
+        phaseContent: phaseContent,
+        phase: phases,
+        room: rooms,
       })
       .from(userRecentActivity)
       .leftJoin(courses, eq(userRecentActivity.courseId, courses.id))
@@ -808,6 +811,13 @@ export class DatabaseStorage implements IStorage {
         eq(userProgress.courseId, courses.id)
       ))
       .leftJoin(lessons, eq(userRecentActivity.lastLessonId, lessons.id))
+      // Join to find if course belongs to a room (via phase_content)
+      .leftJoin(phaseContent, and(
+        eq(phaseContent.contentId, courses.id),
+        eq(phaseContent.contentType, courses.type)
+      ))
+      .leftJoin(phases, eq(phaseContent.phaseId, phases.id))
+      .leftJoin(rooms, eq(phases.roomId, rooms.id))
       .where(eq(userRecentActivity.userId, userId))
       .orderBy(desc(userRecentActivity.lastAccessedAt));
 
@@ -816,10 +826,12 @@ export class DatabaseStorage implements IStorage {
     const uniqueActivities = [];
     
     for (const item of activities) {
-      const key = `${item.activity.courseId}-${item.activity.roomSlug || 'standalone'}`;
+      // Use room slug from activity if available, otherwise from room join
+      const roomSlug = item.activity.roomSlug || item.room?.slug;
+      const key = `${item.activity.courseId}-${roomSlug || 'standalone'}`;
       if (!seen.has(key)) {
         seen.add(key);
-        uniqueActivities.push(item);
+        uniqueActivities.push({ ...item, roomSlug });
         if (uniqueActivities.length >= limit) break;
       }
     }
@@ -832,7 +844,7 @@ export class DatabaseStorage implements IStorage {
       lastLesson: item.lastLesson,
       lastLessonId: item.activity.lastLessonId,
       contentType: item.activity.contentType,
-      roomSlug: item.activity.roomSlug, // Include room context for navigation
+      roomSlug: item.roomSlug, // Include room slug from activity or room join
     }));
   }
 
