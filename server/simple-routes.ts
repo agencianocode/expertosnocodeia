@@ -584,7 +584,7 @@ export function registerSimpleRoutes(app: Express): Server {
         return res.status(401).json({ message: "Usuario no autenticado" });
       }
       
-      const activity = await storage.getUserRecentCourses(userId);
+      const activity = await storage.getUserRecentContent(userId);
       res.json(activity);
     } catch (error) {
       console.error("Error fetching recent activity:", error);
@@ -600,12 +600,16 @@ export function registerSimpleRoutes(app: Express): Server {
         return res.status(401).json({ message: "Usuario no autenticado" });
       }
 
-      const { courseId, lessonId } = req.body;
+      const { courseId, lessonId, contentType, roomSlug } = req.body;
       if (!courseId) {
         return res.status(400).json({ message: "courseId requerido" });
       }
 
-      await storage.trackUserActivity(userId, courseId, lessonId);
+      await storage.trackUserActivity(userId, courseId, { 
+        lastLessonId: lessonId,
+        contentType,
+        roomSlug 
+      });
       res.json({ success: true });
     } catch (error) {
       console.error("Error tracking user activity:", error);
@@ -623,7 +627,7 @@ export function registerSimpleRoutes(app: Express): Server {
 
       // Get all necessary data for dashboard
       const [continueCourses, recommendedCourses, categories] = await Promise.all([
-        storage.getUserRecentCourses(userId, 8), // Recent activity for "continue" section
+        storage.getUserRecentContent(userId, 8), // Recent activity for "continue" section
         storage.getAllCourses(), // All courses for recommendations
         storage.getAllCategories() // Categories for filtering
       ]);
