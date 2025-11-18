@@ -1204,10 +1204,7 @@ export default function Course() {
                                       )}
                                       onClick={() => isAuthenticated && handleLessonClick(subIndex)}
                                     >
-                                      <div className={cn(
-                                        "font-satoshi text-[14px] pr-2 transition-colors hover:text-[#faa318]",
-                                        isCurrentLesson ? "text-[#faa318] font-medium" : "text-muted-foreground"
-                                      )}>
+                                      <div className="font-satoshi pr-2 transition-colors hover:text-[#faa318] text-muted-foreground text-[15px]">
                                         {subLesson.title}
                                       </div>
                                     </div>
