@@ -10,8 +10,10 @@ The system features a modern React frontend with Express.js backend, PostgreSQL 
 
 ## Recent Implementation (November 18, 2025)
 - **Enhanced Activity Tracking**: Extended "Continúa donde lo dejaste" to track all content types (courses, guides, workshops, room courses) with room context preservation
-- **Room Context Navigation**: Activity tracking now preserves room slug for proper URL construction (/sala/:slug/curso/:id) ensuring users maintain context when navigating from dashboard
+- **Room Context Navigation Fix**: Cursos de sala SIEMPRE navegan con contexto (/sala/:slug/curso/:id), NUNCA solo /curso/:id
 - **Multi-Content Type Support**: userRecentActivity table now includes contentType and roomSlug fields to support diverse content navigation
+- **Backend Room Slug Resolution**: getUserRecentContent joins with phase_content → phases → rooms to automatically resolve room slug for courses belonging to rooms
+- **Dashboard Direct Navigation**: From "Continúa donde lo dejaste", users navigate directly to /sala/:slug/curso/:id to continue learning in room context
 - **Backend API Enhancement**: Updated /api/track-activity and /api/dashboard endpoints to handle all content types with room context
 
 ## Previous Implementation (January 2025)
