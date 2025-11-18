@@ -142,7 +142,11 @@ export default function CourseCard({ course, category, progress, variant = "defa
           // Allow navigation for both authenticated and non-authenticated users
           // Non-authenticated users will see blocked content in the course page
           let courseUrl;
-          if (course.type === 'workshop') {
+          
+          // From dashboard "Continue where you left off": go to room page first
+          if (showContinueText && roomSlug) {
+            courseUrl = `/sala/${roomSlug}`;
+          } else if (course.type === 'workshop') {
             courseUrl = roomSlug ? `/sala/${roomSlug}/taller/${course.id}` : `/taller/${course.id}`;
           } else if (course.type === 'guide') {
             courseUrl = roomSlug ? `/sala/${roomSlug}/guia/${course.id}` : `/guia/${course.id}`;
@@ -276,7 +280,11 @@ export default function CourseCard({ course, category, progress, variant = "defa
         // Allow navigation for both authenticated and non-authenticated users
         // Non-authenticated users will see blocked content in the course page
         let courseUrl;
-        if (course.type === 'workshop') {
+        
+        // From dashboard "Continue where you left off": go to room page first
+        if (showContinueText && roomSlug) {
+          courseUrl = `/sala/${roomSlug}`;
+        } else if (course.type === 'workshop') {
           courseUrl = roomSlug ? `/sala/${roomSlug}/taller/${course.id}` : `/taller/${course.id}`;
         } else if (course.type === 'guide') {
           courseUrl = roomSlug ? `/sala/${roomSlug}/guia/${course.id}` : `/guia/${course.id}`;
