@@ -1076,7 +1076,7 @@ export default function Course() {
             </Button>
           </div>
           
-          <div className="pl-6 pr-12 pt-4 space-y-6">
+          <div className="pl-6 pr-12 pt-12 space-y-6">
             {/* Progress Card - Aligned with video */}
             <div className="bg-card rounded-lg p-5">
               <div className="flex justify-between items-center mb-3">
@@ -1096,7 +1096,7 @@ export default function Course() {
             {/* Lessons List Card - Separate card */}
             <div className="bg-card rounded-lg p-5">
               <h3 className="font-satoshi font-medium text-foreground mb-5 text-[20px]">Contenido del curso</h3>
-              <div className="space-y-2 max-h-[400px] overflow-y-auto scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent pr-2">
+              <div className="space-y-2 max-h-[700px] overflow-y-auto scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent pr-2">
                 {isRoomContext ? (
                   /* Room Context Timeline Design */
                   (modules.map((module: any, moduleIdx: number) => {
