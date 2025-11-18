@@ -30,16 +30,47 @@ export function LessonResources({ lessonId, className = "" }: LessonResourcesPro
   }
 
   const handleDownload = (resource: LessonResource) => {
+    // List of file extensions that should be downloaded directly instead of opened
+    const downloadableExtensions = ['.json', '.zip', '.rar', '.7z', '.csv', '.xlsx', '.xls', '.docx', '.doc', '.txt', '.xml', '.sql'];
+    
+    // Check if the file should be downloaded based on extension
+    const shouldDownload = downloadableExtensions.some(ext => 
+      resource.fileName.toLowerCase().endsWith(ext)
+    );
+    
     // Check if it's a cloud storage file (internal path) or external URL
     if (resource.fileUrl.startsWith('/lesson-resources/')) {
       // Internal cloud storage file - construct the correct API URL
       const cleanPath = resource.fileUrl.substring(1); // Remove leading '/'
       const downloadUrl = `/api/${cleanPath}`;
-      // Open in new window instead of forcing download
-      window.open(downloadUrl, '_blank');
+      
+      if (shouldDownload) {
+        // Force download using anchor element
+        const link = document.createElement('a');
+        link.href = downloadUrl;
+        link.download = resource.fileName;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      } else {
+        // Open in new window for viewable files (images, PDFs, etc.)
+        window.open(downloadUrl, '_blank');
+      }
     } else {
-      // External URL - open in new tab
-      window.open(resource.fileUrl, '_blank');
+      // External URL
+      if (shouldDownload) {
+        // Try to force download for external URLs
+        const link = document.createElement('a');
+        link.href = resource.fileUrl;
+        link.download = resource.fileName;
+        link.target = '_blank';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      } else {
+        // Open in new tab
+        window.open(resource.fileUrl, '_blank');
+      }
     }
   };
 
