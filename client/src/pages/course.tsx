@@ -1094,7 +1094,7 @@ export default function Course() {
             )}
 
             {/* Lessons List Card - Separate card */}
-            <div className="bg-card rounded-lg p-5">
+            <div className="bg-card rounded-lg p-5 mt-[11px] mb-[11px]">
               <h3 className="font-satoshi font-medium text-foreground mb-5 text-[20px]">Contenido del curso</h3>
               <div className="space-y-2 max-h-[480px] overflow-y-auto scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent pr-2">
                 {isRoomContext ? (
