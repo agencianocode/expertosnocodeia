@@ -53,6 +53,7 @@ export default function Course() {
   const { id, roomSlug } = useParams<{ id: string; roomSlug?: string }>();
   const [location, setLocation] = useLocation();
   const isRoomContext = location.startsWith('/sala/'); // Detect if viewing from a room context
+  const isAgentesIARoom = isRoomContext && roomSlug === 'agentes-ia'; // Only Agentes IA 2.0 room gets orange theme
   const backUrl = isRoomContext && roomSlug ? `/sala/${roomSlug}` : '/courses';
   const [currentLessonIndex, setCurrentLessonIndex] = useState(0);
   const [hasCheckedSavedPosition, setHasCheckedSavedPosition] = useState(false);
@@ -795,7 +796,7 @@ export default function Course() {
                 size="sm" 
                 className={cn(
                   "text-muted-foreground hover:text-foreground",
-                  isRoomContext && "text-[#faa318] hover:text-[#faa318] hover:bg-black"
+                  isAgentesIARoom && "text-[#faa318] hover:text-[#faa318] hover:bg-black"
                 )}
               >
                 <ChevronLeft className="h-4 w-4 mr-1" />
@@ -907,7 +908,7 @@ export default function Course() {
                                     className={cn(
                                       "h-8 px-3",
                                       isRoomContext && !isLessonCompleted(currentLesson.id) && "hover:bg-black hover:text-white",
-                                      isLessonCompleted(currentLesson.id) && "bg-[#faa318] text-white border-[#faa318] hover:bg-[#faa318]/90"
+                                      isLessonCompleted(currentLesson.id) && (isAgentesIARoom ? "bg-[#faa318] text-white border-[#faa318] hover:bg-[#faa318]/90" : "bg-primary text-white border-primary hover:bg-primary/90")
                                     )}
                                   >
                                     {isLessonCompleted(currentLesson.id) ? (
@@ -934,7 +935,7 @@ export default function Course() {
                                     className={cn(
                                       "h-8 px-3",
                                       isRoomContext && !isSaved && "hover:bg-black hover:text-white",
-                                      isSaved && "bg-[#faa318] text-white border-[#faa318] hover:bg-[#faa318]/90"
+                                      isSaved && (isAgentesIARoom ? "bg-[#faa318] text-white border-[#faa318] hover:bg-[#faa318]/90" : "bg-primary text-white border-primary hover:bg-primary/90")
                                     )}
                                   >
                                     {isSaved ? (
@@ -1020,7 +1021,10 @@ export default function Course() {
                     <button 
                       onClick={handleNextLesson}
                       disabled={currentLessonIndex >= lessonsArray.length - 1}
-                      className="w-full bg-[#faa318] text-white hover:bg-[#faa318]/90 font-medium py-3 px-4 rounded-lg transition-colors disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center"
+                      className={cn(
+                        "w-full text-white font-medium py-3 px-4 rounded-lg transition-colors disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center",
+                        isAgentesIARoom ? "bg-[#faa318] hover:bg-[#faa318]/90" : "bg-primary hover:bg-primary/90"
+                      )}
                     >
                       Próxima lección
                       <ChevronRight className="ml-2" size={16} />
@@ -1055,7 +1059,10 @@ export default function Course() {
                   <Button 
                     onClick={handleNextLesson}
                     disabled={currentLessonIndex >= lessonsArray.length - 1}
-                    className="flex-1 bg-[#faa318] text-white hover:bg-[#faa318]/90 font-medium py-3 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-[#faa318]"
+                    className={cn(
+                      "flex-1 text-white font-medium py-3 disabled:opacity-30 disabled:cursor-not-allowed",
+                      isAgentesIARoom ? "bg-[#faa318] hover:bg-[#faa318]/90 disabled:hover:bg-[#faa318]" : "bg-primary hover:bg-primary/90 disabled:hover:bg-primary"
+                    )}
                   >
                     Próxima lección
                     <ChevronRight className="ml-2" size={16} />
@@ -1085,7 +1092,7 @@ export default function Course() {
                   {isAuthenticated ? `${Math.round(progressPercentage)}% Completado` : "0% Completado"}
                 </span>
               </div>
-              <Progress value={isAuthenticated ? progressPercentage : 0} className="h-2 bg-muted [&>div]:bg-[#faa318]" />
+              <Progress value={isAuthenticated ? progressPercentage : 0} className={cn("h-2 bg-muted", isAgentesIARoom ? "[&>div]:bg-[#faa318]" : "[&>div]:bg-primary")} />
             </div>
 
             {/* Lesson Resources Card - Show only if current lesson has resources */}
@@ -1130,7 +1137,7 @@ export default function Course() {
                               <h4 className="font-satoshi font-medium text-foreground text-[16px]">
                                 {module.title}
                               </h4>
-                              <span className="text-[#faa318] font-semibold text-sm ml-2 flex-shrink-0">
+                              <span className={cn("font-semibold text-sm ml-2 flex-shrink-0", isAgentesIARoom ? "text-[#faa318]" : "text-primary")}>
                                 {progress.percentage}%
                               </span>
                             </div>
@@ -1168,7 +1175,7 @@ export default function Course() {
                                     className={cn(
                                       "group relative flex items-start gap-3 min-h-[32px] rounded-lg px-3 py-3 transition-all",
                                       isCurrentLesson 
-                                        ? "bg-[#2d2d2d] border-2 border-[#ffa018]" 
+                                        ? isAgentesIARoom ? "bg-[#2d2d2d] border-2 border-[#ffa018]" : "bg-muted border-2 border-primary" 
                                         : "bg-[#262626] border border-border/30 hover:bg-[#2d2d2d] hover:border-border/50"
                                     )}
                                   >
@@ -1177,9 +1184,9 @@ export default function Course() {
                                       className={cn(
                                         "h-4 w-4 rounded-full border-2 flex-shrink-0 transition-all relative z-10 mt-0.5",
                                         isCompleted 
-                                          ? "bg-[#faa318] border-[#faa318]" 
+                                          ? isAgentesIARoom ? "bg-[#faa318] border-[#faa318]" : "bg-primary border-primary" 
                                           : "bg-transparent border-border",
-                                        isCurrentLesson && "ring-2 ring-[#faa318]/40",
+                                        isCurrentLesson && (isAgentesIARoom ? "ring-2 ring-[#faa318]/40" : "ring-2 ring-primary/40"),
                                         !isAuthenticated && "bg-muted border-muted",
                                         isAuthenticated && "cursor-pointer hover:scale-110"
                                       )}
@@ -1203,7 +1210,7 @@ export default function Course() {
                                       )}
                                       onClick={() => isAuthenticated && handleLessonClick(subIndex)}
                                     >
-                                      <div className="font-satoshi pr-2 transition-colors hover:text-[#faa318] text-muted-foreground text-[15px]">
+                                      <div className={cn("font-satoshi pr-2 transition-colors text-muted-foreground text-[15px]", isAgentesIARoom ? "hover:text-[#faa318]" : "hover:text-primary")}>
                                         {subLesson.title}
                                       </div>
                                     </div>
@@ -1373,7 +1380,7 @@ export default function Course() {
               {/* Next Course Card - Desktop - Only show in room context when there is a next course */}
               {isRoomContext && nextCourse && (
                 <Link href={`/sala/${roomSlug}/curso/${nextCourse.courseId}`}>
-                  <div className="p-4 bg-[#1a1a1a] border border-[#faa318] rounded-lg cursor-pointer hover:bg-[#1a1a1a]/80 transition-all pt-[6px] pb-[6px] mt-[16px] mb-[16px]">
+                  <div className={cn("p-4 bg-[#1a1a1a] border rounded-lg cursor-pointer hover:bg-[#1a1a1a]/80 transition-all pt-[6px] pb-[6px] mt-[16px] mb-[16px]", isAgentesIARoom ? "border-[#faa318]" : "border-primary")}>
                     <div className="text-xs text-gray-400 mb-2 font-satoshi">Próximo contenido</div>
                     <div className="flex items-center gap-3">
                       {nextCourse.coverImageUrl && (
@@ -1384,11 +1391,11 @@ export default function Course() {
                         />
                       )}
                       <div className="flex-1">
-                        <div className="text-[#faa318] font-satoshi text-[16px] font-bold">
+                        <div className={cn("font-satoshi text-[16px] font-bold", isAgentesIARoom ? "text-[#faa318]" : "text-primary")}>
                           {nextCourse.title}
                         </div>
                       </div>
-                      <div className="text-[#faa318]">
+                      <div className={isAgentesIARoom ? "text-[#faa318]" : "text-primary"}>
                         <ChevronRight size={20} />
                       </div>
                     </div>
@@ -1750,7 +1757,7 @@ export default function Course() {
                               <h4 className="font-satoshi font-medium text-[15px] text-white">
                                 {module.title}
                               </h4>
-                              <span className="text-[#faa318] font-semibold text-sm ml-2 flex-shrink-0">
+                              <span className={cn("font-semibold text-sm ml-2 flex-shrink-0", isAgentesIARoom ? "text-[#faa318]" : "text-primary")}>
                                 {progress.percentage}%
                               </span>
                             </div>
@@ -1789,7 +1796,7 @@ export default function Course() {
                                     className={cn(
                                       "group relative flex items-center gap-4 min-h-[32px] rounded-lg px-2 py-1 -mx-2 transition-all",
                                       isCurrentLesson 
-                                        ? "bg-[#2d2d2d] border-2 border-[#ffa018]" 
+                                        ? isAgentesIARoom ? "bg-[#2d2d2d] border-2 border-[#ffa018]" : "bg-muted border-2 border-primary" 
                                         : "hover:bg-gray-800/30"
                                     )}
                                   >
@@ -1798,10 +1805,11 @@ export default function Course() {
                                       className={cn(
                                         "h-5 w-5 rounded-full border-[2.5px] flex-shrink-0 transition-all relative z-10",
                                         isCompleted 
-                                          ? "bg-[#faa318] border-[#faa318] shadow-lg shadow-[#faa318]/20" 
+                                          ? isAgentesIARoom ? "bg-[#faa318] border-[#faa318] shadow-lg shadow-[#faa318]/20" : "bg-primary border-primary shadow-lg shadow-primary/20" 
                                           : "bg-black border-gray-600",
-                                        isCurrentLesson && "ring-2 ring-[#faa318]/40 ring-offset-2 ring-offset-black",
-                                        "cursor-pointer hover:scale-110 hover:border-[#faa318]/60"
+                                        isCurrentLesson && (isAgentesIARoom ? "ring-2 ring-[#faa318]/40 ring-offset-2 ring-offset-black" : "ring-2 ring-primary/40 ring-offset-2 ring-offset-black"),
+                                        "cursor-pointer hover:scale-110",
+                                        isAgentesIARoom ? "hover:border-[#faa318]/60" : "hover:border-primary/60"
                                       )}
                                       onClick={(e) => {
                                         e.stopPropagation();
@@ -2015,7 +2023,7 @@ export default function Course() {
                 {/* Next Course Card - Only show in room context when there is a next course */}
                 {isRoomContext && nextCourse && (
                   <Link href={`/sala/${roomSlug}/curso/${nextCourse.courseId}`}>
-                    <div className="mt-4 p-4 bg-[#1a1a1a] border border-[#faa318] rounded-lg cursor-pointer hover:bg-[#1a1a1a]/80 transition-all">
+                    <div className={cn("mt-4 p-4 bg-[#1a1a1a] border rounded-lg cursor-pointer hover:bg-[#1a1a1a]/80 transition-all", isAgentesIARoom ? "border-[#faa318]" : "border-primary")}>
                       <div className="text-xs text-gray-400 mb-2 font-satoshi">Próximo contenido</div>
                       <div className="flex items-center gap-3">
                         {nextCourse.coverImageUrl && (
@@ -2026,11 +2034,11 @@ export default function Course() {
                           />
                         )}
                         <div className="flex-1">
-                          <div className="text-[#faa318] font-medium text-sm font-satoshi">
+                          <div className={cn("font-medium text-sm font-satoshi", isAgentesIARoom ? "text-[#faa318]" : "text-primary")}>
                             {nextCourse.title}
                           </div>
                         </div>
-                        <div className="text-[#faa318]">
+                        <div className={isAgentesIARoom ? "text-[#faa318]" : "text-primary"}>
                           <ChevronRight size={20} />
                         </div>
                       </div>
