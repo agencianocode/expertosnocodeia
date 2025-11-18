@@ -1168,7 +1168,7 @@ export default function Course() {
                                     className={cn(
                                       "group relative flex items-start gap-3 min-h-[32px] rounded-lg px-3 py-3 transition-all",
                                       isCurrentLesson 
-                                        ? "bg-[#ffa018]/10 border-2 border-[#ffa018]" 
+                                        ? "bg-[#2d2d2d] border-2 border-[#ffa018]" 
                                         : "bg-[#262626] border border-border/30 hover:bg-[#2d2d2d] hover:border-border/50"
                                     )}
                                   >
@@ -1789,7 +1789,7 @@ export default function Course() {
                                     className={cn(
                                       "group relative flex items-center gap-4 min-h-[32px] rounded-lg px-2 py-1 -mx-2 transition-all",
                                       isCurrentLesson 
-                                        ? "bg-[#ffa018]/10 border-2 border-[#ffa018]" 
+                                        ? "bg-[#2d2d2d] border-2 border-[#ffa018]" 
                                         : "hover:bg-gray-800/30"
                                     )}
                                   >
