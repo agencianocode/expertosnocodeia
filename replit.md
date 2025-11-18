@@ -8,7 +8,13 @@ This is a comprehensive NoCode education ecosystem called "Expertos NoCode IA" t
 
 The system features a modern React frontend with Express.js backend, PostgreSQL database with Drizzle ORM, and integrates Replit's authentication system. The ecosystem is designed to funnel users from free content to paid courses and finally into the comprehensive learning application.
 
-## Recent Implementation (January 2025)
+## Recent Implementation (November 18, 2025)
+- **Enhanced Activity Tracking**: Extended "Continúa donde lo dejaste" to track all content types (courses, guides, workshops, room courses) with room context preservation
+- **Room Context Navigation**: Activity tracking now preserves room slug for proper URL construction (/sala/:slug/curso/:id) ensuring users maintain context when navigating from dashboard
+- **Multi-Content Type Support**: userRecentActivity table now includes contentType and roomSlug fields to support diverse content navigation
+- **Backend API Enhancement**: Updated /api/track-activity and /api/dashboard endpoints to handle all content types with room context
+
+## Previous Implementation (January 2025)
 - **Ecosistema Completo**: Implementada arquitectura de tres niveles (landing + universidad + app LMS)
 - **Landing Principal**: Página pública con artículos, guías y herramientas NoCode
 - **Página Universidad**: Sistema de cursos, certificaciones y precios basado en rundown.ai/ai-university
