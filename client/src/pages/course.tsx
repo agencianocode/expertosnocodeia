@@ -1209,20 +1209,9 @@ export default function Course() {
                                       </div>
                                     </div>
                                     
-                                    {/* Lock Icon or Mark Complete Button */}
-                                    {!isAuthenticated ? (
+                                    {/* Lock Icon */}
+                                    {!isAuthenticated && (
                                       <Lock size={12} className="text-muted-foreground flex-shrink-0 mt-1" />
-                                    ) : !isCompleted && (
-                                      <div 
-                                        className="opacity-0 group-hover:opacity-100 flex items-center border border-border rounded px-2 py-0.5 cursor-pointer hover:bg-muted/20 transition-all flex-shrink-0"
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          handleMarkComplete(subLesson.id);
-                                        }}
-                                      >
-                                        <Check size={10} className="mr-1 text-muted-foreground" />
-                                        <span className="text-muted-foreground font-satoshi text-[11px]">Marcar</span>
-                                      </div>
                                     )}
                                   </div>
                                 </div>
@@ -1289,19 +1278,6 @@ export default function Course() {
                               <Lock size={14} className="text-muted-foreground mt-1" />
                             )}
                             
-                            {!hasSubLessons && isAuthenticated && !isLessonCompleted(module.id) && (
-                              <div 
-                                className="opacity-0 group-hover:opacity-100 flex items-center border border-border rounded px-2 py-1 cursor-pointer hover:bg-muted/20 transition-all"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleMarkComplete(module.id);
-                                }}
-                              >
-                                <Check size={12} className="mr-1.5 text-muted-foreground" />
-                                <span className="text-muted-foreground font-satoshi text-[12px]">Marcar como completado</span>
-                              </div>
-                            )}
-                            
                             {hasSubLessons && (
                               <button
                                 onClick={(e) => {
@@ -1365,19 +1341,8 @@ export default function Course() {
                                   </div>
                                 </div>
                               </div>
-                              {!isAuthenticated ? (
+                              {!isAuthenticated && (
                                 <Lock size={12} className="text-muted-foreground mt-1" />
-                              ) : !isLessonCompleted(subLesson.id) && (
-                                <div 
-                                  className="opacity-0 group-hover:opacity-100 flex items-center border border-border rounded px-2 py-1 ml-2 cursor-pointer hover:bg-muted/20 transition-all"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleMarkComplete(subLesson.id);
-                                  }}
-                                >
-                                  <Check size={10} className="mr-1 text-muted-foreground" />
-                                  <span className="text-muted-foreground font-satoshi text-[11px]">Marcar</span>
-                                </div>
                               )}
                             </div>
                           </div>
