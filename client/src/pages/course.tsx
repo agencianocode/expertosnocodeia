@@ -916,7 +916,9 @@ export default function Course() {
                                     ) : (
                                       <CheckCircle2 className="h-4 w-4" />
                                     )}
-                                    <span className="ml-2 hidden xl:inline">Completar</span>
+                                    <span className="ml-2 hidden xl:inline">
+                                      {isLessonCompleted(currentLesson.id) ? 'Completado' : 'Completar'}
+                                    </span>
                                   </Button>
                                 </TooltipTrigger>
                                 <TooltipContent>
