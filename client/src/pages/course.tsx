@@ -1127,7 +1127,7 @@ export default function Course() {
                           <div className="h-3 w-3 rounded-full border border-primary/60 bg-transparent flex-shrink-0 mt-2" />
                           <div className="flex-1">
                             <div className="flex items-start justify-between">
-                              <h4 className="font-satoshi font-medium text-[15px] text-foreground">
+                              <h4 className="font-satoshi font-medium text-foreground text-[16px]">
                                 {module.title}
                               </h4>
                               <span className="text-[#faa318] font-semibold text-sm ml-2 flex-shrink-0">
@@ -1153,7 +1153,6 @@ export default function Course() {
                             </button>
                           )}
                         </div>
-
                         {/* Sub-lessons Timeline */}
                         {hasSubLessons && !isCollapsed && (
                           <div className="relative px-6 py-4 flex flex-col gap-4">
