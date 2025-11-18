@@ -103,8 +103,10 @@ export const userSavedCourses = pgTable("user_saved_courses", {
 export const userRecentActivity = pgTable("user_recent_activity", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id").references(() => users.id),
+  contentType: varchar("content_type").notNull().default("course"), // 'course', 'guide', 'workshop'
   courseId: varchar("course_id").references(() => courses.id),
   lastLessonId: varchar("last_lesson_id").references(() => lessons.id), // Track specific lesson within course
+  roomSlug: varchar("room_slug"), // Optional: tracks if accessed from a room context
   lastAccessedAt: timestamp("last_accessed_at").defaultNow(),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
