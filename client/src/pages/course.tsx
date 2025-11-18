@@ -1080,7 +1080,7 @@ export default function Course() {
             {/* Progress Card - Aligned with video */}
             <div className="bg-card rounded-lg p-5">
               <div className="flex justify-between items-center mb-3">
-                <span className="font-satoshi font-medium text-[14px] leading-[20px] text-foreground">Progreso del curso</span>
+                <span className="font-satoshi font-medium text-foreground text-[16px]">Progreso del curso</span>
                 <span className="font-satoshi font-normal text-[14px] leading-[20px] text-muted-foreground">
                   {isAuthenticated ? `${Math.round(progressPercentage)}% Completado` : "0% Completado"}
                 </span>
