@@ -128,8 +128,8 @@ export interface IStorage {
   updateUserProgress(userId: string, courseId: string, data: Partial<InsertUserProgress>): Promise<UserProgress>;
   
   // Recent Activity operations
-  trackUserActivity(userId: string, courseId: string): Promise<void>;
-  getUserRecentCourses(userId: string, limit?: number): Promise<any[]>;
+  trackUserActivity(userId: string, courseId: string, options?: { lastLessonId?: string; contentType?: string; roomSlug?: string }): Promise<void>;
+  getUserRecentContent(userId: string, limit?: number): Promise<any[]>;
   
   // Profile Progress operations
   getUserProfileProgress(userId: string): Promise<{
@@ -717,19 +717,37 @@ export class DatabaseStorage implements IStorage {
     };
   }
 
-  // Track user activity when they view a course or lesson
-  async trackUserActivity(userId: string, courseId: string, lastLessonId?: string): Promise<void> {
-    // Check if activity already exists for this user/course combination
+  // Track user activity when they view a course, guide, workshop or lesson
+  async trackUserActivity(userId: string, courseId: string, options?: { lastLessonId?: string; contentType?: string; roomSlug?: string }): Promise<void> {
+    const contentType = options?.contentType || 'course';
+    const lastLessonId = options?.lastLessonId;
+    const roomSlug = options?.roomSlug;
+    
+    // For room context, we want to track separately (e.g., same course in different rooms = different activities)
+    const whereClause = roomSlug
+      ? and(
+          eq(userRecentActivity.userId, userId),
+          eq(userRecentActivity.courseId, courseId),
+          eq(userRecentActivity.roomSlug, roomSlug)
+        )
+      : and(
+          eq(userRecentActivity.userId, userId),
+          eq(userRecentActivity.courseId, courseId),
+          sql`${userRecentActivity.roomSlug} IS NULL`
+        );
+    
+    // Check if activity already exists for this user/course/room combination
     const [existing] = await db
       .select()
       .from(userRecentActivity)
-      .where(and(eq(userRecentActivity.userId, userId), eq(userRecentActivity.courseId, courseId)));
+      .where(whereClause);
 
     if (existing) {
-      // Update existing record with new lesson and timestamp
+      // Update existing record with new data and timestamp
       const updateData: any = { 
         lastAccessedAt: new Date(),
-        updatedAt: new Date() 
+        updatedAt: new Date(),
+        contentType
       };
       
       // Only update lastLessonId if provided
@@ -737,15 +755,21 @@ export class DatabaseStorage implements IStorage {
         updateData.lastLessonId = lastLessonId;
       }
       
+      // Update roomSlug if provided
+      if (roomSlug !== undefined) {
+        updateData.roomSlug = roomSlug;
+      }
+      
       await db
         .update(userRecentActivity)
         .set(updateData)
-        .where(and(eq(userRecentActivity.userId, userId), eq(userRecentActivity.courseId, courseId)));
+        .where(whereClause);
     } else {
       // Create new activity record
       const insertData: any = {
         userId,
         courseId,
+        contentType,
         lastAccessedAt: new Date(),
       };
       
@@ -754,22 +778,27 @@ export class DatabaseStorage implements IStorage {
         insertData.lastLessonId = lastLessonId;
       }
       
+      // Include roomSlug if provided
+      if (roomSlug) {
+        insertData.roomSlug = roomSlug;
+      }
+      
       await db
         .insert(userRecentActivity)
         .values(insertData);
     }
   }
 
-  // Get user's recently accessed courses (last 5, no duplicates)
-  async getUserRecentCourses(userId: string, limit: number = 5): Promise<any[]> {
-    // Use DISTINCT ON to get only the most recent access per course
+  // Get user's recently accessed content (courses, guides, workshops) - last 8, no duplicates
+  async getUserRecentContent(userId: string, limit: number = 8): Promise<any[]> {
+    // Get all recent activities sorted by most recent
     const activities = await db
-      .selectDistinctOn([userRecentActivity.courseId], {
+      .select({
         activity: userRecentActivity,
         course: courses,
         category: categories,
         progress: userProgress,
-        lastLesson: lessons, // Include lesson info
+        lastLesson: lessons,
       })
       .from(userRecentActivity)
       .leftJoin(courses, eq(userRecentActivity.courseId, courses.id))
@@ -778,25 +807,32 @@ export class DatabaseStorage implements IStorage {
         eq(userProgress.userId, userId),
         eq(userProgress.courseId, courses.id)
       ))
-      .leftJoin(lessons, eq(userRecentActivity.lastLessonId, lessons.id)) // Join with lessons table
+      .leftJoin(lessons, eq(userRecentActivity.lastLessonId, lessons.id))
       .where(eq(userRecentActivity.userId, userId))
-      .orderBy(userRecentActivity.courseId, desc(userRecentActivity.lastAccessedAt))
-      .limit(limit);
+      .orderBy(desc(userRecentActivity.lastAccessedAt));
 
-    // Sort by last accessed date descending after getting distinct courses
-    const sortedActivities = activities.sort((a, b) => {
-      const dateA = a.activity.lastAccessedAt ? new Date(a.activity.lastAccessedAt).getTime() : 0;
-      const dateB = b.activity.lastAccessedAt ? new Date(b.activity.lastAccessedAt).getTime() : 0;
-      return dateB - dateA;
-    });
+    // Remove duplicates manually by tracking unique course+room combinations
+    const seen = new Set<string>();
+    const uniqueActivities = [];
+    
+    for (const item of activities) {
+      const key = `${item.activity.courseId}-${item.activity.roomSlug || 'standalone'}`;
+      if (!seen.has(key)) {
+        seen.add(key);
+        uniqueActivities.push(item);
+        if (uniqueActivities.length >= limit) break;
+      }
+    }
 
-    return sortedActivities.map((item: any) => ({
+    return uniqueActivities.map((item: any) => ({
       course: item.course,
       category: item.category,
       progress: item.progress,
       lastAccessed: item.activity.lastAccessedAt,
-      lastLesson: item.lastLesson, // Include last lesson info for navigation
-      lastLessonId: item.activity.lastLessonId, // Also include the ID directly
+      lastLesson: item.lastLesson,
+      lastLessonId: item.activity.lastLessonId,
+      contentType: item.activity.contentType,
+      roomSlug: item.activity.roomSlug, // Include room context for navigation
     }));
   }
 
