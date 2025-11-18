@@ -1096,7 +1096,7 @@ export default function Course() {
             {/* Lessons List Card - Separate card */}
             <div className="bg-card rounded-lg p-5">
               <h3 className="font-satoshi font-medium text-foreground mb-5 text-[20px]">Contenido del curso</h3>
-              <div className="space-y-2 max-h-[700px] overflow-y-auto scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent pr-2">
+              <div className="space-y-2 max-h-[500px] overflow-y-auto scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent pr-2">
                 {isRoomContext ? (
                   /* Room Context Timeline Design */
                   (modules.map((module: any, moduleIdx: number) => {
