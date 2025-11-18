@@ -1269,7 +1269,13 @@ export default function Course() {
                             className="flex items-start space-x-3 flex-1"
                           >
                             <div className="w-6 h-6 rounded border flex items-center justify-center font-medium flex-shrink-0 bg-muted text-foreground border-border text-[14px]">
-                              {moduleNumber}
+                              {!isAuthenticated ? (
+                                <Lock size={10} className="text-muted-foreground" />
+                              ) : !hasSubLessons && isLessonCompleted(module.id) ? (
+                                <Check size={12} />
+                              ) : (
+                                moduleNumber
+                              )}
                             </div>
                             <div className="flex-1">
                               <div className={cn(
