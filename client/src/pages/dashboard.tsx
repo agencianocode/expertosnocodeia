@@ -167,6 +167,7 @@ export default function Dashboard() {
                           lastLessonId={item.lastLessonId}
                           showContinueText={true}
                           isAuthenticated={isAuthenticated}
+                          roomSlug={item.roomSlug}
                         />
                       </div>
                     ))}
