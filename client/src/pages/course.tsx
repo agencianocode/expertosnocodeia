@@ -782,11 +782,11 @@ export default function Course() {
         )}
         
       <div className={cn(
-        "flex-1 flex bg-background lg:mr-[560px] h-screen overflow-y-auto hide-scrollbar transition-all duration-300",
+        "flex-1 flex bg-background lg:mr-[640px] h-screen overflow-y-auto hide-scrollbar transition-all duration-300",
         sidebarOpen ? "lg:ml-[250px]" : "lg:ml-0"
       )}>
         {/* Main Content - Center Column - Full width on mobile */}
-        <main className="flex-1 lg:w-[920px] bg-background overflow-y-auto hide-scrollbar h-screen">
+        <main className="flex-1 lg:w-[840px] bg-background overflow-y-auto hide-scrollbar h-screen">
           {/* Top Navigation Bar */}
           <div className="px-4 lg:px-8 py-4 flex items-center justify-between">
             <Link href={backUrl} className="flex-1 mt-[5px] mb-[5px]">
@@ -1067,7 +1067,7 @@ export default function Course() {
         </main>
 
         {/* Right Sidebar - Course Info & Lessons - Hidden on mobile */}
-        <aside className="hidden lg:block w-[560px] bg-background fixed right-0 top-0 h-screen overflow-y-auto scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent">
+        <aside className="hidden lg:block w-[640px] bg-background fixed right-0 top-0 h-screen overflow-y-auto scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent">
           {/* Save Course Button - Aligned with top navigation */}
           <div className="pl-6 pr-12 py-4 flex justify-end">
             <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground text-[16px] bg-muted hover:bg-muted/80 mt-[6px] mb-[6px]">

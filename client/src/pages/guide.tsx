@@ -46,7 +46,7 @@ export default function Guide() {
     return (
       <div className="min-h-screen bg-background flex">
         <Sidebar />
-        <div className="flex-1 flex items-center justify-center lg:ml-[250px] lg:mr-[560px]">
+        <div className="flex-1 flex items-center justify-center lg:ml-[250px] lg:mr-[640px]">
           <div className="text-foreground">Cargando...</div>
         </div>
       </div>
@@ -57,7 +57,7 @@ export default function Guide() {
     return (
       <div className="min-h-screen bg-background flex">
         <Sidebar />
-        <div className="flex-1 flex items-center justify-center lg:ml-[250px] lg:mr-[560px]">
+        <div className="flex-1 flex items-center justify-center lg:ml-[250px] lg:mr-[640px]">
           <div className="text-foreground text-center">
             <h2 className="text-2xl font-bold mb-4">Error cargando la guía</h2>
             <p className="text-muted-foreground">Hubo un problema al cargar la guía. Intenta de nuevo más tarde.</p>
@@ -71,7 +71,7 @@ export default function Guide() {
     return (
       <div className="min-h-screen bg-background flex">
         <Sidebar />
-        <div className="flex-1 flex items-center justify-center lg:ml-[250px] lg:mr-[560px]">
+        <div className="flex-1 flex items-center justify-center lg:ml-[250px] lg:mr-[640px]">
           <div className="text-foreground text-center">
             <h2 className="text-2xl font-bold mb-4">Guía no encontrada</h2>
             <p className="text-muted-foreground">La guía que buscas no existe o ha sido eliminada.</p>
@@ -108,9 +108,9 @@ export default function Guide() {
           <Sidebar />
         </div>
         
-        <div className="flex-1 flex bg-background lg:ml-[250px] lg:mr-[560px] h-screen overflow-y-auto hide-scrollbar">
+        <div className="flex-1 flex bg-background lg:ml-[250px] lg:mr-[640px] h-screen overflow-y-auto hide-scrollbar">
           {/* Main Content - Center Column - Full width on mobile */}
-          <main className="flex-1 lg:w-[920px] bg-background overflow-y-auto hide-scrollbar h-screen">
+          <main className="flex-1 lg:w-[840px] bg-background overflow-y-auto hide-scrollbar h-screen">
             {/* Header con navegación móvil */}
             <div className="lg:hidden px-4 py-4 flex items-center justify-between border-b border-border">
               <Button
@@ -230,7 +230,7 @@ export default function Guide() {
         </div>
 
         {/* Right Sidebar - Guide Information */}
-        <aside className="hidden lg:block w-[560px] bg-background fixed right-0 top-0 h-screen overflow-y-auto scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent">
+        <aside className="hidden lg:block w-[640px] bg-background fixed right-0 top-0 h-screen overflow-y-auto scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent">
           {/* Header with back and save buttons */}
           <div className="pl-6 pr-12 py-4 flex justify-between items-center">
             <Button
