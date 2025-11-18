@@ -11,7 +11,12 @@ const LESSON_POSITION_KEY = 'expertosnocodeia_lesson_position';
 
 export function useLessonPosition() {
   // Guardar la posición actual de la lección
-  const saveLessonPosition = async (courseId: string, lessonId: string) => {
+  const saveLessonPosition = async (
+    courseId: string, 
+    lessonId: string, 
+    contentType?: string,
+    roomSlug?: string
+  ) => {
     if (!courseId || !lessonId) return;
     
     const position: LessonPosition = {
@@ -27,7 +32,9 @@ export function useLessonPosition() {
       // Also track in backend for "Continue where you left off"
       await apiRequest('POST', '/api/track-activity', {
         courseId,
-        lessonId
+        lessonId,
+        contentType: contentType || 'course',
+        roomSlug
       });
     } catch (error) {
       console.error('Error saving lesson position:', error);

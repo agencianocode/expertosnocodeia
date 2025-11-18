@@ -653,7 +653,7 @@ export default function Course() {
     // Guardar la posición de la nueva lección
     const lesson = lessonsArray[lessonIndex];
     if (lesson && id) {
-      saveLessonPosition(id, lesson.id);
+      saveLessonPosition(id, lesson.id, (course as any)?.type, roomSlug);
     }
   };
 
@@ -678,7 +678,7 @@ export default function Course() {
         setCurrentLessonIndex(prevNavigable);
         const lesson = lessonsArray[prevNavigable];
         if (lesson && id) {
-          saveLessonPosition(id, lesson.id);
+          saveLessonPosition(id, lesson.id, (course as any)?.type, roomSlug);
         }
       } else {
         console.log('❌ No previous navigable lesson found');
@@ -691,7 +691,7 @@ export default function Course() {
       // Guardar la posición de la nueva lección
       const lesson = lessonsArray[newIndex];
       if (lesson && id) {
-        saveLessonPosition(id, lesson.id);
+        saveLessonPosition(id, lesson.id, (course as any)?.type, roomSlug);
       }
     } else {
       console.log('❌ Already at first lesson');
@@ -720,7 +720,7 @@ export default function Course() {
         setCurrentLessonIndex(nextNavigable);
         const lesson = lessonsArray[nextNavigable];
         if (lesson && id) {
-          saveLessonPosition(id, lesson.id);
+          saveLessonPosition(id, lesson.id, (course as any)?.type, roomSlug);
         }
       } else {
         console.log('❌ No next navigable lesson found');
@@ -733,7 +733,7 @@ export default function Course() {
       // Guardar la posición de la nueva lección
       const lesson = lessonsArray[newIndex];
       if (lesson && id) {
-        saveLessonPosition(id, lesson.id);
+        saveLessonPosition(id, lesson.id, (course as any)?.type, roomSlug);
       }
     } else {
       console.log('❌ Already at last lesson');
