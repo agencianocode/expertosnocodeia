@@ -892,7 +892,7 @@ export default function Course() {
                           <div className="w-8 h-8 rounded-lg mr-3 flex items-center justify-center flex-shrink-0" style={{backgroundColor: '#363636'}}>
                             <GraduationCap className="h-4 w-4 text-foreground" />
                           </div>
-                          <span className="flex-1">{currentLesson.title}</span>
+                          <span className="flex-1 text-[22px]">{currentLesson.title}</span>
                         </div>
                         {isAuthenticated && (
                           <TooltipProvider>
