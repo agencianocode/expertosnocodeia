@@ -128,7 +128,7 @@ export default function Community() {
     return acc;
   }, {});
 
-  const sectionOrder = ["Bienvenida", "Redes", "Mercado y negocios", "Obtén respuestas a tus preguntas", "Materiales de clase", "Links"];
+  const sectionOrder = ["Comunidad", "Cursos de Salas"];
   const orderedSections = sectionOrder.filter(s => groupedChannels[s]).map(s => ({ title: s, channels: groupedChannels[s] }));
 
   if (loading) {

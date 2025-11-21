@@ -2565,34 +2565,41 @@ export class DatabaseStorage implements IStorage {
   }
 
   async initializeCommunityChannels(): Promise<void> {
-    const channels = [
-      { slug: 'empieza', name: 'Empieza aquí', description: 'Bienvenido a la comunidad', icon: '🚀', section: 'Bienvenida', order: 1 },
-      { slug: 'presentate', name: 'Preséntate', description: 'Cuéntanos sobre ti', icon: '🎤', section: 'Bienvenida', order: 2 },
-      { slug: 'faqs', name: 'Preguntas frecuentes', description: 'Preguntas y respuestas', icon: '❓', section: 'Bienvenida', order: 3 },
-      { slug: 'anuncios', name: 'Anuncios', description: 'Noticias importantes', icon: '📢', section: 'Bienvenida', order: 4 },
-      { slug: 'streams', name: 'Transmisiones en directo', description: 'Eventos y reuniones', icon: '🔴', section: 'Bienvenida', order: 5 },
-      { slug: 'proyectos', name: 'Comparte tu proyecto', description: 'Muestra tu trabajo', icon: '👨‍💼', section: 'Redes', order: 1 },
-      { slug: 'chat', name: 'Redes de chat', description: 'Conecta con otros', icon: '💬', section: 'Redes', order: 2 },
-      { slug: 'consejos', name: 'Consejos y noticias', description: 'Tips útiles', icon: '💡', section: 'Redes', order: 3 },
-      { slug: 'jobs', name: 'Ofertas de empleo', description: 'Oportunidades laborales', icon: '💼', section: 'Redes', order: 4 },
-      { slug: 'marketing', name: 'Marketing y ventas', description: 'Estrategias de negocio', icon: '📈', section: 'Mercado y negocios', order: 1 },
-      { slug: 'agentes-esp', name: 'Agentes especializados', description: 'Preguntas especializadas', icon: '⭐', section: 'Obtén respuestas a tus preguntas', order: 1 },
-      { slug: 'agentes-ia', name: 'Agentes de IA', description: 'Sobre IA y agentes', icon: '🤖', section: 'Obtén respuestas a tus preguntas', order: 2 },
-      { slug: 'automatizacion', name: 'Automatización', description: 'Automatiza procesos', icon: '⚙️', section: 'Obtén respuestas a tus preguntas', order: 3 },
-      { slug: 'apps', name: 'Aplicaciones Vibe', description: 'Apps y programación', icon: '📱', section: 'Obtén respuestas a tus preguntas', order: 4 },
-      { slug: 'cupones', name: 'Cupones y descuentos', description: 'Ofertas especiales', icon: '🎟️', section: 'Materiales de clase', order: 1 },
-      { slug: 'clases', name: 'Acceso a las clases', description: 'Enlace a cursos', icon: '📚', section: 'Links', order: 1 },
-      { slug: 'whatsapp', name: 'Soporte WhatsApp', description: 'Ayuda por WhatsApp', icon: '💬', section: 'Links', order: 2 },
-      { slug: 'feedback', name: 'Comentarios', description: 'Tu opinión es importante', icon: '📝', section: 'Links', order: 3 },
+    // Core general channels
+    const generalChannels = [
+      { slug: 'anuncios', name: '📢 Anuncios', description: 'Actualizaciones y noticias importantes', icon: '📢', section: 'Comunidad', order: 1 },
+      { slug: 'bienvenida', name: '🚀 Bienvenida', description: 'Preséntate y cuéntanos tu historia', icon: '🚀', section: 'Comunidad', order: 2 },
+      { slug: 'preguntas', name: '❓ Preguntas Generales', description: 'Dudas y preguntas de la comunidad', icon: '❓', section: 'Comunidad', order: 3 },
+      { slug: 'general', name: '💬 General', description: 'Conversación libre y conexiones', icon: '💬', section: 'Comunidad', order: 4 },
+      { slug: 'feedback', name: '📝 Feedback', description: 'Tu opinión y sugerencias de mejora', icon: '📝', section: 'Comunidad', order: 5 },
     ];
 
-    for (const channel of channels) {
+    // Create general channels
+    for (const channel of generalChannels) {
       const existing = await db.query.communityChannels.findFirst({
         where: eq(communityChannels.slug, channel.slug),
       });
-
       if (!existing) {
         await db.insert(communityChannels).values(channel);
+      }
+    }
+
+    // Create dynamic channels for each room (sala)
+    const allRooms = await db.select().from(rooms);
+    for (const room of allRooms) {
+      const channelSlug = `dudas-${room.slug}`;
+      const existing = await db.query.communityChannels.findFirst({
+        where: eq(communityChannels.slug, channelSlug),
+      });
+      if (!existing) {
+        await db.insert(communityChannels).values({
+          slug: channelSlug,
+          name: `❓ Dudas - ${room.name}`,
+          description: `Preguntas y dudas del curso: ${room.name}`,
+          icon: '❓',
+          section: 'Cursos de Salas',
+          order: 1,
+        });
       }
     }
   }
