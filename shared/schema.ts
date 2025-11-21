@@ -840,6 +840,36 @@ export const messageReactions = pgTable("message_reactions", {
   index("idx_reactions_user").on(table.userId),
 ]);
 
+// Community posts (for announcements channel)
+export const communityPosts = pgTable("community_posts", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  channelId: varchar("channel_id").references(() => communityChannels.id, { onDelete: "cascade" }).notNull(),
+  userId: varchar("user_id").references(() => users.id, { onDelete: "set null" }),
+  title: varchar("title").notNull(),
+  content: text("content").notNull(),
+  imageUrl: varchar("image_url"),
+  likes: integer("likes").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("idx_posts_channel").on(table.channelId),
+  index("idx_posts_user").on(table.userId),
+  index("idx_posts_created").on(table.createdAt),
+]);
+
+// Community post comments
+export const communityPostComments = pgTable("community_post_comments", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  postId: varchar("post_id").references(() => communityPosts.id, { onDelete: "cascade" }).notNull(),
+  userId: varchar("user_id").references(() => users.id, { onDelete: "set null" }),
+  content: text("content").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("idx_post_comments_post").on(table.postId),
+  index("idx_post_comments_user").on(table.userId),
+]);
+
 // ========================================
 // RELATIONS
 // ========================================
@@ -916,6 +946,29 @@ export const messageReactionsRelations = relations(messageReactions, ({ one }) =
   }),
 }));
 
+export const communityPostsRelations = relations(communityPosts, ({ one, many }) => ({
+  channel: one(communityChannels, {
+    fields: [communityPosts.channelId],
+    references: [communityChannels.id],
+  }),
+  user: one(users, {
+    fields: [communityPosts.userId],
+    references: [users.id],
+  }),
+  comments: many(communityPostComments),
+}));
+
+export const communityPostCommentsRelations = relations(communityPostComments, ({ one }) => ({
+  post: one(communityPosts, {
+    fields: [communityPostComments.postId],
+    references: [communityPosts.id],
+  }),
+  user: one(users, {
+    fields: [communityPostComments.userId],
+    references: [users.id],
+  }),
+}));
+
 // ========================================
 // INSERT SCHEMAS & TYPES
 // ========================================
@@ -968,6 +1021,19 @@ export const insertMessageReactionSchema = createInsertSchema(messageReactions).
   createdAt: true,
 });
 
+export const insertCommunityPostSchema = createInsertSchema(communityPosts).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  likes: true,
+});
+
+export const insertCommunityPostCommentSchema = createInsertSchema(communityPostComments).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 // Update Schemas (for PATCH operations)
 export const updateRoomSchema = insertRoomSchema.partial().refine(
   (data) => Object.keys(data).length > 0,
@@ -984,6 +1050,8 @@ export type PromoBanner = typeof promoBanners.$inferSelect;
 export type CommunityChannel = typeof communityChannels.$inferSelect;
 export type CommunityMessage = typeof communityMessages.$inferSelect;
 export type MessageReaction = typeof messageReactions.$inferSelect;
+export type CommunityPost = typeof communityPosts.$inferSelect;
+export type CommunityPostComment = typeof communityPostComments.$inferSelect;
 
 // Insert Types
 export type InsertRoom = z.infer<typeof insertRoomSchema>;
@@ -995,6 +1063,8 @@ export type InsertPromoBanner = z.infer<typeof insertPromoBannerSchema>;
 export type InsertCommunityChannel = z.infer<typeof insertCommunityChannelSchema>;
 export type InsertCommunityMessage = z.infer<typeof insertCommunityMessageSchema>;
 export type InsertMessageReaction = z.infer<typeof insertMessageReactionSchema>;
+export type InsertCommunityPost = z.infer<typeof insertCommunityPostSchema>;
+export type InsertCommunityPostComment = z.infer<typeof insertCommunityPostCommentSchema>;
 
 // Update Types
 export type UpdateRoom = z.infer<typeof updateRoomSchema>;
