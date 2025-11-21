@@ -889,6 +889,33 @@ export const promoBannersRelations = relations(promoBanners, ({ one }) => ({
   }),
 }));
 
+export const communityChannelsRelations = relations(communityChannels, ({ many }) => ({
+  messages: many(communityMessages),
+}));
+
+export const communityMessagesRelations = relations(communityMessages, ({ one, many }) => ({
+  channel: one(communityChannels, {
+    fields: [communityMessages.channelId],
+    references: [communityChannels.id],
+  }),
+  user: one(users, {
+    fields: [communityMessages.userId],
+    references: [users.id],
+  }),
+  reactions: many(messageReactions),
+}));
+
+export const messageReactionsRelations = relations(messageReactions, ({ one }) => ({
+  message: one(communityMessages, {
+    fields: [messageReactions.messageId],
+    references: [communityMessages.id],
+  }),
+  user: one(users, {
+    fields: [messageReactions.userId],
+    references: [users.id],
+  }),
+}));
+
 // ========================================
 // INSERT SCHEMAS & TYPES
 // ========================================
@@ -925,6 +952,22 @@ export const insertPromoBannerSchema = createInsertSchema(promoBanners).omit({
   updatedAt: true,
 });
 
+export const insertCommunityChannelSchema = createInsertSchema(communityChannels).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertCommunityMessageSchema = createInsertSchema(communityMessages).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertMessageReactionSchema = createInsertSchema(messageReactions).omit({
+  id: true,
+  createdAt: true,
+});
+
 // Update Schemas (for PATCH operations)
 export const updateRoomSchema = insertRoomSchema.partial().refine(
   (data) => Object.keys(data).length > 0,
@@ -938,6 +981,9 @@ export type PhaseContent = typeof phaseContent.$inferSelect;
 export type Purchase = typeof purchases.$inferSelect;
 export type UserAccess = typeof userAccess.$inferSelect;
 export type PromoBanner = typeof promoBanners.$inferSelect;
+export type CommunityChannel = typeof communityChannels.$inferSelect;
+export type CommunityMessage = typeof communityMessages.$inferSelect;
+export type MessageReaction = typeof messageReactions.$inferSelect;
 
 // Insert Types
 export type InsertRoom = z.infer<typeof insertRoomSchema>;
@@ -946,6 +992,9 @@ export type InsertPhaseContent = z.infer<typeof insertPhaseContentSchema>;
 export type InsertPurchase = z.infer<typeof insertPurchaseSchema>;
 export type InsertUserAccess = z.infer<typeof insertUserAccessSchema>;
 export type InsertPromoBanner = z.infer<typeof insertPromoBannerSchema>;
+export type InsertCommunityChannel = z.infer<typeof insertCommunityChannelSchema>;
+export type InsertCommunityMessage = z.infer<typeof insertCommunityMessageSchema>;
+export type InsertMessageReaction = z.infer<typeof insertMessageReactionSchema>;
 
 // Update Types
 export type UpdateRoom = z.infer<typeof updateRoomSchema>;

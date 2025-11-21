@@ -428,6 +428,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Community chat routes
+  app.get("/api/community/channels", async (req, res) => {
+    try {
+      const channels = await storage.getAllCommunityChannels();
+      res.json(channels);
+    } catch (error) {
+      console.error("Error fetching community channels:", error);
+      res.status(500).json({ message: "Failed to fetch channels" });
+    }
+  });
+
+  app.get("/api/community/channels/:channelId/messages", async (req, res) => {
+    try {
+      const { channelId } = req.params;
+      const limit = req.query.limit ? parseInt(req.query.limit as string) : 50;
+      const messages = await storage.getChannelMessages(channelId, limit);
+      res.json(messages);
+    } catch (error) {
+      console.error("Error fetching messages:", error);
+      res.status(500).json({ message: "Failed to fetch messages" });
+    }
+  });
+
+  app.post("/api/community/channels/:channelId/messages", supabaseAuth, async (req: AuthenticatedRequest, res) => {
+    try {
+      const { channelId } = req.params;
+      const { content } = req.body;
+      const userId = req.user!.id;
+
+      if (!content || !content.trim()) {
+        return res.status(400).json({ message: "Message content is required" });
+      }
+
+      const message = await storage.createCommunityMessage(channelId, userId, content);
+      res.status(201).json(message);
+    } catch (error) {
+      console.error("Error creating message:", error);
+      res.status(500).json({ message: "Failed to create message" });
+    }
+  });
+
+  // Initialize channels on startup
+  storage.initializeCommunityChannels().catch(err => console.error("Error initializing channels:", err));
+
   const httpServer = createServer(app);
   return httpServer;
 }
