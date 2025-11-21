@@ -1751,6 +1751,73 @@ export function registerSimpleRoutes(app: Express): Server {
     }
   });
 
+  // Community posts endpoints
+  app.get("/api/community/channels/:channelId/posts", async (req, res) => {
+    try {
+      const { channelId } = req.params;
+      const limit = req.query.limit ? parseInt(req.query.limit as string) : 50;
+      const posts = await storage.getChannelPosts(channelId, limit);
+      res.json(posts);
+    } catch (error) {
+      console.error("Error fetching posts:", error);
+      res.status(500).json({ message: "Failed to fetch posts" });
+    }
+  });
+
+  app.get("/api/community/posts/:postId/comments", async (req, res) => {
+    try {
+      const { postId } = req.params;
+      const comments = await storage.getPostComments(postId);
+      res.json(comments);
+    } catch (error) {
+      console.error("Error fetching comments:", error);
+      res.status(500).json({ message: "Failed to fetch comments" });
+    }
+  });
+
+  app.post("/api/community/posts", legacyAuth, async (req: Request, res: Response) => {
+    try {
+      const { channelId, title, content, imageUrl } = req.body;
+      const userId = (req as any).user?.claims?.sub;
+
+      if (!channelId || !title || !content) {
+        return res.status(400).json({ message: "channelId, title, and content are required" });
+      }
+
+      if (!userId) {
+        return res.status(401).json({ message: "Usuario no autenticado" });
+      }
+
+      const post = await storage.createCommunityPost(channelId, userId, title, content, imageUrl);
+      res.status(201).json(post);
+    } catch (error) {
+      console.error("Error creating post:", error);
+      res.status(500).json({ message: "Failed to create post" });
+    }
+  });
+
+  app.post("/api/community/posts/:postId/comments", legacyAuth, async (req: Request, res: Response) => {
+    try {
+      const { postId } = req.params;
+      const { content } = req.body;
+      const userId = (req as any).user?.claims?.sub;
+
+      if (!content || !content.trim()) {
+        return res.status(400).json({ message: "Comment content is required" });
+      }
+
+      if (!userId) {
+        return res.status(401).json({ message: "Usuario no autenticado" });
+      }
+
+      const comment = await storage.createPostComment(postId, userId, content);
+      res.status(201).json(comment);
+    } catch (error) {
+      console.error("Error creating comment:", error);
+      res.status(500).json({ message: "Failed to create comment" });
+    }
+  });
+
   // Initialize channels on startup
   storage.initializeCommunityChannels().catch(err => console.error("Error initializing channels:", err));
 

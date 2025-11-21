@@ -33,6 +33,8 @@ import {
   communityChannels,
   communityMessages,
   messageReactions,
+  communityPosts,
+  communityPostComments,
   type User,
   type UpsertUser,
   type OnboardingData,
