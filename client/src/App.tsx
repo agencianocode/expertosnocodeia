@@ -124,6 +124,7 @@ function Router() {
           <Route path="/planes" component={Planes} />
           <Route path="/apoyo" component={Support} />
           <Route path="/support" component={Support} />
+          <Route path="/community" component={Community} />
           <Route component={NotFound} />
         </>
       ) : (
