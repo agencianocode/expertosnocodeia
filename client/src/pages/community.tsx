@@ -1,15 +1,15 @@
 import React, { useState } from "react";
 import { useSimpleAuth } from "@/hooks/use-simple-auth";
 import { useToast } from "@/hooks/use-toast";
-import Sidebar from "@/components/layout/sidebar";
-import MobileNav from "@/components/layout/mobile-nav";
-import MobileHeader from "@/components/layout/mobile-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Heart, MessageCircle, Share2, Calendar, TrendingUp, Search, Plus } from "lucide-react";
+import { 
+  Heart, MessageCircle, Share2, Calendar, TrendingUp, Search, Plus, ChevronDown,
+  Users, MessageSquare, Trophy, Calendar as CalendarIcon, DollarSign, Zap
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface Post {
@@ -40,8 +40,7 @@ interface Event {
 export default function Community() {
   const { isAuthenticated, user, isLoading } = useSimpleAuth();
   const { toast } = useToast();
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("all");
+  const [activeChannel, setActiveChannel] = useState("bienvenido");
   const [posts, setPosts] = useState<Post[]>([
     {
       id: "1",
@@ -50,12 +49,12 @@ export default function Community() {
         avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Maria",
         role: "Mentor"
       },
-      title: "Sesión de preguntas y respuestas: IA y automatización",
-      content: "Hoy tuvimos una sesión increíble discutiendo sobre los últimos avances en IA...",
+      title: "¡Bienvenido!",
+      content: "Nuestra comunidad es un espacio para aprender, conectar e intercambiar experiencias sobre el mundo del desarrollo con código y la IA.",
       timestamp: "Hace 2 horas",
       likes: 45,
       comments: 12,
-      category: "IA",
+      category: "General",
       liked: false
     },
     {
@@ -65,12 +64,12 @@ export default function Community() {
         avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Carlos",
         role: "Desarrollador"
       },
-      title: "Ganadores del Black IA No Vela 🎉",
-      content: "Felicidades a todos los ganadores de esta semana. Sus proyectos fueron...",
+      title: "Publicaciones destacadas por leer, aprender e intercambiar esta semana",
+      content: "Hemos recopilado las mejores publicaciones de la semana para que no te pierdas nada importante.",
       timestamp: "Hace 5 horas",
       likes: 128,
       comments: 34,
-      category: "Concursos",
+      category: "Destacadas",
       liked: false
     },
     {
@@ -80,78 +79,52 @@ export default function Community() {
         avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Ana",
         role: "Creadora"
       },
-      title: "TEMAS para TRANSMISIONES EN VIVO (¡Necesitamos tu ayuda!)",
-      content: "¿Qué temas te gustaría que cubramos en nuestras próximas transmisiones?...",
+      title: "Ganadores del Black IA No Vela 🎉",
+      content: "Felicidades a todos los ganadores de esta semana. Sus proyectos fueron increíbles.",
       timestamp: "Hace 8 horas",
       likes: 67,
       comments: 23,
-      category: "Sugerencias",
+      category: "Concursos",
       liked: false
     }
   ]);
 
   const upcomingEvents: Event[] = [
-    {
-      id: "1",
-      date: "24",
-      day: "Jueves",
-      title: "Sesión de preguntas y respuestas: IA y automatización",
-      time: "3:00 - 4:00 PM -05"
-    },
-    {
-      id: "2",
-      date: "25",
-      day: "Viernes",
-      title: "Bienvenida a la transmisión en vivo - Comunidad NoCode",
-      time: "8:00 - 9:00 PM -05"
-    },
-    {
-      id: "3",
-      date: "26",
-      day: "Sábado",
-      title: "Sesión de preguntas y respuestas: IA y automatización",
-      time: "3:00 - 4:00 PM -05"
-    },
-    {
-      id: "4",
-      date: "28",
-      day: "Lunes",
-      title: "Cómo ofrecer soluciones de automatización e IA",
-      time: "5:00 - 6:00 PM -05"
-    }
+    { id: "1", date: "24", day: "jueves", title: "Sesión de preguntas y respuestas: IA y automatización", time: "3:00 - 4:00 PM -05" },
+    { id: "2", date: "25", day: "viernes", title: "Bienvenida a la transmisión en vivo - Comunidad NoCode", time: "8:00 - 9:00 PM -05" },
+    { id: "3", date: "26", day: "sábado", title: "Sesión de preguntas y respuestas: IA y automatización", time: "3:00 - 4:00 PM -05" },
+    { id: "4", date: "28", day: "lunes", title: "Cómo ofrecer soluciones de automatización e IA", time: "5:00 - 6:00 PM -05" }
   ];
 
   const popularPosts: Post[] = [
     {
       id: "p1",
-      author: { name: "Enric", role: "Instructor" },
+      author: { name: "Enric", role: "Instructor", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Enric" },
       title: "Envío automático de comprobantes de pago",
-      content: "Tutorial completo sobre automatización de pagos",
+      content: "",
       timestamp: "2 días",
       likes: 234,
-      comments: 45,
-      category: "Tutorial"
+      comments: 45
     },
     {
       id: "p2",
-      author: { name: "Bruno Rialetta Morales", role: "Mentor" },
+      author: { name: "Bruno Rialetta Morales", role: "Mentor", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Bruno" },
       title: "¿De verdad está protegiendo el certificado de seguridad de mi aplicación?",
-      content: "Análisis de seguridad en certificados SSL",
+      content: "",
       timestamp: "3 días",
       likes: 189,
-      comments: 32,
-      category: "Seguridad"
+      comments: 32
     }
   ];
 
-  const categories = [
-    { id: "all", label: "Todos", icon: "🌐" },
-    { id: "presentate", label: "Presentate", icon: "👋" },
+  const channels = [
+    { id: "bienvenido", label: "Bienvenido", icon: "👋" },
+    { id: "presentate", label: "Presentate", icon: "🎤", badge: "63" },
     { id: "faqs", label: "Preguntas frecuentes", icon: "❓" },
-    { id: "announcements", label: "Anuncios", icon: "📢" },
+    { id: "anuncios", label: "Anuncios", icon: "📢" },
     { id: "streams", label: "Transmisiones en directo", icon: "🔴" },
-    { id: "chat", label: "Redes de chat", icon: "💬" },
-    { id: "jobs", label: "Ofertas de empleo", icon: "💼" }
+    { id: "chat", label: "Redes de chat", icon: "💬", badge: "53" },
+    { id: "jobs", label: "Ofertas de empleo", icon: "💼", badge: "2" }
   ];
 
   const handleLikePost = (postId: string) => {
@@ -180,7 +153,6 @@ export default function Community() {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background flex">
-        <Sidebar />
         <div className="flex-1 flex items-center justify-center">
           <div className="text-foreground">Cargando...</div>
         </div>
@@ -189,190 +161,278 @@ export default function Community() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <Sidebar />
-      <MobileHeader />
-      
-      <div className="flex flex-col lg:flex-row gap-6 pt-20 lg:pt-6 lg:ml-[250px] px-4 lg:px-6 pb-20">
-        {/* Main Feed - Centro */}
-        <div className="flex-1 max-w-2xl">
-          {/* Search and New Post */}
-          <div className="space-y-4 mb-6">
-            <div className="flex gap-3">
-              <div className="flex-1 relative">
-                <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Buscar publicaciones..."
-                  className="pl-10"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
-              </div>
-              <Button
-                onClick={handleNewPost}
-                className="bg-cyan-500 hover:bg-cyan-600 text-white"
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Nueva publicación
-              </Button>
-            </div>
-
-            {/* Categories */}
-            <div className="flex gap-2 overflow-x-auto pb-2">
-              {categories.map(cat => (
-                <button
-                  key={cat.id}
-                  onClick={() => setSelectedCategory(cat.id)}
-                  className={cn(
-                    "px-4 py-2 rounded-full whitespace-nowrap text-sm font-medium transition-all flex-shrink-0",
-                    selectedCategory === cat.id
-                      ? "bg-primary text-white"
-                      : "bg-muted text-muted-foreground hover:bg-muted/80"
-                  )}
-                >
-                  <span className="mr-2">{cat.icon}</span>
-                  {cat.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Posts */}
-          <div className="space-y-4">
-            {posts.map(post => (
-              <Card key={post.id} className="bg-[#1a1a1a] border-[#333333] hover:border-[#444444] transition-colors">
-                <CardContent className="pt-6">
-                  {/* Author */}
-                  <div className="flex items-center gap-3 mb-4">
-                    <Avatar className="h-10 w-10">
-                      <AvatarImage src={post.author.avatar} />
-                      <AvatarFallback>{post.author.name.charAt(0)}</AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2">
-                        <h3 className="font-semibold text-white text-sm">{post.author.name}</h3>
-                        {post.author.role && (
-                          <Badge variant="outline" className="text-xs bg-primary/10 text-primary border-primary/30">
-                            {post.author.role}
-                          </Badge>
-                        )}
-                      </div>
-                      <p className="text-xs text-muted-foreground">{post.timestamp}</p>
-                    </div>
-                  </div>
-
-                  {/* Post Content */}
-                  <div className="mb-4">
-                    <h2 className="text-lg font-semibold text-white mb-2">{post.title}</h2>
-                    <p className="text-muted-foreground text-sm">{post.content}</p>
-                  </div>
-
-                  {/* Category Badge */}
-                  {post.category && (
-                    <div className="mb-4">
-                      <Badge className="bg-primary/20 text-primary border-0">
-                        {post.category}
-                      </Badge>
-                    </div>
-                  )}
-
-                  {/* Interactions */}
-                  <div className="flex items-center justify-between text-muted-foreground border-t border-[#333333] pt-4">
-                    <button
-                      onClick={() => handleLikePost(post.id)}
-                      className={cn(
-                        "flex items-center gap-2 text-sm hover:text-white transition-colors",
-                        post.liked && "text-red-500"
-                      )}
-                    >
-                      <Heart className={cn("h-4 w-4", post.liked && "fill-current")} />
-                      {post.likes}
-                    </button>
-                    <button className="flex items-center gap-2 text-sm hover:text-white transition-colors">
-                      <MessageCircle className="h-4 w-4" />
-                      {post.comments}
-                    </button>
-                    <button className="flex items-center gap-2 text-sm hover:text-white transition-colors">
-                      <Share2 className="h-4 w-4" />
-                      Compartir
-                    </button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+    <div className="min-h-screen bg-background flex overflow-hidden">
+      {/* Left Sidebar - Channels */}
+      <div className="w-[140px] bg-[#2a2a2a] border-r border-[#333333] overflow-y-auto flex flex-col">
+        {/* Logo */}
+        <div className="p-4 border-b border-[#333333]">
+          <div className="flex items-center gap-2 mb-4">
+            <Input
+              type="search"
+              placeholder="Alojamiento"
+              className="text-xs h-8 bg-[#1a1a1a] border-[#444444]"
+            />
           </div>
         </div>
 
-        {/* Sidebar Derecho - Desktop only */}
-        <div className="hidden lg:flex flex-col gap-6 w-72 sticky top-6 h-fit">
-          {/* Upcoming Events */}
-          <Card className="bg-[#1a1a1a] border-[#333333]">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-white text-base flex items-center gap-2">
-                <Calendar className="h-4 w-4" />
-                Próximos eventos
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {upcomingEvents.map(event => (
-                <div
-                  key={event.id}
-                  className="flex gap-3 p-2 rounded hover:bg-muted/50 transition-colors cursor-pointer"
-                >
-                  <div className="flex flex-col items-center justify-center min-w-fit bg-muted/50 px-2 py-1 rounded">
-                    <span className="text-lg font-bold text-primary">{event.date}</span>
-                    <span className="text-xs text-muted-foreground">{event.day}</span>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-white line-clamp-2">{event.title}</p>
-                    <p className="text-xs text-muted-foreground mt-1">{event.time}</p>
-                  </div>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
+        {/* Sections */}
+        <div className="flex-1 overflow-y-auto">
+          {/* Bienvenido */}
+          <div className="text-xs text-muted-foreground px-3 py-2 mt-4 font-semibold">
+            Bienvenido
+          </div>
+          {channels.slice(0, 1).map(channel => (
+            <button
+              key={channel.id}
+              onClick={() => setActiveChannel(channel.id)}
+              className={cn(
+                "w-full text-left px-3 py-2 text-sm font-medium flex items-center gap-2 hover:bg-[#333333] transition-colors",
+                activeChannel === channel.id && "bg-[#404040] text-white"
+              )}
+            >
+              <span>{channel.icon}</span>
+              <span className="truncate">{channel.label}</span>
+            </button>
+          ))}
 
-          {/* Popular Posts */}
-          <Card className="bg-[#1a1a1a] border-[#333333]">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-white text-base flex items-center gap-2">
-                <TrendingUp className="h-4 w-4" />
-                Publicaciones populares
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {popularPosts.map(post => (
-                <div
-                  key={post.id}
-                  className="p-3 bg-muted/30 rounded hover:bg-muted/50 transition-colors cursor-pointer"
-                >
-                  <div className="flex items-start gap-2 mb-2">
-                    <Avatar className="h-6 w-6 flex-shrink-0">
-                      <AvatarFallback className="text-xs">{post.author.name.charAt(0)}</AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs text-muted-foreground">{post.author.name}</p>
-                      <p className="text-sm font-medium text-white line-clamp-2">{post.title}</p>
-                    </div>
-                  </div>
-                  <div className="flex gap-4 text-xs text-muted-foreground">
-                    <span className="flex items-center gap-1">
-                      <Heart className="h-3 w-3" />
-                      {post.likes}
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <MessageCircle className="h-3 w-3" />
-                      {post.comments}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
+          {/* Redes */}
+          <div className="text-xs text-muted-foreground px-3 py-3 mt-4 font-semibold">
+            Redes
+          </div>
+          {channels.slice(1, 5).map(channel => (
+            <button
+              key={channel.id}
+              onClick={() => setActiveChannel(channel.id)}
+              className={cn(
+                "w-full text-left px-3 py-2 text-sm font-medium flex items-center justify-between gap-2 hover:bg-[#333333] transition-colors group",
+                activeChannel === channel.id && "bg-[#404040] text-white"
+              )}
+            >
+              <div className="flex items-center gap-2 min-w-0">
+                <span>{channel.icon}</span>
+                <span className="truncate text-xs">{channel.label}</span>
+              </div>
+              {channel.badge && (
+                <span className="text-xs bg-muted text-muted-foreground px-1.5 rounded group-hover:bg-[#333333]">
+                  {channel.badge}
+                </span>
+              )}
+            </button>
+          ))}
+
+          {/* Obtén respuestas a tus preguntas */}
+          <div className="text-xs text-muted-foreground px-3 py-3 mt-4 font-semibold">
+            Obtén respuestas a tus preguntas
+          </div>
+          {channels.slice(5, 7).map(channel => (
+            <button
+              key={channel.id}
+              onClick={() => setActiveChannel(channel.id)}
+              className={cn(
+                "w-full text-left px-3 py-2 text-sm font-medium flex items-center justify-between gap-2 hover:bg-[#333333] transition-colors group",
+                activeChannel === channel.id && "bg-[#404040] text-white"
+              )}
+            >
+              <div className="flex items-center gap-2 min-w-0">
+                <span>{channel.icon}</span>
+                <span className="truncate text-xs">{channel.label}</span>
+              </div>
+              {channel.badge && (
+                <span className="text-xs bg-muted text-muted-foreground px-1.5 rounded group-hover:bg-[#333333]">
+                  {channel.badge}
+                </span>
+              )}
+            </button>
+          ))}
+
+          {/* Mercado y negocios */}
+          <div className="text-xs text-muted-foreground px-3 py-3 mt-4 font-semibold">
+            Mercado y negocios
+          </div>
+          <button className="w-full text-left px-3 py-2 text-sm font-medium flex items-center gap-2 hover:bg-[#333333] transition-colors">
+            <span>📈</span>
+            <span className="truncate text-xs">Marketing y ventas</span>
+            <span className="text-xs text-muted-foreground ml-auto">6</span>
+          </button>
+
+          {/* Bottom section */}
+          <div className="text-xs text-muted-foreground px-3 py-3 mt-4 font-semibold">
+            Obtén respuestas a tus preguntas
+          </div>
+          <button className="w-full text-left px-3 py-2 text-sm font-medium flex items-center gap-2 hover:bg-[#333333] transition-colors">
+            <span>⭐</span>
+            <span className="truncate text-xs">Agentes especializados</span>
+          </button>
+          <button className="w-full text-left px-3 py-2 text-sm font-medium flex items-center gap-2 hover:bg-[#333333] transition-colors">
+            <span>🤖</span>
+            <span className="truncate text-xs">Agentes de IA</span>
+            <span className="text-xs text-muted-foreground ml-auto">31</span>
+          </button>
+          <button className="w-full text-left px-3 py-2 text-sm font-medium flex items-center gap-2 hover:bg-[#333333] transition-colors">
+            <span>⚙️</span>
+            <span className="truncate text-xs">Automatización</span>
+            <span className="text-xs text-muted-foreground ml-auto">15</span>
+          </button>
+          <button className="w-full text-left px-3 py-2 text-sm font-medium flex items-center gap-2 hover:bg-[#333333] transition-colors">
+            <span>📱</span>
+            <span className="truncate text-xs">Aplicaciones y prototipos</span>
+            <span className="text-xs text-muted-foreground ml-auto">12</span>
+          </button>
+        </div>
+
+        {/* Bottom */}
+        <div className="border-t border-[#333333] p-3 text-xs text-muted-foreground">
+          En
         </div>
       </div>
 
-      <MobileNav />
+      {/* Main Content Area */}
+      <div className="flex-1 flex flex-col overflow-hidden">
+        {/* Header */}
+        <div className="border-b border-[#333333] bg-[#1a1a1a] px-6 py-4 flex items-center justify-between">
+          <div>
+            <h1 className="text-xl font-bold text-white capitalize">
+              {channels.find(c => c.id === activeChannel)?.label || "Alimentar"}
+            </h1>
+          </div>
+          <div className="flex items-center gap-3">
+            <Button
+              onClick={handleNewPost}
+              className="bg-cyan-500 hover:bg-cyan-600 text-white text-sm"
+            >
+              Nueva publicación
+            </Button>
+          </div>
+        </div>
+
+        {/* Content and Sidebar wrapper */}
+        <div className="flex-1 overflow-hidden flex gap-6 bg-background">
+          {/* Center Content */}
+          <div className="flex-1 overflow-y-auto px-6 py-6">
+            <div className="max-w-2xl space-y-4">
+              {posts.map(post => (
+                <Card key={post.id} className="bg-[#1a1a1a] border-[#333333] hover:border-[#444444] transition-colors">
+                  <CardContent className="pt-6">
+                    {/* Author */}
+                    <div className="flex items-center gap-3 mb-4">
+                      <Avatar className="h-10 w-10">
+                        <AvatarImage src={post.author.avatar} />
+                        <AvatarFallback>{post.author.name.charAt(0)}</AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-semibold text-white text-sm">{post.author.name}</h3>
+                          {post.author.role && (
+                            <Badge variant="outline" className="text-xs bg-cyan-500/10 text-cyan-400 border-cyan-500/30">
+                              {post.author.role}
+                            </Badge>
+                          )}
+                        </div>
+                        <p className="text-xs text-muted-foreground">{post.timestamp}</p>
+                      </div>
+                    </div>
+
+                    {/* Post Content */}
+                    <div className="mb-4">
+                      <h2 className="text-lg font-semibold text-white mb-2">{post.title}</h2>
+                      <p className="text-muted-foreground text-sm">{post.content}</p>
+                    </div>
+
+                    {/* Category Badge */}
+                    {post.category && (
+                      <div className="mb-4">
+                        <Badge className="bg-cyan-500/20 text-cyan-400 border-0 text-xs">
+                          {post.category}
+                        </Badge>
+                      </div>
+                    )}
+
+                    {/* Interactions */}
+                    <div className="flex items-center justify-between text-muted-foreground border-t border-[#333333] pt-4">
+                      <button
+                        onClick={() => handleLikePost(post.id)}
+                        className={cn(
+                          "flex items-center gap-2 text-sm hover:text-white transition-colors",
+                          post.liked && "text-red-500"
+                        )}
+                      >
+                        <Heart className={cn("h-4 w-4", post.liked && "fill-current")} />
+                        {post.likes}
+                      </button>
+                      <button className="flex items-center gap-2 text-sm hover:text-white transition-colors">
+                        <MessageCircle className="h-4 w-4" />
+                        {post.comments}
+                      </button>
+                      <button className="flex items-center gap-2 text-sm hover:text-white transition-colors">
+                        <Share2 className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+
+          {/* Right Sidebar */}
+          <div className="w-72 overflow-y-auto border-l border-[#333333] px-6 py-6 space-y-6">
+            {/* Upcoming Events */}
+            <div>
+              <h3 className="text-white font-semibold mb-4 flex items-center gap-2">
+                <CalendarIcon className="h-4 w-4 text-cyan-400" />
+                Próximos eventos
+              </h3>
+              <div className="space-y-3">
+                {upcomingEvents.map(event => (
+                  <div key={event.id} className="flex gap-3 p-2 rounded hover:bg-muted/50 transition-colors cursor-pointer">
+                    <div className="flex flex-col items-center justify-center min-w-fit bg-muted/50 px-2 py-1 rounded text-xs">
+                      <span className="font-bold text-cyan-400">{event.date}</span>
+                      <span className="text-muted-foreground text-xs capitalize">{event.day}</span>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-medium text-white line-clamp-2">{event.title}</p>
+                      <p className="text-xs text-muted-foreground mt-1">{event.time}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Popular Posts */}
+            <div>
+              <h3 className="text-white font-semibold mb-4 flex items-center gap-2">
+                <TrendingUp className="h-4 w-4 text-cyan-400" />
+                Publicaciones populares
+              </h3>
+              <div className="space-y-3">
+                {popularPosts.map(post => (
+                  <div key={post.id} className="p-3 bg-muted/30 rounded hover:bg-muted/50 transition-colors cursor-pointer">
+                    <div className="flex items-start gap-2 mb-2">
+                      <Avatar className="h-6 w-6 flex-shrink-0">
+                        <AvatarImage src={post.author.avatar} />
+                        <AvatarFallback className="text-xs">{post.author.name.charAt(0)}</AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs text-muted-foreground font-medium">{post.author.name}</p>
+                        <p className="text-xs font-medium text-white line-clamp-2">{post.title}</p>
+                      </div>
+                    </div>
+                    <div className="flex gap-4 text-xs text-muted-foreground">
+                      <span className="flex items-center gap-1">
+                        <Heart className="h-3 w-3" />
+                        {post.likes}
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <MessageCircle className="h-3 w-3" />
+                        {post.comments}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
