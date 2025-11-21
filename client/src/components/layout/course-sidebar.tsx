@@ -90,6 +90,25 @@ export default function CourseSidebar() {
         <ul className="space-y-2">
           {navigation.map((item) => {
             const isActive = location === item.href;
+            
+            // Special case for Comunidad - open in new tab
+            if (item.name === "Comunidad") {
+              return (
+                <li key={item.name}>
+                  <button
+                    onClick={() => window.open(item.href, '_blank')}
+                    className={cn(
+                      "w-full flex items-center space-x-3 p-2 rounded-lg transition-colors cursor-pointer font-satoshi font-normal text-[13px] leading-[20px]",
+                      "text-[#a3a3a3] hover:bg-dark-bg hover:text-white"
+                    )}
+                  >
+                    <item.icon className="h-4 w-4" />
+                    <span>{item.name}</span>
+                  </button>
+                </li>
+              );
+            }
+            
             return (
               <li key={item.name}>
                 <Link href={item.href}>

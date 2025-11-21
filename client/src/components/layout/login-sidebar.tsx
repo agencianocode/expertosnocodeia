@@ -69,6 +69,24 @@ export default function LoginSidebar() {
       <nav className="flex-1 px-2 py-4 space-y-1 overflow-y-auto">
         {navigation.map((item) => {
           const isActive = location === item.href;
+          
+          // Special case for Comunidad - open in new tab
+          if (item.name === "Comunidad") {
+            return (
+              <button
+                key={item.name}
+                onClick={() => window.open(item.href, '_blank')}
+                className={cn(
+                  "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 group cursor-pointer",
+                  "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                )}
+              >
+                <item.icon className="w-4 h-4 shrink-0 text-blue-500" />
+                <span className="hidden lg:block truncate">{item.name}</span>
+              </button>
+            );
+          }
+          
           return (
             <Link key={item.name} href={item.href}>
               <div className={cn(

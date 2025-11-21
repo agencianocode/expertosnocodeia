@@ -228,6 +228,24 @@ export default function Sidebar({ onToggle }: SidebarProps = {}) {
             }
             
             // Regular nav items
+            // Special case for Comunidad - open in new tab
+            if (item.name === "Comunidad") {
+              return (
+                <li key={item.name}>
+                  <button
+                    onClick={() => window.open(item.href, '_blank')}
+                    className={cn(
+                      "w-full flex items-center justify-center lg:justify-start lg:space-x-3 p-2 rounded-lg transition-colors cursor-pointer font-satoshi font-normal text-[13px] leading-[20px]",
+                      "text-muted-foreground hover:bg-muted hover:text-foreground"
+                    )}
+                  >
+                    <item.icon className="h-5 w-5" />
+                    <span className="hidden lg:block">{item.name}</span>
+                  </button>
+                </li>
+              );
+            }
+            
             return (
               <li key={item.name}>
                 <Link href={item.href}>
