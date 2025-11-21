@@ -2567,11 +2567,11 @@ export class DatabaseStorage implements IStorage {
   async initializeCommunityChannels(): Promise<void> {
     // Core general channels
     const generalChannels = [
-      { slug: 'anuncios', name: '📢 Anuncios', description: 'Actualizaciones y noticias importantes', icon: '📢', section: 'Comunidad', order: 1 },
-      { slug: 'bienvenida', name: '🚀 Bienvenida', description: 'Preséntate y cuéntanos tu historia', icon: '🚀', section: 'Comunidad', order: 2 },
-      { slug: 'preguntas', name: '❓ Preguntas Generales', description: 'Dudas y preguntas de la comunidad', icon: '❓', section: 'Comunidad', order: 3 },
-      { slug: 'general', name: '💬 General', description: 'Conversación libre y conexiones', icon: '💬', section: 'Comunidad', order: 4 },
-      { slug: 'feedback', name: '📝 Feedback', description: 'Tu opinión y sugerencias de mejora', icon: '📝', section: 'Comunidad', order: 5 },
+      { slug: 'anuncios', name: 'Anuncios', description: 'Actualizaciones y noticias importantes', icon: '📢', section: 'Comunidad', order: 1 },
+      { slug: 'bienvenida', name: 'Bienvenida', description: 'Preséntate y cuéntanos tu historia', icon: '🚀', section: 'Comunidad', order: 2 },
+      { slug: 'preguntas', name: 'Preguntas Generales', description: 'Dudas y preguntas de la comunidad', icon: '❓', section: 'Comunidad', order: 3 },
+      { slug: 'general', name: 'General', description: 'Conversación libre y conexiones', icon: '💬', section: 'Comunidad', order: 4 },
+      { slug: 'feedback', name: 'Feedback', description: 'Tu opinión y sugerencias de mejora', icon: '📝', section: 'Comunidad', order: 5 },
     ];
 
     // Create general channels
