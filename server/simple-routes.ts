@@ -1775,7 +1775,8 @@ export function registerSimpleRoutes(app: Express): Server {
     }
   });
 
-  app.post("/api/community/posts", async (req: Request, res: Response) => {
+  // Admin endpoint to create posts
+  app.post("/api/admin/community/posts", isAdmin, async (req: Request, res: Response) => {
     try {
       const { channelId, title, content, imageUrl } = req.body;
       const userId = (req as any).user?.claims?.sub || (req as any).user?.id;
@@ -1784,15 +1785,69 @@ export function registerSimpleRoutes(app: Express): Server {
         return res.status(400).json({ message: "channelId, title, and content are required" });
       }
 
-      if (!userId) {
-        return res.status(401).json({ message: "Usuario no autenticado" });
-      }
-
       const post = await storage.createCommunityPost(channelId, userId, title, content, imageUrl);
       res.status(201).json(post);
     } catch (error) {
       console.error("Error creating post:", error);
       res.status(500).json({ message: "Failed to create post" });
+    }
+  });
+
+  // Admin endpoint to get all posts
+  app.get("/api/admin/community/posts", isAdmin, async (req: Request, res: Response) => {
+    try {
+      const posts = await db
+        .select({
+          post: communityPosts,
+          user: {
+            id: users.id,
+            firstName: users.firstName,
+            lastName: users.lastName,
+            profileImageUrl: users.profileImageUrl,
+          },
+          channel: communityChannels,
+        })
+        .from(communityPosts)
+        .leftJoin(users, eq(communityPosts.userId, users.id))
+        .leftJoin(communityChannels, eq(communityPosts.channelId, communityChannels.id))
+        .orderBy(desc(communityPosts.createdAt));
+
+      res.json(posts);
+    } catch (error) {
+      console.error("Error fetching admin posts:", error);
+      res.status(500).json({ message: "Failed to fetch posts" });
+    }
+  });
+
+  // Admin endpoint to update post
+  app.patch("/api/admin/community/posts/:postId", isAdmin, async (req: Request, res: Response) => {
+    try {
+      const { postId } = req.params;
+      const { title, content, imageUrl } = req.body;
+
+      const [updated] = await db
+        .update(communityPosts)
+        .set({ title, content, imageUrl, updatedAt: new Date() })
+        .where(eq(communityPosts.id, postId))
+        .returning();
+
+      res.json(updated);
+    } catch (error) {
+      console.error("Error updating post:", error);
+      res.status(500).json({ message: "Failed to update post" });
+    }
+  });
+
+  // Admin endpoint to delete post
+  app.delete("/api/admin/community/posts/:postId", isAdmin, async (req: Request, res: Response) => {
+    try {
+      const { postId } = req.params;
+
+      await db.delete(communityPosts).where(eq(communityPosts.id, postId));
+      res.json({ message: "Post deleted" });
+    } catch (error) {
+      console.error("Error deleting post:", error);
+      res.status(500).json({ message: "Failed to delete post" });
     }
   });
 

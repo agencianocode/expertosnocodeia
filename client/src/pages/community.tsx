@@ -4,7 +4,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Send, Loader2, Menu, Heart, MessageCircle, Plus, X } from "lucide-react";
+import { Send, Loader2, Menu, Heart, MessageCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Sidebar from "@/components/layout/sidebar";
 import MobileNav from "@/components/layout/mobile-nav";
@@ -68,10 +68,6 @@ export default function Community() {
   const [sendingComment, setSendingComment] = useState(false);
   const [channelsSidebarOpen, setChannelsSidebarOpen] = useState(true);
   const [isAnunciosChannel, setIsAnunciosChannel] = useState(false);
-  const [showCreatePost, setShowCreatePost] = useState(false);
-  const [postTitle, setPostTitle] = useState("");
-  const [postContent, setPostContent] = useState("");
-  const [creatingPost, setCreatingPost] = useState(false);
 
   // Fetch channels on mount
   useEffect(() => {
@@ -175,42 +171,6 @@ export default function Community() {
     }
   };
 
-  const handleCreatePost = async () => {
-    if (!postTitle.trim() || !postContent.trim() || !activeChannel) return;
-
-    setCreatingPost(true);
-    try {
-      const res = await fetch("/api/community/posts", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({
-          channelId: activeChannel.id,
-          title: postTitle,
-          content: postContent,
-        }),
-      });
-
-      if (res.ok) {
-        setPostTitle("");
-        setPostContent("");
-        setShowCreatePost(false);
-        // Refresh posts
-        const newRes = await fetch(`/api/community/channels/${activeChannel.id}/posts?limit=50`);
-        const data = await newRes.json();
-        setPosts(Array.isArray(data) ? data : []);
-        toast({ title: "Éxito", description: "Anuncio creado" });
-      } else {
-        const error = await res.json();
-        toast({ title: "Error", description: error.message || "No se pudo crear el anuncio", variant: "destructive" });
-      }
-    } catch (error) {
-      console.error("Error creating post:", error);
-      toast({ title: "Error", description: "No se pudo crear el anuncio", variant: "destructive" });
-    } finally {
-      setCreatingPost(false);
-    }
-  };
 
   const groupedChannels = channels.reduce((acc: { [key: string]: Channel[] }, channel) => {
     if (!acc[channel.section]) acc[channel.section] = [];
@@ -294,17 +254,6 @@ export default function Community() {
               <h1 className="text-xl font-bold text-white">{activeChannel?.name}</h1>
               {activeChannel?.description && <p className="text-xs text-muted-foreground mt-1">{activeChannel.description}</p>}
             </div>
-            {isAnunciosChannel && (
-              <Button
-                onClick={() => setShowCreatePost(true)}
-                className="bg-cyan-500 hover:bg-cyan-600 gap-2"
-                size="sm"
-                data-testid="create-post-button"
-              >
-                <Plus className="h-4 w-4" />
-                Nuevo anuncio
-              </Button>
-            )}
           </div>
 
           {/* Posts Feed - Only for Anuncios channel */}
@@ -429,62 +378,6 @@ export default function Community() {
         )}
       </div>
 
-      {/* Create Post Modal */}
-      {showCreatePost && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-[#1a1a1a] border border-[#333333] rounded-lg w-full max-w-md mx-4">
-            <div className="flex items-center justify-between p-6 border-b border-[#333333]">
-              <h2 className="text-lg font-bold text-white">Crear nuevo anuncio</h2>
-              <button
-                onClick={() => setShowCreatePost(false)}
-                className="text-muted-foreground hover:text-white"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-            <div className="p-6 space-y-4">
-              <div>
-                <label className="text-sm font-medium text-white mb-2 block">Título</label>
-                <Input
-                  placeholder="Título del anuncio"
-                  value={postTitle}
-                  onChange={(e) => setPostTitle(e.target.value)}
-                  className="bg-[#2a2a2a] border-[#444444] text-white"
-                  data-testid="post-title-input"
-                />
-              </div>
-              <div>
-                <label className="text-sm font-medium text-white mb-2 block">Descripción</label>
-                <textarea
-                  placeholder="Contenido del anuncio"
-                  value={postContent}
-                  onChange={(e) => setPostContent(e.target.value)}
-                  className="w-full bg-[#2a2a2a] border border-[#444444] rounded text-white p-2 text-sm resize-none"
-                  rows={4}
-                  data-testid="post-content-input"
-                />
-              </div>
-            </div>
-            <div className="flex gap-2 p-6 border-t border-[#333333]">
-              <Button
-                variant="outline"
-                onClick={() => setShowCreatePost(false)}
-                className="flex-1"
-              >
-                Cancelar
-              </Button>
-              <Button
-                onClick={handleCreatePost}
-                disabled={creatingPost || !postTitle.trim() || !postContent.trim()}
-                className="flex-1 bg-cyan-500 hover:bg-cyan-600"
-                data-testid="submit-post-button"
-              >
-                {creatingPost ? <Loader2 className="h-4 w-4 animate-spin" /> : "Publicar"}
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
 
       <MobileNav />
     </div>
