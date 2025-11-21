@@ -46,7 +46,6 @@ import DebugPage from "@/pages/debug";
 import SimpleDashboard from "@/pages/simple-dashboard";
 import SimpleLogin from "@/pages/simple-login";
 import RealDashboard from "@/pages/real-dashboard";
-// Community import removed - now using CommunityChatPage instead
 
 function Router() {
   const { isAuthenticated, isLoading, user } = useSimpleAuth();

@@ -2594,8 +2594,8 @@ export class DatabaseStorage implements IStorage {
       if (!existing) {
         await db.insert(communityChannels).values({
           slug: channelSlug,
-          name: `❓ Dudas - ${room.name}`,
-          description: `Preguntas y dudas del curso: ${room.name}`,
+          name: `❓ Dudas - ${room.title}`,
+          description: `Preguntas y dudas del curso: ${room.title}`,
           icon: '❓',
           section: 'Cursos de Salas',
           order: 1,
