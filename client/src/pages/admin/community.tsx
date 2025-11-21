@@ -8,10 +8,9 @@ import MobileHeader from "@/components/layout/mobile-header";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Plus, Edit, Trash2, Loader2, MessageSquare } from "lucide-react";
+import { Plus, Edit, Trash2, Loader2 } from "lucide-react";
 import { useAdmin } from "@/hooks/useAdmin";
 import { useToast } from "@/hooks/use-toast";
-import { apiRequest } from "@/lib/queryClient";
 
 interface Post {
   post: any;
@@ -29,24 +28,28 @@ export default function AdminCommunity() {
 
   const { data: posts = [], isLoading: postsLoading } = useQuery({
     queryKey: ["/api/admin/community/posts"],
-  });
-
-  const deleteMutation = useMutation({
-    mutationFn: async (postId: string) => {
-      return await apiRequest("DELETE", `/api/admin/community/posts/${postId}`);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/community/posts"] });
-      toast({ title: "Éxito", description: "Anuncio eliminado" });
-    },
-    onError: (error: any) => {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
+    queryFn: async () => {
+      const res = await fetch("/api/admin/community/posts", {
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Error al cargar posts");
+      return res.json();
     },
   });
 
   const createMutation = useMutation({
     mutationFn: async (data: any) => {
-      return await apiRequest("POST", "/api/admin/community/posts", data);
+      const res = await fetch("/api/admin/community/posts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.message || "Error al crear anuncio");
+      }
+      return res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/community/posts"] });
@@ -61,13 +64,44 @@ export default function AdminCommunity() {
 
   const updateMutation = useMutation({
     mutationFn: async (data: any) => {
-      return await apiRequest("PATCH", `/api/admin/community/posts/${editingPost?.post.id}`, data);
+      const res = await fetch(`/api/admin/community/posts/${editingPost?.post.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.message || "Error al actualizar anuncio");
+      }
+      return res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/community/posts"] });
       setFormData({ title: "", content: "", channelId: "" });
       setEditingPost(null);
       toast({ title: "Éxito", description: "Anuncio actualizado" });
+    },
+    onError: (error: any) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (postId: string) => {
+      const res = await fetch(`/api/admin/community/posts/${postId}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.message || "Error al eliminar anuncio");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/community/posts"] });
+      toast({ title: "Éxito", description: "Anuncio eliminado" });
     },
     onError: (error: any) => {
       toast({ title: "Error", description: error.message, variant: "destructive" });
@@ -94,6 +128,7 @@ export default function AdminCommunity() {
       content: post.post.content,
       channelId: post.post.channelId,
     });
+    setShowCreateModal(true);
   };
 
   if (adminLoading) {
