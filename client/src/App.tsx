@@ -34,7 +34,7 @@ import RoomForm from "@/pages/admin/room-form";
 import Setup from "@/pages/setup";
 import Lesson from "@/pages/lesson";
 import Events from "@/pages/events";
-import CommunityChatPage from "@/pages/community-simple";
+import Community from "@/pages/community";
 import Perks from "@/pages/perks";
 import Profile from "@/pages/profile";
 import MyProgress from "@/pages/my-progress";
@@ -125,7 +125,7 @@ function Router() {
           <Route path="/planes" component={Planes} />
           <Route path="/apoyo" component={Support} />
           <Route path="/support" component={Support} />
-          <Route path="/community" component={CommunityChatPage} />
+          <Route path="/community" component={Community} />
           <Route component={NotFound} />
         </>
       ) : (
@@ -137,7 +137,7 @@ function Router() {
           <Route path="/talleres" component={Workshops} />
           <Route path="/taller/:id" component={Workshop} />
           <Route path="/events" component={Events} />
-          <Route path="/community" component={CommunityChatPage} />
+          <Route path="/community" component={Community} />
           <Route path="/perks" component={Perks} />
           <Route path="/profile" component={Profile} />
           <Route path="/progreso" component={MyProgress} />
