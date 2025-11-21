@@ -1776,7 +1776,7 @@ export function registerSimpleRoutes(app: Express): Server {
   });
 
   // Admin endpoint to create posts
-  app.post("/api/admin/community/posts", optionalSupabaseAuth, isAdmin, async (req: Request, res: Response) => {
+  app.post("/api/admin/community/posts", supabaseAuth, isAdmin, async (req: Request, res: Response) => {
     try {
       const { channelId, title, content, imageUrl } = req.body;
       const userId = (req as any).user?.claims?.sub || (req as any).user?.id;
@@ -1794,7 +1794,7 @@ export function registerSimpleRoutes(app: Express): Server {
   });
 
   // Admin endpoint to get all posts
-  app.get("/api/admin/community/posts", optionalSupabaseAuth, isAdmin, async (req: Request, res: Response) => {
+  app.get("/api/admin/community/posts", supabaseAuth, isAdmin, async (req: Request, res: Response) => {
     try {
       const posts = await db
         .select({
@@ -1820,7 +1820,7 @@ export function registerSimpleRoutes(app: Express): Server {
   });
 
   // Admin endpoint to update post
-  app.patch("/api/admin/community/posts/:postId", optionalSupabaseAuth, isAdmin, async (req: Request, res: Response) => {
+  app.patch("/api/admin/community/posts/:postId", supabaseAuth, isAdmin, async (req: Request, res: Response) => {
     try {
       const { postId } = req.params;
       const { title, content, imageUrl } = req.body;
@@ -1839,7 +1839,7 @@ export function registerSimpleRoutes(app: Express): Server {
   });
 
   // Admin endpoint to delete post
-  app.delete("/api/admin/community/posts/:postId", optionalSupabaseAuth, isAdmin, async (req: Request, res: Response) => {
+  app.delete("/api/admin/community/posts/:postId", supabaseAuth, isAdmin, async (req: Request, res: Response) => {
     try {
       const { postId } = req.params;
 
