@@ -1,265 +1,377 @@
-import React, { useEffect } from "react";
-import { useAuth } from "@/hooks/useAuth";
+import React, { useState } from "react";
+import { useSimpleAuth } from "@/hooks/use-simple-auth";
 import { useToast } from "@/hooks/use-toast";
 import Sidebar from "@/components/layout/sidebar";
 import MobileNav from "@/components/layout/mobile-nav";
 import MobileHeader from "@/components/layout/mobile-header";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Users, MessageCircle, Trophy, Star, ExternalLink } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Heart, MessageCircle, Share2, Calendar, TrendingUp, Search, Plus } from "lucide-react";
+import { cn } from "@/lib/utils";
+
+interface Post {
+  id: string;
+  author: {
+    name: string;
+    avatar?: string;
+    role?: string;
+  };
+  title: string;
+  content: string;
+  timestamp: string;
+  likes: number;
+  comments: number;
+  category?: string;
+  image?: string;
+  liked?: boolean;
+}
+
+interface Event {
+  id: string;
+  date: string;
+  day: string;
+  title: string;
+  time: string;
+}
 
 export default function Community() {
+  const { isAuthenticated, user, isLoading } = useSimpleAuth();
   const { toast } = useToast();
-  const { isAuthenticated, isLoading } = useAuth();
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("all");
+  const [posts, setPosts] = useState<Post[]>([
+    {
+      id: "1",
+      author: {
+        name: "María González",
+        avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Maria",
+        role: "Mentor"
+      },
+      title: "Sesión de preguntas y respuestas: IA y automatización",
+      content: "Hoy tuvimos una sesión increíble discutiendo sobre los últimos avances en IA...",
+      timestamp: "Hace 2 horas",
+      likes: 45,
+      comments: 12,
+      category: "IA",
+      liked: false
+    },
+    {
+      id: "2",
+      author: {
+        name: "Carlos Ruiz",
+        avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Carlos",
+        role: "Desarrollador"
+      },
+      title: "Ganadores del Black IA No Vela 🎉",
+      content: "Felicidades a todos los ganadores de esta semana. Sus proyectos fueron...",
+      timestamp: "Hace 5 horas",
+      likes: 128,
+      comments: 34,
+      category: "Concursos",
+      liked: false
+    },
+    {
+      id: "3",
+      author: {
+        name: "Ana López",
+        avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Ana",
+        role: "Creadora"
+      },
+      title: "TEMAS para TRANSMISIONES EN VIVO (¡Necesitamos tu ayuda!)",
+      content: "¿Qué temas te gustaría que cubramos en nuestras próximas transmisiones?...",
+      timestamp: "Hace 8 horas",
+      likes: 67,
+      comments: 23,
+      category: "Sugerencias",
+      liked: false
+    }
+  ]);
 
-  // Redirect to login if not authenticated
-  useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
+  const upcomingEvents: Event[] = [
+    {
+      id: "1",
+      date: "24",
+      day: "Jueves",
+      title: "Sesión de preguntas y respuestas: IA y automatización",
+      time: "3:00 - 4:00 PM -05"
+    },
+    {
+      id: "2",
+      date: "25",
+      day: "Viernes",
+      title: "Bienvenida a la transmisión en vivo - Comunidad NoCode",
+      time: "8:00 - 9:00 PM -05"
+    },
+    {
+      id: "3",
+      date: "26",
+      day: "Sábado",
+      title: "Sesión de preguntas y respuestas: IA y automatización",
+      time: "3:00 - 4:00 PM -05"
+    },
+    {
+      id: "4",
+      date: "28",
+      day: "Lunes",
+      title: "Cómo ofrecer soluciones de automatización e IA",
+      time: "5:00 - 6:00 PM -05"
+    }
+  ];
+
+  const popularPosts: Post[] = [
+    {
+      id: "p1",
+      author: { name: "Enric", role: "Instructor" },
+      title: "Envío automático de comprobantes de pago",
+      content: "Tutorial completo sobre automatización de pagos",
+      timestamp: "2 días",
+      likes: 234,
+      comments: 45,
+      category: "Tutorial"
+    },
+    {
+      id: "p2",
+      author: { name: "Bruno Rialetta Morales", role: "Mentor" },
+      title: "¿De verdad está protegiendo el certificado de seguridad de mi aplicación?",
+      content: "Análisis de seguridad en certificados SSL",
+      timestamp: "3 días",
+      likes: 189,
+      comments: 32,
+      category: "Seguridad"
+    }
+  ];
+
+  const categories = [
+    { id: "all", label: "Todos", icon: "🌐" },
+    { id: "presentate", label: "Presentate", icon: "👋" },
+    { id: "faqs", label: "Preguntas frecuentes", icon: "❓" },
+    { id: "announcements", label: "Anuncios", icon: "📢" },
+    { id: "streams", label: "Transmisiones en directo", icon: "🔴" },
+    { id: "chat", label: "Redes de chat", icon: "💬" },
+    { id: "jobs", label: "Ofertas de empleo", icon: "💼" }
+  ];
+
+  const handleLikePost = (postId: string) => {
+    setPosts(posts.map(post =>
+      post.id === postId
+        ? { ...post, liked: !post.liked, likes: post.liked ? post.likes - 1 : post.likes + 1 }
+        : post
+    ));
+  };
+
+  const handleNewPost = () => {
+    if (!isAuthenticated) {
       toast({
-        title: "Unauthorized",
-        description: "You are logged out. Logging in again...",
-        variant: "destructive",
+        title: "Inicia sesión",
+        description: "Debes estar autenticado para crear una publicación",
+        variant: "destructive"
       });
-      setTimeout(() => {
-        window.location.href = "/api/login";
-      }, 500);
       return;
     }
-  }, [isAuthenticated, isLoading, toast]);
+    toast({
+      title: "Nueva publicación",
+      description: "Función de crear publicación próximamente",
+    });
+  };
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-dark-bg flex">
-        <div className="w-[250px] bg-dark-card border-r border-dark-border"></div>
+      <div className="min-h-screen bg-background flex">
+        <Sidebar />
         <div className="flex-1 flex items-center justify-center">
-          <div className="text-white">Loading...</div>
+          <div className="text-foreground">Cargando...</div>
         </div>
       </div>
     );
   }
 
-  const communityStats = {
-    totalMembers: 1247,
-    activeToday: 89,
-    totalPosts: 2456,
-    totalProjects: 134
-  };
-
-  const topMembers = [
-    {
-      id: "1",
-      name: "María González",
-      avatar: "",
-      role: "Mentor",
-      contributions: 45,
-      level: "Expert"
-    },
-    {
-      id: "2", 
-      name: "Carlos Ruiz",
-      avatar: "",
-      role: "Estudiante",
-      contributions: 32,
-      level: "Advanced"
-    },
-    {
-      id: "3",
-      name: "Ana López",
-      avatar: "",
-      role: "Creadora",
-      contributions: 28,
-      level: "Intermediate"
-    }
-  ];
-
-  const recentActivity = [
-    {
-      id: "1",
-      user: "Pedro Martín",
-      action: "completó el curso",
-      target: "Automatización con Make.com",
-      time: "hace 2 horas"
-    },
-    {
-      id: "2",
-      user: "Laura Sánchez",
-      action: "publicó un proyecto",
-      target: "App de Fitness con FlutterFlow",
-      time: "hace 4 horas"
-    },
-    {
-      id: "3",
-      user: "Diego Torres",
-      action: "obtuvo certificación en",
-      target: "No-Code Fundamentals",
-      time: "hace 1 día"
-    }
-  ];
-
   return (
-    <div className="min-h-screen bg-dark-bg text-white">
-      {/* Mobile Header */}
+    <div className="min-h-screen bg-background">
+      <Sidebar />
       <MobileHeader />
       
-      <div className="flex">
-        {/* Sidebar */}
-        <Sidebar />
-        
-        {/* Main Content */}
-        <main className="flex-1 overflow-auto pb-20 lg:pb-0 md:ml-16 lg:ml-[250px]">
-          {/* Header */}
-          <header className="bg-dark-card border-b border-dark-border p-6">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-              <div>
-                <h1 className="text-2xl font-bold">Comunidad</h1>
-                <p className="text-gray-400 mt-1">
-                  Conecta con otros estudiantes, comparte proyectos y aprende juntos.
-                </p>
+      <div className="flex flex-col lg:flex-row gap-6 pt-20 lg:pt-6 lg:ml-[250px] px-4 lg:px-6 pb-20">
+        {/* Main Feed - Centro */}
+        <div className="flex-1 max-w-2xl">
+          {/* Search and New Post */}
+          <div className="space-y-4 mb-6">
+            <div className="flex gap-3">
+              <div className="flex-1 relative">
+                <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Buscar publicaciones..."
+                  className="pl-10"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
               </div>
-              <Button className="bg-purple-600 hover:bg-purple-700">
-                <ExternalLink className="h-4 w-4 mr-2" />
-                Unirse al Discord
+              <Button
+                onClick={handleNewPost}
+                className="bg-cyan-500 hover:bg-cyan-600 text-white"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Nueva publicación
               </Button>
             </div>
-          </header>
 
-          <div className="container mx-auto px-6 py-8 max-w-7xl">
-            {/* Community Stats */}
-            <section className="mb-8">
-              <h2 className="text-xl font-bold text-white mb-6">Estadísticas de la Comunidad</h2>
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                <Card className="bg-dark-card border-dark-border">
-                  <CardContent className="p-6 text-center">
-                    <Users className="h-8 w-8 text-purple-400 mx-auto mb-2" />
-                    <p className="text-2xl font-bold text-white">{communityStats.totalMembers.toLocaleString()}</p>
-                    <p className="text-sm text-gray-400">Miembros Totales</p>
-                  </CardContent>
-                </Card>
-                <Card className="bg-dark-card border-dark-border">
-                  <CardContent className="p-6 text-center">
-                    <Star className="h-8 w-8 text-green-400 mx-auto mb-2" />
-                    <p className="text-2xl font-bold text-white">{communityStats.activeToday}</p>
-                    <p className="text-sm text-gray-400">Activos Hoy</p>
-                  </CardContent>
-                </Card>
-                <Card className="bg-dark-card border-dark-border">
-                  <CardContent className="p-6 text-center">
-                    <MessageCircle className="h-8 w-8 text-blue-400 mx-auto mb-2" />
-                    <p className="text-2xl font-bold text-white">{communityStats.totalPosts.toLocaleString()}</p>
-                    <p className="text-sm text-gray-400">Publicaciones</p>
-                  </CardContent>
-                </Card>
-                <Card className="bg-dark-card border-dark-border">
-                  <CardContent className="p-6 text-center">
-                    <Trophy className="h-8 w-8 text-orange-400 mx-auto mb-2" />
-                    <p className="text-2xl font-bold text-white">{communityStats.totalProjects}</p>
-                    <p className="text-sm text-gray-400">Proyectos</p>
-                  </CardContent>
-                </Card>
-              </div>
-            </section>
-
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              {/* Top Members */}
-              <section>
-                <h2 className="text-xl font-bold text-white mb-6">Miembros Destacados</h2>
-                <Card className="bg-dark-card border-dark-border">
-                  <CardContent className="p-6">
-                    <div className="space-y-4">
-                      {topMembers.map((member, index) => (
-                        <div key={member.id} className="flex items-center gap-4 p-4 rounded-lg bg-dark-bg/50 hover:bg-dark-bg/70 transition-colors">
-                          <div className="flex items-center gap-1 text-sm font-bold text-gray-400 w-6">
-                            #{index + 1}
-                          </div>
-                          <Avatar className="h-10 w-10">
-                            <AvatarImage src={member.avatar} />
-                            <AvatarFallback className="bg-purple-600 text-white">
-                              {member.name.split(' ').map(n => n[0]).join('')}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div className="flex-1">
-                            <p className="font-medium text-white">{member.name}</p>
-                            <p className="text-sm text-gray-400">{member.role}</p>
-                          </div>
-                          <div className="text-right">
-                            <Badge className="bg-purple-500/20 text-purple-400 mb-1">
-                              {member.level}
-                            </Badge>
-                            <p className="text-xs text-gray-500">{member.contributions} contribuciones</p>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              </section>
-
-              {/* Recent Activity */}
-              <section>
-                <h2 className="text-xl font-bold text-white mb-6">Actividad Reciente</h2>
-                <Card className="bg-dark-card border-dark-border">
-                  <CardContent className="p-6">
-                    <div className="space-y-4">
-                      {recentActivity.map((activity) => (
-                        <div key={activity.id} className="flex items-start gap-4 p-4 rounded-lg bg-dark-bg/50">
-                          <Avatar className="h-8 w-8 mt-1">
-                            <AvatarFallback className="bg-blue-600 text-white text-sm">
-                              {activity.user.split(' ').map(n => n[0]).join('')}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div className="flex-1">
-                            <p className="text-sm text-white">
-                              <span className="font-medium">{activity.user}</span>
-                              <span className="text-gray-400"> {activity.action} </span>
-                              <span className="font-medium text-purple-400">{activity.target}</span>
-                            </p>
-                            <p className="text-xs text-gray-500 mt-1">{activity.time}</p>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              </section>
+            {/* Categories */}
+            <div className="flex gap-2 overflow-x-auto pb-2">
+              {categories.map(cat => (
+                <button
+                  key={cat.id}
+                  onClick={() => setSelectedCategory(cat.id)}
+                  className={cn(
+                    "px-4 py-2 rounded-full whitespace-nowrap text-sm font-medium transition-all flex-shrink-0",
+                    selectedCategory === cat.id
+                      ? "bg-primary text-white"
+                      : "bg-muted text-muted-foreground hover:bg-muted/80"
+                  )}
+                >
+                  <span className="mr-2">{cat.icon}</span>
+                  {cat.label}
+                </button>
+              ))}
             </div>
+          </div>
 
-            {/* Community Guidelines */}
-            <section className="mt-8">
-              <h2 className="text-xl font-bold text-white mb-6">Únete a Nuestra Comunidad</h2>
-              <Card className="bg-dark-card border-dark-border">
-                <CardContent className="p-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                      <h3 className="text-lg font-semibold text-white mb-3">Discord</h3>
-                      <p className="text-gray-400 mb-4">
-                        Únete a nuestro servidor de Discord para chatear en tiempo real, hacer preguntas y colaborar en proyectos.
-                      </p>
-                      <Button className="bg-blue-600 hover:bg-blue-700">
-                        <ExternalLink className="h-4 w-4 mr-2" />
-                        Unirse al Discord
-                      </Button>
+          {/* Posts */}
+          <div className="space-y-4">
+            {posts.map(post => (
+              <Card key={post.id} className="bg-[#1a1a1a] border-[#333333] hover:border-[#444444] transition-colors">
+                <CardContent className="pt-6">
+                  {/* Author */}
+                  <div className="flex items-center gap-3 mb-4">
+                    <Avatar className="h-10 w-10">
+                      <AvatarImage src={post.author.avatar} />
+                      <AvatarFallback>{post.author.name.charAt(0)}</AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-semibold text-white text-sm">{post.author.name}</h3>
+                        {post.author.role && (
+                          <Badge variant="outline" className="text-xs bg-primary/10 text-primary border-primary/30">
+                            {post.author.role}
+                          </Badge>
+                        )}
+                      </div>
+                      <p className="text-xs text-muted-foreground">{post.timestamp}</p>
                     </div>
-                    <div>
-                      <h3 className="text-lg font-semibold text-white mb-3">Foro de Proyectos</h3>
-                      <p className="text-gray-400 mb-4">
-                        Comparte tus proyectos, recibe feedback y encuentra colaboradores para nuevas ideas.
-                      </p>
-                      <Button variant="outline" className="border-dark-border text-gray-300 hover:bg-dark-bg">
-                        <Trophy className="h-4 w-4 mr-2" />
-                        Ver Proyectos
-                      </Button>
+                  </div>
+
+                  {/* Post Content */}
+                  <div className="mb-4">
+                    <h2 className="text-lg font-semibold text-white mb-2">{post.title}</h2>
+                    <p className="text-muted-foreground text-sm">{post.content}</p>
+                  </div>
+
+                  {/* Category Badge */}
+                  {post.category && (
+                    <div className="mb-4">
+                      <Badge className="bg-primary/20 text-primary border-0">
+                        {post.category}
+                      </Badge>
                     </div>
+                  )}
+
+                  {/* Interactions */}
+                  <div className="flex items-center justify-between text-muted-foreground border-t border-[#333333] pt-4">
+                    <button
+                      onClick={() => handleLikePost(post.id)}
+                      className={cn(
+                        "flex items-center gap-2 text-sm hover:text-white transition-colors",
+                        post.liked && "text-red-500"
+                      )}
+                    >
+                      <Heart className={cn("h-4 w-4", post.liked && "fill-current")} />
+                      {post.likes}
+                    </button>
+                    <button className="flex items-center gap-2 text-sm hover:text-white transition-colors">
+                      <MessageCircle className="h-4 w-4" />
+                      {post.comments}
+                    </button>
+                    <button className="flex items-center gap-2 text-sm hover:text-white transition-colors">
+                      <Share2 className="h-4 w-4" />
+                      Compartir
+                    </button>
                   </div>
                 </CardContent>
               </Card>
-            </section>
+            ))}
           </div>
-        </main>
+        </div>
+
+        {/* Sidebar Derecho - Desktop only */}
+        <div className="hidden lg:flex flex-col gap-6 w-72 sticky top-6 h-fit">
+          {/* Upcoming Events */}
+          <Card className="bg-[#1a1a1a] border-[#333333]">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-white text-base flex items-center gap-2">
+                <Calendar className="h-4 w-4" />
+                Próximos eventos
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {upcomingEvents.map(event => (
+                <div
+                  key={event.id}
+                  className="flex gap-3 p-2 rounded hover:bg-muted/50 transition-colors cursor-pointer"
+                >
+                  <div className="flex flex-col items-center justify-center min-w-fit bg-muted/50 px-2 py-1 rounded">
+                    <span className="text-lg font-bold text-primary">{event.date}</span>
+                    <span className="text-xs text-muted-foreground">{event.day}</span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-white line-clamp-2">{event.title}</p>
+                    <p className="text-xs text-muted-foreground mt-1">{event.time}</p>
+                  </div>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+
+          {/* Popular Posts */}
+          <Card className="bg-[#1a1a1a] border-[#333333]">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-white text-base flex items-center gap-2">
+                <TrendingUp className="h-4 w-4" />
+                Publicaciones populares
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {popularPosts.map(post => (
+                <div
+                  key={post.id}
+                  className="p-3 bg-muted/30 rounded hover:bg-muted/50 transition-colors cursor-pointer"
+                >
+                  <div className="flex items-start gap-2 mb-2">
+                    <Avatar className="h-6 w-6 flex-shrink-0">
+                      <AvatarFallback className="text-xs">{post.author.name.charAt(0)}</AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs text-muted-foreground">{post.author.name}</p>
+                      <p className="text-sm font-medium text-white line-clamp-2">{post.title}</p>
+                    </div>
+                  </div>
+                  <div className="flex gap-4 text-xs text-muted-foreground">
+                    <span className="flex items-center gap-1">
+                      <Heart className="h-3 w-3" />
+                      {post.likes}
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <MessageCircle className="h-3 w-3" />
+                      {post.comments}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        </div>
       </div>
-      
-      {/* Mobile Navigation */}
+
       <MobileNav />
     </div>
   );
