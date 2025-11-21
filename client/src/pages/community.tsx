@@ -3,11 +3,11 @@ import { useSimpleAuth } from "@/hooks/use-simple-auth";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
-import { Heart, MessageCircle, Send, Loader2 } from "lucide-react";
+import { Heart, MessageCircle, Send, Loader2, Menu } from "lucide-react";
 import { cn } from "@/lib/utils";
+import Sidebar from "@/components/layout/sidebar";
+import MobileNav from "@/components/layout/mobile-nav";
 
 interface Channel {
   id: string;
@@ -47,6 +47,7 @@ export default function Community() {
   const [loading, setLoading] = useState(true);
   const [messageInput, setMessageInput] = useState("");
   const [sendingMessage, setSendingMessage] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
 
   // Fetch channels on mount
   useEffect(() => {
@@ -56,7 +57,7 @@ export default function Community() {
         const data = await res.json();
         setChannels(data);
         if (data.length > 0) {
-          const firstChannel = data.find((c: Channel) => c.slug === "empieza") || data[0];
+          const firstChannel = data.find((c: Channel) => c.slug === "anuncios") || data[0];
           setActiveChannel(firstChannel);
         }
       } catch (error) {
@@ -141,8 +142,14 @@ export default function Community() {
 
   return (
     <div className="min-h-screen bg-background flex overflow-hidden">
-      {/* Left Sidebar - Channels */}
-      <div className="w-[280px] bg-[#2a2a2a] border-r border-[#333333] overflow-y-auto flex flex-col">
+      {/* Left Sidebar - Main Navigation */}
+      <Sidebar isOpen={sidebarOpen} onToggle={() => setSidebarOpen(prev => !prev)} />
+
+      {/* Middle Sidebar - Channels */}
+      <div className={cn(
+        "w-[280px] bg-[#2a2a2a] border-r border-[#333333] overflow-y-auto flex flex-col transition-all duration-300",
+        !sidebarOpen && "hidden"
+      )}>
         {/* Search */}
         <div className="p-4 border-b border-[#333333] sticky top-0 bg-[#2a2a2a] z-10">
           <Input type="search" placeholder="Buscar..." className="text-xs h-8 bg-[#1a1a1a] border-[#444444]" />
@@ -176,12 +183,23 @@ export default function Community() {
         </div>
       </div>
 
-      {/* Main Content */}
+      {/* Right Content - Messages */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Header */}
-        <div className="border-b border-[#333333] bg-[#1a1a1a] px-6 py-4">
-          <h1 className="text-xl font-bold text-white">{activeChannel?.name}</h1>
-          {activeChannel?.description && <p className="text-xs text-muted-foreground mt-1">{activeChannel.description}</p>}
+        <div className="border-b border-[#333333] bg-[#1a1a1a] px-6 py-4 flex items-center gap-4">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setSidebarOpen(prev => !prev)}
+            className="lg:hidden"
+            data-testid="toggle-channels-button"
+          >
+            <Menu className="h-5 w-5" />
+          </Button>
+          <div className="flex-1">
+            <h1 className="text-xl font-bold text-white">{activeChannel?.name}</h1>
+            {activeChannel?.description && <p className="text-xs text-muted-foreground mt-1">{activeChannel.description}</p>}
+          </div>
         </div>
 
         {/* Messages */}
@@ -235,6 +253,8 @@ export default function Community() {
           </div>
         </div>
       </div>
+
+      <MobileNav />
     </div>
   );
 }
