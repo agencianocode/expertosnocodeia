@@ -4,7 +4,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Heart, MessageCircle, Send, Loader2, Menu } from "lucide-react";
+import { Send, Loader2, Menu } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Sidebar from "@/components/layout/sidebar";
 import MobileNav from "@/components/layout/mobile-nav";
@@ -33,11 +33,6 @@ interface Message {
   } | null;
 }
 
-interface ChannelSection {
-  title: string;
-  channels: Channel[];
-}
-
 export default function Community() {
   const { isAuthenticated, user } = useSimpleAuth();
   const { toast } = useToast();
@@ -47,7 +42,7 @@ export default function Community() {
   const [loading, setLoading] = useState(true);
   const [messageInput, setMessageInput] = useState("");
   const [sendingMessage, setSendingMessage] = useState(false);
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [channelsSidebarOpen, setChannelsSidebarOpen] = useState(true);
 
   // Fetch channels on mount
   useEffect(() => {
@@ -143,12 +138,12 @@ export default function Community() {
   return (
     <div className="min-h-screen bg-background flex overflow-hidden">
       {/* Left Sidebar - Main Navigation */}
-      <Sidebar isOpen={sidebarOpen} onToggle={() => setSidebarOpen(prev => !prev)} />
+      <Sidebar />
 
       {/* Middle Sidebar - Channels */}
       <div className={cn(
         "w-[280px] bg-[#2a2a2a] border-r border-[#333333] overflow-y-auto flex flex-col transition-all duration-300",
-        !sidebarOpen && "hidden"
+        !channelsSidebarOpen && "hidden lg:flex"
       )}>
         {/* Search */}
         <div className="p-4 border-b border-[#333333] sticky top-0 bg-[#2a2a2a] z-10">
@@ -190,7 +185,7 @@ export default function Community() {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => setSidebarOpen(prev => !prev)}
+            onClick={() => setChannelsSidebarOpen(!channelsSidebarOpen)}
             className="lg:hidden"
             data-testid="toggle-channels-button"
           >
