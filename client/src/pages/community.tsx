@@ -90,18 +90,19 @@ export default function Community() {
   }, [activeChannel]);
 
   const handleSendMessage = async () => {
-    if (!isAuthenticated) {
-      toast({ title: "Inicia sesión", description: "Debes estar autenticado para enviar mensajes", variant: "destructive" });
-      return;
-    }
-
     if (!messageInput.trim() || !activeChannel) return;
 
     setSendingMessage(true);
     try {
+      const token = localStorage.getItem("authToken");
+      const headers: any = { "Content-Type": "application/json" };
+      if (token) {
+        headers["Authorization"] = `Bearer ${token}`;
+      }
+
       const res = await fetch(`/api/community/channels/${activeChannel.id}/messages`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers,
         body: JSON.stringify({ content: messageInput }),
       });
 
@@ -214,28 +215,24 @@ export default function Community() {
 
         {/* Message Input */}
         <div className="border-t border-[#333333] bg-[#1a1a1a] px-6 py-4">
-          {isAuthenticated ? (
-            <div className="flex gap-3">
-              <Input
-                placeholder="Escribe un mensaje..."
-                className="bg-[#2a2a2a] border-[#444444] text-white"
-                value={messageInput}
-                onChange={(e) => setMessageInput(e.target.value)}
-                onKeyPress={(e) => e.key === "Enter" && handleSendMessage()}
-                data-testid="message-input"
-              />
-              <Button
-                onClick={handleSendMessage}
-                disabled={sendingMessage || !messageInput.trim()}
-                className="bg-cyan-500 hover:bg-cyan-600"
-                data-testid="send-message-button"
-              >
-                {sendingMessage ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-              </Button>
-            </div>
-          ) : (
-            <p className="text-sm text-muted-foreground text-center">Inicia sesión para participar en la comunidad</p>
-          )}
+          <div className="flex gap-3">
+            <Input
+              placeholder="Escribe un mensaje..."
+              className="bg-[#2a2a2a] border-[#444444] text-white"
+              value={messageInput}
+              onChange={(e) => setMessageInput(e.target.value)}
+              onKeyPress={(e) => e.key === "Enter" && handleSendMessage()}
+              data-testid="message-input"
+            />
+            <Button
+              onClick={handleSendMessage}
+              disabled={sendingMessage || !messageInput.trim()}
+              className="bg-cyan-500 hover:bg-cyan-600"
+              data-testid="send-message-button"
+            >
+              {sendingMessage ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+            </Button>
+          </div>
         </div>
       </div>
     </div>
