@@ -117,14 +117,57 @@ export default function Community() {
     }
   ];
 
-  const channels = [
-    { id: "bienvenido", label: "Bienvenido", icon: "👋" },
-    { id: "presentate", label: "Presentate", icon: "🎤", badge: "63" },
-    { id: "faqs", label: "Preguntas frecuentes", icon: "❓" },
-    { id: "anuncios", label: "Anuncios", icon: "📢" },
-    { id: "streams", label: "Transmisiones en directo", icon: "🔴" },
-    { id: "chat", label: "Redes de chat", icon: "💬", badge: "53" },
-    { id: "jobs", label: "Ofertas de empleo", icon: "💼", badge: "2" }
+  const channelSections = [
+    {
+      title: "Bienvenida",
+      channels: [
+        { id: "empieza", label: "Empieza aquí", icon: "🚀" },
+        { id: "presentate", label: "Preséntate", icon: "🎤", badge: "63" },
+        { id: "faqs", label: "Preguntas frecuentes", icon: "❓" },
+        { id: "anuncios", label: "Anuncios", icon: "📢", badge: "11" },
+        { id: "streams", label: "Transmisiones en directo y reuniones", icon: "🔴" },
+      ]
+    },
+    {
+      title: "Redes",
+      channels: [
+        { id: "proyectos", label: "Comparte tu proyecto/trabajo", icon: "👨‍💼", badge: "21" },
+        { id: "chat", label: "Redes de chat", icon: "💬", badge: "53" },
+        { id: "consejos", label: "Consejos y noticias", icon: "💡", badge: "9" },
+        { id: "jobs", label: "Ofertas de empleo y oportunidades", icon: "💼", badge: "2" },
+      ]
+    },
+    {
+      title: "Mercado y negocios",
+      channels: [
+        { id: "marketing", label: "Marketing y ventas", icon: "📈", badge: "6" },
+      ]
+    },
+    {
+      title: "Obtén respuestas a tus preguntas",
+      channels: [
+        { id: "agentes-esp", label: "Agentes especializados", icon: "⭐" },
+        { id: "agentes-ia", label: "Agentes de IA", icon: "🤖", badge: "31" },
+        { id: "automatizacion", label: "Automatización", icon: "⚙️", badge: "18" },
+        { id: "apps", label: "Aplicaciones y programación Vibe", icon: "📱", badge: "12" },
+      ]
+    },
+    {
+      title: "Materiales de clase",
+      channels: [
+        { id: "cupones", label: "Cupones y descuentos", icon: "🎟️" },
+      ]
+    },
+    {
+      title: "Links",
+      channels: [
+        { id: "clases", label: "Acceso a las clases", icon: "📚" },
+        { id: "whatsapp", label: "Soporte de WhatsApp", icon: "💬" },
+        { id: "whatsapp-notif", label: "Canal de notificaciones de WhatsApp", icon: "🔔" },
+        { id: "feedback", label: "Comentarios y sugerencias", icon: "📝" },
+        { id: "trabaja", label: "Trabaja con nosotros", icon: "💼" },
+      ]
+    }
   ];
 
   const handleLikePost = (postId: string) => {
@@ -163,125 +206,51 @@ export default function Community() {
   return (
     <div className="min-h-screen bg-background flex overflow-hidden">
       {/* Left Sidebar - Channels */}
-      <div className="w-[140px] bg-[#2a2a2a] border-r border-[#333333] overflow-y-auto flex flex-col">
+      <div className="w-[280px] bg-[#2a2a2a] border-r border-[#333333] overflow-y-auto flex flex-col">
         {/* Logo */}
-        <div className="p-4 border-b border-[#333333]">
-          <div className="flex items-center gap-2 mb-4">
+        <div className="p-4 border-b border-[#333333] sticky top-0 bg-[#2a2a2a] z-10">
+          <div className="flex items-center gap-2">
             <Input
               type="search"
-              placeholder="Alojamiento"
+              placeholder="Buscar canales..."
               className="text-xs h-8 bg-[#1a1a1a] border-[#444444]"
             />
           </div>
         </div>
 
         {/* Sections */}
-        <div className="flex-1 overflow-y-auto">
-          {/* Bienvenido */}
-          <div className="text-xs text-muted-foreground px-3 py-2 mt-4 font-semibold">
-            Bienvenido
-          </div>
-          {channels.slice(0, 1).map(channel => (
-            <button
-              key={channel.id}
-              onClick={() => setActiveChannel(channel.id)}
-              className={cn(
-                "w-full text-left px-3 py-2 text-sm font-medium flex items-center gap-2 hover:bg-[#333333] transition-colors",
-                activeChannel === channel.id && "bg-[#404040] text-white"
-              )}
-            >
-              <span>{channel.icon}</span>
-              <span className="truncate">{channel.label}</span>
-            </button>
-          ))}
-
-          {/* Redes */}
-          <div className="text-xs text-muted-foreground px-3 py-3 mt-4 font-semibold">
-            Redes
-          </div>
-          {channels.slice(1, 5).map(channel => (
-            <button
-              key={channel.id}
-              onClick={() => setActiveChannel(channel.id)}
-              className={cn(
-                "w-full text-left px-3 py-2 text-sm font-medium flex items-center justify-between gap-2 hover:bg-[#333333] transition-colors group",
-                activeChannel === channel.id && "bg-[#404040] text-white"
-              )}
-            >
-              <div className="flex items-center gap-2 min-w-0">
-                <span>{channel.icon}</span>
-                <span className="truncate text-xs">{channel.label}</span>
+        <div className="flex-1 overflow-y-auto px-2 py-3 space-y-2">
+          {channelSections.map((section) => (
+            <div key={section.title}>
+              <div className="text-xs text-muted-foreground px-2 py-2 font-semibold uppercase">
+                {section.title}
               </div>
-              {channel.badge && (
-                <span className="text-xs bg-muted text-muted-foreground px-1.5 rounded group-hover:bg-[#333333]">
-                  {channel.badge}
-                </span>
-              )}
-            </button>
+              {section.channels.map((channel) => (
+                <button
+                  key={channel.id}
+                  onClick={() => setActiveChannel(channel.id)}
+                  className={cn(
+                    "w-full text-left px-3 py-2 rounded text-sm font-medium flex items-center justify-between gap-2 hover:bg-[#333333] transition-colors group",
+                    activeChannel === channel.id && "bg-[#404040] text-white"
+                  )}
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <span className="text-lg flex-shrink-0">{channel.icon}</span>
+                    <span className="truncate text-sm">{channel.label}</span>
+                  </div>
+                  {channel.badge && (
+                    <span className="text-xs bg-muted text-muted-foreground px-2 py-0.5 rounded-full flex-shrink-0 group-hover:bg-[#333333]">
+                      {channel.badge}
+                    </span>
+                  )}
+                </button>
+              ))}
+            </div>
           ))}
-
-          {/* Obtén respuestas a tus preguntas */}
-          <div className="text-xs text-muted-foreground px-3 py-3 mt-4 font-semibold">
-            Obtén respuestas a tus preguntas
-          </div>
-          {channels.slice(5, 7).map(channel => (
-            <button
-              key={channel.id}
-              onClick={() => setActiveChannel(channel.id)}
-              className={cn(
-                "w-full text-left px-3 py-2 text-sm font-medium flex items-center justify-between gap-2 hover:bg-[#333333] transition-colors group",
-                activeChannel === channel.id && "bg-[#404040] text-white"
-              )}
-            >
-              <div className="flex items-center gap-2 min-w-0">
-                <span>{channel.icon}</span>
-                <span className="truncate text-xs">{channel.label}</span>
-              </div>
-              {channel.badge && (
-                <span className="text-xs bg-muted text-muted-foreground px-1.5 rounded group-hover:bg-[#333333]">
-                  {channel.badge}
-                </span>
-              )}
-            </button>
-          ))}
-
-          {/* Mercado y negocios */}
-          <div className="text-xs text-muted-foreground px-3 py-3 mt-4 font-semibold">
-            Mercado y negocios
-          </div>
-          <button className="w-full text-left px-3 py-2 text-sm font-medium flex items-center gap-2 hover:bg-[#333333] transition-colors">
-            <span>📈</span>
-            <span className="truncate text-xs">Marketing y ventas</span>
-            <span className="text-xs text-muted-foreground ml-auto">6</span>
-          </button>
-
-          {/* Bottom section */}
-          <div className="text-xs text-muted-foreground px-3 py-3 mt-4 font-semibold">
-            Obtén respuestas a tus preguntas
-          </div>
-          <button className="w-full text-left px-3 py-2 text-sm font-medium flex items-center gap-2 hover:bg-[#333333] transition-colors">
-            <span>⭐</span>
-            <span className="truncate text-xs">Agentes especializados</span>
-          </button>
-          <button className="w-full text-left px-3 py-2 text-sm font-medium flex items-center gap-2 hover:bg-[#333333] transition-colors">
-            <span>🤖</span>
-            <span className="truncate text-xs">Agentes de IA</span>
-            <span className="text-xs text-muted-foreground ml-auto">31</span>
-          </button>
-          <button className="w-full text-left px-3 py-2 text-sm font-medium flex items-center gap-2 hover:bg-[#333333] transition-colors">
-            <span>⚙️</span>
-            <span className="truncate text-xs">Automatización</span>
-            <span className="text-xs text-muted-foreground ml-auto">15</span>
-          </button>
-          <button className="w-full text-left px-3 py-2 text-sm font-medium flex items-center gap-2 hover:bg-[#333333] transition-colors">
-            <span>📱</span>
-            <span className="truncate text-xs">Aplicaciones y prototipos</span>
-            <span className="text-xs text-muted-foreground ml-auto">12</span>
-          </button>
         </div>
 
         {/* Bottom */}
-        <div className="border-t border-[#333333] p-3 text-xs text-muted-foreground">
+        <div className="border-t border-[#333333] p-3 text-xs text-muted-foreground sticky bottom-0 bg-[#2a2a2a]">
           En
         </div>
       </div>
@@ -292,7 +261,7 @@ export default function Community() {
         <div className="border-b border-[#333333] bg-[#1a1a1a] px-6 py-4 flex items-center justify-between">
           <div>
             <h1 className="text-xl font-bold text-white capitalize">
-              {channels.find(c => c.id === activeChannel)?.label || "Alimentar"}
+              {channelSections.flatMap(s => s.channels).find(c => c.id === activeChannel)?.label || "Alimentar"}
             </h1>
           </div>
           <div className="flex items-center gap-3">
