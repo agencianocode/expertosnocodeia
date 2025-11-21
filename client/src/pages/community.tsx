@@ -104,7 +104,7 @@ export default function Community() {
           // Fetch posts for announcements channel
           const res = await fetch(`/api/community/channels/${activeChannel.id}/posts?limit=50`);
           const data = await res.json();
-          setPosts(data);
+          setPosts(Array.isArray(data) ? data : []);
           setSelectedPost(null);
           setComments([]);
         } else {
@@ -115,6 +115,7 @@ export default function Community() {
         }
       } catch (error) {
         console.error("Error fetching content:", error);
+        setPosts([]);
       }
     };
 
@@ -129,9 +130,10 @@ export default function Community() {
       try {
         const res = await fetch(`/api/community/posts/${selectedPost.post.id}/comments`);
         const data = await res.json();
-        setComments(data);
+        setComments(Array.isArray(data) ? data : []);
       } catch (error) {
         console.error("Error fetching comments:", error);
+        setComments([]);
       }
     };
 
