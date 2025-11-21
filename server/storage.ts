@@ -2564,6 +2564,64 @@ export class DatabaseStorage implements IStorage {
     return message;
   }
 
+  // Community posts methods
+  async getChannelPosts(channelId: string, limit: number = 50): Promise<any[]> {
+    const posts = await db
+      .select({
+        post: communityPosts,
+        user: {
+          id: users.id,
+          firstName: users.firstName,
+          lastName: users.lastName,
+          profileImageUrl: users.profileImageUrl,
+        }
+      })
+      .from(communityPosts)
+      .leftJoin(users, eq(communityPosts.userId, users.id))
+      .where(eq(communityPosts.channelId, channelId))
+      .orderBy(desc(communityPosts.createdAt))
+      .limit(limit);
+
+    return posts.reverse();
+  }
+
+  async getPostComments(postId: string): Promise<any[]> {
+    const comments = await db
+      .select({
+        comment: communityPostComments,
+        user: {
+          id: users.id,
+          firstName: users.firstName,
+          lastName: users.lastName,
+          profileImageUrl: users.profileImageUrl,
+        }
+      })
+      .from(communityPostComments)
+      .leftJoin(users, eq(communityPostComments.userId, users.id))
+      .where(eq(communityPostComments.postId, postId))
+      .orderBy(desc(communityPostComments.createdAt));
+
+    return comments;
+  }
+
+  async createCommunityPost(channelId: string, userId: string, title: string, content: string, imageUrl?: string): Promise<any> {
+    const [post] = await db
+      .insert(communityPosts)
+      .values({ channelId, userId, title, content, imageUrl })
+      .returning();
+
+    return post;
+  }
+
+  async createPostComment(postId: string, userId: string, content: string): Promise<any> {
+    const [comment] = await db
+      .insert(communityPostComments)
+      .values({ postId, userId, content })
+      .returning();
+
+    return comment;
+  }
+
   async initializeCommunityChannels(): Promise<void> {
     // Core general channels
     const generalChannels = [
