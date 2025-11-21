@@ -86,7 +86,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/user-recent-activity", supabaseAuth, async (req: AuthenticatedRequest, res) => {
     try {
       const userId = req.user!.id;
-      const activity = await storage.getUserRecentCourses(userId);
+      const activity = await storage.getUserRecentContent(userId);
       res.json(activity);
     } catch (error) {
       console.error("Error fetching recent activity:", error);

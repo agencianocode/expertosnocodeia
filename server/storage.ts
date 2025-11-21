@@ -2519,9 +2519,10 @@ export class DatabaseStorage implements IStorage {
 
   // Community chat methods
   async getAllCommunityChannels(): Promise<CommunityChannel[]> {
-    return db.query.communityChannels.findMany({
-      orderBy: (channels, { asc }) => [asc(channels.section), asc(channels.order)],
-    });
+    return db
+      .select()
+      .from(communityChannels)
+      .orderBy(communityChannels.section, communityChannels.order);
   }
 
   async getChannelMessages(channelId: string, limit: number = 50): Promise<any[]> {
