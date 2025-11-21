@@ -2519,10 +2519,20 @@ export class DatabaseStorage implements IStorage {
 
   // Community chat methods
   async getAllCommunityChannels(): Promise<CommunityChannel[]> {
-    return db
-      .select()
-      .from(communityChannels)
-      .orderBy(communityChannels.section, communityChannels.order);
+    try {
+      const channels = await db
+        .select()
+        .from(communityChannels);
+      return channels.sort((a, b) => {
+        if (a.section !== b.section) {
+          return a.section.localeCompare(b.section);
+        }
+        return (a.order || 0) - (b.order || 0);
+      });
+    } catch (error) {
+      console.error("Error in getAllCommunityChannels:", error);
+      throw error;
+    }
   }
 
   async getChannelMessages(channelId: string, limit: number = 50): Promise<any[]> {
