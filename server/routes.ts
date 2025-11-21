@@ -6,6 +6,8 @@ import { setupSupabaseAuthRoutes } from "./supabaseAuthRoutes";
 import { isAdmin } from "./adminMiddleware";
 import { insertCommentSchema } from "@shared/schema";
 import { sendNewCommentNotification, getAdminNotificationEmails } from "./emailNotifications";
+import { db } from "./db";
+import { communityChannels, communityMessages } from "@shared/schema";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Setup Supabase authentication routes
@@ -431,11 +433,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Community chat routes
   app.get("/api/community/channels", async (req, res) => {
     try {
-      const channels = await storage.getAllCommunityChannels();
-      res.json(channels);
-    } catch (error) {
+      const channels = await db.select().from(communityChannels);
+      const sorted = channels.sort((a: any, b: any) => {
+        if (a.section !== b.section) return a.section.localeCompare(b.section);
+        return (a.order || 0) - (b.order || 0);
+      });
+      res.json(sorted);
+    } catch (error: any) {
       console.error("Error fetching community channels:", error);
-      res.status(500).json({ message: "Failed to fetch channels" });
+      res.status(500).json({ message: "Failed to fetch channels", error: error.message });
     }
   });
 
