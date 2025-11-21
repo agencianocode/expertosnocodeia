@@ -136,115 +136,118 @@ export default function Community() {
   }
 
   return (
-    <div className="min-h-screen bg-background flex overflow-hidden">
-      {/* Left Sidebar - Main Navigation */}
+    <div className="min-h-screen bg-background">
+      {/* Left Sidebar - Main Navigation (fixed) */}
       <Sidebar />
 
-      {/* Middle Sidebar - Channels */}
-      <div className={cn(
-        "w-[280px] bg-[#2a2a2a] border-r border-[#333333] overflow-y-auto flex flex-col transition-all duration-300",
-        !channelsSidebarOpen && "hidden lg:flex"
-      )}>
-        {/* Search */}
-        <div className="p-4 border-b border-[#333333] sticky top-0 bg-[#2a2a2a] z-10">
-          <Input type="search" placeholder="Buscar..." className="text-xs h-8 bg-[#1a1a1a] border-[#444444]" />
-        </div>
+      {/* Main Content Container - accounts for fixed sidebar */}
+      <div className="md:ml-16 lg:ml-[250px] min-h-screen flex overflow-hidden">
+        {/* Middle Sidebar - Channels */}
+        <div className={cn(
+          "w-[280px] bg-[#2a2a2a] border-r border-[#333333] overflow-y-auto flex flex-col transition-all duration-300",
+          !channelsSidebarOpen && "hidden lg:flex"
+        )}>
+          {/* Search */}
+          <div className="p-4 border-b border-[#333333] sticky top-0 bg-[#2a2a2a] z-10">
+            <Input type="search" placeholder="Buscar..." className="text-xs h-8 bg-[#1a1a1a] border-[#444444]" />
+          </div>
 
-        {/* Sections */}
-        <div className="flex-1 overflow-y-auto px-2 py-3 space-y-2">
-          {orderedSections.map((section) => (
-            <div key={section.title}>
-              <div className="text-xs text-muted-foreground px-2 py-2 font-semibold uppercase">{section.title}</div>
-              {section.channels.map((channel) => (
-                <button
-                  key={channel.id}
-                  onClick={() => setActiveChannel(channel)}
-                  className={cn(
-                    "w-full text-left px-3 py-2 rounded text-sm font-medium flex items-center gap-2 hover:bg-[#333333] transition-colors",
-                    activeChannel?.id === channel.id && "bg-[#404040] text-white"
-                  )}
-                  data-testid={`channel-${channel.slug}`}
-                >
-                  <span className="text-lg">{channel.icon}</span>
-                  <span className="truncate">{channel.name}</span>
-                </button>
-              ))}
-            </div>
-          ))}
-        </div>
+          {/* Sections */}
+          <div className="flex-1 overflow-y-auto px-2 py-3 space-y-2">
+            {orderedSections.map((section) => (
+              <div key={section.title}>
+                <div className="text-xs text-muted-foreground px-2 py-2 font-semibold uppercase">{section.title}</div>
+                {section.channels.map((channel) => (
+                  <button
+                    key={channel.id}
+                    onClick={() => setActiveChannel(channel)}
+                    className={cn(
+                      "w-full text-left px-3 py-2 rounded text-sm font-medium flex items-center gap-2 hover:bg-[#333333] transition-colors",
+                      activeChannel?.id === channel.id && "bg-[#404040] text-white"
+                    )}
+                    data-testid={`channel-${channel.slug}`}
+                  >
+                    <span className="text-lg">{channel.icon}</span>
+                    <span className="truncate">{channel.name}</span>
+                  </button>
+                ))}
+              </div>
+            ))}
+          </div>
 
-        <div className="border-t border-[#333333] p-3 text-xs text-muted-foreground sticky bottom-0 bg-[#2a2a2a]">
-          En vivo
-        </div>
-      </div>
-
-      {/* Right Content - Messages */}
-      <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Header */}
-        <div className="border-b border-[#333333] bg-[#1a1a1a] px-6 py-4 flex items-center gap-4">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setChannelsSidebarOpen(!channelsSidebarOpen)}
-            className="lg:hidden"
-            data-testid="toggle-channels-button"
-          >
-            <Menu className="h-5 w-5" />
-          </Button>
-          <div className="flex-1">
-            <h1 className="text-xl font-bold text-white">{activeChannel?.name}</h1>
-            {activeChannel?.description && <p className="text-xs text-muted-foreground mt-1">{activeChannel.description}</p>}
+          <div className="border-t border-[#333333] p-3 text-xs text-muted-foreground sticky bottom-0 bg-[#2a2a2a]">
+            En vivo
           </div>
         </div>
 
-        {/* Messages */}
-        <div className="flex-1 overflow-y-auto px-6 py-6 space-y-4">
-          {messages.length === 0 ? (
-            <div className="flex items-center justify-center h-full text-muted-foreground">
-              <p>No hay mensajes. ¡Sé el primero en escribir!</p>
-            </div>
-          ) : (
-            messages.map((msg) => (
-              <div key={msg.message.id} className="flex gap-3">
-                <Avatar className="h-8 w-8 flex-shrink-0">
-                  <AvatarImage src={msg.user?.profileImageUrl || undefined} />
-                  <AvatarFallback>{(msg.user?.firstName?.charAt(0) || "U").toUpperCase()}</AvatarFallback>
-                </Avatar>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <p className="text-sm font-semibold text-white">
-                      {msg.user?.firstName} {msg.user?.lastName}
-                    </p>
-                    <span className="text-xs text-muted-foreground">
-                      {new Date(msg.message.createdAt).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })}
-                    </span>
-                  </div>
-                  <p className="text-sm text-muted-foreground break-words">{msg.message.content}</p>
-                </div>
-              </div>
-            ))
-          )}
-        </div>
-
-        {/* Message Input */}
-        <div className="border-t border-[#333333] bg-[#1a1a1a] px-6 py-4">
-          <div className="flex gap-3">
-            <Input
-              placeholder="Escribe un mensaje..."
-              className="bg-[#2a2a2a] border-[#444444] text-white"
-              value={messageInput}
-              onChange={(e) => setMessageInput(e.target.value)}
-              onKeyPress={(e) => e.key === "Enter" && handleSendMessage()}
-              data-testid="message-input"
-            />
+        {/* Right Content - Messages */}
+        <div className="flex-1 flex flex-col overflow-hidden">
+          {/* Header */}
+          <div className="border-b border-[#333333] bg-[#1a1a1a] px-6 py-4 flex items-center gap-4">
             <Button
-              onClick={handleSendMessage}
-              disabled={sendingMessage || !messageInput.trim()}
-              className="bg-cyan-500 hover:bg-cyan-600"
-              data-testid="send-message-button"
+              variant="ghost"
+              size="sm"
+              onClick={() => setChannelsSidebarOpen(!channelsSidebarOpen)}
+              className="lg:hidden"
+              data-testid="toggle-channels-button"
             >
-              {sendingMessage ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+              <Menu className="h-5 w-5" />
             </Button>
+            <div className="flex-1">
+              <h1 className="text-xl font-bold text-white">{activeChannel?.name}</h1>
+              {activeChannel?.description && <p className="text-xs text-muted-foreground mt-1">{activeChannel.description}</p>}
+            </div>
+          </div>
+
+          {/* Messages */}
+          <div className="flex-1 overflow-y-auto px-6 py-6 space-y-4">
+            {messages.length === 0 ? (
+              <div className="flex items-center justify-center h-full text-muted-foreground">
+                <p>No hay mensajes. ¡Sé el primero en escribir!</p>
+              </div>
+            ) : (
+              messages.map((msg) => (
+                <div key={msg.message.id} className="flex gap-3">
+                  <Avatar className="h-8 w-8 flex-shrink-0">
+                    <AvatarImage src={msg.user?.profileImageUrl || undefined} />
+                    <AvatarFallback>{(msg.user?.firstName?.charAt(0) || "U").toUpperCase()}</AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm font-semibold text-white">
+                        {msg.user?.firstName} {msg.user?.lastName}
+                      </p>
+                      <span className="text-xs text-muted-foreground">
+                        {new Date(msg.message.createdAt).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })}
+                      </span>
+                    </div>
+                    <p className="text-sm text-muted-foreground break-words">{msg.message.content}</p>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+
+          {/* Message Input */}
+          <div className="border-t border-[#333333] bg-[#1a1a1a] px-6 py-4">
+            <div className="flex gap-3">
+              <Input
+                placeholder="Escribe un mensaje..."
+                className="bg-[#2a2a2a] border-[#444444] text-white"
+                value={messageInput}
+                onChange={(e) => setMessageInput(e.target.value)}
+                onKeyPress={(e) => e.key === "Enter" && handleSendMessage()}
+                data-testid="message-input"
+              />
+              <Button
+                onClick={handleSendMessage}
+                disabled={sendingMessage || !messageInput.trim()}
+                className="bg-cyan-500 hover:bg-cyan-600"
+                data-testid="send-message-button"
+              >
+                {sendingMessage ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+              </Button>
+            </div>
           </div>
         </div>
       </div>
