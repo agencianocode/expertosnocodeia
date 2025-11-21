@@ -8,7 +8,7 @@ import { SupabaseStorageService } from "./supabaseStorage";
 import { ObjectStorageService, ObjectNotFoundError, objectStorageClient, parseObjectPath } from "./objectStorage";
 import { supabaseAuth, optionalSupabaseAuth, supabaseAdminAuth, AuthenticatedRequest } from "./supabaseAuth";
 import { setupSupabaseAuthRoutes } from "./supabaseAuthRoutes";
-import { insertLessonResourceSchema, updateRoomSchema, userSavedCourses, courses } from "../shared/schema";
+import { insertLessonResourceSchema, updateRoomSchema, userSavedCourses, courses, communityChannels, communityMessages } from "../shared/schema";
 import { sendNewCommentNotification, getAdminNotificationEmails } from "./emailNotifications";
 import { db } from "./db";
 import { eq, desc, and } from "drizzle-orm";
@@ -1701,6 +1701,58 @@ export function registerSimpleRoutes(app: Express): Server {
       res.status(500).json({ message: "Error al dar me gusta" });
     }
   });
+
+  // Community chat routes
+  app.get("/api/community/channels", async (req, res) => {
+    try {
+      const channels = await db.select().from(communityChannels);
+      const sorted = channels.sort((a: any, b: any) => {
+        if (a.section !== b.section) return a.section.localeCompare(b.section);
+        return (a.order || 0) - (b.order || 0);
+      });
+      res.json(sorted);
+    } catch (error: any) {
+      console.error("Error fetching community channels:", error);
+      res.status(500).json({ message: "Failed to fetch channels", error: error.message });
+    }
+  });
+
+  app.get("/api/community/channels/:channelId/messages", async (req, res) => {
+    try {
+      const { channelId } = req.params;
+      const limit = req.query.limit ? parseInt(req.query.limit as string) : 50;
+      const messages = await storage.getChannelMessages(channelId, limit);
+      res.json(messages);
+    } catch (error) {
+      console.error("Error fetching messages:", error);
+      res.status(500).json({ message: "Failed to fetch messages" });
+    }
+  });
+
+  app.post("/api/community/channels/:channelId/messages", legacyAuth, async (req: Request, res: Response) => {
+    try {
+      const { channelId } = req.params;
+      const { content } = req.body;
+      const userId = (req as any).user?.claims?.sub;
+
+      if (!content || !content.trim()) {
+        return res.status(400).json({ message: "Message content is required" });
+      }
+
+      if (!userId) {
+        return res.status(401).json({ message: "Usuario no autenticado" });
+      }
+
+      const message = await storage.createCommunityMessage(channelId, userId, content);
+      res.status(201).json(message);
+    } catch (error) {
+      console.error("Error creating message:", error);
+      res.status(500).json({ message: "Failed to create message" });
+    }
+  });
+
+  // Initialize channels on startup
+  storage.initializeCommunityChannels().catch(err => console.error("Error initializing channels:", err));
 
   const httpServer = createServer(app);
   return httpServer;
