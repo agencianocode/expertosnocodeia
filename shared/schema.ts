@@ -801,6 +801,45 @@ export const promoBanners = pgTable("promo_banners", {
   index("idx_promo_banners_room_order").on(table.roomId, table.order),
 ]);
 
+// Community channels
+export const communityChannels = pgTable("community_channels", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  slug: varchar("slug").unique().notNull(),
+  name: varchar("name").notNull(),
+  description: text("description"),
+  icon: varchar("icon").notNull(),
+  section: varchar("section").notNull(), // "Bienvenida", "Redes", etc.
+  order: integer("order").notNull().default(0),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Community messages
+export const communityMessages = pgTable("community_messages", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  channelId: varchar("channel_id").references(() => communityChannels.id, { onDelete: "cascade" }).notNull(),
+  userId: varchar("user_id").references(() => users.id, { onDelete: "set null" }),
+  content: text("content").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("idx_messages_channel").on(table.channelId),
+  index("idx_messages_user").on(table.userId),
+  index("idx_messages_created").on(table.createdAt),
+]);
+
+// Message reactions
+export const messageReactions = pgTable("message_reactions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  messageId: varchar("message_id").references(() => communityMessages.id, { onDelete: "cascade" }).notNull(),
+  userId: varchar("user_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
+  emoji: varchar("emoji").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("idx_reactions_message").on(table.messageId),
+  index("idx_reactions_user").on(table.userId),
+]);
+
 // ========================================
 // RELATIONS
 // ========================================
