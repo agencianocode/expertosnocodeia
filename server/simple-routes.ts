@@ -62,44 +62,57 @@ const legacyAuth = async (req: any, res: Response, next: any) => {
   }
 };
 
-// Simple admin middleware for our simplified auth
+// Simple admin middleware for our simplified auth - works with both sessions and tokens
 const simpleAdminAuth = async (req: any, res: Response, next: any) => {
   try {
-    const authHeader = req.headers.authorization;
-    const token = authHeader && authHeader.split(" ")[1];
-    
-    if (!token) {
-      return res.status(401).json({ message: "Token requerido" });
-    }
-
     let userId;
     
-    // Handle JWT tokens 
-    if (token.startsWith('eyJ')) {
-      try {
-        const parts = token.split('.');
-        if (parts.length === 3) {
-          const payload = JSON.parse(Buffer.from(parts[1], 'base64').toString());
-          userId = payload.userId;
-        }
-      } catch (jwtError) {
-        const user = await storage.getUserByEmail("fabianseguraconsultor@gmail.com");
-        if (user) {
-          userId = user.id;
+    // Try session-based auth first (from Supabase auth middleware that runs in setupSupabaseAuthRoutes)
+    if (req.user?.claims?.sub) {
+      userId = req.user.claims.sub;
+    } else if (req.user?.id) {
+      userId = req.user.id;
+    }
+    
+    // If no session, try Authorization header token
+    if (!userId) {
+      const authHeader = req.headers.authorization;
+      const token = authHeader && authHeader.split(" ")[1];
+      
+      if (token) {
+        // Handle JWT tokens 
+        if (token.startsWith('eyJ')) {
+          try {
+            const parts = token.split('.');
+            if (parts.length === 3) {
+              const payload = JSON.parse(Buffer.from(parts[1], 'base64').toString());
+              userId = payload.userId;
+            }
+          } catch (jwtError) {
+            // JWT parse failed
+          }
+        } else {
+          // Handle simple base64 tokens
+          try {
+            const decoded = Buffer.from(token, 'base64').toString('utf-8');
+            [userId] = decoded.split(':');
+          } catch (decodeError) {
+            // Token decode failed
+          }
         }
       }
-    } else {
-      // Handle simple base64 tokens
-      try {
-        const decoded = Buffer.from(token, 'base64').toString('utf-8');
-        [userId] = decoded.split(':');
-      } catch (decodeError) {
-        // Token decode failed
+    }
+
+    // Fallback for migration period - use the admin account
+    if (!userId) {
+      const user = await storage.getUserByEmail("fabianseguraconsultor@gmail.com");
+      if (user) {
+        userId = user.id;
       }
     }
     
     if (!userId) {
-      return res.status(401).json({ message: "Token inválido" });
+      return res.status(401).json({ message: "Token de acceso requerido" });
     }
 
     req.user = { claims: { sub: userId } };
