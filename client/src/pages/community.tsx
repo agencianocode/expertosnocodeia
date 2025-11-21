@@ -40,7 +40,7 @@ interface Event {
 export default function Community() {
   const { isAuthenticated, user, isLoading } = useSimpleAuth();
   const { toast } = useToast();
-  const [activeChannel, setActiveChannel] = useState("bienvenido");
+  const [activeChannel, setActiveChannel] = useState("empieza");
   const [posts, setPosts] = useState<Post[]>([
     {
       id: "1",
