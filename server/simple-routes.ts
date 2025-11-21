@@ -1775,10 +1775,10 @@ export function registerSimpleRoutes(app: Express): Server {
     }
   });
 
-  app.post("/api/community/posts", legacyAuth, async (req: Request, res: Response) => {
+  app.post("/api/community/posts", async (req: Request, res: Response) => {
     try {
       const { channelId, title, content, imageUrl } = req.body;
-      const userId = (req as any).user?.claims?.sub;
+      const userId = (req as any).user?.claims?.sub || (req as any).user?.id;
 
       if (!channelId || !title || !content) {
         return res.status(400).json({ message: "channelId, title, and content are required" });
@@ -1796,11 +1796,11 @@ export function registerSimpleRoutes(app: Express): Server {
     }
   });
 
-  app.post("/api/community/posts/:postId/comments", legacyAuth, async (req: Request, res: Response) => {
+  app.post("/api/community/posts/:postId/comments", async (req: Request, res: Response) => {
     try {
       const { postId } = req.params;
       const { content } = req.body;
-      const userId = (req as any).user?.claims?.sub;
+      const userId = (req as any).user?.claims?.sub || (req as any).user?.id;
 
       if (!content || !content.trim()) {
         return res.status(400).json({ message: "Comment content is required" });

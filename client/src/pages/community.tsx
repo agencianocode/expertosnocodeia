@@ -149,15 +149,10 @@ export default function Community() {
 
     setSendingComment(true);
     try {
-      const token = localStorage.getItem("authToken");
-      const headers: any = { "Content-Type": "application/json" };
-      if (token) {
-        headers["Authorization"] = `Bearer ${token}`;
-      }
-
       const res = await fetch(`/api/community/posts/${selectedPost.post.id}/comments`, {
         method: "POST",
-        headers,
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({ content: commentInput }),
       });
 
@@ -166,10 +161,11 @@ export default function Community() {
         // Refresh comments
         const newRes = await fetch(`/api/community/posts/${selectedPost.post.id}/comments`);
         const data = await newRes.json();
-        setComments(data);
+        setComments(Array.isArray(data) ? data : []);
         toast({ title: "Éxito", description: "Comentario enviado" });
       } else {
-        toast({ title: "Error", description: "No se pudo enviar el comentario", variant: "destructive" });
+        const error = await res.json();
+        toast({ title: "Error", description: error.message || "No se pudo enviar el comentario", variant: "destructive" });
       }
     } catch (error) {
       console.error("Error sending comment:", error);
@@ -184,15 +180,10 @@ export default function Community() {
 
     setCreatingPost(true);
     try {
-      const token = localStorage.getItem("authToken");
-      const headers: any = { "Content-Type": "application/json" };
-      if (token) {
-        headers["Authorization"] = `Bearer ${token}`;
-      }
-
       const res = await fetch("/api/community/posts", {
         method: "POST",
-        headers,
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({
           channelId: activeChannel.id,
           title: postTitle,
@@ -210,7 +201,8 @@ export default function Community() {
         setPosts(Array.isArray(data) ? data : []);
         toast({ title: "Éxito", description: "Anuncio creado" });
       } else {
-        toast({ title: "Error", description: "No se pudo crear el anuncio", variant: "destructive" });
+        const error = await res.json();
+        toast({ title: "Error", description: error.message || "No se pudo crear el anuncio", variant: "destructive" });
       }
     } catch (error) {
       console.error("Error creating post:", error);
