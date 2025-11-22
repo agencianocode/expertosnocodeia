@@ -85,7 +85,7 @@ export default function Profile() {
   // Update profile mutation
   const updateProfileMutation = useMutation({
     mutationFn: async (data: any) => {
-      return apiRequest('/api/users/profile', 'PATCH', data);
+      return apiRequest('PATCH', '/api/users/profile', data);
     },
     onSuccess: () => {
       toast({
@@ -106,7 +106,7 @@ export default function Profile() {
   // Update password mutation
   const updatePasswordMutation = useMutation({
     mutationFn: async (data: any) => {
-      return apiRequest('/api/users/change-password', 'PATCH', data);
+      return apiRequest('PATCH', '/api/users/change-password', data);
     },
     onSuccess: () => {
       toast({
@@ -129,7 +129,7 @@ export default function Profile() {
   // Update focus preferences mutation
   const updateFocusMutation = useMutation({
     mutationFn: async (data: any) => {
-      return apiRequest('/api/users/focus', 'PATCH', data);
+      return apiRequest('PATCH', '/api/users/focus', data);
     },
     onSuccess: () => {
       toast({
