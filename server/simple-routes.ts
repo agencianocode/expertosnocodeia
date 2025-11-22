@@ -1405,7 +1405,7 @@ export function registerSimpleRoutes(app: Express): Server {
   });
 
   // Upload profile image
-  app.post("/api/users/upload-profile-image", legacyAuth, async (req: Request, res: Response) => {
+  app.post("/api/users/upload-profile-image", simpleAdminAuth, async (req: Request, res: Response) => {
     try {
       const userId = (req as any).user?.claims?.sub;
       if (!userId) {
