@@ -2068,11 +2068,11 @@ export function registerSimpleRoutes(app: Express): Server {
   app.patch("/api/admin/community/posts/:postId", simpleAdminAuth, isAdmin, async (req: Request, res: Response) => {
     try {
       const { postId } = req.params;
-      const { title, content, imageUrl, videoUrl, contentBlocks } = req.body;
+      const { title, content, imageUrl, videoUrl, contentBlocks, displayOrder } = req.body;
 
       const [updated] = await db
         .update(communityPosts)
-        .set({ title, content, imageUrl, videoUrl, contentBlocks, updatedAt: new Date() })
+        .set({ title, content, imageUrl, videoUrl, contentBlocks, displayOrder, updatedAt: new Date() })
         .where(eq(communityPosts.id, postId))
         .returning();
 
@@ -2080,6 +2080,25 @@ export function registerSimpleRoutes(app: Express): Server {
     } catch (error) {
       console.error("Error updating post:", error);
       res.status(500).json({ message: "Failed to update post" });
+    }
+  });
+
+  // Admin endpoint to reorder posts
+  app.post("/api/admin/community/posts/reorder", simpleAdminAuth, isAdmin, async (req: Request, res: Response) => {
+    try {
+      const { updates } = req.body; // Array of { postId, displayOrder }
+      
+      for (const update of updates) {
+        await db
+          .update(communityPosts)
+          .set({ displayOrder: update.displayOrder, updatedAt: new Date() })
+          .where(eq(communityPosts.id, update.postId));
+      }
+
+      res.json({ message: "Posts reordered successfully" });
+    } catch (error) {
+      console.error("Error reordering posts:", error);
+      res.status(500).json({ message: "Failed to reorder posts" });
     }
   });
 

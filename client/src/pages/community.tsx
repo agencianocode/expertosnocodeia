@@ -96,6 +96,7 @@ export default function Community() {
   const [allReactions, setAllReactions] = useState<{ [postId: string]: { emoji: string; count: number; users: string[] }[] }>({});
   const [sortBy, setSortBy] = useState("recent");
   const [notificationDialogOpen, setNotificationDialogOpen] = useState(false);
+  const [expandedPostId, setExpandedPostId] = useState<string | null>(null);
   const [notificationPrefs, setNotificationPrefs] = useState({
     emailNotifications: true,
     inAppNotifications: true,
@@ -539,23 +540,54 @@ export default function Community() {
                 posts.map((post) => {
                   const postCommentCount = postCommentCounts[post.post.id] || 0;
                   const postComments = allPostComments[post.post.id] || [];
+                  const isExpanded = expandedPostId === post.post.id;
+                  const isReadOnlyChannel = activeChannel?.isReadOnly;
                   
                   return (
                     <div
                       key={post.post.id}
                       className={cn(
-                        "p-4 rounded-lg border border-[#333333] bg-[#1a1a1a] cursor-pointer hover:border-[#555555] transition-colors",
-                        selectedPost?.post.id === post.post.id && "border-cyan-500 bg-[#1a2a2a]"
+                        "rounded-lg border transition-colors",
+                        isReadOnlyChannel 
+                          ? "border-[#333333] bg-[#1a1a1a]" 
+                          : cn(
+                              "p-4 border-[#333333] bg-[#1a1a1a] cursor-pointer hover:border-[#555555]",
+                              selectedPost?.post.id === post.post.id && "border-cyan-500 bg-[#1a2a2a]"
+                            )
                       )}
                       data-testid={`post-${post.post.id}`}
                     >
-                      {/* Fecha arriba */}
-                      <p className="text-xs text-muted-foreground mb-2">
-                        {new Date(post.post.createdAt).toLocaleDateString("es-ES", { year: "numeric", month: "long", day: "numeric" })}
-                      </p>
+                      {/* Acordeón Header para canales de solo lectura */}
+                      {isReadOnlyChannel ? (
+                        <button
+                          onClick={() => setExpandedPostId(isExpanded ? null : post.post.id)}
+                          className="w-full text-left p-4 hover:bg-[#222222] transition-colors flex items-center justify-between"
+                        >
+                          <div>
+                            <h3 className="font-bold text-white">{post.post.title}</h3>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              {new Date(post.post.createdAt).toLocaleDateString("es-ES", { year: "numeric", month: "long", day: "numeric" })}
+                            </p>
+                          </div>
+                          <ChevronDown className={cn("h-5 w-5 transition-transform", isExpanded && "rotate-180")} />
+                        </button>
+                      ) : (
+                        <>
+                          {/* Fecha arriba */}
+                          <p className="text-xs text-muted-foreground mb-2">
+                            {new Date(post.post.createdAt).toLocaleDateString("es-ES", { year: "numeric", month: "long", day: "numeric" })}
+                          </p>
+                        </>
+                      )}
 
-                      {/* Renderizar bloques si existen */}
-                      {post.post.contentBlocks && post.post.contentBlocks.length > 0 ? (
+                      {/* Contenido - solo mostrar si no es de solo lectura O si está expandido */}
+                      {!isReadOnlyChannel || isExpanded ? (
+                        <>
+                          {!isReadOnlyChannel && <h3 className="font-bold text-white mb-3">{post.post.title}</h3>}
+                          {isReadOnlyChannel && <div className="border-t border-[#333333] my-0" />}
+
+                          {/* Renderizar bloques si existen */}
+                          {post.post.contentBlocks && post.post.contentBlocks.length > 0 ? (
                         <div className="space-y-3 mb-3">
                           {post.post.contentBlocks.map((block: any, idx: number) => {
                             if (block.type === "text") {
@@ -670,34 +702,37 @@ export default function Community() {
                         </div>
                       </div>
 
-                      {/* Contenido - solo si no hay contentBlocks */}
-                      {(!post.post.contentBlocks || post.post.contentBlocks.length === 0) && (
-                        <>
-                          <h3 className="font-bold text-white mb-2">{post.post.title}</h3>
-                          <div className="text-sm text-muted-foreground mb-3 whitespace-pre-wrap break-words">
-                            {post.post.content.split(/(\bhttps?:\/\/[^\s]+)/g).map((part, idx) => {
-                              if (part.match(/^\bhttps?:\/\//)) {
-                                return (
-                                  <a
-                                    key={idx}
-                                    href={part}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="text-cyan-500 hover:text-cyan-400 underline break-all"
-                                  >
-                                    {part}
-                                  </a>
-                                );
-                              }
-                              return part;
-                            })}
-                          </div>
+                          {/* Contenido - solo si no hay contentBlocks */}
+                          {(!post.post.contentBlocks || post.post.contentBlocks.length === 0) && (
+                            <>
+                              {!isReadOnlyChannel && <h3 className="font-bold text-white mb-2">{post.post.title}</h3>}
+                              <div className="text-sm text-muted-foreground mb-3 whitespace-pre-wrap break-words">
+                                {post.post.content.split(/(\bhttps?:\/\/[^\s]+)/g).map((part, idx) => {
+                                  if (part.match(/^\bhttps?:\/\//)) {
+                                    return (
+                                      <a
+                                        key={idx}
+                                        href={part}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="text-cyan-500 hover:text-cyan-400 underline break-all"
+                                      >
+                                        {part}
+                                      </a>
+                                    );
+                                  }
+                                  return part;
+                                })}
+                              </div>
+                            </>
+                          )}
                         </>
-                      )}
+                      ) : null}
 
-                      {/* Acciones */}
-                      <div className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
-                        {!activeChannel?.isReadOnly && (
+                      {/* Acciones - solo para canales no de solo lectura O si está expandido */}
+                      {!isReadOnlyChannel || isExpanded ? (
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
+                          {!activeChannel?.isReadOnly && (
                           <div className="relative">
                             <button 
                               onClick={() => setOpenReactionPostId(openReactionPostId === post.post.id ? null : post.post.id)}
@@ -802,7 +837,8 @@ export default function Community() {
                             <span>{postCommentCount} respuesta{postCommentCount !== 1 ? "s" : ""}</span>
                           </button>
                         )}
-                      </div>
+                        </div>
+                      ) : null}
                     </div>
                   );
                 })

@@ -851,6 +851,7 @@ export const communityPosts = pgTable("community_posts", {
   imageUrl: varchar("image_url"),
   videoUrl: varchar("video_url"),
   contentBlocks: jsonb("content_blocks").$type<Array<{type: "text" | "video"; content?: string; url?: string}>>().default([]),
+  displayOrder: integer("display_order").default(0), // For ordering posts in read-only channels like "Empieza aquí"
   likes: integer("likes").default(0),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
@@ -858,6 +859,7 @@ export const communityPosts = pgTable("community_posts", {
   index("idx_posts_channel").on(table.channelId),
   index("idx_posts_user").on(table.userId),
   index("idx_posts_created").on(table.createdAt),
+  index("idx_posts_channel_order").on(table.channelId, table.displayOrder),
 ]);
 
 // Community post comments

@@ -91,7 +91,7 @@ export default function AdminCommunity() {
 
   const updateMutation = useMutation({
     mutationFn: async (data: any) => {
-      const { title, channelId, contentBlocks } = data;
+      const { title, channelId, contentBlocks, displayOrder } = data;
       const content = contentBlocks.filter((b: ContentBlock) => b.type === "text").map((b: ContentBlock) => b.content).join("\n") || "Post de comunidad";
       const videoUrl = contentBlocks.find((b: ContentBlock) => b.type === "video")?.url || "";
       
@@ -99,7 +99,7 @@ export default function AdminCommunity() {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ title, channelId, content, videoUrl, contentBlocks }),
+        body: JSON.stringify({ title, channelId, content, videoUrl, contentBlocks, displayOrder }),
       });
       if (!res.ok) {
         const error = await res.json();
@@ -499,56 +499,106 @@ export default function AdminCommunity() {
               </Card>
             ) : (
               <div className="grid gap-4">
-                {posts.map((post: Post) => (
-                  <Card key={post.post.id} className="bg-slate-900/50 border-slate-700">
-                    <CardContent className="pt-6">
-                      <div className="flex justify-between items-start">
-                        <div className="flex-1">
-                          <h3 className="font-bold text-lg mb-2">{post.post.title}</h3>
-                          <p className="text-sm text-gray-400 mb-2 line-clamp-2">{post.post.content}</p>
-                          <div className="flex gap-4 text-xs text-gray-500">
-                            <span>📢 {post.channel?.name}</span>
-                            <span>👤 {post.user?.firstName} {post.user?.lastName}</span>
-                            <span>📅 {new Date(post.post.createdAt).toLocaleDateString("es-ES")}</span>
+                {posts.map((post: Post, index: number) => {
+                  const isReadOnlyChannel = post.channel?.isReadOnly;
+                  return (
+                    <Card key={post.post.id} className="bg-slate-900/50 border-slate-700">
+                      <CardContent className="pt-6">
+                        <div className="flex justify-between items-start">
+                          <div className="flex-1">
+                            <h3 className="font-bold text-lg mb-2">{post.post.title}</h3>
+                            <p className="text-sm text-gray-400 mb-2 line-clamp-2">{post.post.content}</p>
+                            <div className="flex gap-4 text-xs text-gray-500">
+                              <span>📢 {post.channel?.name}</span>
+                              <span>👤 {post.user?.firstName} {post.user?.lastName}</span>
+                              <span>📅 {new Date(post.post.createdAt).toLocaleDateString("es-ES")}</span>
+                              {isReadOnlyChannel && <span className="text-cyan-500">🔒 Solo lectura</span>}
+                            </div>
+                          </div>
+                          <div className="flex gap-2 flex-wrap justify-end">
+                            {isReadOnlyChannel && (
+                              <>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={async () => {
+                                    const newOrder = (post.post.displayOrder || 0) - 1;
+                                    try {
+                                      await fetch("/api/admin/community/posts/reorder", {
+                                        method: "POST",
+                                        headers: { "Content-Type": "application/json" },
+                                        credentials: "include",
+                                        body: JSON.stringify({ updates: [{ postId: post.post.id, displayOrder: newOrder }] }),
+                                      });
+                                      queryClient.invalidateQueries({ queryKey: ["/api/admin/community/posts"] });
+                                    } catch (e) {
+                                      toast({ title: "Error", description: "No se pudo reordenar", variant: "destructive" });
+                                    }
+                                  }}
+                                  disabled={index === 0}
+                                >
+                                  ⬆️
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={async () => {
+                                    const newOrder = (post.post.displayOrder || 0) + 1;
+                                    try {
+                                      await fetch("/api/admin/community/posts/reorder", {
+                                        method: "POST",
+                                        headers: { "Content-Type": "application/json" },
+                                        credentials: "include",
+                                        body: JSON.stringify({ updates: [{ postId: post.post.id, displayOrder: newOrder }] }),
+                                      });
+                                      queryClient.invalidateQueries({ queryKey: ["/api/admin/community/posts"] });
+                                    } catch (e) {
+                                      toast({ title: "Error", description: "No se pudo reordenar", variant: "destructive" });
+                                    }
+                                  }}
+                                  disabled={index === posts.length - 1}
+                                >
+                                  ⬇️
+                                </Button>
+                              </>
+                            )}
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleEdit(post)}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button size="sm" variant="destructive">
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent className="bg-[#1a1a1a] border-[#333333]">
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Eliminar anuncio</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    ¿Estás seguro? Esta acción no se puede deshacer.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                  <AlertDialogAction
+                                    onClick={() => deleteMutation.mutate(post.post.id)}
+                                    className="bg-red-500 hover:bg-red-600"
+                                  >
+                                    Eliminar
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
                           </div>
                         </div>
-                        <div className="flex gap-2">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleEdit(post)}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button size="sm" variant="destructive">
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent className="bg-[#1a1a1a] border-[#333333]">
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>Eliminar anuncio</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  ¿Estás seguro? Esta acción no se puede deshacer.
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                <AlertDialogAction
-                                  onClick={() => deleteMutation.mutate(post.post.id)}
-                                  className="bg-red-500 hover:bg-red-600"
-                                >
-                                  Eliminar
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
+                      </CardContent>
+                    </Card>
+                  );
+                })}
               </div>
             )}
           </div>
