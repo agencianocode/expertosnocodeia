@@ -1414,16 +1414,23 @@ export function registerSimpleRoutes(app: Express): Server {
       }
 
       const { firstName, lastName, email } = req.body;
+      console.log("Update profile request:", { userId, firstName, lastName, email });
+
+      const updateData: any = {};
+      if (firstName) updateData.firstName = firstName;
+      if (lastName) updateData.lastName = lastName;
+      if (email) updateData.email = email;
+
+      if (Object.keys(updateData).length === 0) {
+        return res.status(400).json({ message: "No hay datos para actualizar" });
+      }
 
       await db
         .update(users)
-        .set({
-          firstName: firstName || null,
-          lastName: lastName || null,
-          email: email || null,
-        })
+        .set(updateData)
         .where(eq(users.id, userId));
 
+      console.log("Profile updated successfully for user:", userId);
       res.json({ message: "Perfil actualizado exitosamente" });
     } catch (error) {
       console.error("Error updating profile:", error);
