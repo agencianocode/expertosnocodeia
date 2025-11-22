@@ -670,26 +670,30 @@ export default function Community() {
                         </div>
                       </div>
 
-                      {/* Contenido */}
-                      <h3 className="font-bold text-white mb-2">{post.post.title}</h3>
-                      <div className="text-sm text-muted-foreground mb-3 whitespace-pre-wrap break-words">
-                        {post.post.content.split(/(\bhttps?:\/\/[^\s]+)/g).map((part, idx) => {
-                          if (part.match(/^\bhttps?:\/\//)) {
-                            return (
-                              <a
-                                key={idx}
-                                href={part}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-cyan-500 hover:text-cyan-400 underline break-all"
-                              >
-                                {part}
-                              </a>
-                            );
-                          }
-                          return part;
-                        })}
-                      </div>
+                      {/* Contenido - solo si no hay contentBlocks */}
+                      {(!post.post.contentBlocks || post.post.contentBlocks.length === 0) && (
+                        <>
+                          <h3 className="font-bold text-white mb-2">{post.post.title}</h3>
+                          <div className="text-sm text-muted-foreground mb-3 whitespace-pre-wrap break-words">
+                            {post.post.content.split(/(\bhttps?:\/\/[^\s]+)/g).map((part, idx) => {
+                              if (part.match(/^\bhttps?:\/\//)) {
+                                return (
+                                  <a
+                                    key={idx}
+                                    href={part}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-cyan-500 hover:text-cyan-400 underline break-all"
+                                  >
+                                    {part}
+                                  </a>
+                                );
+                              }
+                              return part;
+                            })}
+                          </div>
+                        </>
+                      )}
 
                       {/* Acciones */}
                       <div className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
