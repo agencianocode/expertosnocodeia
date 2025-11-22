@@ -487,10 +487,10 @@ export default function Community() {
                                     });
                                   }}
                                   className={cn(
-                                    "text-sm px-2 py-1 rounded-full transition-all cursor-pointer",
+                                    "text-sm px-2 py-1 rounded-full transition-all cursor-pointer border",
                                     isUserReaction 
-                                      ? "bg-orange-500 text-white ring-1 ring-orange-600" 
-                                      : "bg-[#2a2a2a] hover:bg-[#3a3a3a]"
+                                      ? "border-white text-white bg-transparent" 
+                                      : "border-[#444444] text-muted-foreground hover:border-[#555555]"
                                   )}
                                 >
                                   {reaction.emoji} {reaction.count}
