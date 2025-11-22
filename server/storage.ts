@@ -2630,9 +2630,9 @@ export class DatabaseStorage implements IStorage {
       { slug: 'anuncios', name: 'Anuncios', description: 'Actualizaciones y noticias importantes', icon: '📢', section: 'Comunidad', order: 1 },
       { slug: 'empieza-aqui', name: 'Empieza aquí', description: 'Preséntate y cuéntanos tu historia', icon: '🏠', section: 'Comunidad', order: 2 },
       { slug: 'presentante', name: 'Presentante', description: 'Conoce a los miembros de la comunidad', icon: '👋', section: 'Comunidad', order: 3 },
-      { slug: 'preguntas', name: 'Preguntas Generales', description: 'Dudas y preguntas de la comunidad', icon: '❓', section: 'Comunidad', order: 4 },
-      { slug: 'general', name: 'General', description: 'Conversación libre y conexiones', icon: '💬', section: 'Comunidad', order: 5 },
-      { slug: 'feedback', name: 'Feedback', description: 'Tu opinión y sugerencias de mejora', icon: '📝', section: 'Comunidad', order: 6 },
+      { slug: 'comparte-proyecto', name: 'Comparte tu proyecto o trabajo', description: 'Muestra tus proyectos y trabajos realizados', icon: '🚀', section: 'Comunidad', order: 4 },
+      { slug: 'redes-chat', name: 'Redes de Chat', description: 'Enlaces y redes de comunicación de la comunidad', icon: '📝', section: 'Comunidad', order: 5 },
+      { slug: 'general', name: 'General', description: 'Conversación libre y conexiones', icon: '💬', section: 'Comunidad', order: 6 },
     ];
 
     // Create general channels
