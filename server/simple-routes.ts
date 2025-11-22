@@ -2072,7 +2072,7 @@ export function registerSimpleRoutes(app: Express): Server {
   });
 
   // Endpoint to add reaction to post
-  app.post("/api/community/posts/:postId/reactions", simpleAdminAuth, async (req: Request, res: Response) => {
+  app.post("/api/community/posts/:postId/reactions", optionalSupabaseAuth, async (req: Request, res: Response) => {
     try {
       const { postId } = req.params;
       const { emoji } = req.body;
