@@ -1944,6 +1944,11 @@ export function registerSimpleRoutes(app: Express): Server {
   // Community posts endpoints
   app.get("/api/community/channels/:channelId/posts", async (req, res) => {
     try {
+      // Disable caching for this endpoint
+      res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+      res.set('Pragma', 'no-cache');
+      res.set('Expires', '0');
+      
       const { channelId } = req.params;
       const limit = req.query.limit ? parseInt(req.query.limit as string) : 50;
       const sort = (req.query.sort as string) || "recent"; // recent, activity, oldest, popular, likes, alphabetical
@@ -1993,6 +1998,11 @@ export function registerSimpleRoutes(app: Express): Server {
 
   app.get("/api/community/posts/:postId/comments", async (req, res) => {
     try {
+      // Disable caching for this endpoint
+      res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+      res.set('Pragma', 'no-cache');
+      res.set('Expires', '0');
+      
       const { postId } = req.params;
       const comments = await storage.getPostComments(postId);
       res.json(comments);
