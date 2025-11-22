@@ -590,7 +590,7 @@ export default function Community() {
 
                           {/* Renderizar bloques si existen */}
                           {post.post.contentBlocks && post.post.contentBlocks.length > 0 ? (
-                        <div className="space-y-3 mb-3">
+                            <div className={cn("space-y-3 mb-3", isReadOnlyChannel && "px-4 py-3")}>
                           {post.post.contentBlocks.map((block: any, idx: number) => {
                             if (block.type === "text") {
                               return (
@@ -706,7 +706,7 @@ export default function Community() {
 
                           {/* Contenido - solo si no hay contentBlocks */}
                           {(!post.post.contentBlocks || post.post.contentBlocks.length === 0) && (
-                            <>
+                            <div className={isReadOnlyChannel ? "px-4 py-3" : ""}>
                               {!isReadOnlyChannel && <h3 className="font-bold text-white mb-2">{post.post.title}</h3>}
                               <div className="text-sm text-muted-foreground mb-3 whitespace-pre-wrap break-words">
                                 {post.post.content.split(/(\bhttps?:\/\/[^\s]+)/g).map((part, idx) => {
@@ -726,7 +726,7 @@ export default function Community() {
                                   return part;
                                 })}
                               </div>
-                            </>
+                            </div>
                           )}
                         </>
                       ) : null}
