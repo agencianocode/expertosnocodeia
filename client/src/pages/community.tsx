@@ -442,96 +442,83 @@ export default function Community() {
                       <MoreVertical className="h-4 w-4" />
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-56">
-                    <Dialog open={notificationDialogOpen} onOpenChange={setNotificationDialogOpen}>
-                      <DialogTrigger asChild>
-                        <button className="w-full text-left px-2 py-2 text-sm hover:bg-[#333333] flex items-center gap-2 cursor-pointer rounded">
-                          <Bell className="h-4 w-4" />
-                          Mi preferencia de notificaciones
-                        </button>
-                      </DialogTrigger>
-                      <DialogContent className="bg-[#2a2a2a] border-[#444444] text-white">
-                        <DialogHeader>
-                          <DialogTitle>Preferencias de Notificaciones</DialogTitle>
-                          <DialogDescription className="text-muted-foreground">
-                            Elige cómo deseas recibir notificaciones
-                          </DialogDescription>
-                        </DialogHeader>
-                        <div className="space-y-4 py-4">
-                          <div className="flex items-center space-x-3">
-                            <Checkbox
-                              id="email-notif"
-                              checked={notificationPrefs.emailNotifications}
-                              onCheckedChange={(checked) => {
-                                setNotificationPrefs(prev => ({
-                                  ...prev,
-                                  emailNotifications: checked as boolean
-                                }));
-                              }}
-                              className="border-[#555555]"
-                            />
-                            <Label htmlFor="email-notif" className="cursor-pointer">
-                              Notificaciones por Email
-                            </Label>
-                          </div>
-                          <div className="flex items-center space-x-3">
-                            <Checkbox
-                              id="app-notif"
-                              checked={notificationPrefs.inAppNotifications}
-                              onCheckedChange={(checked) => {
-                                setNotificationPrefs(prev => ({
-                                  ...prev,
-                                  inAppNotifications: checked as boolean
-                                }));
-                              }}
-                              className="border-[#555555]"
-                            />
-                            <Label htmlFor="app-notif" className="cursor-pointer">
-                              Notificaciones en la App
-                            </Label>
-                          </div>
-                          <div className="flex items-center space-x-3">
-                            <Checkbox
-                              id="mobile-notif"
-                              checked={notificationPrefs.mobileNotifications}
-                              onCheckedChange={(checked) => {
-                                setNotificationPrefs(prev => ({
-                                  ...prev,
-                                  mobileNotifications: checked as boolean
-                                }));
-                              }}
-                              className="border-[#555555]"
-                            />
-                            <Label htmlFor="mobile-notif" className="cursor-pointer">
-                              Notificaciones Móvil
-                            </Label>
-                          </div>
-                          <Button
-                            className="w-full bg-cyan-500 hover:bg-cyan-600 text-black font-semibold mt-6"
-                            onClick={async () => {
-                              try {
-                                const res = await fetch("/api/user/notification-preferences", {
-                                  method: "PATCH",
-                                  headers: { "Content-Type": "application/json" },
-                                  credentials: "include",
-                                  body: JSON.stringify(notificationPrefs),
-                                });
-                                if (res.ok) {
-                                  toast({ title: "Éxito", description: "Preferencias guardadas" });
-                                  setNotificationDialogOpen(false);
-                                } else {
-                                  toast({ title: "Error", description: "No se pudieron guardar las preferencias", variant: "destructive" });
-                                }
-                              } catch (error) {
-                                toast({ title: "Error", description: "Error al guardar preferencias", variant: "destructive" });
-                              }
-                            }}
-                          >
-                            Guardar Preferencias
-                          </Button>
-                        </div>
-                      </DialogContent>
-                    </Dialog>
+                  <DropdownMenuContent align="end" className="w-80 bg-[#2a2a2a] border-[#444444] p-4">
+                    <div className="flex items-center gap-2 mb-4 pb-4 border-b border-[#444444]">
+                      <Bell className="h-4 w-4 text-cyan-500" />
+                      <span className="font-semibold text-white">Mi preferencia de notificaciones</span>
+                    </div>
+                    <div className="space-y-4">
+                      <div className="flex items-center space-x-3">
+                        <Checkbox
+                          id="email-notif-dd"
+                          checked={notificationPrefs.emailNotifications}
+                          onCheckedChange={(checked) => {
+                            setNotificationPrefs(prev => ({
+                              ...prev,
+                              emailNotifications: checked as boolean
+                            }));
+                          }}
+                          className="border-[#555555]"
+                        />
+                        <Label htmlFor="email-notif-dd" className="cursor-pointer text-sm text-gray-200">
+                          Notificaciones por Email
+                        </Label>
+                      </div>
+                      <div className="flex items-center space-x-3">
+                        <Checkbox
+                          id="app-notif-dd"
+                          checked={notificationPrefs.inAppNotifications}
+                          onCheckedChange={(checked) => {
+                            setNotificationPrefs(prev => ({
+                              ...prev,
+                              inAppNotifications: checked as boolean
+                            }));
+                          }}
+                          className="border-[#555555]"
+                        />
+                        <Label htmlFor="app-notif-dd" className="cursor-pointer text-sm text-gray-200">
+                          Notificaciones en la App
+                        </Label>
+                      </div>
+                      <div className="flex items-center space-x-3">
+                        <Checkbox
+                          id="mobile-notif-dd"
+                          checked={notificationPrefs.mobileNotifications}
+                          onCheckedChange={(checked) => {
+                            setNotificationPrefs(prev => ({
+                              ...prev,
+                              mobileNotifications: checked as boolean
+                            }));
+                          }}
+                          className="border-[#555555]"
+                        />
+                        <Label htmlFor="mobile-notif-dd" className="cursor-pointer text-sm text-gray-200">
+                          Notificaciones Móvil
+                        </Label>
+                      </div>
+                      <Button
+                        className="w-full bg-cyan-500 hover:bg-cyan-600 text-black font-semibold mt-6 h-8 text-sm"
+                        onClick={async () => {
+                          try {
+                            const res = await fetch("/api/user/notification-preferences", {
+                              method: "PATCH",
+                              headers: { "Content-Type": "application/json" },
+                              credentials: "include",
+                              body: JSON.stringify(notificationPrefs),
+                            });
+                            if (res.ok) {
+                              toast({ title: "Éxito", description: "Preferencias guardadas" });
+                            } else {
+                              toast({ title: "Error", description: "No se pudieron guardar las preferencias", variant: "destructive" });
+                            }
+                          } catch (error) {
+                            toast({ title: "Error", description: "Error al guardar preferencias", variant: "destructive" });
+                          }
+                        }}
+                      >
+                        Guardar Preferencias
+                      </Button>
+                    </div>
                   </DropdownMenuContent>
                 </DropdownMenu>
               </div>
