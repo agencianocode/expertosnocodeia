@@ -29,6 +29,17 @@ export default function AdminCommunity() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  const { data: channels = [], isLoading: channelsLoading } = useQuery({
+    queryKey: ["/api/community/channels"],
+    queryFn: async () => {
+      const res = await fetch("/api/community/channels", {
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Error al cargar canales");
+      return res.json();
+    },
+  });
+
   const { data: posts = [], isLoading: postsLoading } = useQuery({
     queryKey: ["/api/admin/community/posts"],
     queryFn: async () => {
@@ -366,7 +377,11 @@ export default function AdminCommunity() {
                         className="w-full bg-[#2a2a2a] border border-[#444444] rounded p-2 text-white"
                       >
                         <option value="">Selecciona un canal</option>
-                        <option value="289c4446-6628-4775-a18b-3d24b3ba8938">Anuncios</option>
+                        {channels.map((channel: any) => (
+                          <option key={channel.id} value={channel.id}>
+                            {channel.icon} {channel.name}
+                          </option>
+                        ))}
                       </select>
                     </div>
                     <div className="flex gap-2">
