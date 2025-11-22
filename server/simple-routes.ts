@@ -2082,16 +2082,16 @@ export function registerSimpleRoutes(app: Express): Server {
           const uniqueFileId = randomUUID();
           const uniqueFileName = `post-${uniqueFileId}.${ext}`;
 
-          // Use PUBLIC directory with post-images path so it's publicly accessible
+          // Use PRIVATE directory with post-images path (like profile images)
           const objectStorageService = new ObjectStorageService();
-          const publicDirs = objectStorageService.getPublicObjectSearchPaths();
+          const privateDir = objectStorageService.getPrivateObjectDir();
           
-          if (!publicDirs || publicDirs.length === 0) {
+          if (!privateDir) {
             return res.status(500).json({ message: "Object storage not configured" });
           }
 
-          // Use first public directory with post-images path
-          const uploadPath = `${publicDirs[0]}/post-images/${uniqueFileName}`;
+          // Use private directory with post-images path
+          const uploadPath = `${privateDir}/post-images/${uniqueFileName}`;
           const { bucketName, objectName } = parseObjectPath(uploadPath);
           
           const bucket = objectStorageClient.bucket(bucketName);
@@ -2104,9 +2104,10 @@ export function registerSimpleRoutes(app: Express): Server {
             },
           });
 
-          // Use proxy URL that works for public object storage
-          // objectName format: public/post-images/post-xxxxx.ext
-          const proxyUrl = `/api/object-proxy/objects/${objectName}`;
+          // Use proxy URL that works for private object storage
+          // Extract just the file path after the bucket name
+          // objectName format: .private/post-images/post-xxxxx.ext
+          const proxyUrl = `/api/object-proxy/objects/post-images/${uniqueFileName}`;
 
           // Update post image URL in database with proxy URL
           await db
@@ -2114,7 +2115,7 @@ export function registerSimpleRoutes(app: Express): Server {
             .set({ imageUrl: proxyUrl, updatedAt: new Date() })
             .where(eq(communityPosts.id, postId));
 
-          console.log("Post image uploaded successfully:", { proxyUrl, objectName, bucketName });
+          console.log("Post image uploaded successfully:", { proxyUrl, objectName, uniqueFileName });
 
           res.json({ 
             message: "Post image uploaded successfully",
