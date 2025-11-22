@@ -49,6 +49,8 @@ interface Post {
     likes: number;
     createdAt: string;
     updatedAt: string;
+    contentBlocks?: any[];
+    displayOrder?: number;
   };
   user: {
     id: string;

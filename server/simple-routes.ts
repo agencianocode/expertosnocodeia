@@ -1953,24 +1953,36 @@ export function registerSimpleRoutes(app: Express): Server {
       const limit = req.query.limit ? parseInt(req.query.limit as string) : 50;
       const sort = (req.query.sort as string) || "recent"; // recent, activity, oldest, popular, likes, alphabetical
       
+      // Get channel to check if it's read-only
+      const channel = await db.select().from(communityChannels).where(eq(communityChannels.id, channelId)).limit(1);
+      const isReadOnly = channel[0]?.isReadOnly;
+      
       // Determine sort order
-      let orderClause: any;
-      switch (sort) {
-        case "oldest":
-          orderClause = communityPosts.createdAt;
-          break;
-        case "popular":
-        case "likes":
-          orderClause = desc(communityPosts.likes);
-          break;
-        case "alphabetical":
-          orderClause = communityPosts.title;
-          break;
-        case "activity":
-        case "recent":
-        default:
-          orderClause = desc(communityPosts.updatedAt);
-          break;
+      let orderClauses: any[];
+      if (isReadOnly) {
+        // For read-only channels, always order by displayOrder, then createdAt
+        orderClauses = [communityPosts.displayOrder, desc(communityPosts.createdAt)];
+      } else {
+        // For regular channels, use the sort parameter
+        let orderClause: any;
+        switch (sort) {
+          case "oldest":
+            orderClause = communityPosts.createdAt;
+            break;
+          case "popular":
+          case "likes":
+            orderClause = desc(communityPosts.likes);
+            break;
+          case "alphabetical":
+            orderClause = communityPosts.title;
+            break;
+          case "activity":
+          case "recent":
+          default:
+            orderClause = desc(communityPosts.updatedAt);
+            break;
+        }
+        orderClauses = [orderClause];
       }
 
       const posts = await db
@@ -1986,7 +1998,7 @@ export function registerSimpleRoutes(app: Express): Server {
         .from(communityPosts)
         .leftJoin(users, eq(communityPosts.userId, users.id))
         .where(eq(communityPosts.channelId, channelId))
-        .orderBy(orderClause)
+        .orderBy(...orderClauses)
         .limit(limit);
 
       res.json(posts);
@@ -2055,7 +2067,7 @@ export function registerSimpleRoutes(app: Express): Server {
         .from(communityPosts)
         .leftJoin(users, eq(communityPosts.userId, users.id))
         .leftJoin(communityChannels, eq(communityPosts.channelId, communityChannels.id))
-        .orderBy(desc(communityPosts.createdAt));
+        .orderBy(communityPosts.displayOrder, desc(communityPosts.createdAt));
 
       res.json(posts);
     } catch (error) {
