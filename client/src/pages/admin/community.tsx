@@ -22,7 +22,8 @@ export default function AdminCommunity() {
   const { isAdmin, isLoading: adminLoading } = useAdmin();
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [editingPost, setEditingPost] = useState<Post | null>(null);
-  const [formData, setFormData] = useState({ title: "", content: "", videoUrl: "", channelId: "" });
+  const [formData, setFormData] = useState({ title: "", content: "", videoUrl: "", channelId: "", imageUrl: "" });
+  const [uploadingImage, setUploadingImage] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -53,7 +54,7 @@ export default function AdminCommunity() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/community/posts"] });
-      setFormData({ title: "", content: "", videoUrl: "", channelId: "" });
+      setFormData({ title: "", content: "", videoUrl: "", channelId: "", imageUrl: "" });
       setShowCreateModal(false);
       toast({ title: "Éxito", description: "Anuncio creado" });
     },
@@ -78,7 +79,7 @@ export default function AdminCommunity() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/community/posts"] });
-      setFormData({ title: "", content: "", videoUrl: "", channelId: "" });
+      setFormData({ title: "", content: "", videoUrl: "", channelId: "", imageUrl: "" });
       setEditingPost(null);
       toast({ title: "Éxito", description: "Anuncio actualizado" });
     },
@@ -128,8 +129,55 @@ export default function AdminCommunity() {
       content: post.post.content,
       videoUrl: post.post.videoUrl || "",
       channelId: post.post.channelId,
+      imageUrl: post.post.imageUrl || "",
     });
     setShowCreateModal(true);
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !editingPost?.post?.id) return;
+
+    if (!file.type.startsWith("image/")) {
+      toast({
+        title: "Error",
+        description: "Por favor selecciona un archivo de imagen.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setUploadingImage(true);
+    try {
+      const formDataToUpload = new FormData();
+      formDataToUpload.append("file", file);
+
+      const res = await fetch(`/api/admin/community/posts/${editingPost.post.id}/upload-image`, {
+        method: "POST",
+        credentials: "include",
+        body: formDataToUpload,
+      });
+
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.message || "Error al subir la imagen");
+      }
+
+      const data = await res.json();
+      setFormData({ ...formData, imageUrl: data.imageUrl });
+      toast({
+        title: "Éxito",
+        description: "Imagen subida correctamente",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "No se pudo subir la imagen",
+        variant: "destructive",
+      });
+    } finally {
+      setUploadingImage(false);
+    }
   };
 
   if (adminLoading) {
@@ -169,7 +217,7 @@ export default function AdminCommunity() {
               <Button
                 onClick={() => {
                   setEditingPost(null);
-                  setFormData({ title: "", content: "", videoUrl: "", channelId: "" });
+                  setFormData({ title: "", content: "", videoUrl: "", channelId: "", imageUrl: "" });
                   setShowCreateModal(true);
                 }}
                 className="bg-cyan-500 hover:bg-cyan-600 gap-2"
@@ -215,6 +263,37 @@ export default function AdminCommunity() {
                         className="bg-[#2a2a2a] border-[#444444]"
                       />
                     </div>
+                    {editingPost && (
+                      <div>
+                        <label className="text-sm font-medium mb-2 block">Imagen de Portada</label>
+                        <div className="space-y-2">
+                          {formData.imageUrl && (
+                            <div className="relative w-full h-40 rounded overflow-hidden">
+                              <img src={formData.imageUrl} alt="Portada" className="w-full h-full object-cover" />
+                            </div>
+                          )}
+                          <div className="relative">
+                            <input
+                              type="file"
+                              accept="image/*"
+                              onChange={handleImageUpload}
+                              disabled={uploadingImage}
+                              className="hidden"
+                              id="post-image-input"
+                              data-testid="input-post-image"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => document.getElementById("post-image-input")?.click()}
+                              disabled={uploadingImage}
+                              className="w-full bg-[#2a2a2a] border border-[#444444] rounded p-2 text-white hover:bg-[#333333] disabled:opacity-50"
+                            >
+                              {uploadingImage ? "Subiendo..." : "Seleccionar imagen"}
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                     <div>
                       <label className="text-sm font-medium mb-2 block">Canal</label>
                       <select
@@ -236,7 +315,7 @@ export default function AdminCommunity() {
                       </Button>
                       <Button
                         onClick={handleSubmit}
-                        disabled={createMutation.isPending || updateMutation.isPending}
+                        disabled={createMutation.isPending || updateMutation.isPending || uploadingImage}
                         className="flex-1 bg-cyan-500 hover:bg-cyan-600"
                       >
                         {createMutation.isPending || updateMutation.isPending ? (

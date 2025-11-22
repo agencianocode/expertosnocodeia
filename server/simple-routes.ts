@@ -2049,6 +2049,88 @@ export function registerSimpleRoutes(app: Express): Server {
     }
   });
 
+  // Admin endpoint to upload community post image
+  app.post("/api/admin/community/posts/:postId/upload-image", simpleAdminAuth, isAdmin, async (req: Request, res: Response) => {
+    try {
+      const { postId } = req.params;
+
+      // Handle multipart form data
+      const bb = Busboy({ headers: req.headers, limits: { fileSize: 10 * 1024 * 1024 } });
+      
+      let fileData: Buffer | null = null;
+      let fileName: string | null = null;
+
+      bb.on("file", (fieldname: string, file: any, info: any) => {
+        const chunks: Buffer[] = [];
+        file.on("data", (data: Buffer) => {
+          chunks.push(data);
+        });
+        file.on("end", () => {
+          fileData = Buffer.concat(chunks);
+          fileName = info.filename;
+        });
+      });
+
+      bb.on("close", async () => {
+        if (!fileData || !fileName) {
+          return res.status(400).json({ message: "No file provided" });
+        }
+
+        try {
+          // Generate unique filename
+          const ext = fileName.split(".").pop() || "jpg";
+          const uniqueFileId = randomUUID();
+          const uniqueFileName = `post-${uniqueFileId}.${ext}`;
+
+          // Get public object directory for upload
+          const objectStorageService = new ObjectStorageService();
+          const publicDir = process.env.PUBLIC_OBJECT_SEARCH_PATHS?.split(',')[0] || 'public';
+          
+          if (!publicDir) {
+            return res.status(500).json({ message: "Object storage not configured" });
+          }
+
+          // Use public directory with post-images path
+          const uploadPath = `${publicDir}/post-images/${uniqueFileName}`;
+          const { bucketName, objectName } = parseObjectPath(uploadPath);
+          
+          const bucket = objectStorageClient.bucket(bucketName);
+          const file = bucket.file(objectName);
+          
+          // Upload file to object storage
+          await file.save(fileData, {
+            metadata: {
+              contentType: `image/${ext === "jpg" ? "jpeg" : ext}`,
+            },
+          });
+
+          // Generate the proxy URL that will be served through /api/object-proxy
+          const fullGcsUrl = `https://storage.googleapis.com/${bucketName}/${objectName}`;
+          const proxyUrl = objectStorageService.normalizeObjectEntityPath(fullGcsUrl);
+
+          // Update post image URL in database
+          await db
+            .update(communityPosts)
+            .set({ imageUrl: proxyUrl, updatedAt: new Date() })
+            .where(eq(communityPosts.id, postId));
+
+          res.json({ 
+            message: "Post image uploaded successfully",
+            imageUrl: proxyUrl 
+          });
+        } catch (uploadError) {
+          console.error("Error uploading post image:", uploadError);
+          res.status(500).json({ message: "Error uploading image to storage" });
+        }
+      });
+
+      req.pipe(bb);
+    } catch (error) {
+      console.error("Error uploading post image:", error);
+      res.status(500).json({ message: "Error uploading image" });
+    }
+  });
+
   app.post("/api/community/posts/:postId/comments", simpleAdminAuth, async (req: Request, res: Response) => {
     try {
       const { postId } = req.params;
