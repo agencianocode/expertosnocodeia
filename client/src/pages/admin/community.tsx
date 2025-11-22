@@ -154,9 +154,24 @@ export default function AdminCommunity() {
 
   const handleEdit = (post: Post) => {
     setEditingPost(post);
-    const blocks = (post.post.contentBlocks && post.post.contentBlocks.length > 0) 
-      ? post.post.contentBlocks 
-      : [];
+    
+    // Si hay contentBlocks, usar esos; si no, construir desde campos legacy
+    let blocks = [];
+    if (post.post.contentBlocks && post.post.contentBlocks.length > 0) {
+      blocks = post.post.contentBlocks;
+    } else {
+      // Convertir campos legacy a bloques
+      if (post.post.content) {
+        blocks.push({ type: "text" as const, content: post.post.content });
+      }
+      if (post.post.videoUrl) {
+        blocks.push({ type: "video" as const, url: post.post.videoUrl });
+      }
+      if (post.post.imageUrl) {
+        blocks.push({ type: "image" as const, url: post.post.imageUrl });
+      }
+    }
+    
     setFormData({
       title: post.post.title,
       channelId: post.post.channelId,
