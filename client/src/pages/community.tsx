@@ -4,7 +4,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Send, Loader2, Menu, Heart, MessageCircle } from "lucide-react";
+import { Send, Loader2, Menu, Heart, MessageCircle, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Sidebar from "@/components/layout/sidebar";
 import MobileNav from "@/components/layout/mobile-nav";
@@ -61,13 +61,13 @@ export default function Community() {
   const [activeChannel, setActiveChannel] = useState<Channel | null>(null);
   const [channels, setChannels] = useState<Channel[]>([]);
   const [posts, setPosts] = useState<Post[]>([]);
-  const [selectedPost, setSelectedPost] = useState<Post | null>(null);
-  const [comments, setComments] = useState<Comment[]>([]);
+  const [postComments, setPostComments] = useState<{ [key: string]: Comment[] }>({});
   const [loading, setLoading] = useState(true);
   const [commentInput, setCommentInput] = useState("");
   const [sendingComment, setSendingComment] = useState(false);
   const [channelsSidebarOpen, setChannelsSidebarOpen] = useState(true);
   const [isAnunciosChannel, setIsAnunciosChannel] = useState(false);
+  const [expandedPostId, setExpandedPostId] = useState<string | null>(null);
 
   // Fetch channels on mount
   useEffect(() => {
@@ -105,13 +105,13 @@ export default function Community() {
           const res = await fetch(`/api/community/channels/${activeChannel.id}/posts?limit=50`);
           const data = await res.json();
           setPosts(Array.isArray(data) ? data : []);
-          setSelectedPost(null);
-          setComments([]);
+          setPostComments({});
+          setExpandedPostId(null);
         } else {
           // For regular channels, we could add message fetching here if needed
           setPosts([]);
-          setSelectedPost(null);
-          setComments([]);
+          setPostComments({});
+          setExpandedPostId(null);
         }
       } catch (error) {
         console.error("Error fetching content:", error);
@@ -122,30 +122,41 @@ export default function Community() {
     fetchContent();
   }, [activeChannel]);
 
-  // Fetch comments when post is selected
-  useEffect(() => {
-    if (!selectedPost) return;
+  // Fetch comments for a specific post
+  const fetchCommentsForPost = async (postId: string) => {
+    try {
+      const res = await fetch(`/api/community/posts/${postId}/comments`);
+      const data = await res.json();
+      setPostComments(prev => ({
+        ...prev,
+        [postId]: Array.isArray(data) ? data : []
+      }));
+    } catch (error) {
+      console.error("Error fetching comments:", error);
+      setPostComments(prev => ({
+        ...prev,
+        [postId]: []
+      }));
+    }
+  };
 
-    const fetchComments = async () => {
-      try {
-        const res = await fetch(`/api/community/posts/${selectedPost.post.id}/comments`);
-        const data = await res.json();
-        setComments(Array.isArray(data) ? data : []);
-      } catch (error) {
-        console.error("Error fetching comments:", error);
-        setComments([]);
+  const handleExpandPost = async (postId: string) => {
+    if (expandedPostId === postId) {
+      setExpandedPostId(null);
+    } else {
+      setExpandedPostId(postId);
+      if (!postComments[postId]) {
+        await fetchCommentsForPost(postId);
       }
-    };
+    }
+  };
 
-    fetchComments();
-  }, [selectedPost]);
-
-  const handleSendComment = async () => {
-    if (!commentInput.trim() || !selectedPost) return;
+  const handleSendComment = async (postId: string) => {
+    if (!commentInput.trim()) return;
 
     setSendingComment(true);
     try {
-      const res = await fetch(`/api/community/posts/${selectedPost.post.id}/comments`, {
+      const res = await fetch(`/api/community/posts/${postId}/comments`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -154,10 +165,8 @@ export default function Community() {
 
       if (res.ok) {
         setCommentInput("");
-        // Refresh comments
-        const newRes = await fetch(`/api/community/posts/${selectedPost.post.id}/comments`);
-        const data = await newRes.json();
-        setComments(Array.isArray(data) ? data : []);
+        // Refresh comments for this post
+        await fetchCommentsForPost(postId);
         toast({ title: "Éxito", description: "Comentario enviado" });
       } else {
         const error = await res.json();
@@ -170,7 +179,6 @@ export default function Community() {
       setSendingComment(false);
     }
   };
-
 
   const groupedChannels = channels.reduce((acc: { [key: string]: Channel[] }, channel) => {
     if (!acc[channel.section]) acc[channel.section] = [];
@@ -234,11 +242,8 @@ export default function Community() {
           </div>
         </div>
 
-        {/* Center Content - Posts Feed OR Messages */}
-        <div className={cn(
-          "flex-1 flex flex-col overflow-hidden",
-          selectedPost && isAnunciosChannel ? "lg:w-1/2" : ""
-        )}>
+        {/* Center Content - Posts Feed */}
+        <div className="flex-1 flex flex-col overflow-hidden">
           {/* Header */}
           <div className="border-b border-[#333333] bg-[#1a1a1a] px-6 py-4 flex items-center gap-4">
             <Button
@@ -264,47 +269,113 @@ export default function Community() {
                   <p>No hay anuncios. Vuelve pronto.</p>
                 </div>
               ) : (
-                posts.map((post) => (
-                  <div
-                    key={post.post.id}
-                    onClick={() => setSelectedPost(post)}
-                    className={cn(
-                      "p-4 rounded-lg border border-[#333333] bg-[#1a1a1a] cursor-pointer hover:border-[#555555] transition-colors",
-                      selectedPost?.post.id === post.post.id && "border-cyan-500 bg-[#1a2a2a]"
-                    )}
-                    data-testid={`post-${post.post.id}`}
-                  >
-                    {post.post.imageUrl && (
-                      <img src={post.post.imageUrl} alt="" className="w-full h-40 object-cover rounded mb-3" />
-                    )}
-                    <div className="flex items-center gap-2 mb-2">
-                      <Avatar className="h-8 w-8">
-                        <AvatarImage src={post.user?.profileImageUrl || undefined} />
-                        <AvatarFallback>{(post.user?.firstName?.charAt(0) || "U").toUpperCase()}</AvatarFallback>
-                      </Avatar>
-                      <div className="text-sm">
-                        <p className="font-semibold text-white">
-                          {post.user?.firstName} {post.user?.lastName}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {new Date(post.post.createdAt).toLocaleDateString("es-ES")}
-                        </p>
+                posts.map((post) => {
+                  const comments = postComments[post.post.id] || [];
+                  const isExpanded = expandedPostId === post.post.id;
+                  
+                  return (
+                    <div
+                      key={post.post.id}
+                      className={cn(
+                        "p-4 rounded-lg border border-[#333333] bg-[#1a1a1a] transition-all",
+                        isExpanded && "border-cyan-500 bg-[#1a2a2a]"
+                      )}
+                      data-testid={`post-${post.post.id}`}
+                    >
+                      {/* Post Header */}
+                      {post.post.imageUrl && (
+                        <img src={post.post.imageUrl} alt="" className="w-full h-40 object-cover rounded mb-3" />
+                      )}
+                      <div className="flex items-center gap-2 mb-2">
+                        <Avatar className="h-8 w-8">
+                          <AvatarImage src={post.user?.profileImageUrl || undefined} />
+                          <AvatarFallback>{(post.user?.firstName?.charAt(0) || "U").toUpperCase()}</AvatarFallback>
+                        </Avatar>
+                        <div className="text-sm">
+                          <p className="font-semibold text-white">
+                            {post.user?.firstName} {post.user?.lastName}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {new Date(post.post.createdAt).toLocaleDateString("es-ES")}
+                          </p>
+                        </div>
                       </div>
+
+                      {/* Post Content */}
+                      <h3 className="font-bold text-white mb-2">{post.post.title}</h3>
+                      <p className="text-sm text-muted-foreground mb-3">{post.post.content}</p>
+
+                      {/* Post Actions */}
+                      <div className="flex items-center gap-4 text-xs text-muted-foreground mb-4 pb-4 border-b border-[#333333]">
+                        <div className="flex items-center gap-1">
+                          <Heart className="h-4 w-4" />
+                          {post.post.likes}
+                        </div>
+                        <button
+                          onClick={() => handleExpandPost(post.post.id)}
+                          className="flex items-center gap-1 hover:text-cyan-500 transition-colors"
+                          data-testid={`toggle-comments-${post.post.id}`}
+                        >
+                          <MessageCircle className="h-4 w-4" />
+                          {comments.length}
+                        </button>
+                      </div>
+
+                      {/* Comments Section - Expandable */}
+                      {isExpanded && (
+                        <div className="space-y-3">
+                          {/* Comments List */}
+                          {comments.length === 0 ? (
+                            <p className="text-xs text-muted-foreground text-center py-2">Sin comentarios aún. ¡Sé el primero!</p>
+                          ) : (
+                            <div className="space-y-3 mb-3 max-h-48 overflow-y-auto">
+                              {comments.map((comment) => (
+                                <div key={comment.comment.id} className="flex gap-2 text-sm">
+                                  <Avatar className="h-6 w-6 flex-shrink-0 mt-0.5">
+                                    <AvatarImage src={comment.user?.profileImageUrl || undefined} />
+                                    <AvatarFallback className="text-xs">{(comment.user?.firstName?.charAt(0) || "U").toUpperCase()}</AvatarFallback>
+                                  </Avatar>
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-1">
+                                      <p className="text-xs font-semibold text-white">
+                                        {comment.user?.firstName} {comment.user?.lastName}
+                                      </p>
+                                      <span className="text-xs text-muted-foreground">
+                                        {new Date(comment.comment.createdAt).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })}
+                                      </span>
+                                    </div>
+                                    <p className="text-xs text-muted-foreground break-words">{comment.comment.content}</p>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+
+                          {/* Comment Input */}
+                          <div className="flex gap-2 border-t border-[#333333] pt-3">
+                            <Input
+                              placeholder="Escribe un comentario..."
+                              className="bg-[#2a2a2a] border-[#444444] text-white text-xs h-8"
+                              value={commentInput}
+                              onChange={(e) => setCommentInput(e.target.value)}
+                              onKeyPress={(e) => e.key === "Enter" && handleSendComment(post.post.id)}
+                              data-testid={`comment-input-${post.post.id}`}
+                            />
+                            <Button
+                              onClick={() => handleSendComment(post.post.id)}
+                              disabled={sendingComment || !commentInput.trim()}
+                              className="bg-cyan-500 hover:bg-cyan-600 px-2 h-8"
+                              size="sm"
+                              data-testid={`send-comment-${post.post.id}`}
+                            >
+                              {sendingComment ? <Loader2 className="h-3 w-3 animate-spin" /> : <Send className="h-3 w-3" />}
+                            </Button>
+                          </div>
+                        </div>
+                      )}
                     </div>
-                    <h3 className="font-bold text-white mb-2">{post.post.title}</h3>
-                    <p className="text-sm text-muted-foreground mb-3 line-clamp-2">{post.post.content}</p>
-                    <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                      <div className="flex items-center gap-1">
-                        <Heart className="h-4 w-4" />
-                        {post.post.likes}
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <MessageCircle className="h-4 w-4" />
-                        {comments.filter(c => c.comment.postId === post.post.id).length}
-                      </div>
-                    </div>
-                  </div>
-                ))
+                  );
+                })
               )}
             </div>
           ) : (
@@ -313,71 +384,7 @@ export default function Community() {
             </div>
           )}
         </div>
-
-        {/* Right Sidebar - Comments (only for Anuncios when post selected) */}
-        {isAnunciosChannel && selectedPost && (
-          <div className="hidden lg:flex w-1/3 flex-col border-l border-[#333333] bg-[#1a1a1a] overflow-hidden">
-            {/* Header */}
-            <div className="border-b border-[#333333] px-6 py-4">
-              <h2 className="text-lg font-bold text-white">Comentarios</h2>
-              <p className="text-xs text-muted-foreground mt-1">{comments.length} comentarios</p>
-            </div>
-
-            {/* Comments List */}
-            <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
-              {comments.length === 0 ? (
-                <div className="flex items-center justify-center h-full text-muted-foreground text-sm">
-                  <p>Sin comentarios aún. ¡Sé el primero!</p>
-                </div>
-              ) : (
-                comments.map((comment) => (
-                  <div key={comment.comment.id} className="flex gap-3">
-                    <Avatar className="h-8 w-8 flex-shrink-0">
-                      <AvatarImage src={comment.user?.profileImageUrl || undefined} />
-                      <AvatarFallback>{(comment.user?.firstName?.charAt(0) || "U").toUpperCase()}</AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <p className="text-sm font-semibold text-white">
-                          {comment.user?.firstName} {comment.user?.lastName}
-                        </p>
-                        <span className="text-xs text-muted-foreground">
-                          {new Date(comment.comment.createdAt).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })}
-                        </span>
-                      </div>
-                      <p className="text-sm text-muted-foreground break-words mt-1">{comment.comment.content}</p>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-
-            {/* Comment Input */}
-            <div className="border-t border-[#333333] bg-[#1a1a1a] px-6 py-4">
-              <div className="flex gap-2">
-                <Input
-                  placeholder="Escribe un comentario..."
-                  className="bg-[#2a2a2a] border-[#444444] text-white text-sm"
-                  value={commentInput}
-                  onChange={(e) => setCommentInput(e.target.value)}
-                  onKeyPress={(e) => e.key === "Enter" && handleSendComment()}
-                  data-testid="comment-input"
-                />
-                <Button
-                  onClick={handleSendComment}
-                  disabled={sendingComment || !commentInput.trim()}
-                  className="bg-cyan-500 hover:bg-cyan-600 px-3"
-                  size="sm"
-                  data-testid="send-comment-button"
-                >
-                  {sendingComment ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-                </Button>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
-
 
       <MobileNav />
     </div>
