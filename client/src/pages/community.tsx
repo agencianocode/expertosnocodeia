@@ -75,8 +75,10 @@ export default function Community() {
   const [allPostComments, setAllPostComments] = useState<{ [postId: string]: Comment[] }>({});
   const [openReactionPostId, setOpenReactionPostId] = useState<string | null>(null);
   const [postReactions, setPostReactions] = useState<{ [postId: string]: { emoji: string; count: number }[] }>({});
+  const [userEmojis, setUserEmojis] = useState<{ [postId: string]: string[] }>({});
+  const [allReactions, setAllReactions] = useState<{ [postId: string]: { emoji: string; count: number; users: string[] }[] }>({});
 
-  // Mutation for adding reactions
+  // Mutation for adding/removing reactions
   const addReactionMutation = useMutation({
     mutationFn: async ({ postId, emoji }: { postId: string; emoji: string }) => {
       const res = await fetch(`/api/community/posts/${postId}/reactions`, {
@@ -93,15 +95,22 @@ export default function Community() {
     onSuccess: (data, variables) => {
       // Close the reaction selector
       setOpenReactionPostId(null);
-      // Update reactions display
-      setPostReactions(prev => ({
-        ...prev,
-        [variables.postId]: (prev[variables.postId] || []).concat({ emoji: variables.emoji, count: 1 })
-      }));
-      toast({ title: "Éxito", description: "Reacción agregada" });
+      
+      // Refresh user reactions and all reactions
+      Promise.all([
+        fetch(`/api/community/posts/${variables.postId}/user-reactions`, { credentials: "include" }).then(r => r.json()),
+        fetch(`/api/community/posts/${variables.postId}/reactions`).then(r => r.json())
+      ]).then(([userReactionsData, allReactionsData]) => {
+        const userReactionsArray = Array.isArray(userReactionsData) ? userReactionsData.map((r: any) => r.emoji) : [];
+        const allReactionsArray = Array.isArray(allReactionsData) ? allReactionsData : [];
+        setUserEmojis(prev => ({ ...prev, [variables.postId]: userReactionsArray }));
+        setAllReactions(prev => ({ ...prev, [variables.postId]: allReactionsArray }));
+      });
+      
+      toast({ title: "Éxito", description: "Reacción actualizada" });
     },
     onError: (error: any) => {
-      toast({ title: "Error", description: error.message || "No se pudo agregar la reacción", variant: "destructive" });
+      toast({ title: "Error", description: error.message || "No se pudo actualizar la reacción", variant: "destructive" });
     },
   });
 
@@ -145,23 +154,43 @@ export default function Community() {
           setSelectedPost(null);
           setComments([]);
           
-          // Load comment counts and all comments for all posts
+          // Load comment counts, all comments, and reactions for all posts
           const counts: { [postId: string]: number } = {};
           const allComments: { [postId: string]: Comment[] } = {};
+          const userReactionsMap: { [postId: string]: string[] } = {};
+          const allReactionsMap: { [postId: string]: { emoji: string; count: number; users: string[] }[] } = {};
+          
           for (const post of postsData) {
             try {
+              // Fetch comments
               const commentsRes = await fetch(`/api/community/posts/${post.post.id}/comments`);
               const commentsData = await commentsRes.json();
               const commentsArray = Array.isArray(commentsData) ? commentsData : [];
               counts[post.post.id] = commentsArray.length;
               allComments[post.post.id] = commentsArray;
+              
+              // Fetch user reactions
+              const userReactionsRes = await fetch(`/api/community/posts/${post.post.id}/user-reactions`, {
+                credentials: "include"
+              });
+              const userReactionsData = await userReactionsRes.json();
+              userReactionsMap[post.post.id] = Array.isArray(userReactionsData) ? userReactionsData.map((r: any) => r.emoji) : [];
+              
+              // Fetch all reactions
+              const reactionsRes = await fetch(`/api/community/posts/${post.post.id}/reactions`);
+              const reactionsData = await reactionsRes.json();
+              allReactionsMap[post.post.id] = Array.isArray(reactionsData) ? reactionsData : [];
             } catch (err) {
               counts[post.post.id] = 0;
               allComments[post.post.id] = [];
+              userReactionsMap[post.post.id] = [];
+              allReactionsMap[post.post.id] = [];
             }
           }
           setPostCommentCounts(counts);
           setAllPostComments(allComments);
+          setUserEmojis(userReactionsMap);
+          setAllReactions(allReactionsMap);
         } else {
           // For regular channels, we could add message fetching here if needed
           setPosts([]);
@@ -395,11 +424,17 @@ export default function Community() {
                       <div className="text-sm text-muted-foreground mb-3 whitespace-pre-wrap break-words">{post.post.content}</div>
 
                       {/* Acciones */}
-                      <div className="flex items-center gap-4 text-xs text-muted-foreground flex-wrap">
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
                         <div className="relative">
                           <button 
                             onClick={() => setOpenReactionPostId(openReactionPostId === post.post.id ? null : post.post.id)}
-                            className="flex items-center gap-1 hover:text-cyan-500 transition-colors"
+                            disabled={(userEmojis[post.post.id] || []).length >= 3}
+                            className={cn(
+                              "flex items-center gap-1 transition-colors",
+                              (userEmojis[post.post.id] || []).length >= 3 
+                                ? "text-muted-foreground cursor-not-allowed opacity-50" 
+                                : "hover:text-cyan-500"
+                            )}
                           >
                             <Smile className="h-4 w-4" />
                             Reaccionar
@@ -407,32 +442,61 @@ export default function Community() {
                           {/* Emoji selector popup - visible when open */}
                           {openReactionPostId === post.post.id && (
                             <div className="absolute bottom-full left-0 mb-2 bg-[#2a2a2a] border border-[#444444] rounded-lg p-2 grid grid-cols-5 gap-1 w-56 z-50 shadow-lg">
-                              {["👍", "❤️", "😂", "😮", "🎉", "🔥", "🍊", "🌟", "👏", "🎯"].map((emoji) => (
-                                <button
-                                  key={emoji}
-                                  onClick={() => {
-                                    addReactionMutation.mutate({
-                                      postId: post.post.id,
-                                      emoji,
-                                    });
-                                  }}
-                                  className="text-2xl hover:scale-125 transition-transform cursor-pointer"
-                                >
-                                  {emoji}
-                                </button>
-                              ))}
+                              {["👍", "❤️", "😂", "😮", "🎉", "🔥", "🍊", "🌟", "👏", "🎯"].map((emoji) => {
+                                const hasEmoji = (userEmojis[post.post.id] || []).includes(emoji);
+                                const userReactionsCount = (userEmojis[post.post.id] || []).length;
+                                const canAdd = hasEmoji || userReactionsCount < 3;
+                                
+                                return (
+                                  <button
+                                    key={emoji}
+                                    onClick={() => {
+                                      addReactionMutation.mutate({
+                                        postId: post.post.id,
+                                        emoji,
+                                      });
+                                    }}
+                                    disabled={!canAdd}
+                                    className={cn(
+                                      "text-2xl transition-transform",
+                                      hasEmoji ? "ring-2 ring-cyan-500 rounded-lg scale-110" : "",
+                                      canAdd ? "hover:scale-125 cursor-pointer" : "opacity-30 cursor-not-allowed"
+                                    )}
+                                  >
+                                    {emoji}
+                                  </button>
+                                );
+                              })}
                             </div>
                           )}
                         </div>
                         
-                        {/* Show reactions */}
-                        {postReactions[post.post.id] && postReactions[post.post.id].length > 0 && (
-                          <div className="flex items-center gap-1">
-                            {postReactions[post.post.id].map((reaction, idx) => (
-                              <span key={idx} className="text-sm bg-[#2a2a2a] px-2 py-1 rounded-full">
-                                {reaction.emoji}
-                              </span>
-                            ))}
+                        {/* Show all reactions */}
+                        {(allReactions[post.post.id] || []).length > 0 && (
+                          <div className="flex items-center gap-1 flex-wrap">
+                            {(allReactions[post.post.id] || []).map((reaction, idx) => {
+                              const isUserReaction = (userEmojis[post.post.id] || []).includes(reaction.emoji);
+                              return (
+                                <button
+                                  key={idx}
+                                  onClick={() => {
+                                    // Toggle reaction on click
+                                    addReactionMutation.mutate({
+                                      postId: post.post.id,
+                                      emoji: reaction.emoji,
+                                    });
+                                  }}
+                                  className={cn(
+                                    "text-sm px-2 py-1 rounded-full transition-all cursor-pointer",
+                                    isUserReaction 
+                                      ? "bg-cyan-500 text-white ring-1 ring-cyan-600" 
+                                      : "bg-[#2a2a2a] hover:bg-[#3a3a3a]"
+                                  )}
+                                >
+                                  {reaction.emoji} {reaction.count}
+                                </button>
+                              );
+                            })}
                           </div>
                         )}
                         <button

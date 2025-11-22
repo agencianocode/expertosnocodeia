@@ -2147,6 +2147,33 @@ export function registerSimpleRoutes(app: Express): Server {
     }
   });
 
+  // Endpoint to get current user's reactions for a post
+  app.get("/api/community/posts/:postId/user-reactions", optionalSupabaseAuth, async (req: Request, res: Response) => {
+    try {
+      const { postId } = req.params;
+      const userId = (req as any).user?.claims?.sub || (req as any).user?.id;
+
+      if (!userId) {
+        return res.json([]);
+      }
+
+      const userReactions = await db
+        .select()
+        .from(communityPostReactions)
+        .where(
+          and(
+            eq(communityPostReactions.postId, postId),
+            eq(communityPostReactions.userId, userId)
+          )
+        );
+
+      res.json(userReactions);
+    } catch (error) {
+      console.error("Error fetching user reactions:", error);
+      res.status(500).json({ message: "Failed to fetch user reactions" });
+    }
+  });
+
   // Initialize channels on startup
   storage.initializeCommunityChannels().catch(err => console.error("Error initializing channels:", err));
 
