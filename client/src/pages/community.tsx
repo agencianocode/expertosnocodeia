@@ -400,7 +400,7 @@ export default function Community() {
                       )}
 
                       {post.post.imageUrl && (
-                        <img src={post.post.imageUrl} alt="" className="w-full h-40 object-cover rounded mb-3" />
+                        <img src={post.post.imageUrl} alt="" className="w-full h-64 object-cover rounded mb-4" />
                       )}
 
                       {/* Header con nombre y hora */}
@@ -421,7 +421,24 @@ export default function Community() {
 
                       {/* Contenido */}
                       <h3 className="font-bold text-white mb-2">{post.post.title}</h3>
-                      <div className="text-sm text-muted-foreground mb-3 whitespace-pre-wrap break-words">{post.post.content}</div>
+                      <div className="text-sm text-muted-foreground mb-3 whitespace-pre-wrap break-words">
+                        {post.post.content.split(/(\bhttps?:\/\/[^\s]+)/g).map((part, idx) => {
+                          if (part.match(/^\bhttps?:\/\//)) {
+                            return (
+                              <a
+                                key={idx}
+                                href={part}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-cyan-500 hover:text-cyan-400 underline break-all"
+                              >
+                                {part}
+                              </a>
+                            );
+                          }
+                          return part;
+                        })}
+                      </div>
 
                       {/* Acciones */}
                       <div className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
