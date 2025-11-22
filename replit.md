@@ -8,7 +8,17 @@ This is a comprehensive NoCode education ecosystem called "Expertos NoCode IA" t
 
 The system features a modern React frontend with Express.js backend, PostgreSQL database with Drizzle ORM, and integrates Replit's authentication system. The ecosystem is designed to funnel users from free content to paid courses and finally into the comprehensive learning application.
 
-## Recent Implementation (November 18, 2025)
+## Recent Implementation (November 22, 2025)
+- **Community System Implementation**: Complete Netflix-style learning community with announcements feed
+- **Admin Community Panel**: Full CRUD endpoints for administrators to create/edit/delete announcements (/api/admin/community/posts)
+- **Announcements Feed**: Users can view announcements in /community/anuncios channel with LinkedIn/Facebook-style post cards showing date, time, likes, and response counts
+- **Comment System**: Individual comment threads in right sidebar with Discord/Slack-style interface - click message icon on any post to open comments
+- **Profile Photo Upload**: Implemented profile image upload feature in /profile page with Object Storage integration and automatic database URL persistence
+- **Three-Column Layout**: Community uses modern three-column design - left sidebar (channels), center (posts feed), right sidebar (comments on click)
+- **Admin-Only Posts**: Only administrators can create announcements via /admin/community; users can only view and comment
+- **Comment Display**: Real-time comment fetching with user avatars, names, timestamps, and content in right sidebar comments panel
+
+## Previous Implementation (November 18, 2025)
 - **Enhanced Activity Tracking**: Extended "Continúa donde lo dejaste" to track all content types (courses, guides, workshops, room courses) with room context preservation
 - **Room Context Navigation Fix**: Cursos de sala SIEMPRE navegan con contexto (/sala/:slug/curso/:id), NUNCA solo /curso/:id
 - **Multi-Content Type Support**: userRecentActivity table now includes contentType and roomSlug fields to support diverse content navigation
