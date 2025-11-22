@@ -348,17 +348,6 @@ export default function Community() {
                           )}
                           data-testid={`view-comments-${post.post.id}`}
                         >
-                          {/* Avatares de quienes comentaron */}
-                          {postCommentCount > 0 && (
-                            <div className="flex items-center -space-x-2">
-                              {postComments.slice(0, 3).map((comment, idx) => (
-                                <Avatar key={idx} className="h-5 w-5 border border-[#1a1a1a]">
-                                  <AvatarImage src={comment.user?.profileImageUrl || undefined} />
-                                  <AvatarFallback className="text-xs">{(comment.user?.firstName?.charAt(0) || "U").toUpperCase()}</AvatarFallback>
-                                </Avatar>
-                              ))}
-                            </div>
-                          )}
                           <span>{postCommentCount} respuesta{postCommentCount !== 1 ? "s" : ""}</span>
                         </button>
                       </div>
