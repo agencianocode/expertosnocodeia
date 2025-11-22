@@ -1438,18 +1438,19 @@ export function registerSimpleRoutes(app: Express): Server {
         try {
           // Generate unique filename
           const ext = fileName.split(".").pop() || "jpg";
-          const uniqueFileName = `profile-${userId}-${Date.now()}.${ext}`;
+          const uniqueFileId = randomUUID();
+          const uniqueFileName = `profile-${uniqueFileId}.${ext}`;
 
-          // Get public object search paths for upload
+          // Get private object directory for upload
           const objectStorageService = new ObjectStorageService();
-          const publicPaths = objectStorageService.getPublicObjectSearchPaths();
+          const privateDir = objectStorageService.getPrivateObjectDir();
           
-          if (!publicPaths || publicPaths.length === 0) {
+          if (!privateDir) {
             return res.status(500).json({ message: "Object storage not configured" });
           }
 
-          // Use first public path
-          const uploadPath = `${publicPaths[0]}/profile-images/${uniqueFileName}`;
+          // Use private directory with profile-images path
+          const uploadPath = `${privateDir}/profile-images/${uniqueFileName}`;
           const { bucketName, objectName } = parseObjectPath(uploadPath);
           
           const bucket = objectStorageClient.bucket(bucketName);
@@ -1462,18 +1463,19 @@ export function registerSimpleRoutes(app: Express): Server {
             },
           });
 
-          // Get public URL
-          const fileUrl = `https://storage.googleapis.com/${bucketName}/${objectName}`;
+          // Generate the proxy URL that will be served through /api/object-proxy
+          const fullGcsUrl = `https://storage.googleapis.com/${bucketName}/${objectName}`;
+          const proxyUrl = objectStorageService.normalizeObjectEntityPath(fullGcsUrl);
 
           // Update user profile image URL in database
           await db
             .update(users)
-            .set({ profileImageUrl: fileUrl })
+            .set({ profileImageUrl: proxyUrl })
             .where(eq(users.id, userId));
 
           res.json({ 
             message: "Profile image uploaded successfully",
-            profileImageUrl: fileUrl 
+            profileImageUrl: proxyUrl 
           });
         } catch (uploadError) {
           console.error("Error uploading profile image:", uploadError);
