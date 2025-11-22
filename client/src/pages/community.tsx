@@ -379,25 +379,39 @@ export default function Community() {
                         {new Date(post.post.createdAt).toLocaleDateString("es-ES", { year: "numeric", month: "long", day: "numeric" })}
                       </p>
 
-                      {post.post.videoUrl && (
-                        <div className="w-full mb-3 rounded overflow-hidden bg-black border-2 border-cyan-500">
-                          <div style={{ position: "relative", paddingBottom: "56.25%", height: 0 }}>
-                            <iframe
-                              style={{
-                                position: "absolute",
-                                top: 0,
-                                left: 0,
-                                width: "100%",
-                                height: "100%",
-                              }}
-                              src={post.post.videoUrl.replace(/youtu\.be\//, "youtube.com/embed/").replace(/vimeo\.com\//, "vimeo.com/video/")}
-                              frameBorder="0"
-                              allowFullScreen
-                              title="Video"
-                            ></iframe>
-                          </div>
-                        </div>
-                      )}
+                      {post.post.videoUrl && (() => {
+                        const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(post.post.videoUrl);
+                        const isYouTube = /youtu\.be\/|youtube\.com/i.test(post.post.videoUrl);
+                        const isVimeo = /vimeo\.com/i.test(post.post.videoUrl);
+                        
+                        if (isImage) {
+                          return <img src={post.post.videoUrl} alt="" className="w-full h-64 object-cover rounded mb-3 border-2 border-cyan-500" />;
+                        }
+                        
+                        if (isYouTube || isVimeo) {
+                          return (
+                            <div className="w-full mb-3 rounded overflow-hidden bg-black border-2 border-cyan-500">
+                              <div style={{ position: "relative", paddingBottom: "56.25%", height: 0 }}>
+                                <iframe
+                                  style={{
+                                    position: "absolute",
+                                    top: 0,
+                                    left: 0,
+                                    width: "100%",
+                                    height: "100%",
+                                  }}
+                                  src={post.post.videoUrl.replace(/youtu\.be\//, "youtube.com/embed/").replace(/vimeo\.com\//, "vimeo.com/video/")}
+                                  frameBorder="0"
+                                  allowFullScreen
+                                  title="Video"
+                                ></iframe>
+                              </div>
+                            </div>
+                          );
+                        }
+                        
+                        return null;
+                      })()}
 
                       {post.post.imageUrl && (
                         <img src={post.post.imageUrl} alt="" className="w-full h-64 object-cover rounded mb-4" />
