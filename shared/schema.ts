@@ -811,6 +811,7 @@ export const communityChannels = pgTable("community_channels", {
   section: varchar("section").notNull(), // "Bienvenida", "Redes", etc.
   order: integer("order").notNull().default(0),
   isActive: boolean("is_active").default(true),
+  isReadOnly: boolean("is_read_only").default(false), // Solo admins pueden publicar, usuarios no pueden comentar ni reaccionar
   createdAt: timestamp("created_at").defaultNow(),
 });
 

@@ -34,6 +34,7 @@ interface Channel {
   description?: string;
   icon: string;
   section: string;
+  isReadOnly?: boolean;
 }
 
 interface Post {
@@ -628,20 +629,21 @@ export default function Community() {
 
                       {/* Acciones */}
                       <div className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
-                        <div className="relative">
-                          <button 
-                            onClick={() => setOpenReactionPostId(openReactionPostId === post.post.id ? null : post.post.id)}
-                            disabled={(userEmojis[post.post.id] || []).length >= 3}
-                            className={cn(
-                              "flex items-center gap-1 transition-colors",
-                              (userEmojis[post.post.id] || []).length >= 3 
-                                ? "text-muted-foreground cursor-not-allowed opacity-50" 
-                                : "hover:text-cyan-500"
-                            )}
-                          >
-                            <Smile className="h-4 w-4" />
-                            Reaccionar
-                          </button>
+                        {!activeChannel?.isReadOnly && (
+                          <div className="relative">
+                            <button 
+                              onClick={() => setOpenReactionPostId(openReactionPostId === post.post.id ? null : post.post.id)}
+                              disabled={(userEmojis[post.post.id] || []).length >= 3}
+                              className={cn(
+                                "flex items-center gap-1 transition-colors",
+                                (userEmojis[post.post.id] || []).length >= 3 
+                                  ? "text-muted-foreground cursor-not-allowed opacity-50" 
+                                  : "hover:text-cyan-500"
+                              )}
+                            >
+                              <Smile className="h-4 w-4" />
+                              Reaccionar
+                            </button>
                           {/* Emoji selector popup - visible when open */}
                           {openReactionPostId === post.post.id && (
                             <div className="absolute bottom-full left-0 mb-2 bg-[#2a2a2a] border border-[#444444] rounded-lg p-2 grid grid-cols-5 gap-1 w-56 z-50 shadow-lg">
@@ -671,11 +673,12 @@ export default function Community() {
                                 );
                               })}
                             </div>
-                          )}
-                        </div>
+                            )}
+                          </div>
+                        )}
                         
                         {/* Show all reactions */}
-                        {(allReactions[post.post.id] || []).length > 0 && (
+                        {!activeChannel?.isReadOnly && (allReactions[post.post.id] || []).length > 0 && (
                           <div className="flex items-center gap-1 flex-wrap">
                             {(allReactions[post.post.id] || []).map((reaction, idx) => {
                               const isUserReaction = (userEmojis[post.post.id] || []).includes(reaction.emoji);
@@ -702,33 +705,35 @@ export default function Community() {
                             })}
                           </div>
                         )}
-                        <button
-                          onClick={() => {
-                            if (selectedPost?.post.id === post.post.id) {
-                              setSelectedPost(null);
-                            } else {
-                              setSelectedPost(post);
-                            }
-                          }}
-                          className={cn(
-                            "flex items-center gap-2 transition-colors",
-                            selectedPost?.post.id === post.post.id ? "text-cyan-500" : "text-muted-foreground hover:text-cyan-500"
-                          )}
-                          data-testid={`view-comments-${post.post.id}`}
-                        >
-                          {/* Avatares de quienes comentaron */}
-                          {postCommentCount > 0 && (
-                            <div className="flex items-center -space-x-2">
-                              {postComments.slice(0, 3).map((comment, idx) => (
-                                <Avatar key={idx} className="h-5 w-5 border border-[#1a1a1a]">
-                                  <AvatarImage src={comment.user?.profileImageUrl || undefined} />
-                                  <AvatarFallback className="text-xs">{(comment.user?.firstName?.charAt(0) || "U").toUpperCase()}</AvatarFallback>
-                                </Avatar>
-                              ))}
-                            </div>
-                          )}
-                          <span>{postCommentCount} respuesta{postCommentCount !== 1 ? "s" : ""}</span>
-                        </button>
+                        {!activeChannel?.isReadOnly && (
+                          <button
+                            onClick={() => {
+                              if (selectedPost?.post.id === post.post.id) {
+                                setSelectedPost(null);
+                              } else {
+                                setSelectedPost(post);
+                              }
+                            }}
+                            className={cn(
+                              "flex items-center gap-2 transition-colors",
+                              selectedPost?.post.id === post.post.id ? "text-cyan-500" : "text-muted-foreground hover:text-cyan-500"
+                            )}
+                            data-testid={`view-comments-${post.post.id}`}
+                          >
+                            {/* Avatares de quienes comentaron */}
+                            {postCommentCount > 0 && (
+                              <div className="flex items-center -space-x-2">
+                                {postComments.slice(0, 3).map((comment, idx) => (
+                                  <Avatar key={idx} className="h-5 w-5 border border-[#1a1a1a]">
+                                    <AvatarImage src={comment.user?.profileImageUrl || undefined} />
+                                    <AvatarFallback className="text-xs">{(comment.user?.firstName?.charAt(0) || "U").toUpperCase()}</AvatarFallback>
+                                  </Avatar>
+                                ))}
+                              </div>
+                            )}
+                            <span>{postCommentCount} respuesta{postCommentCount !== 1 ? "s" : ""}</span>
+                          </button>
+                        )}
                       </div>
                     </div>
                   );

@@ -2185,6 +2185,17 @@ export function registerSimpleRoutes(app: Express): Server {
         return res.status(401).json({ message: "Usuario no autenticado" });
       }
 
+      // Check if channel is read-only
+      const post = await db.select().from(communityPosts).where(eq(communityPosts.id, postId));
+      if (post.length === 0) {
+        return res.status(404).json({ message: "Post not found" });
+      }
+
+      const channel = await db.select().from(communityChannels).where(eq(communityChannels.id, post[0].channelId));
+      if (channel.length > 0 && channel[0].isReadOnly) {
+        return res.status(403).json({ message: "Este canal no permite comentarios" });
+      }
+
       const comment = await storage.createPostComment(postId, userId, content);
       res.status(201).json(comment);
     } catch (error) {
@@ -2206,6 +2217,17 @@ export function registerSimpleRoutes(app: Express): Server {
 
       if (!userId) {
         return res.status(401).json({ message: "Usuario no autenticado" });
+      }
+
+      // Check if channel is read-only
+      const post = await db.select().from(communityPosts).where(eq(communityPosts.id, postId));
+      if (post.length === 0) {
+        return res.status(404).json({ message: "Post not found" });
+      }
+
+      const channel = await db.select().from(communityChannels).where(eq(communityChannels.id, post[0].channelId));
+      if (channel.length > 0 && channel[0].isReadOnly) {
+        return res.status(403).json({ message: "Este canal no permite reacciones" });
       }
 
       // Check if user already reacted with this emoji
