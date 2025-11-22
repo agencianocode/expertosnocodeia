@@ -316,6 +316,19 @@ export default function Community() {
                         {new Date(post.post.createdAt).toLocaleDateString("es-ES", { year: "numeric", month: "long", day: "numeric" })}
                       </p>
 
+                      {post.post.videoUrl && (
+                        <div className="w-full mb-3 rounded overflow-hidden bg-black">
+                          <iframe
+                            width="100%"
+                            height="200"
+                            src={post.post.videoUrl.replace(/youtu\.be\//, "youtube.com/embed/").replace(/vimeo\.com\//, "vimeo.com/video/")}
+                            frameBorder="0"
+                            allowFullScreen
+                            title="Video"
+                          ></iframe>
+                        </div>
+                      )}
+
                       {post.post.imageUrl && (
                         <img src={post.post.imageUrl} alt="" className="w-full h-40 object-cover rounded mb-3" />
                       )}
@@ -338,7 +351,7 @@ export default function Community() {
 
                       {/* Contenido */}
                       <h3 className="font-bold text-white mb-2">{post.post.title}</h3>
-                      <p className="text-sm text-muted-foreground mb-3 line-clamp-2">{post.post.content}</p>
+                      <div className="text-sm text-muted-foreground mb-3 whitespace-pre-wrap break-words">{post.post.content}</div>
 
                       {/* Acciones */}
                       <div className="flex items-center gap-4 text-xs text-muted-foreground">

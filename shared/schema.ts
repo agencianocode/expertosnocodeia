@@ -848,6 +848,7 @@ export const communityPosts = pgTable("community_posts", {
   title: varchar("title").notNull(),
   content: text("content").notNull(),
   imageUrl: varchar("image_url"),
+  videoUrl: varchar("video_url"),
   likes: integer("likes").default(0),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),

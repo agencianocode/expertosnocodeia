@@ -1968,15 +1968,23 @@ export function registerSimpleRoutes(app: Express): Server {
   // Admin endpoint to create posts
   app.post("/api/admin/community/posts", simpleAdminAuth, isAdmin, async (req: Request, res: Response) => {
     try {
-      const { channelId, title, content, imageUrl } = req.body;
+      const { channelId, title, content, imageUrl, videoUrl } = req.body;
       const userId = (req as any).user?.claims?.sub || (req as any).user?.id;
 
       if (!channelId || !title || !content) {
         return res.status(400).json({ message: "channelId, title, and content are required" });
       }
 
-      const post = await storage.createCommunityPost(channelId, userId, title, content, imageUrl);
-      res.status(201).json(post);
+      const post = await db.insert(communityPosts).values({
+        channelId,
+        userId,
+        title,
+        content,
+        imageUrl: imageUrl || null,
+        videoUrl: videoUrl || null,
+      }).returning();
+
+      res.status(201).json(post[0]);
     } catch (error) {
       console.error("Error creating post:", error);
       res.status(500).json({ message: "Failed to create post" });
@@ -2013,11 +2021,11 @@ export function registerSimpleRoutes(app: Express): Server {
   app.patch("/api/admin/community/posts/:postId", simpleAdminAuth, isAdmin, async (req: Request, res: Response) => {
     try {
       const { postId } = req.params;
-      const { title, content, imageUrl } = req.body;
+      const { title, content, imageUrl, videoUrl } = req.body;
 
       const [updated] = await db
         .update(communityPosts)
-        .set({ title, content, imageUrl, updatedAt: new Date() })
+        .set({ title, content, imageUrl, videoUrl, updatedAt: new Date() })
         .where(eq(communityPosts.id, postId))
         .returning();
 

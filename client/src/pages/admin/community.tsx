@@ -22,7 +22,7 @@ export default function AdminCommunity() {
   const { isAdmin, isLoading: adminLoading } = useAdmin();
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [editingPost, setEditingPost] = useState<Post | null>(null);
-  const [formData, setFormData] = useState({ title: "", content: "", channelId: "" });
+  const [formData, setFormData] = useState({ title: "", content: "", videoUrl: "", channelId: "" });
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -53,7 +53,7 @@ export default function AdminCommunity() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/community/posts"] });
-      setFormData({ title: "", content: "", channelId: "" });
+      setFormData({ title: "", content: "", videoUrl: "", channelId: "" });
       setShowCreateModal(false);
       toast({ title: "Éxito", description: "Anuncio creado" });
     },
@@ -78,7 +78,7 @@ export default function AdminCommunity() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/community/posts"] });
-      setFormData({ title: "", content: "", channelId: "" });
+      setFormData({ title: "", content: "", videoUrl: "", channelId: "" });
       setEditingPost(null);
       toast({ title: "Éxito", description: "Anuncio actualizado" });
     },
@@ -126,6 +126,7 @@ export default function AdminCommunity() {
     setFormData({
       title: post.post.title,
       content: post.post.content,
+      videoUrl: post.post.videoUrl || "",
       channelId: post.post.channelId,
     });
     setShowCreateModal(true);
@@ -168,7 +169,7 @@ export default function AdminCommunity() {
               <Button
                 onClick={() => {
                   setEditingPost(null);
-                  setFormData({ title: "", content: "", channelId: "" });
+                  setFormData({ title: "", content: "", videoUrl: "", channelId: "" });
                   setShowCreateModal(true);
                 }}
                 className="bg-cyan-500 hover:bg-cyan-600 gap-2"
@@ -202,7 +203,16 @@ export default function AdminCommunity() {
                         value={formData.content}
                         onChange={(e) => setFormData({ ...formData, content: e.target.value })}
                         className="w-full bg-[#2a2a2a] border border-[#444444] rounded p-2 text-white resize-none"
-                        rows={4}
+                        rows={6}
+                      />
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium mb-2 block">URL del Video (YouTube, Vimeo, etc.)</label>
+                      <Input
+                        placeholder="https://youtu.be/... o https://vimeo.com/..."
+                        value={formData.videoUrl}
+                        onChange={(e) => setFormData({ ...formData, videoUrl: e.target.value })}
+                        className="bg-[#2a2a2a] border-[#444444]"
                       />
                     </div>
                     <div>
