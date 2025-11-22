@@ -24,6 +24,8 @@ export default function AdminCommunity() {
   const [editingPost, setEditingPost] = useState<Post | null>(null);
   const [formData, setFormData] = useState({ title: "", content: "", videoUrl: "", channelId: "", imageUrl: "" });
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null);
+  const [imagePreviewUrl, setImagePreviewUrl] = useState<string>("");
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -40,11 +42,53 @@ export default function AdminCommunity() {
 
   const createMutation = useMutation({
     mutationFn: async (data: any) => {
+      // If there's a selected image file, upload it first
+      let imageUrl = data.imageUrl;
+      if (selectedImageFile && !editingPost) {
+        try {
+          // Create a temporary post first to get an ID
+          const tempRes = await fetch("/api/admin/community/posts", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+            body: JSON.stringify({ ...data, imageUrl: "" }),
+          });
+          if (!tempRes.ok) throw new Error("Error al crear anuncio");
+          const tempPost = await tempRes.json();
+
+          // Upload the image
+          const formDataToUpload = new FormData();
+          formDataToUpload.append("file", selectedImageFile);
+          const uploadRes = await fetch(`/api/admin/community/posts/${tempPost.id}/upload-image`, {
+            method: "POST",
+            credentials: "include",
+            body: formDataToUpload,
+          });
+          if (uploadRes.ok) {
+            const uploadData = await uploadRes.json();
+            imageUrl = uploadData.imageUrl;
+            // Update the post with the image URL
+            const updateRes = await fetch(`/api/admin/community/posts/${tempPost.id}`, {
+              method: "PATCH",
+              headers: { "Content-Type": "application/json" },
+              credentials: "include",
+              body: JSON.stringify({ ...data, imageUrl }),
+            });
+            if (!updateRes.ok) throw new Error("Error al actualizar imagen");
+            return updateRes.json();
+          }
+          return tempPost;
+        } catch (error: any) {
+          throw error;
+        }
+      }
+
+      // Normal create without image
       const res = await fetch("/api/admin/community/posts", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify(data),
+        body: JSON.stringify({ ...data, imageUrl }),
       });
       if (!res.ok) {
         const error = await res.json();
@@ -52,12 +96,14 @@ export default function AdminCommunity() {
       }
       return res.json();
     },
-    onSuccess: (newPost) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/community/posts"] });
-      // Set the new post as editing post to show image upload option
-      setEditingPost({ post: newPost, user: null, channel: null });
-      // Keep the modal open for image upload
-      toast({ title: "Éxito", description: "Anuncio creado. Ahora puedes subir una imagen (opcional)." });
+      setFormData({ title: "", content: "", videoUrl: "", channelId: "", imageUrl: "" });
+      setSelectedImageFile(null);
+      setImagePreviewUrl("");
+      setShowCreateModal(false);
+      setEditingPost(null);
+      toast({ title: "Éxito", description: "Anuncio creado exitosamente" });
     },
     onError: (error: any) => {
       toast({ title: "Error", description: error.message, variant: "destructive" });
@@ -137,7 +183,7 @@ export default function AdminCommunity() {
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file || !editingPost?.post?.id) return;
+    if (!file) return;
 
     if (!file.type.startsWith("image/")) {
       toast({
@@ -148,6 +194,22 @@ export default function AdminCommunity() {
       return;
     }
 
+    // If we're creating a new post (no editingPost or editingPost without user), show preview locally
+    if (!editingPost?.user) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        setSelectedImageFile(file);
+        setImagePreviewUrl(event.target?.result as string);
+        toast({
+          title: "Éxito",
+          description: "Imagen seleccionada. Se subirá cuando hagas click en Crear.",
+        });
+      };
+      reader.readAsDataURL(file);
+      return;
+    }
+
+    // If we're editing an existing post, upload directly to server
     setUploadingImage(true);
     try {
       const formDataToUpload = new FormData();
@@ -219,6 +281,8 @@ export default function AdminCommunity() {
                 onClick={() => {
                   setEditingPost(null);
                   setFormData({ title: "", content: "", videoUrl: "", channelId: "", imageUrl: "" });
+                  setSelectedImageFile(null);
+                  setImagePreviewUrl("");
                   setShowCreateModal(true);
                 }}
                 className="bg-cyan-500 hover:bg-cyan-600 gap-2"
@@ -267,9 +331,9 @@ export default function AdminCommunity() {
                     <div>
                       <label className="text-sm font-medium mb-2 block">Imagen de Portada</label>
                       <div className="space-y-2">
-                        {formData.imageUrl && (
+                        {(formData.imageUrl || imagePreviewUrl) && (
                           <div className="relative w-full h-40 rounded overflow-hidden">
-                            <img src={formData.imageUrl} alt="Portada" className="w-full h-full object-cover" />
+                            <img src={formData.imageUrl || imagePreviewUrl} alt="Portada" className="w-full h-full object-cover" />
                           </div>
                         )}
                         <div className="relative">
@@ -277,7 +341,7 @@ export default function AdminCommunity() {
                             type="file"
                             accept="image/*"
                             onChange={handleImageUpload}
-                            disabled={uploadingImage || !editingPost?.post?.id}
+                            disabled={uploadingImage}
                             className="hidden"
                             id="post-image-input"
                             data-testid="input-post-image"
@@ -285,11 +349,10 @@ export default function AdminCommunity() {
                           <button
                             type="button"
                             onClick={() => document.getElementById("post-image-input")?.click()}
-                            disabled={uploadingImage || !editingPost?.post?.id}
+                            disabled={uploadingImage}
                             className="w-full bg-[#2a2a2a] border border-[#444444] rounded p-2 text-white hover:bg-[#333333] disabled:opacity-50"
-                            title={!editingPost?.post?.id ? "Primero crea el anuncio" : ""}
                           >
-                            {uploadingImage ? "Subiendo..." : !editingPost?.post?.id ? "Crea el anuncio primero" : "Seleccionar imagen"}
+                            {uploadingImage ? "Subiendo..." : "Seleccionar imagen"}
                           </button>
                         </div>
                       </div>
