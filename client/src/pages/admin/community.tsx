@@ -116,17 +116,11 @@ export default function AdminCommunity() {
       return;
     }
 
-    // Check if we're in create mode (editingPost exists but was just created)
-    const isNewPost = editingPost && !editingPost.user && !editingPost.channel;
-    
-    if (editingPost && !isNewPost) {
-      // Edit mode - update existing post
+    if (editingPost) {
       updateMutation.mutate(formData);
-    } else if (!editingPost) {
-      // Create mode - create new post
+    } else {
       createMutation.mutate(formData);
     }
-    // If isNewPost is true, do nothing - user is uploading image for newly created post
   };
 
   const handleEdit = (post: Post) => {
@@ -270,37 +264,36 @@ export default function AdminCommunity() {
                         className="bg-[#2a2a2a] border-[#444444]"
                       />
                     </div>
-                    {editingPost && (
-                      <div>
-                        <label className="text-sm font-medium mb-2 block">Imagen de Portada</label>
-                        <div className="space-y-2">
-                          {formData.imageUrl && (
-                            <div className="relative w-full h-40 rounded overflow-hidden">
-                              <img src={formData.imageUrl} alt="Portada" className="w-full h-full object-cover" />
-                            </div>
-                          )}
-                          <div className="relative">
-                            <input
-                              type="file"
-                              accept="image/*"
-                              onChange={handleImageUpload}
-                              disabled={uploadingImage}
-                              className="hidden"
-                              id="post-image-input"
-                              data-testid="input-post-image"
-                            />
-                            <button
-                              type="button"
-                              onClick={() => document.getElementById("post-image-input")?.click()}
-                              disabled={uploadingImage}
-                              className="w-full bg-[#2a2a2a] border border-[#444444] rounded p-2 text-white hover:bg-[#333333] disabled:opacity-50"
-                            >
-                              {uploadingImage ? "Subiendo..." : "Seleccionar imagen"}
-                            </button>
+                    <div>
+                      <label className="text-sm font-medium mb-2 block">Imagen de Portada</label>
+                      <div className="space-y-2">
+                        {formData.imageUrl && (
+                          <div className="relative w-full h-40 rounded overflow-hidden">
+                            <img src={formData.imageUrl} alt="Portada" className="w-full h-full object-cover" />
                           </div>
+                        )}
+                        <div className="relative">
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={handleImageUpload}
+                            disabled={uploadingImage || !editingPost?.post?.id}
+                            className="hidden"
+                            id="post-image-input"
+                            data-testid="input-post-image"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => document.getElementById("post-image-input")?.click()}
+                            disabled={uploadingImage || !editingPost?.post?.id}
+                            className="w-full bg-[#2a2a2a] border border-[#444444] rounded p-2 text-white hover:bg-[#333333] disabled:opacity-50"
+                            title={!editingPost?.post?.id ? "Primero crea el anuncio" : ""}
+                          >
+                            {uploadingImage ? "Subiendo..." : !editingPost?.post?.id ? "Crea el anuncio primero" : "Seleccionar imagen"}
+                          </button>
                         </div>
                       </div>
-                    )}
+                    </div>
                     <div>
                       <label className="text-sm font-medium mb-2 block">Canal</label>
                       <select
@@ -322,7 +315,7 @@ export default function AdminCommunity() {
                         }}
                         className="flex-1"
                       >
-                        {editingPost?.post?.id && !editingPost.post.title ? "Finalizar" : "Cancelar"}
+                        {editingPost?.post?.id && !editingPost.user ? "Finalizar" : "Cancelar"}
                       </Button>
                       <Button
                         onClick={handleSubmit}
@@ -331,7 +324,7 @@ export default function AdminCommunity() {
                       >
                         {createMutation.isPending || updateMutation.isPending ? (
                           <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : editingPost?.post?.title ? (
+                        ) : editingPost?.user ? (
                           "Actualizar"
                         ) : (
                           "Crear"
