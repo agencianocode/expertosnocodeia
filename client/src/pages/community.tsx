@@ -489,7 +489,7 @@ export default function Community() {
                                   className={cn(
                                     "text-sm px-2 py-1 rounded-full transition-all cursor-pointer",
                                     isUserReaction 
-                                      ? "bg-cyan-500 text-white ring-1 ring-cyan-600" 
+                                      ? "bg-orange-500 text-white ring-1 ring-orange-600" 
                                       : "bg-[#2a2a2a] hover:bg-[#3a3a3a]"
                                   )}
                                 >
