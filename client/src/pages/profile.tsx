@@ -45,6 +45,7 @@ export default function Profile() {
   
   // Profile image upload state
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [profileImageUrl, setProfileImageUrl] = useState<string | null>(null);
 
   // Fetch subscription info
   const { data: subscriptionInfo } = useQuery({
@@ -222,11 +223,17 @@ export default function Profile() {
 
       const data = await res.json();
       
+      // Update local state with the new image URL immediately
+      if (data.profileImageUrl) {
+        setProfileImageUrl(data.profileImageUrl);
+      }
+      
       toast({
         title: "Éxito",
         description: "Tu foto de perfil ha sido actualizada.",
       });
 
+      // Invalidate cache to refresh user data
       queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
     } catch (error: any) {
       toast({
@@ -286,7 +293,7 @@ export default function Profile() {
                   <CardContent className="p-6">
                     <div className="flex items-center gap-6">
                       <Avatar className="h-20 w-20">
-                        <AvatarImage src={(user as any)?.profileImageUrl} />
+                        <AvatarImage src={profileImageUrl || (user as any)?.profileImageUrl} />
                         <AvatarFallback className="bg-purple-600 text-white text-xl">
                           {getUserInitials()}
                         </AvatarFallback>
