@@ -317,8 +317,8 @@ export default function Community() {
                       </p>
 
                       {post.post.videoUrl && (
-                        <div className="w-full mb-3 rounded overflow-hidden bg-black border-4 border-cyan-500">
-                          <div style={{ position: "relative", paddingBottom: "56.25%", height: 0 }}>
+                        <div className="w-full mb-3 rounded overflow-hidden bg-black border-2 border-cyan-500">
+                          <div style={{ position: "relative", paddingBottom: "56.25%", height: 0, maxHeight: "240px" }}>
                             <iframe
                               style={{
                                 position: "absolute",
