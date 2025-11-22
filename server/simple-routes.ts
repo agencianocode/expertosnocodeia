@@ -2068,11 +2068,11 @@ export function registerSimpleRoutes(app: Express): Server {
   app.patch("/api/admin/community/posts/:postId", simpleAdminAuth, isAdmin, async (req: Request, res: Response) => {
     try {
       const { postId } = req.params;
-      const { title, content, imageUrl, videoUrl } = req.body;
+      const { title, content, imageUrl, videoUrl, contentBlocks } = req.body;
 
       const [updated] = await db
         .update(communityPosts)
-        .set({ title, content, imageUrl, videoUrl, updatedAt: new Date() })
+        .set({ title, content, imageUrl, videoUrl, contentBlocks, updatedAt: new Date() })
         .where(eq(communityPosts.id, postId))
         .returning();
 
