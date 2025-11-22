@@ -263,50 +263,76 @@ export default function Community() {
                   <p>No hay anuncios. Vuelve pronto.</p>
                 </div>
               ) : (
-                posts.map((post) => (
-                  <div
-                    key={post.post.id}
-                    className={cn(
-                      "p-4 rounded-lg border border-[#333333] bg-[#1a1a1a] cursor-pointer hover:border-[#555555] transition-colors",
-                      selectedPost?.post.id === post.post.id && "border-cyan-500 bg-[#1a2a2a]"
-                    )}
-                    data-testid={`post-${post.post.id}`}
-                  >
-                    {post.post.imageUrl && (
-                      <img src={post.post.imageUrl} alt="" className="w-full h-40 object-cover rounded mb-3" />
-                    )}
-                    <div className="flex items-center gap-2 mb-2">
-                      <Avatar className="h-8 w-8">
-                        <AvatarImage src={post.user?.profileImageUrl || undefined} />
-                        <AvatarFallback>{(post.user?.firstName?.charAt(0) || "U").toUpperCase()}</AvatarFallback>
-                      </Avatar>
-                      <div className="text-sm">
-                        <p className="font-semibold text-white">
-                          {post.user?.firstName} {post.user?.lastName}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {new Date(post.post.createdAt).toLocaleDateString("es-ES")}
-                        </p>
+                posts.map((post) => {
+                  const postCommentCount = comments.filter(c => c.comment.postId === post.post.id).length;
+                  const postComments = comments.filter(c => c.comment.postId === post.post.id);
+                  
+                  return (
+                    <div
+                      key={post.post.id}
+                      className={cn(
+                        "p-4 rounded-lg border border-[#333333] bg-[#1a1a1a] cursor-pointer hover:border-[#555555] transition-colors",
+                        selectedPost?.post.id === post.post.id && "border-cyan-500 bg-[#1a2a2a]"
+                      )}
+                      data-testid={`post-${post.post.id}`}
+                    >
+                      {/* Fecha arriba */}
+                      <p className="text-xs text-muted-foreground mb-2">
+                        {new Date(post.post.createdAt).toLocaleDateString("es-ES", { year: "numeric", month: "long", day: "numeric" })}
+                      </p>
+
+                      {post.post.imageUrl && (
+                        <img src={post.post.imageUrl} alt="" className="w-full h-40 object-cover rounded mb-3" />
+                      )}
+
+                      {/* Header con nombre y hora */}
+                      <div className="flex items-center gap-2 mb-3">
+                        <Avatar className="h-8 w-8">
+                          <AvatarImage src={post.user?.profileImageUrl || undefined} />
+                          <AvatarFallback>{(post.user?.firstName?.charAt(0) || "U").toUpperCase()}</AvatarFallback>
+                        </Avatar>
+                        <div className="text-sm">
+                          <p className="font-semibold text-white">
+                            {post.user?.firstName} {post.user?.lastName}{" "}
+                            <span className="text-xs text-muted-foreground font-normal">
+                              {new Date(post.post.createdAt).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })}
+                            </span>
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Contenido */}
+                      <h3 className="font-bold text-white mb-2">{post.post.title}</h3>
+                      <p className="text-sm text-muted-foreground mb-3 line-clamp-2">{post.post.content}</p>
+
+                      {/* Acciones */}
+                      <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                        <div className="flex items-center gap-1">
+                          <Heart className="h-4 w-4" />
+                          {post.post.likes}
+                        </div>
+                        <button
+                          onClick={() => setSelectedPost(post)}
+                          className="flex items-center gap-2 hover:text-cyan-500 transition-colors"
+                          data-testid={`view-comments-${post.post.id}`}
+                        >
+                          {/* Avatares de quienes comentaron */}
+                          {postCommentCount > 0 && (
+                            <div className="flex items-center -space-x-2">
+                              {postComments.slice(0, 3).map((comment, idx) => (
+                                <Avatar key={idx} className="h-5 w-5 border border-[#1a1a1a]">
+                                  <AvatarImage src={comment.user?.profileImageUrl || undefined} />
+                                  <AvatarFallback className="text-xs">{(comment.user?.firstName?.charAt(0) || "U").toUpperCase()}</AvatarFallback>
+                                </Avatar>
+                              ))}
+                            </div>
+                          )}
+                          <span>{postCommentCount} respuesta{postCommentCount !== 1 ? "s" : ""}</span>
+                        </button>
                       </div>
                     </div>
-                    <h3 className="font-bold text-white mb-2">{post.post.title}</h3>
-                    <p className="text-sm text-muted-foreground mb-3 line-clamp-2">{post.post.content}</p>
-                    <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                      <div className="flex items-center gap-1">
-                        <Heart className="h-4 w-4" />
-                        {post.post.likes}
-                      </div>
-                      <button
-                        onClick={() => setSelectedPost(post)}
-                        className="flex items-center gap-1 hover:text-cyan-500 transition-colors"
-                        data-testid={`view-comments-${post.post.id}`}
-                      >
-                        <MessageCircle className="h-4 w-4" />
-                        {comments.filter(c => c.comment.postId === post.post.id).length}
-                      </button>
-                    </div>
-                  </div>
-                ))
+                  );
+                })
               )}
             </div>
           ) : (
@@ -319,7 +345,14 @@ export default function Community() {
         {/* Right Sidebar - Comments (only for Anuncios when post selected) */}
         {isAnunciosChannel && selectedPost && (
           <div className="hidden lg:flex w-1/3 flex-col border-l border-[#333333] bg-[#1a1a1a] overflow-hidden">
-            {/* Header */}
+            {/* Header con fecha del post */}
+            <div className="border-b border-[#333333] px-6 py-4 text-center">
+              <p className="text-xs text-muted-foreground mb-3">
+                {new Date(selectedPost.post.createdAt).toLocaleDateString("es-ES", { year: "numeric", month: "long", day: "numeric" })}
+              </p>
+            </div>
+
+            {/* Comments Header */}
             <div className="border-b border-[#333333] px-6 py-4 flex items-center justify-between">
               <div>
                 <h2 className="text-lg font-bold text-white">Comentarios</h2>
