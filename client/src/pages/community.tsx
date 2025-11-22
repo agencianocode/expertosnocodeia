@@ -73,6 +73,8 @@ export default function Community() {
   const [isAnunciosChannel, setIsAnunciosChannel] = useState(false);
   const [postCommentCounts, setPostCommentCounts] = useState<{ [postId: string]: number }>({});
   const [allPostComments, setAllPostComments] = useState<{ [postId: string]: Comment[] }>({});
+  const [openReactionPostId, setOpenReactionPostId] = useState<string | null>(null);
+  const [postReactions, setPostReactions] = useState<{ [postId: string]: { emoji: string; count: number }[] }>({});
 
   // Mutation for adding reactions
   const addReactionMutation = useMutation({
@@ -88,9 +90,14 @@ export default function Community() {
       }
       return res.json();
     },
-    onSuccess: () => {
-      // Optionally refresh posts or reactions
-      queryClient.invalidateQueries({ queryKey: ["/api/community/channels"] });
+    onSuccess: (data, variables) => {
+      // Close the reaction selector
+      setOpenReactionPostId(null);
+      // Update reactions display
+      setPostReactions(prev => ({
+        ...prev,
+        [variables.postId]: (prev[variables.postId] || []).concat({ emoji: variables.emoji, count: 1 })
+      }));
       toast({ title: "Éxito", description: "Reacción agregada" });
     },
     onError: (error: any) => {
@@ -388,30 +395,46 @@ export default function Community() {
                       <div className="text-sm text-muted-foreground mb-3 whitespace-pre-wrap break-words">{post.post.content}</div>
 
                       {/* Acciones */}
-                      <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                        <div className="relative group">
-                          <button className="flex items-center gap-1 hover:text-cyan-500 transition-colors">
+                      <div className="flex items-center gap-4 text-xs text-muted-foreground flex-wrap">
+                        <div className="relative">
+                          <button 
+                            onClick={() => setOpenReactionPostId(openReactionPostId === post.post.id ? null : post.post.id)}
+                            className="flex items-center gap-1 hover:text-cyan-500 transition-colors"
+                          >
                             <Smile className="h-4 w-4" />
                             Reaccionar
                           </button>
-                          {/* Emoji selector popup */}
-                          <div className="absolute bottom-full left-0 mb-2 bg-[#2a2a2a] border border-[#444444] rounded-lg p-2 hidden group-hover:grid grid-cols-5 gap-1 w-48 z-50">
-                            {["👍", "❤️", "😂", "😮", "🎉", "🔥", "🍊", "🌟", "👏", "🎯"].map((emoji) => (
-                              <button
-                                key={emoji}
-                                onClick={() => {
-                                  addReactionMutation.mutate({
-                                    postId: post.post.id,
-                                    emoji,
-                                  });
-                                }}
-                                className="text-2xl hover:scale-125 transition-transform"
-                              >
-                                {emoji}
-                              </button>
+                          {/* Emoji selector popup - visible when open */}
+                          {openReactionPostId === post.post.id && (
+                            <div className="absolute bottom-full left-0 mb-2 bg-[#2a2a2a] border border-[#444444] rounded-lg p-2 grid grid-cols-5 gap-1 w-56 z-50 shadow-lg">
+                              {["👍", "❤️", "😂", "😮", "🎉", "🔥", "🍊", "🌟", "👏", "🎯"].map((emoji) => (
+                                <button
+                                  key={emoji}
+                                  onClick={() => {
+                                    addReactionMutation.mutate({
+                                      postId: post.post.id,
+                                      emoji,
+                                    });
+                                  }}
+                                  className="text-2xl hover:scale-125 transition-transform cursor-pointer"
+                                >
+                                  {emoji}
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                        
+                        {/* Show reactions */}
+                        {postReactions[post.post.id] && postReactions[post.post.id].length > 0 && (
+                          <div className="flex items-center gap-1">
+                            {postReactions[post.post.id].map((reaction, idx) => (
+                              <span key={idx} className="text-sm bg-[#2a2a2a] px-2 py-1 rounded-full">
+                                {reaction.emoji}
+                              </span>
                             ))}
                           </div>
-                        </div>
+                        )}
                         <button
                           onClick={() => {
                             if (selectedPost?.post.id === post.post.id) {
