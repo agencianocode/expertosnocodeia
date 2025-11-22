@@ -871,6 +871,18 @@ export const communityPostComments = pgTable("community_post_comments", {
   index("idx_post_comments_user").on(table.userId),
 ]);
 
+// Community post reactions
+export const communityPostReactions = pgTable("community_post_reactions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  postId: varchar("post_id").references(() => communityPosts.id, { onDelete: "cascade" }).notNull(),
+  userId: varchar("user_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
+  emoji: varchar("emoji").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("idx_post_reactions_post").on(table.postId),
+  index("idx_post_reactions_user").on(table.userId),
+]);
+
 // ========================================
 // RELATIONS
 // ========================================
@@ -957,6 +969,7 @@ export const communityPostsRelations = relations(communityPosts, ({ one, many })
     references: [users.id],
   }),
   comments: many(communityPostComments),
+  reactions: many(communityPostReactions),
 }));
 
 export const communityPostCommentsRelations = relations(communityPostComments, ({ one }) => ({
@@ -966,6 +979,17 @@ export const communityPostCommentsRelations = relations(communityPostComments, (
   }),
   user: one(users, {
     fields: [communityPostComments.userId],
+    references: [users.id],
+  }),
+}));
+
+export const communityPostReactionsRelations = relations(communityPostReactions, ({ one }) => ({
+  post: one(communityPosts, {
+    fields: [communityPostReactions.postId],
+    references: [communityPosts.id],
+  }),
+  user: one(users, {
+    fields: [communityPostReactions.userId],
     references: [users.id],
   }),
 }));

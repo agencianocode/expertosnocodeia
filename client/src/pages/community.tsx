@@ -4,10 +4,12 @@ import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Send, Loader2, Menu, Heart, MessageCircle, X } from "lucide-react";
+import { Send, Loader2, Menu, Heart, MessageCircle, X, Smile } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Sidebar from "@/components/layout/sidebar";
 import MobileNav from "@/components/layout/mobile-nav";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 
 interface Channel {
   id: string;
@@ -26,6 +28,7 @@ interface Post {
     title: string;
     content: string;
     imageUrl?: string;
+    videoUrl?: string;
     likes: number;
     createdAt: string;
     updatedAt: string;
@@ -70,6 +73,30 @@ export default function Community() {
   const [isAnunciosChannel, setIsAnunciosChannel] = useState(false);
   const [postCommentCounts, setPostCommentCounts] = useState<{ [postId: string]: number }>({});
   const [allPostComments, setAllPostComments] = useState<{ [postId: string]: Comment[] }>({});
+
+  // Mutation for adding reactions
+  const addReactionMutation = useMutation({
+    mutationFn: async ({ postId, emoji }: { postId: string; emoji: string }) => {
+      const res = await fetch(`/api/community/posts/${postId}/reactions`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ emoji }),
+      });
+      if (!res.ok) {
+        throw new Error("Failed to add reaction");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      // Optionally refresh posts or reactions
+      queryClient.invalidateQueries({ queryKey: ["/api/community/channels"] });
+      toast({ title: "Éxito", description: "Reacción agregada" });
+    },
+    onError: (error: any) => {
+      toast({ title: "Error", description: error.message || "No se pudo agregar la reacción", variant: "destructive" });
+    },
+  });
 
   // Fetch channels on mount
   useEffect(() => {
@@ -362,9 +389,28 @@ export default function Community() {
 
                       {/* Acciones */}
                       <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                        <div className="flex items-center gap-1">
-                          <Heart className="h-4 w-4" />
-                          {post.post.likes}
+                        <div className="relative group">
+                          <button className="flex items-center gap-1 hover:text-cyan-500 transition-colors">
+                            <Smile className="h-4 w-4" />
+                            Reaccionar
+                          </button>
+                          {/* Emoji selector popup */}
+                          <div className="absolute bottom-full left-0 mb-2 bg-[#2a2a2a] border border-[#444444] rounded-lg p-2 hidden group-hover:grid grid-cols-5 gap-1 w-48 z-50">
+                            {["👍", "❤️", "😂", "😮", "🎉", "🔥", "🍊", "🌟", "👏", "🎯"].map((emoji) => (
+                              <button
+                                key={emoji}
+                                onClick={() => {
+                                  addReactionMutation.mutate({
+                                    postId: post.post.id,
+                                    emoji,
+                                  });
+                                }}
+                                className="text-2xl hover:scale-125 transition-transform"
+                              >
+                                {emoji}
+                              </button>
+                            ))}
+                          </div>
                         </div>
                         <button
                           onClick={() => {

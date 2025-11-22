@@ -9,10 +9,10 @@ import { SupabaseStorageService } from "./supabaseStorage";
 import { ObjectStorageService, ObjectNotFoundError, objectStorageClient, parseObjectPath } from "./objectStorage";
 import { supabaseAuth, optionalSupabaseAuth, supabaseAdminAuth, AuthenticatedRequest } from "./supabaseAuth";
 import { setupSupabaseAuthRoutes } from "./supabaseAuthRoutes";
-import { insertLessonResourceSchema, updateRoomSchema, userSavedCourses, courses, communityChannels, communityMessages, communityPosts, communityPostComments, users, rooms } from "../shared/schema";
+import { insertLessonResourceSchema, updateRoomSchema, userSavedCourses, courses, communityChannels, communityMessages, communityPosts, communityPostComments, communityPostReactions, users, rooms } from "../shared/schema";
 import { sendNewCommentNotification, getAdminNotificationEmails } from "./emailNotifications";
 import { db } from "./db";
-import { eq, desc, and } from "drizzle-orm";
+import { eq, desc, and, sql } from "drizzle-orm";
 
 // Legacy auth fallback (will be removed after migration)
 const legacyAuth = async (req: any, res: Response, next: any) => {
@@ -2068,6 +2068,82 @@ export function registerSimpleRoutes(app: Express): Server {
     } catch (error) {
       console.error("Error creating comment:", error);
       res.status(500).json({ message: "Failed to create comment" });
+    }
+  });
+
+  // Endpoint to add reaction to post
+  app.post("/api/community/posts/:postId/reactions", simpleAdminAuth, async (req: Request, res: Response) => {
+    try {
+      const { postId } = req.params;
+      const { emoji } = req.body;
+      const userId = (req as any).user?.claims?.sub || (req as any).user?.id;
+
+      if (!emoji) {
+        return res.status(400).json({ message: "Emoji is required" });
+      }
+
+      if (!userId) {
+        return res.status(401).json({ message: "Usuario no autenticado" });
+      }
+
+      // Check if user already reacted with this emoji
+      const existing = await db
+        .select()
+        .from(communityPostReactions)
+        .where(
+          and(
+            eq(communityPostReactions.postId, postId),
+            eq(communityPostReactions.userId, userId),
+            eq(communityPostReactions.emoji, emoji)
+          )
+        );
+
+      if (existing.length > 0) {
+        // Remove reaction if already exists
+        await db
+          .delete(communityPostReactions)
+          .where(eq(communityPostReactions.id, existing[0].id));
+      } else {
+        // Add new reaction
+        await db.insert(communityPostReactions).values({
+          postId,
+          userId,
+          emoji,
+        });
+      }
+
+      // Return all reactions for this post
+      const reactions = await db
+        .select()
+        .from(communityPostReactions)
+        .where(eq(communityPostReactions.postId, postId));
+
+      res.json(reactions);
+    } catch (error) {
+      console.error("Error adding reaction:", error);
+      res.status(500).json({ message: "Failed to add reaction" });
+    }
+  });
+
+  // Endpoint to get reactions for a post
+  app.get("/api/community/posts/:postId/reactions", async (req: Request, res: Response) => {
+    try {
+      const { postId } = req.params;
+
+      const reactions = await db
+        .select({
+          emoji: communityPostReactions.emoji,
+          count: sql<number>`count(*)`.mapWith(Number),
+          users: sql<string[]>`array_agg(${communityPostReactions.userId})`.mapWith(el => (el as string[]) || []),
+        })
+        .from(communityPostReactions)
+        .where(eq(communityPostReactions.postId, postId))
+        .groupBy(communityPostReactions.emoji);
+
+      res.json(reactions);
+    } catch (error) {
+      console.error("Error fetching reactions:", error);
+      res.status(500).json({ message: "Failed to fetch reactions" });
     }
   });
 
