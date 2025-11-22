@@ -9,7 +9,7 @@ import { SupabaseStorageService } from "./supabaseStorage";
 import { ObjectStorageService, ObjectNotFoundError, objectStorageClient, parseObjectPath } from "./objectStorage";
 import { supabaseAuth, optionalSupabaseAuth, supabaseAdminAuth, AuthenticatedRequest } from "./supabaseAuth";
 import { setupSupabaseAuthRoutes } from "./supabaseAuthRoutes";
-import { insertLessonResourceSchema, updateRoomSchema, userSavedCourses, courses, communityChannels, communityMessages, communityPosts, communityPostComments, communityPostReactions, users, rooms } from "../shared/schema";
+import { insertLessonResourceSchema, updateRoomSchema, userSavedCourses, courses, communityChannels, communityMessages, communityPosts, communityPostComments, communityPostReactions, users, rooms, userNotificationPreferences } from "../shared/schema";
 import { sendNewCommentNotification, getAdminNotificationEmails } from "./emailNotifications";
 import { db } from "./db";
 import { eq, desc, and, sql } from "drizzle-orm";
@@ -1946,7 +1946,44 @@ export function registerSimpleRoutes(app: Express): Server {
     try {
       const { channelId } = req.params;
       const limit = req.query.limit ? parseInt(req.query.limit as string) : 50;
-      const posts = await storage.getChannelPosts(channelId, limit);
+      const sort = (req.query.sort as string) || "recent"; // recent, activity, oldest, popular, likes, alphabetical
+      
+      // Determine sort order
+      let orderClause: any;
+      switch (sort) {
+        case "oldest":
+          orderClause = communityPosts.createdAt;
+          break;
+        case "popular":
+        case "likes":
+          orderClause = desc(communityPosts.likes);
+          break;
+        case "alphabetical":
+          orderClause = communityPosts.title;
+          break;
+        case "activity":
+        case "recent":
+        default:
+          orderClause = desc(communityPosts.updatedAt);
+          break;
+      }
+
+      const posts = await db
+        .select({
+          post: communityPosts,
+          user: {
+            id: users.id,
+            firstName: users.firstName,
+            lastName: users.lastName,
+            profileImageUrl: users.profileImageUrl,
+          },
+        })
+        .from(communityPosts)
+        .leftJoin(users, eq(communityPosts.userId, users.id))
+        .where(eq(communityPosts.channelId, channelId))
+        .orderBy(orderClause)
+        .limit(limit);
+
       res.json(posts);
     } catch (error) {
       console.error("Error fetching posts:", error);
@@ -2256,6 +2293,84 @@ export function registerSimpleRoutes(app: Express): Server {
     } catch (error) {
       console.error("Error fetching user reactions:", error);
       res.status(500).json({ message: "Failed to fetch user reactions" });
+    }
+  });
+
+  // Notification preferences endpoints
+  app.get("/api/user/notification-preferences", simpleAdminAuth, async (req: Request, res: Response) => {
+    try {
+      const userId = (req as any).user?.claims?.sub || (req as any).user?.id;
+
+      if (!userId) {
+        return res.status(401).json({ message: "Usuario no autenticado" });
+      }
+
+      let prefs = await db
+        .select()
+        .from(userNotificationPreferences)
+        .where(eq(userNotificationPreferences.userId, userId));
+
+      // If no preferences exist, create defaults
+      if (prefs.length === 0) {
+        const newPrefs = await db.insert(userNotificationPreferences).values({
+          userId,
+          emailNotifications: true,
+          inAppNotifications: true,
+          mobileNotifications: false,
+        }).returning();
+        return res.json(newPrefs[0]);
+      }
+
+      res.json(prefs[0]);
+    } catch (error) {
+      console.error("Error fetching notification preferences:", error);
+      res.status(500).json({ message: "Failed to fetch notification preferences" });
+    }
+  });
+
+  app.patch("/api/user/notification-preferences", simpleAdminAuth, async (req: Request, res: Response) => {
+    try {
+      const userId = (req as any).user?.claims?.sub || (req as any).user?.id;
+      const { emailNotifications, inAppNotifications, mobileNotifications } = req.body;
+
+      if (!userId) {
+        return res.status(401).json({ message: "Usuario no autenticado" });
+      }
+
+      // Check if preferences exist
+      const existing = await db
+        .select()
+        .from(userNotificationPreferences)
+        .where(eq(userNotificationPreferences.userId, userId));
+
+      let result;
+      if (existing.length === 0) {
+        // Create new preferences
+        result = await db.insert(userNotificationPreferences).values({
+          userId,
+          emailNotifications: emailNotifications !== undefined ? emailNotifications : true,
+          inAppNotifications: inAppNotifications !== undefined ? inAppNotifications : true,
+          mobileNotifications: mobileNotifications !== undefined ? mobileNotifications : false,
+          updatedAt: new Date(),
+        }).returning();
+      } else {
+        // Update existing preferences
+        result = await db
+          .update(userNotificationPreferences)
+          .set({
+            emailNotifications: emailNotifications !== undefined ? emailNotifications : existing[0].emailNotifications,
+            inAppNotifications: inAppNotifications !== undefined ? inAppNotifications : existing[0].inAppNotifications,
+            mobileNotifications: mobileNotifications !== undefined ? mobileNotifications : existing[0].mobileNotifications,
+            updatedAt: new Date(),
+          })
+          .where(eq(userNotificationPreferences.userId, userId))
+          .returning();
+      }
+
+      res.json(result[0]);
+    } catch (error) {
+      console.error("Error updating notification preferences:", error);
+      res.status(500).json({ message: "Failed to update notification preferences" });
     }
   });
 

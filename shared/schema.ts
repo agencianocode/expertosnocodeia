@@ -883,6 +883,19 @@ export const communityPostReactions = pgTable("community_post_reactions", {
   index("idx_post_reactions_user").on(table.userId),
 ]);
 
+// User notification preferences
+export const userNotificationPreferences = pgTable("user_notification_preferences", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").references(() => users.id, { onDelete: "cascade" }).notNull().unique(),
+  emailNotifications: boolean("email_notifications").default(true),
+  inAppNotifications: boolean("in_app_notifications").default(true),
+  mobileNotifications: boolean("mobile_notifications").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("idx_notification_prefs_user").on(table.userId),
+]);
+
 // ========================================
 // RELATIONS
 // ========================================
@@ -994,6 +1007,13 @@ export const communityPostReactionsRelations = relations(communityPostReactions,
   }),
 }));
 
+export const userNotificationPreferencesRelations = relations(userNotificationPreferences, ({ one }) => ({
+  user: one(users, {
+    fields: [userNotificationPreferences.userId],
+    references: [users.id],
+  }),
+}));
+
 // ========================================
 // INSERT SCHEMAS & TYPES
 // ========================================
@@ -1059,6 +1079,12 @@ export const insertCommunityPostCommentSchema = createInsertSchema(communityPost
   updatedAt: true,
 });
 
+export const insertUserNotificationPreferencesSchema = createInsertSchema(userNotificationPreferences).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 // Update Schemas (for PATCH operations)
 export const updateRoomSchema = insertRoomSchema.partial().refine(
   (data) => Object.keys(data).length > 0,
@@ -1077,6 +1103,7 @@ export type CommunityMessage = typeof communityMessages.$inferSelect;
 export type MessageReaction = typeof messageReactions.$inferSelect;
 export type CommunityPost = typeof communityPosts.$inferSelect;
 export type CommunityPostComment = typeof communityPostComments.$inferSelect;
+export type UserNotificationPreference = typeof userNotificationPreferences.$inferSelect;
 
 // Insert Types
 export type InsertRoom = z.infer<typeof insertRoomSchema>;
@@ -1090,6 +1117,7 @@ export type InsertCommunityMessage = z.infer<typeof insertCommunityMessageSchema
 export type InsertMessageReaction = z.infer<typeof insertMessageReactionSchema>;
 export type InsertCommunityPost = z.infer<typeof insertCommunityPostSchema>;
 export type InsertCommunityPostComment = z.infer<typeof insertCommunityPostCommentSchema>;
+export type InsertUserNotificationPreference = z.infer<typeof insertUserNotificationPreferencesSchema>;
 
 // Update Types
 export type UpdateRoom = z.infer<typeof updateRoomSchema>;

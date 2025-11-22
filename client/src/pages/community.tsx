@@ -4,12 +4,28 @@ import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Send, Loader2, Menu, Heart, MessageCircle, X, Smile } from "lucide-react";
+import { Send, Loader2, Menu, Heart, MessageCircle, X, Smile, ChevronDown, MoreVertical, Bell } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Sidebar from "@/components/layout/sidebar";
 import MobileNav from "@/components/layout/mobile-nav";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 
 interface Channel {
   id: string;
@@ -77,6 +93,13 @@ export default function Community() {
   const [postReactions, setPostReactions] = useState<{ [postId: string]: { emoji: string; count: number }[] }>({});
   const [userEmojis, setUserEmojis] = useState<{ [postId: string]: string[] }>({});
   const [allReactions, setAllReactions] = useState<{ [postId: string]: { emoji: string; count: number; users: string[] }[] }>({});
+  const [sortBy, setSortBy] = useState("recent");
+  const [notificationDialogOpen, setNotificationDialogOpen] = useState(false);
+  const [notificationPrefs, setNotificationPrefs] = useState({
+    emailNotifications: true,
+    inAppNotifications: true,
+    mobileNotifications: false,
+  });
 
   // Mutation for adding/removing reactions
   const addReactionMutation = useMutation({
@@ -136,6 +159,31 @@ export default function Community() {
     fetchChannels();
   }, []);
 
+  // Load notification preferences on mount
+  useEffect(() => {
+    const loadNotificationPrefs = async () => {
+      try {
+        const res = await fetch("/api/user/notification-preferences", {
+          credentials: "include",
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setNotificationPrefs({
+            emailNotifications: data.emailNotifications ?? true,
+            inAppNotifications: data.inAppNotifications ?? true,
+            mobileNotifications: data.mobileNotifications ?? false,
+          });
+        }
+      } catch (error) {
+        console.error("Error loading notification preferences:", error);
+      }
+    };
+
+    if (user) {
+      loadNotificationPrefs();
+    }
+  }, [user]);
+
   // Fetch content when channel changes
   useEffect(() => {
     if (!activeChannel) return;
@@ -146,8 +194,8 @@ export default function Community() {
     const fetchContent = async () => {
       try {
         if (isAnuncios) {
-          // Fetch posts for announcements channel
-          const res = await fetch(`/api/community/channels/${activeChannel.id}/posts?limit=50`);
+          // Fetch posts for announcements channel with sorting
+          const res = await fetch(`/api/community/channels/${activeChannel.id}/posts?limit=50&sort=${sortBy}`);
           const data = await res.json();
           const postsData = Array.isArray(data) ? data : [];
           setPosts(postsData);
@@ -208,7 +256,7 @@ export default function Community() {
     };
 
     fetchContent();
-  }, [activeChannel]);
+  }, [activeChannel, sortBy]);
 
   // Fetch comments when post is selected
   useEffect(() => {
@@ -337,20 +385,157 @@ export default function Community() {
           selectedPost && isAnunciosChannel ? "lg:w-1/2" : ""
         )}>
           {/* Header */}
-          <div className="border-b border-[#333333] bg-[#1a1a1a] px-6 py-4 flex items-center gap-4">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setChannelsSidebarOpen(!channelsSidebarOpen)}
-              className="lg:hidden"
-              data-testid="toggle-channels-button"
-            >
-              <Menu className="h-5 w-5" />
-            </Button>
-            <div className="flex-1">
-              <h1 className="text-xl font-bold text-white">{activeChannel?.name}</h1>
-              {activeChannel?.description && <p className="text-xs text-muted-foreground mt-1">{activeChannel.description}</p>}
+          <div className="border-b border-[#333333] bg-[#1a1a1a] px-6 py-4 flex items-center justify-between gap-4">
+            <div className="flex items-center gap-4 flex-1">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setChannelsSidebarOpen(!channelsSidebarOpen)}
+                className="lg:hidden"
+                data-testid="toggle-channels-button"
+              >
+                <Menu className="h-5 w-5" />
+              </Button>
+              <div className="flex-1">
+                <h1 className="text-xl font-bold text-white">{activeChannel?.name}</h1>
+                {activeChannel?.description && <p className="text-xs text-muted-foreground mt-1">{activeChannel.description}</p>}
+              </div>
             </div>
+
+            {/* Sorting and Menu - only for Anuncios channel */}
+            {isAnunciosChannel && (
+              <div className="flex items-center gap-2">
+                {/* Sort Dropdown */}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="sm" className="text-xs gap-1">
+                      El último
+                      <ChevronDown className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-40">
+                    <DropdownMenuItem onClick={() => setSortBy("recent")} className={sortBy === "recent" ? "bg-[#333333]" : ""}>
+                      Más reciente
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setSortBy("activity")} className={sortBy === "activity" ? "bg-[#333333]" : ""}>
+                      Nueva actividad
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setSortBy("oldest")} className={sortBy === "oldest" ? "bg-[#333333]" : ""}>
+                      Más antiguo
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setSortBy("popular")} className={sortBy === "popular" ? "bg-[#333333]" : ""}>
+                      Popular
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setSortBy("likes")} className={sortBy === "likes" ? "bg-[#333333]" : ""}>
+                      Me gusta
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setSortBy("alphabetical")} className={sortBy === "alphabetical" ? "bg-[#333333]" : ""}>
+                      Alfabético
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+
+                {/* Notification Preferences Menu */}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="sm" className="p-2" data-testid="notification-menu">
+                      <MoreVertical className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-56">
+                    <Dialog open={notificationDialogOpen} onOpenChange={setNotificationDialogOpen}>
+                      <DialogTrigger asChild>
+                        <button className="w-full text-left px-2 py-2 text-sm hover:bg-[#333333] flex items-center gap-2 cursor-pointer rounded">
+                          <Bell className="h-4 w-4" />
+                          Mi preferencia de notificaciones
+                        </button>
+                      </DialogTrigger>
+                      <DialogContent className="bg-[#2a2a2a] border-[#444444] text-white">
+                        <DialogHeader>
+                          <DialogTitle>Preferencias de Notificaciones</DialogTitle>
+                          <DialogDescription className="text-muted-foreground">
+                            Elige cómo deseas recibir notificaciones
+                          </DialogDescription>
+                        </DialogHeader>
+                        <div className="space-y-4 py-4">
+                          <div className="flex items-center space-x-3">
+                            <Checkbox
+                              id="email-notif"
+                              checked={notificationPrefs.emailNotifications}
+                              onCheckedChange={(checked) => {
+                                setNotificationPrefs(prev => ({
+                                  ...prev,
+                                  emailNotifications: checked as boolean
+                                }));
+                              }}
+                              className="border-[#555555]"
+                            />
+                            <Label htmlFor="email-notif" className="cursor-pointer">
+                              Notificaciones por Email
+                            </Label>
+                          </div>
+                          <div className="flex items-center space-x-3">
+                            <Checkbox
+                              id="app-notif"
+                              checked={notificationPrefs.inAppNotifications}
+                              onCheckedChange={(checked) => {
+                                setNotificationPrefs(prev => ({
+                                  ...prev,
+                                  inAppNotifications: checked as boolean
+                                }));
+                              }}
+                              className="border-[#555555]"
+                            />
+                            <Label htmlFor="app-notif" className="cursor-pointer">
+                              Notificaciones en la App
+                            </Label>
+                          </div>
+                          <div className="flex items-center space-x-3">
+                            <Checkbox
+                              id="mobile-notif"
+                              checked={notificationPrefs.mobileNotifications}
+                              onCheckedChange={(checked) => {
+                                setNotificationPrefs(prev => ({
+                                  ...prev,
+                                  mobileNotifications: checked as boolean
+                                }));
+                              }}
+                              className="border-[#555555]"
+                            />
+                            <Label htmlFor="mobile-notif" className="cursor-pointer">
+                              Notificaciones Móvil
+                            </Label>
+                          </div>
+                          <Button
+                            className="w-full bg-cyan-500 hover:bg-cyan-600 text-black font-semibold mt-6"
+                            onClick={async () => {
+                              try {
+                                const res = await fetch("/api/user/notification-preferences", {
+                                  method: "PATCH",
+                                  headers: { "Content-Type": "application/json" },
+                                  credentials: "include",
+                                  body: JSON.stringify(notificationPrefs),
+                                });
+                                if (res.ok) {
+                                  toast({ title: "Éxito", description: "Preferencias guardadas" });
+                                  setNotificationDialogOpen(false);
+                                } else {
+                                  toast({ title: "Error", description: "No se pudieron guardar las preferencias", variant: "destructive" });
+                                }
+                              } catch (error) {
+                                toast({ title: "Error", description: "Error al guardar preferencias", variant: "destructive" });
+                              }
+                            }}
+                          >
+                            Guardar Preferencias
+                          </Button>
+                        </div>
+                      </DialogContent>
+                    </Dialog>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            )}
           </div>
 
           {/* Posts Feed - Only for Anuncios channel */}
