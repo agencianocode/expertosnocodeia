@@ -52,11 +52,12 @@ export default function AdminCommunity() {
       }
       return res.json();
     },
-    onSuccess: () => {
+    onSuccess: (newPost) => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/community/posts"] });
-      setFormData({ title: "", content: "", videoUrl: "", channelId: "", imageUrl: "" });
-      setShowCreateModal(false);
-      toast({ title: "Éxito", description: "Anuncio creado" });
+      // Set the new post as editing post to show image upload option
+      setEditingPost({ post: newPost, user: null, channel: null });
+      // Keep the modal open for image upload
+      toast({ title: "Éxito", description: "Anuncio creado. Ahora puedes subir una imagen (opcional)." });
     },
     onError: (error: any) => {
       toast({ title: "Error", description: error.message, variant: "destructive" });
@@ -115,11 +116,17 @@ export default function AdminCommunity() {
       return;
     }
 
-    if (editingPost) {
+    // Check if we're in create mode (editingPost exists but was just created)
+    const isNewPost = editingPost && !editingPost.user && !editingPost.channel;
+    
+    if (editingPost && !isNewPost) {
+      // Edit mode - update existing post
       updateMutation.mutate(formData);
-    } else {
+    } else if (!editingPost) {
+      // Create mode - create new post
       createMutation.mutate(formData);
     }
+    // If isNewPost is true, do nothing - user is uploading image for newly created post
   };
 
   const handleEdit = (post: Post) => {
@@ -308,10 +315,14 @@ export default function AdminCommunity() {
                     <div className="flex gap-2">
                       <Button
                         variant="outline"
-                        onClick={() => setShowCreateModal(false)}
+                        onClick={() => {
+                          setShowCreateModal(false);
+                          setEditingPost(null);
+                          setFormData({ title: "", content: "", videoUrl: "", channelId: "", imageUrl: "" });
+                        }}
                         className="flex-1"
                       >
-                        Cancelar
+                        {editingPost?.post?.id && !editingPost.post.title ? "Finalizar" : "Cancelar"}
                       </Button>
                       <Button
                         onClick={handleSubmit}
@@ -320,7 +331,7 @@ export default function AdminCommunity() {
                       >
                         {createMutation.isPending || updateMutation.isPending ? (
                           <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : editingPost ? (
+                        ) : editingPost?.post?.title ? (
                           "Actualizar"
                         ) : (
                           "Crear"
