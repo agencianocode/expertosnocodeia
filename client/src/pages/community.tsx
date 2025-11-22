@@ -604,6 +604,10 @@ export default function Community() {
                                   </div>
                                 );
                               }
+                            } else if (block.type === "image") {
+                              return (
+                                <img key={idx} src={block.url} alt="" className="w-full h-64 object-cover rounded border-2 border-cyan-500" />
+                              );
                             }
                             return null;
                           })}

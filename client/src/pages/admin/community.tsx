@@ -19,7 +19,7 @@ interface Post {
 }
 
 interface ContentBlock {
-  type: "text" | "video";
+  type: "text" | "video" | "image";
   content?: string;
   url?: string;
 }
@@ -189,6 +189,33 @@ export default function AdminCommunity() {
     }
   };
 
+  const handleBlockImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, blockIndex: number) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setUploadingImage(true);
+      const formDataToUpload = new FormData();
+      formDataToUpload.append("file", file);
+      const uploadRes = await fetch("/api/upload-image", {
+        method: "POST",
+        credentials: "include",
+        body: formDataToUpload,
+      });
+      if (uploadRes.ok) {
+        const uploadData = await uploadRes.json();
+        updateBlock(blockIndex, { url: uploadData.url });
+        toast({ title: "Éxito", description: "Imagen subida correctamente" });
+      } else {
+        toast({ title: "Error", description: "Error al subir la imagen", variant: "destructive" });
+      }
+    } catch (error: any) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -327,7 +354,7 @@ export default function AdminCommunity() {
                           <div key={index} className="bg-[#2a2a2a] border border-[#444444] rounded p-3 space-y-2">
                             <div className="flex items-center justify-between gap-2">
                               <span className="text-sm font-medium text-cyan-400">
-                                Bloque {index + 1}: {block.type === "text" ? "📝 Texto" : "🎬 Video"}
+                                Bloque {index + 1}: {block.type === "text" ? "📝 Texto" : block.type === "video" ? "🎬 Video" : "🖼️ Imagen"}
                               </span>
                               <div className="flex gap-1">
                                 <button onClick={() => moveBlock(index, "up")} disabled={index === 0} className="p-1 hover:bg-[#333333] disabled:opacity-30 rounded">
@@ -349,23 +376,50 @@ export default function AdminCommunity() {
                                 className="w-full bg-[#1a1a1a] border border-[#333333] rounded p-2 text-white text-sm resize-none"
                                 rows={3}
                               />
-                            ) : (
+                            ) : block.type === "video" ? (
                               <Input
                                 placeholder="URL del video (YouTube, Vimeo, etc.)"
                                 value={block.url || ""}
                                 onChange={(e) => updateBlock(index, { url: e.target.value })}
                                 className="bg-[#1a1a1a] border-[#333333] text-sm"
                               />
+                            ) : (
+                              <div className="space-y-2">
+                                {block.url && (
+                                  <div className="relative w-full h-32 rounded overflow-hidden">
+                                    <img src={block.url} alt="Preview" className="w-full h-full object-cover" />
+                                  </div>
+                                )}
+                                <div>
+                                  <input
+                                    type="file"
+                                    accept="image/*"
+                                    onChange={(e) => handleBlockImageUpload(e, index)}
+                                    className="hidden"
+                                    id={`block-image-${index}`}
+                                  />
+                                  <button
+                                    type="button"
+                                    onClick={() => document.getElementById(`block-image-${index}`)?.click()}
+                                    className="w-full bg-[#1a1a1a] border border-[#333333] rounded p-2 text-white hover:bg-[#222222] text-sm"
+                                  >
+                                    Seleccionar imagen
+                                  </button>
+                                </div>
+                              </div>
                             )}
                           </div>
                         ))}
                       </div>
-                      <div className="flex gap-2 mt-3">
-                        <Button onClick={() => addBlock("text")} size="sm" variant="outline" className="flex-1">
-                          <Plus className="h-4 w-4 mr-1" /> Agregar Texto
+                      <div className="grid grid-cols-3 gap-2 mt-3">
+                        <Button onClick={() => addBlock("text")} size="sm" variant="outline">
+                          <Plus className="h-4 w-4 mr-1" /> Texto
                         </Button>
-                        <Button onClick={() => addBlock("video")} size="sm" variant="outline" className="flex-1">
-                          <Plus className="h-4 w-4 mr-1" /> Agregar Video
+                        <Button onClick={() => addBlock("video")} size="sm" variant="outline">
+                          <Plus className="h-4 w-4 mr-1" /> Video
+                        </Button>
+                        <Button onClick={() => addBlock("image")} size="sm" variant="outline">
+                          <Plus className="h-4 w-4 mr-1" /> Imagen
                         </Button>
                       </div>
                     </div>
