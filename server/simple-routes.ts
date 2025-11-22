@@ -1864,7 +1864,7 @@ export function registerSimpleRoutes(app: Express): Server {
     }
   });
 
-  app.post("/api/community/posts/:postId/comments", async (req: Request, res: Response) => {
+  app.post("/api/community/posts/:postId/comments", simpleAdminAuth, async (req: Request, res: Response) => {
     try {
       const { postId } = req.params;
       const { content } = req.body;
