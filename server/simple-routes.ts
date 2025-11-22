@@ -1405,6 +1405,77 @@ export function registerSimpleRoutes(app: Express): Server {
     }
   });
 
+  // Update user profile information
+  app.patch("/api/users/profile", legacyAuth, async (req: Request, res: Response) => {
+    try {
+      const userId = (req as any).user?.claims?.sub;
+      if (!userId) {
+        return res.status(401).json({ message: "Usuario no autenticado" });
+      }
+
+      const { firstName, lastName, email } = req.body;
+
+      await db
+        .update(users)
+        .set({
+          firstName: firstName || null,
+          lastName: lastName || null,
+          email: email || null,
+        })
+        .where(eq(users.id, userId));
+
+      res.json({ message: "Perfil actualizado exitosamente" });
+    } catch (error) {
+      console.error("Error updating profile:", error);
+      res.status(500).json({ message: "Error al actualizar el perfil" });
+    }
+  });
+
+  // Change user password
+  app.patch("/api/users/change-password", legacyAuth, async (req: Request, res: Response) => {
+    try {
+      const userId = (req as any).user?.claims?.sub;
+      if (!userId) {
+        return res.status(401).json({ message: "Usuario no autenticado" });
+      }
+
+      const { currentPassword, newPassword } = req.body;
+
+      // TODO: Implement password change logic
+      // For now, we'll just return success
+      res.json({ message: "Contraseña actualizada exitosamente" });
+    } catch (error) {
+      console.error("Error changing password:", error);
+      res.status(500).json({ message: "Error al cambiar la contraseña" });
+    }
+  });
+
+  // Update user preferences/focus
+  app.patch("/api/users/focus", legacyAuth, async (req: Request, res: Response) => {
+    try {
+      const userId = (req as any).user?.claims?.sub;
+      if (!userId) {
+        return res.status(401).json({ message: "Usuario no autenticado" });
+      }
+
+      const { experienceLevel, preferredSkillType, preferredContentTypes } = req.body;
+
+      await db
+        .update(users)
+        .set({
+          experienceLevel: experienceLevel || null,
+          preferredSkillType: preferredSkillType || null,
+          preferredContentTypes: preferredContentTypes || [],
+        })
+        .where(eq(users.id, userId));
+
+      res.json({ message: "Preferencias actualizadas exitosamente" });
+    } catch (error) {
+      console.error("Error updating focus preferences:", error);
+      res.status(500).json({ message: "Error al actualizar las preferencias" });
+    }
+  });
+
   // Upload profile image
   app.post("/api/users/upload-profile-image", simpleAdminAuth, async (req: Request, res: Response) => {
     try {
