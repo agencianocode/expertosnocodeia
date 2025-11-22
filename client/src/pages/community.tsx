@@ -487,7 +487,7 @@ export default function Community() {
                                     });
                                   }}
                                   className={cn(
-                                    "text-sm px-2 py-1 rounded-full transition-all cursor-pointer",
+                                    "text-sm px-2 py-1 rounded-full transition-all cursor-pointer bg-[#292929]",
                                     isUserReaction 
                                       ? "text-white" 
                                       : "text-muted-foreground hover:text-white"
