@@ -2104,19 +2104,18 @@ export function registerSimpleRoutes(app: Express): Server {
             },
           });
 
-          // Generate the proxy URL that will be served through /api/object-proxy
-          const fullGcsUrl = `https://storage.googleapis.com/${bucketName}/${objectName}`;
-          const proxyUrl = objectStorageService.normalizeObjectEntityPath(fullGcsUrl);
+          // Use direct GCS URL which works for public images
+          const directGcsUrl = `https://storage.googleapis.com/${bucketName}/${objectName}`;
 
-          // Update post image URL in database
+          // Update post image URL in database with direct GCS URL
           await db
             .update(communityPosts)
-            .set({ imageUrl: proxyUrl, updatedAt: new Date() })
+            .set({ imageUrl: directGcsUrl, updatedAt: new Date() })
             .where(eq(communityPosts.id, postId));
 
           res.json({ 
             message: "Post image uploaded successfully",
-            imageUrl: proxyUrl 
+            imageUrl: directGcsUrl 
           });
         } catch (uploadError) {
           console.error("Error uploading post image:", uploadError);
