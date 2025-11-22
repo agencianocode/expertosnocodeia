@@ -91,11 +91,15 @@ export default function AdminCommunity() {
 
   const updateMutation = useMutation({
     mutationFn: async (data: any) => {
+      const { title, channelId, contentBlocks } = data;
+      const content = contentBlocks.filter((b: ContentBlock) => b.type === "text").map((b: ContentBlock) => b.content).join("\n") || "Post de comunidad";
+      const videoUrl = contentBlocks.find((b: ContentBlock) => b.type === "video")?.url || "";
+      
       const res = await fetch(`/api/admin/community/posts/${editingPost?.post.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify(data),
+        body: JSON.stringify({ title, channelId, content, videoUrl, contentBlocks }),
       });
       if (!res.ok) {
         const error = await res.json();
@@ -105,7 +109,7 @@ export default function AdminCommunity() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/community/posts"] });
-      setFormData({ title: "", content: "", videoUrl: "", channelId: "", imageUrl: "" });
+      setFormData({ title: "", channelId: "", imageUrl: "", contentBlocks: [] });
       setEditingPost(null);
       toast({ title: "Éxito", description: "Anuncio actualizado" });
     },
@@ -136,8 +140,8 @@ export default function AdminCommunity() {
   });
 
   const handleSubmit = () => {
-    if (!formData.title.trim() || !formData.content.trim() || !formData.channelId) {
-      toast({ title: "Error", description: "Completa todos los campos", variant: "destructive" });
+    if (!formData.title.trim() || !formData.channelId || formData.contentBlocks.length === 0) {
+      toast({ title: "Error", description: "Completa el título, canal y agrega bloques de contenido", variant: "destructive" });
       return;
     }
 
@@ -162,7 +166,7 @@ export default function AdminCommunity() {
     setShowCreateModal(true);
   };
 
-  const addBlock = (type: "text" | "video") => {
+  const addBlock = (type: "text" | "video" | "image") => {
     setFormData({
       ...formData,
       contentBlocks: [...formData.contentBlocks, { type }],
