@@ -2628,7 +2628,7 @@ export class DatabaseStorage implements IStorage {
     // Core general channels
     const generalChannels = [
       { slug: 'anuncios', name: 'Anuncios', description: 'Actualizaciones y noticias importantes', icon: '📢', section: 'Comunidad', order: 1 },
-      { slug: 'empieza-aqui', name: 'Empieza aquí', description: 'Preséntate y cuéntanos tu historia', icon: '🚀', section: 'Comunidad', order: 2 },
+      { slug: 'empieza-aqui', name: 'Empieza aquí', description: 'Preséntate y cuéntanos tu historia', icon: '🏠', section: 'Comunidad', order: 2 },
       { slug: 'presentante', name: 'Presentante', description: 'Conoce a los miembros de la comunidad', icon: '👋', section: 'Comunidad', order: 3 },
       { slug: 'preguntas', name: 'Preguntas Generales', description: 'Dudas y preguntas de la comunidad', icon: '❓', section: 'Comunidad', order: 4 },
       { slug: 'general', name: 'General', description: 'Conversación libre y conexiones', icon: '💬', section: 'Comunidad', order: 5 },
