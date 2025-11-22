@@ -253,6 +253,10 @@ export function registerSimpleRoutes(app: Express): Server {
           email: user.email,
           firstName: user.firstName,
           lastName: user.lastName,
+          profileImageUrl: user.profileImageUrl,
+          experienceLevel: user.experienceLevel,
+          preferredSkillType: user.preferredSkillType,
+          preferredContentTypes: user.preferredContentTypes,
         });
       } else {
         res.status(401).json({ message: "Usuario no encontrado" });
@@ -289,6 +293,10 @@ export function registerSimpleRoutes(app: Express): Server {
             email: user.email,
             firstName: user.firstName,
             lastName: user.lastName,
+            profileImageUrl: user.profileImageUrl,
+            experienceLevel: user.experienceLevel,
+            preferredSkillType: user.preferredSkillType,
+            preferredContentTypes: user.preferredContentTypes,
           });
         } else {
           res.status(401).json({ message: "Usuario no encontrado" });
