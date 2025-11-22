@@ -850,6 +850,7 @@ export const communityPosts = pgTable("community_posts", {
   content: text("content").notNull(),
   imageUrl: varchar("image_url"),
   videoUrl: varchar("video_url"),
+  contentBlocks: jsonb("content_blocks").$type<Array<{type: "text" | "video"; content?: string; url?: string}>>().default([]),
   likes: integer("likes").default(0),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),

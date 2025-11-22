@@ -8,7 +8,7 @@ import MobileHeader from "@/components/layout/mobile-header";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Plus, Edit, Trash2, Loader2 } from "lucide-react";
+import { Plus, Edit, Trash2, Loader2, ChevronUp, ChevronDown } from "lucide-react";
 import { useAdmin } from "@/hooks/useAdmin";
 import { useToast } from "@/hooks/use-toast";
 
@@ -18,11 +18,17 @@ interface Post {
   channel?: any;
 }
 
+interface ContentBlock {
+  type: "text" | "video";
+  content?: string;
+  url?: string;
+}
+
 export default function AdminCommunity() {
   const { isAdmin, isLoading: adminLoading } = useAdmin();
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [editingPost, setEditingPost] = useState<Post | null>(null);
-  const [formData, setFormData] = useState({ title: "", content: "", videoUrl: "", channelId: "", imageUrl: "" });
+  const [formData, setFormData] = useState({ title: "", channelId: "", imageUrl: "", contentBlocks: [] as ContentBlock[] });
   const [uploadingImage, setUploadingImage] = useState(false);
   const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null);
   const [imagePreviewUrl, setImagePreviewUrl] = useState<string>("");
@@ -53,52 +59,15 @@ export default function AdminCommunity() {
 
   const createMutation = useMutation({
     mutationFn: async (data: any) => {
-      let imageUrl = data.imageUrl;
-      if (selectedImageFile && !editingPost) {
-        try {
-          // Crear post temporal para obtener el ID
-          const tempRes = await fetch("/api/admin/community/posts", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            credentials: "include",
-            body: JSON.stringify({ ...data, imageUrl: "" }),
-          });
-          if (!tempRes.ok) throw new Error("Error al crear anuncio");
-          const tempPost = await tempRes.json();
-
-          // Subir la imagen
-          const formDataToUpload = new FormData();
-          formDataToUpload.append("file", selectedImageFile);
-          const uploadRes = await fetch(`/api/admin/community/posts/${tempPost.id}/upload-image`, {
-            method: "POST",
-            credentials: "include",
-            body: formDataToUpload,
-          });
-          if (uploadRes.ok) {
-            const uploadData = await uploadRes.json();
-            imageUrl = uploadData.imageUrl;
-            // Actualizar el post con la imagen
-            const updateRes = await fetch(`/api/admin/community/posts/${tempPost.id}`, {
-              method: "PATCH",
-              headers: { "Content-Type": "application/json" },
-              credentials: "include",
-              body: JSON.stringify({ ...data, imageUrl }),
-            });
-            if (!updateRes.ok) throw new Error("Error al actualizar imagen");
-            return updateRes.json();
-          }
-          return tempPost;
-        } catch (error: any) {
-          throw error;
-        }
-      }
-
-      // Crear post sin imagen
+      const { title, channelId, contentBlocks } = data;
+      const content = contentBlocks.filter((b: ContentBlock) => b.type === "text").map((b: ContentBlock) => b.content).join("\n") || "Post de comunidad";
+      const videoUrl = contentBlocks.find((b: ContentBlock) => b.type === "video")?.url || "";
+      
       const res = await fetch("/api/admin/community/posts", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ ...data, imageUrl }),
+        body: JSON.stringify({ title, channelId, content, videoUrl, contentBlocks }),
       });
       if (!res.ok) {
         const error = await res.json();
@@ -108,7 +77,7 @@ export default function AdminCommunity() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/community/posts"] });
-      setFormData({ title: "", content: "", videoUrl: "", channelId: "", imageUrl: "" });
+      setFormData({ title: "", channelId: "", imageUrl: "", contentBlocks: [] });
       setSelectedImageFile(null);
       setImagePreviewUrl("");
       setShowCreateModal(false);
@@ -181,14 +150,43 @@ export default function AdminCommunity() {
 
   const handleEdit = (post: Post) => {
     setEditingPost(post);
+    const blocks = (post.post.contentBlocks && post.post.contentBlocks.length > 0) 
+      ? post.post.contentBlocks 
+      : [];
     setFormData({
       title: post.post.title,
-      content: post.post.content,
-      videoUrl: post.post.videoUrl || "",
       channelId: post.post.channelId,
       imageUrl: post.post.imageUrl || "",
+      contentBlocks: blocks,
     });
     setShowCreateModal(true);
+  };
+
+  const addBlock = (type: "text" | "video") => {
+    setFormData({
+      ...formData,
+      contentBlocks: [...formData.contentBlocks, { type }],
+    });
+  };
+
+  const updateBlock = (index: number, data: Partial<ContentBlock>) => {
+    const newBlocks = [...formData.contentBlocks];
+    newBlocks[index] = { ...newBlocks[index], ...data };
+    setFormData({ ...formData, contentBlocks: newBlocks });
+  };
+
+  const removeBlock = (index: number) => {
+    const newBlocks = formData.contentBlocks.filter((_, i) => i !== index);
+    setFormData({ ...formData, contentBlocks: newBlocks });
+  };
+
+  const moveBlock = (index: number, direction: "up" | "down") => {
+    const newBlocks = [...formData.contentBlocks];
+    const newIndex = direction === "up" ? index - 1 : index + 1;
+    if (newIndex >= 0 && newIndex < newBlocks.length) {
+      [newBlocks[index], newBlocks[newIndex]] = [newBlocks[newIndex], newBlocks[index]];
+      setFormData({ ...formData, contentBlocks: newBlocks });
+    }
   };
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -291,7 +289,7 @@ export default function AdminCommunity() {
               <Button
                 onClick={() => {
                   setEditingPost(null);
-                  setFormData({ title: "", content: "", videoUrl: "", channelId: "", imageUrl: "" });
+                  setFormData({ title: "", channelId: "", imageUrl: "", contentBlocks: [] });
                   setSelectedImageFile(null);
                   setImagePreviewUrl("");
                   setShowCreateModal(true);
@@ -305,70 +303,73 @@ export default function AdminCommunity() {
 
             {/* Create/Edit Modal */}
             {showCreateModal && (
-              <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-                <Card className="w-full max-w-md bg-[#1a1a1a] border-[#333333]">
+              <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 overflow-y-auto">
+                <Card className="w-full max-w-2xl bg-[#1a1a1a] border-[#333333] my-8">
                   <CardHeader>
                     <CardTitle>{editingPost ? "Editar Anuncio" : "Nuevo Anuncio"}</CardTitle>
+                    <CardDescription>Crea bloques de contenido: texto → video → más texto</CardDescription>
                   </CardHeader>
-                  <CardContent className="space-y-4">
+                  <CardContent className="space-y-6 max-h-96 overflow-y-auto">
                     <div>
                       <label className="text-sm font-medium mb-2 block">Título</label>
                       <Input
-                        placeholder="Título del anuncio"
+                        placeholder="Título del anuncio (ej: ¡Bienvenido a la Comunidad!)"
                         value={formData.title}
                         onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                         className="bg-[#2a2a2a] border-[#444444]"
                       />
                     </div>
+
                     <div>
-                      <label className="text-sm font-medium mb-2 block">Contenido</label>
-                      <textarea
-                        placeholder="Contenido del anuncio"
-                        value={formData.content}
-                        onChange={(e) => setFormData({ ...formData, content: e.target.value })}
-                        className="w-full bg-[#2a2a2a] border border-[#444444] rounded p-2 text-white resize-none"
-                        rows={6}
-                      />
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium mb-2 block">URL del Video (Opcional)</label>
-                      <p className="text-xs text-muted-foreground mb-2">YouTube, Vimeo, etc.</p>
-                      <Input
-                        placeholder="https://youtu.be/... o https://vimeo.com/..."
-                        value={formData.videoUrl}
-                        onChange={(e) => setFormData({ ...formData, videoUrl: e.target.value })}
-                        className="bg-[#2a2a2a] border-[#444444]"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium mb-2 block">Imagen de Portada (Opcional)</label>
-                      <div className="space-y-2">
-                        {(formData.imageUrl || imagePreviewUrl) && (
-                          <div className="relative w-full h-40 rounded overflow-hidden">
-                            <img src={formData.imageUrl || imagePreviewUrl} alt="Portada" className="w-full h-full object-cover" />
+                      <label className="text-sm font-medium mb-3 block">Bloques de Contenido</label>
+                      <div className="space-y-3">
+                        {formData.contentBlocks.map((block, index) => (
+                          <div key={index} className="bg-[#2a2a2a] border border-[#444444] rounded p-3 space-y-2">
+                            <div className="flex items-center justify-between gap-2">
+                              <span className="text-sm font-medium text-cyan-400">
+                                Bloque {index + 1}: {block.type === "text" ? "📝 Texto" : "🎬 Video"}
+                              </span>
+                              <div className="flex gap-1">
+                                <button onClick={() => moveBlock(index, "up")} disabled={index === 0} className="p-1 hover:bg-[#333333] disabled:opacity-30 rounded">
+                                  <ChevronUp className="h-4 w-4" />
+                                </button>
+                                <button onClick={() => moveBlock(index, "down")} disabled={index === formData.contentBlocks.length - 1} className="p-1 hover:bg-[#333333] disabled:opacity-30 rounded">
+                                  <ChevronDown className="h-4 w-4" />
+                                </button>
+                                <button onClick={() => removeBlock(index)} className="p-1 hover:bg-red-500/20 rounded">
+                                  <Trash2 className="h-4 w-4 text-red-500" />
+                                </button>
+                              </div>
+                            </div>
+                            {block.type === "text" ? (
+                              <textarea
+                                placeholder="Escribe tu texto aquí..."
+                                value={block.content || ""}
+                                onChange={(e) => updateBlock(index, { content: e.target.value })}
+                                className="w-full bg-[#1a1a1a] border border-[#333333] rounded p-2 text-white text-sm resize-none"
+                                rows={3}
+                              />
+                            ) : (
+                              <Input
+                                placeholder="URL del video (YouTube, Vimeo, etc.)"
+                                value={block.url || ""}
+                                onChange={(e) => updateBlock(index, { url: e.target.value })}
+                                className="bg-[#1a1a1a] border-[#333333] text-sm"
+                              />
+                            )}
                           </div>
-                        )}
-                        <div className="relative">
-                          <input
-                            type="file"
-                            accept="image/*"
-                            onChange={handleImageUpload}
-                            disabled={uploadingImage}
-                            className="hidden"
-                            id="post-image-input"
-                            data-testid="input-post-image"
-                          />
-                          <button
-                            type="button"
-                            onClick={() => document.getElementById("post-image-input")?.click()}
-                            disabled={uploadingImage}
-                            className="w-full bg-[#2a2a2a] border border-[#444444] rounded p-2 text-white hover:bg-[#333333] disabled:opacity-50"
-                          >
-                            {uploadingImage ? "Subiendo..." : "Seleccionar imagen"}
-                          </button>
-                        </div>
+                        ))}
+                      </div>
+                      <div className="flex gap-2 mt-3">
+                        <Button onClick={() => addBlock("text")} size="sm" variant="outline" className="flex-1">
+                          <Plus className="h-4 w-4 mr-1" /> Agregar Texto
+                        </Button>
+                        <Button onClick={() => addBlock("video")} size="sm" variant="outline" className="flex-1">
+                          <Plus className="h-4 w-4 mr-1" /> Agregar Video
+                        </Button>
                       </div>
                     </div>
+
                     <div>
                       <label className="text-sm font-medium mb-2 block">Canal</label>
                       <select
@@ -384,35 +385,30 @@ export default function AdminCommunity() {
                         ))}
                       </select>
                     </div>
-                    <div className="flex gap-2">
-                      <Button
-                        variant="outline"
-                        onClick={() => {
-                          setShowCreateModal(false);
-                          setEditingPost(null);
-                          setFormData({ title: "", content: "", videoUrl: "", channelId: "", imageUrl: "" });
-                          setSelectedImageFile(null);
-                          setImagePreviewUrl("");
-                        }}
-                        className="flex-1"
-                      >
-                        {editingPost?.post?.id && !editingPost.user ? "Finalizar" : "Cancelar"}
-                      </Button>
-                      <Button
-                        onClick={handleSubmit}
-                        disabled={createMutation.isPending || updateMutation.isPending || uploadingImage}
-                        className="flex-1 bg-cyan-500 hover:bg-cyan-600"
-                      >
-                        {createMutation.isPending || updateMutation.isPending ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : editingPost?.user ? (
-                          "Actualizar"
-                        ) : (
-                          "Crear"
-                        )}
-                      </Button>
-                    </div>
                   </CardContent>
+                  <div className="px-6 py-4 border-t border-[#333333] flex gap-2">
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setShowCreateModal(false);
+                        setEditingPost(null);
+                        setFormData({ title: "", channelId: "", imageUrl: "", contentBlocks: [] });
+                      }}
+                      className="flex-1"
+                    >
+                      Cancelar
+                    </Button>
+                    <Button
+                      onClick={handleSubmit}
+                      disabled={createMutation.isPending || updateMutation.isPending || !formData.title || !formData.channelId || formData.contentBlocks.length === 0}
+                      className="flex-1 bg-cyan-500 hover:bg-cyan-600"
+                    >
+                      {createMutation.isPending || updateMutation.isPending ? (
+                        <Loader2 className="h-4 w-4 animate-spin mr-1" />
+                      ) : null}
+                      {editingPost?.user ? "Actualizar" : "Crear"}
+                    </Button>
+                  </div>
                 </Card>
               </div>
             )}

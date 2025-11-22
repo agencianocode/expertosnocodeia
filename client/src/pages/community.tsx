@@ -554,42 +554,100 @@ export default function Community() {
                         {new Date(post.post.createdAt).toLocaleDateString("es-ES", { year: "numeric", month: "long", day: "numeric" })}
                       </p>
 
-                      {post.post.videoUrl && (() => {
-                        const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(post.post.videoUrl);
-                        const isYouTube = /youtu\.be\/|youtube\.com/i.test(post.post.videoUrl);
-                        const isVimeo = /vimeo\.com/i.test(post.post.videoUrl);
-                        
-                        if (isImage) {
-                          return <img src={post.post.videoUrl} alt="" className="w-full h-64 object-cover rounded mb-3 border-2 border-cyan-500" />;
-                        }
-                        
-                        if (isYouTube || isVimeo) {
-                          return (
-                            <div className="w-full mb-3 rounded overflow-hidden bg-black border-2 border-cyan-500">
-                              <div style={{ position: "relative", paddingBottom: "56.25%", height: 0 }}>
-                                <iframe
-                                  style={{
-                                    position: "absolute",
-                                    top: 0,
-                                    left: 0,
-                                    width: "100%",
-                                    height: "100%",
-                                  }}
-                                  src={post.post.videoUrl.replace(/youtu\.be\//, "youtube.com/embed/").replace(/vimeo\.com\//, "vimeo.com/video/")}
-                                  frameBorder="0"
-                                  allowFullScreen
-                                  title="Video"
-                                ></iframe>
-                              </div>
-                            </div>
-                          );
-                        }
-                        
-                        return null;
-                      })()}
+                      {/* Renderizar bloques si existen */}
+                      {post.post.contentBlocks && post.post.contentBlocks.length > 0 ? (
+                        <div className="space-y-3 mb-3">
+                          {post.post.contentBlocks.map((block: any, idx: number) => {
+                            if (block.type === "text") {
+                              return (
+                                <div key={idx} className="text-sm text-muted-foreground whitespace-pre-wrap break-words">
+                                  {block.content && block.content.split(/(\bhttps?:\/\/[^\s]+)/g).map((part: string, i: number) => {
+                                    if (part.match(/^\bhttps?:\/\//)) {
+                                      return (
+                                        <a
+                                          key={i}
+                                          href={part}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          className="text-cyan-500 hover:text-cyan-400 underline break-all"
+                                        >
+                                          {part}
+                                        </a>
+                                      );
+                                    }
+                                    return part;
+                                  })}
+                                </div>
+                              );
+                            } else if (block.type === "video") {
+                              const isYouTube = /youtu\.be\/|youtube\.com/i.test(block.url);
+                              const isVimeo = /vimeo\.com/i.test(block.url);
+                              
+                              if (isYouTube || isVimeo) {
+                                return (
+                                  <div key={idx} className="w-full rounded overflow-hidden bg-black border-2 border-cyan-500">
+                                    <div style={{ position: "relative", paddingBottom: "56.25%", height: 0 }}>
+                                      <iframe
+                                        style={{
+                                          position: "absolute",
+                                          top: 0,
+                                          left: 0,
+                                          width: "100%",
+                                          height: "100%",
+                                        }}
+                                        src={block.url.replace(/youtu\.be\//, "youtube.com/embed/").replace(/vimeo\.com\//, "vimeo.com/video/")}
+                                        frameBorder="0"
+                                        allowFullScreen
+                                        title="Video"
+                                      ></iframe>
+                                    </div>
+                                  </div>
+                                );
+                              }
+                            }
+                            return null;
+                          })}
+                        </div>
+                      ) : (
+                        <>
+                          {post.post.videoUrl && (() => {
+                            const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(post.post.videoUrl);
+                            const isYouTube = /youtu\.be\/|youtube\.com/i.test(post.post.videoUrl);
+                            const isVimeo = /vimeo\.com/i.test(post.post.videoUrl);
+                            
+                            if (isImage) {
+                              return <img src={post.post.videoUrl} alt="" className="w-full h-64 object-cover rounded mb-3 border-2 border-cyan-500" />;
+                            }
+                            
+                            if (isYouTube || isVimeo) {
+                              return (
+                                <div className="w-full mb-3 rounded overflow-hidden bg-black border-2 border-cyan-500">
+                                  <div style={{ position: "relative", paddingBottom: "56.25%", height: 0 }}>
+                                    <iframe
+                                      style={{
+                                        position: "absolute",
+                                        top: 0,
+                                        left: 0,
+                                        width: "100%",
+                                        height: "100%",
+                                      }}
+                                      src={post.post.videoUrl.replace(/youtu\.be\//, "youtube.com/embed/").replace(/vimeo\.com\//, "vimeo.com/video/")}
+                                      frameBorder="0"
+                                      allowFullScreen
+                                      title="Video"
+                                    ></iframe>
+                                  </div>
+                                </div>
+                              );
+                            }
+                            
+                            return null;
+                          })()}
 
-                      {post.post.imageUrl && (
-                        <img src={post.post.imageUrl} alt="" className="w-full h-64 object-cover rounded mb-4" />
+                          {post.post.imageUrl && (
+                            <img src={post.post.imageUrl} alt="" className="w-full h-64 object-cover rounded mb-4" />
+                          )}
+                        </>
                       )}
 
                       {/* Header con nombre y hora */}
