@@ -317,15 +317,22 @@ export default function Community() {
                       </p>
 
                       {post.post.videoUrl && (
-                        <div className="w-full mb-3 rounded overflow-hidden bg-black">
-                          <iframe
-                            width="100%"
-                            height="200"
-                            src={post.post.videoUrl.replace(/youtu\.be\//, "youtube.com/embed/").replace(/vimeo\.com\//, "vimeo.com/video/")}
-                            frameBorder="0"
-                            allowFullScreen
-                            title="Video"
-                          ></iframe>
+                        <div className="w-full mb-3 rounded overflow-hidden bg-black border-4 border-cyan-500">
+                          <div style={{ position: "relative", paddingBottom: "56.25%", height: 0 }}>
+                            <iframe
+                              style={{
+                                position: "absolute",
+                                top: 0,
+                                left: 0,
+                                width: "100%",
+                                height: "100%",
+                              }}
+                              src={post.post.videoUrl.replace(/youtu\.be\//, "youtube.com/embed/").replace(/vimeo\.com\//, "vimeo.com/video/")}
+                              frameBorder="0"
+                              allowFullScreen
+                              title="Video"
+                            ></iframe>
+                          </div>
                         </div>
                       )}
 
