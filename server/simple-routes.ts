@@ -1404,6 +1404,95 @@ export function registerSimpleRoutes(app: Express): Server {
     }
   });
 
+  // Upload profile image
+  app.post("/api/users/upload-profile-image", legacyAuth, async (req: Request, res: Response) => {
+    try {
+      const userId = (req as any).user?.claims?.sub;
+      if (!userId) {
+        return res.status(401).json({ message: "Usuario no autenticado" });
+      }
+
+      // Handle multipart form data
+      const Busboy = require("busboy");
+      const bb = Busboy({ headers: req.headers, limits: { fileSize: 5 * 1024 * 1024 } });
+      
+      let fileData: Buffer | null = null;
+      let fileName: string | null = null;
+
+      bb.on("file", (fieldname: string, file: any, info: any) => {
+        const chunks: Buffer[] = [];
+        file.on("data", (data: Buffer) => {
+          chunks.push(data);
+        });
+        file.on("end", () => {
+          fileData = Buffer.concat(chunks);
+          fileName = info.filename;
+        });
+      });
+
+      bb.on("close", async () => {
+        if (!fileData || !fileName) {
+          return res.status(400).json({ message: "No file provided" });
+        }
+
+        try {
+          // Generate unique filename
+          const ext = fileName.split(".").pop() || "jpg";
+          const uniqueFileName = `profile-${userId}-${Date.now()}.${ext}`;
+
+          // Get public object search paths for upload
+          const objectStorageService = new ObjectStorageService();
+          const publicPaths = objectStorageService.getPublicObjectSearchPaths();
+          
+          if (!publicPaths || publicPaths.length === 0) {
+            return res.status(500).json({ message: "Object storage not configured" });
+          }
+
+          // Use first public path
+          const uploadPath = `${publicPaths[0]}/profile-images/${uniqueFileName}`;
+          const { bucketName, objectName } = parseObjectPath(uploadPath);
+          
+          const bucket = objectStorageClient.bucket(bucketName);
+          const file = bucket.file(objectName);
+          
+          // Upload file to object storage
+          await file.save(fileData, {
+            metadata: {
+              contentType: `image/${ext === "jpg" ? "jpeg" : ext}`,
+            },
+          });
+
+          // Get public URL
+          const fileUrl = `https://storage.googleapis.com/${bucketName}/${objectName}`;
+
+          // Update user profile image URL in database
+          await db
+            .update(users)
+            .set({ profileImageUrl: fileUrl })
+            .where(eq(users.id, userId));
+
+          res.json({ 
+            message: "Profile image uploaded successfully",
+            profileImageUrl: fileUrl 
+          });
+        } catch (uploadError) {
+          console.error("Error uploading profile image:", uploadError);
+          res.status(500).json({ message: "Error uploading image to storage" });
+        }
+      });
+
+      bb.on("error", (error: any) => {
+        console.error("Busboy error:", error);
+        res.status(400).json({ message: "Error processing upload" });
+      });
+
+      req.pipe(bb);
+    } catch (error) {
+      console.error("Error in profile image upload:", error);
+      res.status(500).json({ message: "Error al procesar la imagen" });
+    }
+  });
+
   // ==================== COMMENT ROUTES ====================
   
   // GET comments for a lesson

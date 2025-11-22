@@ -42,6 +42,9 @@ export default function Profile() {
   const [preferredSkillType, setPreferredSkillType] = useState("");
   const [preferredContentTypes, setPreferredContentTypes] = useState<string[]>([]);
   const [showFocusEdit, setShowFocusEdit] = useState(false);
+  
+  // Profile image upload state
+  const [uploadingImage, setUploadingImage] = useState(false);
 
   // Fetch subscription info
   const { data: subscriptionInfo } = useQuery({
@@ -188,6 +191,54 @@ export default function Profile() {
     );
   };
 
+  const handleProfileImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      toast({
+        title: "Error",
+        description: "Por favor selecciona un archivo de imagen.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setUploadingImage(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const res = await fetch("/api/users/upload-profile-image", {
+        method: "POST",
+        credentials: "include",
+        body: formData,
+      });
+
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.message || "Error al subir la imagen");
+      }
+
+      const data = await res.json();
+      
+      toast({
+        title: "Éxito",
+        description: "Tu foto de perfil ha sido actualizada.",
+      });
+
+      queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "No se pudo subir la imagen. Intenta nuevamente.",
+        variant: "destructive",
+      });
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
   const getUserInitials = () => {
     if ((user as any)?.firstName && (user as any)?.lastName) {
       return `${(user as any).firstName[0]}${(user as any).lastName[0]}`.toUpperCase();
@@ -242,10 +293,25 @@ export default function Profile() {
                       </Avatar>
                       <div className="flex-1">
                         <p className="text-white mb-2">Sube una imagen de perfil cuadrada con un mínimo de 200x200 píxeles</p>
-                        <Button variant="outline" className="border-dark-border text-gray-300 hover:bg-dark-bg">
-                          <Camera className="h-4 w-4 mr-2" />
-                          Cambiar
-                        </Button>
+                        <div className="relative">
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={handleProfileImageUpload}
+                            disabled={uploadingImage}
+                            className="hidden"
+                            id="profile-image-input"
+                          />
+                          <Button
+                            variant="outline"
+                            className="border-dark-border text-gray-300 hover:bg-dark-bg"
+                            onClick={() => document.getElementById("profile-image-input")?.click()}
+                            disabled={uploadingImage}
+                          >
+                            <Camera className="h-4 w-4 mr-2" />
+                            {uploadingImage ? "Subiendo..." : "Cambiar"}
+                          </Button>
+                        </div>
                       </div>
                     </div>
                   </CardContent>
