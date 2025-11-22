@@ -2082,16 +2082,16 @@ export function registerSimpleRoutes(app: Express): Server {
           const uniqueFileId = randomUUID();
           const uniqueFileName = `post-${uniqueFileId}.${ext}`;
 
-          // Get public object directory for upload
+          // Use private directory with post-images path (same as profile images)
           const objectStorageService = new ObjectStorageService();
-          const publicDir = process.env.PUBLIC_OBJECT_SEARCH_PATHS?.split(',')[0] || 'public';
+          const privateDir = objectStorageService.getPrivateObjectDir();
           
-          if (!publicDir) {
+          if (!privateDir) {
             return res.status(500).json({ message: "Object storage not configured" });
           }
 
-          // Use public directory with post-images path
-          const uploadPath = `${publicDir}/post-images/${uniqueFileName}`;
+          // Use private directory with post-images path
+          const uploadPath = `${privateDir}/post-images/${uniqueFileName}`;
           const { bucketName, objectName } = parseObjectPath(uploadPath);
           
           const bucket = objectStorageClient.bucket(bucketName);
