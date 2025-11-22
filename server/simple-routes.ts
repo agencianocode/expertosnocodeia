@@ -2,6 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { Request, Response } from "express";
 import { randomUUID } from "crypto";
+import Busboy from "busboy";
 import { storage } from "./storage";
 import { isAdmin } from "./adminMiddleware";
 import { SupabaseStorageService } from "./supabaseStorage";
@@ -1413,7 +1414,6 @@ export function registerSimpleRoutes(app: Express): Server {
       }
 
       // Handle multipart form data
-      const Busboy = require("busboy");
       const bb = Busboy({ headers: req.headers, limits: { fileSize: 5 * 1024 * 1024 } });
       
       let fileData: Buffer | null = null;
