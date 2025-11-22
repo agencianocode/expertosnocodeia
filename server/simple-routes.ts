@@ -2072,7 +2072,7 @@ export function registerSimpleRoutes(app: Express): Server {
   });
 
   // Endpoint to add reaction to post
-  app.post("/api/community/posts/:postId/reactions", optionalSupabaseAuth, async (req: Request, res: Response) => {
+  app.post("/api/community/posts/:postId/reactions", simpleAdminAuth, async (req: Request, res: Response) => {
     try {
       const { postId } = req.params;
       const { emoji } = req.body;
@@ -2148,7 +2148,7 @@ export function registerSimpleRoutes(app: Express): Server {
   });
 
   // Endpoint to get current user's reactions for a post
-  app.get("/api/community/posts/:postId/user-reactions", optionalSupabaseAuth, async (req: Request, res: Response) => {
+  app.get("/api/community/posts/:postId/user-reactions", simpleAdminAuth, async (req: Request, res: Response) => {
     try {
       const { postId } = req.params;
       const userId = (req as any).user?.claims?.sub || (req as any).user?.id;
