@@ -189,56 +189,67 @@ export default function Community() {
   useEffect(() => {
     if (!activeChannel) return;
 
+    // Check if this channel should show posts (all "Comunidad" section channels show posts)
+    const hasPostsFeed = activeChannel.section === "Comunidad";
     const isAnuncios = activeChannel.slug === "anuncios";
     setIsAnunciosChannel(isAnuncios);
 
     const fetchContent = async () => {
       try {
-        // Fetch posts for all channels with sorting
-        const res = await fetch(`/api/community/channels/${activeChannel.id}/posts?limit=50&sort=${sortBy}`);
-        const data = await res.json();
-        const postsData = Array.isArray(data) ? data : [];
-        setPosts(postsData);
-        setSelectedPost(null);
-        setComments([]);
-        
-        // Load comment counts, all comments, and reactions for all posts
-        const counts: { [postId: string]: number } = {};
-        const allComments: { [postId: string]: Comment[] } = {};
-        const userReactionsMap: { [postId: string]: string[] } = {};
-        const allReactionsMap: { [postId: string]: { emoji: string; count: number; users: string[] }[] } = {};
-        
-        for (const post of postsData) {
-          try {
-            // Fetch comments
-            const commentsRes = await fetch(`/api/community/posts/${post.post.id}/comments`);
-            const commentsData = await commentsRes.json();
-            const commentsArray = Array.isArray(commentsData) ? commentsData : [];
-            counts[post.post.id] = commentsArray.length;
-            allComments[post.post.id] = commentsArray;
-            
-            // Fetch user reactions
-            const userReactionsRes = await fetch(`/api/community/posts/${post.post.id}/user-reactions`, {
-              credentials: "include"
-            });
-            const userReactionsData = await userReactionsRes.json();
-            userReactionsMap[post.post.id] = Array.isArray(userReactionsData) ? userReactionsData.map((r: any) => r.emoji) : [];
-            
-            // Fetch all reactions
-            const reactionsRes = await fetch(`/api/community/posts/${post.post.id}/reactions`);
-            const reactionsData = await reactionsRes.json();
-            allReactionsMap[post.post.id] = Array.isArray(reactionsData) ? reactionsData : [];
-          } catch (err) {
-            counts[post.post.id] = 0;
-            allComments[post.post.id] = [];
-            userReactionsMap[post.post.id] = [];
-            allReactionsMap[post.post.id] = [];
+        if (hasPostsFeed) {
+          // Fetch posts for all channels with sorting
+          const res = await fetch(`/api/community/channels/${activeChannel.id}/posts?limit=50&sort=${sortBy}`);
+          const data = await res.json();
+          const postsData = Array.isArray(data) ? data : [];
+          setPosts(postsData);
+          setSelectedPost(null);
+          setComments([]);
+          
+          // Load comment counts, all comments, and reactions for all posts
+          const counts: { [postId: string]: number } = {};
+          const allComments: { [postId: string]: Comment[] } = {};
+          const userReactionsMap: { [postId: string]: string[] } = {};
+          const allReactionsMap: { [postId: string]: { emoji: string; count: number; users: string[] }[] } = {};
+          
+          for (const post of postsData) {
+            try {
+              // Fetch comments
+              const commentsRes = await fetch(`/api/community/posts/${post.post.id}/comments`);
+              const commentsData = await commentsRes.json();
+              const commentsArray = Array.isArray(commentsData) ? commentsData : [];
+              counts[post.post.id] = commentsArray.length;
+              allComments[post.post.id] = commentsArray;
+              
+              // Fetch user reactions
+              const userReactionsRes = await fetch(`/api/community/posts/${post.post.id}/user-reactions`, {
+                credentials: "include"
+              });
+              const userReactionsData = await userReactionsRes.json();
+              userReactionsMap[post.post.id] = Array.isArray(userReactionsData) ? userReactionsData.map((r: any) => r.emoji) : [];
+              
+              // Fetch all reactions
+              const reactionsRes = await fetch(`/api/community/posts/${post.post.id}/reactions`);
+              const reactionsData = await reactionsRes.json();
+              allReactionsMap[post.post.id] = Array.isArray(reactionsData) ? reactionsData : [];
+            } catch (err) {
+              counts[post.post.id] = 0;
+              allComments[post.post.id] = [];
+              userReactionsMap[post.post.id] = [];
+              allReactionsMap[post.post.id] = [];
+            }
           }
+          setPostCommentCounts(counts);
+          setAllPostComments(allComments);
+          setUserEmojis(userReactionsMap);
+          setAllReactions(allReactionsMap);
+        } else {
+          // For non-post channels (chat channels), clear posts
+          setPosts([]);
+          setSelectedPost(null);
+          setComments([]);
+          setPostCommentCounts({});
+          setAllPostComments({});
         }
-        setPostCommentCounts(counts);
-        setAllPostComments(allComments);
-        setUserEmojis(userReactionsMap);
-        setAllReactions(allReactionsMap);
       } catch (error) {
         console.error("Error fetching content:", error);
         setPosts([]);
@@ -517,8 +528,8 @@ export default function Community() {
             )}
           </div>
 
-          {/* Posts Feed - Only for Anuncios channel */}
-          {isAnunciosChannel ? (
+          {/* Posts Feed - For all Comunidad section channels */}
+          {posts.length > 0 || activeChannel?.section === "Comunidad" ? (
             <div className="flex-1 overflow-y-auto px-6 py-6 space-y-4 max-w-4xl">
               {posts.length === 0 ? (
                 <div className="flex items-center justify-center h-full text-muted-foreground">
