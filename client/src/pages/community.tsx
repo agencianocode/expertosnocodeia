@@ -312,8 +312,17 @@ export default function Community() {
                           {post.post.likes}
                         </div>
                         <button
-                          onClick={() => setSelectedPost(post)}
-                          className="flex items-center gap-2 hover:text-cyan-500 transition-colors"
+                          onClick={() => {
+                            if (selectedPost?.post.id === post.post.id) {
+                              setSelectedPost(null);
+                            } else {
+                              setSelectedPost(post);
+                            }
+                          }}
+                          className={cn(
+                            "flex items-center gap-2 transition-colors",
+                            selectedPost?.post.id === post.post.id ? "text-cyan-500" : "text-muted-foreground hover:text-cyan-500"
+                          )}
                           data-testid={`view-comments-${post.post.id}`}
                         >
                           {/* Avatares de quienes comentaron */}
