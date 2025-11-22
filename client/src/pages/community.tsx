@@ -292,7 +292,7 @@ export default function Community() {
 
           {/* Posts Feed - Only for Anuncios channel */}
           {isAnunciosChannel ? (
-            <div className="flex-1 overflow-y-auto px-6 py-6 space-y-4">
+            <div className="flex-1 overflow-y-auto px-6 py-6 space-y-4 max-w-2xl">
               {posts.length === 0 ? (
                 <div className="flex items-center justify-center h-full text-muted-foreground">
                   <p>No hay anuncios. Vuelve pronto.</p>
@@ -317,8 +317,8 @@ export default function Community() {
                       </p>
 
                       {post.post.videoUrl && (
-                        <div className="w-full mb-3 rounded overflow-hidden bg-black border-2 border-cyan-500">
-                          <div style={{ position: "relative", paddingBottom: "56.25%", height: 0, maxHeight: "240px" }}>
+                        <div className="mb-3 rounded overflow-hidden bg-black border-2 border-cyan-500 max-w-sm">
+                          <div style={{ position: "relative", paddingBottom: "56.25%", height: 0 }}>
                             <iframe
                               style={{
                                 position: "absolute",
