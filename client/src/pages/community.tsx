@@ -69,6 +69,7 @@ export default function Community() {
   const [channelsSidebarOpen, setChannelsSidebarOpen] = useState(true);
   const [isAnunciosChannel, setIsAnunciosChannel] = useState(false);
   const [postCommentCounts, setPostCommentCounts] = useState<{ [postId: string]: number }>({});
+  const [allPostComments, setAllPostComments] = useState<{ [postId: string]: Comment[] }>({});
 
   // Fetch channels on mount
   useEffect(() => {
@@ -110,29 +111,36 @@ export default function Community() {
           setSelectedPost(null);
           setComments([]);
           
-          // Load comment counts for all posts
+          // Load comment counts and all comments for all posts
           const counts: { [postId: string]: number } = {};
+          const allComments: { [postId: string]: Comment[] } = {};
           for (const post of postsData) {
             try {
               const commentsRes = await fetch(`/api/community/posts/${post.post.id}/comments`);
               const commentsData = await commentsRes.json();
-              counts[post.post.id] = Array.isArray(commentsData) ? commentsData.length : 0;
+              const commentsArray = Array.isArray(commentsData) ? commentsData : [];
+              counts[post.post.id] = commentsArray.length;
+              allComments[post.post.id] = commentsArray;
             } catch (err) {
               counts[post.post.id] = 0;
+              allComments[post.post.id] = [];
             }
           }
           setPostCommentCounts(counts);
+          setAllPostComments(allComments);
         } else {
           // For regular channels, we could add message fetching here if needed
           setPosts([]);
           setSelectedPost(null);
           setComments([]);
           setPostCommentCounts({});
+          setAllPostComments({});
         }
       } catch (error) {
         console.error("Error fetching content:", error);
         setPosts([]);
         setPostCommentCounts({});
+        setAllPostComments({});
       }
     };
 
@@ -176,10 +184,14 @@ export default function Community() {
         const data = await newRes.json();
         const newComments = Array.isArray(data) ? data : [];
         setComments(newComments);
-        // Update the comment count
+        // Update the comment count and all post comments
         setPostCommentCounts(prev => ({
           ...prev,
           [selectedPost.post.id]: newComments.length
+        }));
+        setAllPostComments(prev => ({
+          ...prev,
+          [selectedPost.post.id]: newComments
         }));
         toast({ title: "Éxito", description: "Comentario enviado" });
       } else {
@@ -288,7 +300,7 @@ export default function Community() {
               ) : (
                 posts.map((post) => {
                   const postCommentCount = postCommentCounts[post.post.id] || 0;
-                  const postComments = comments.filter(c => c.comment.postId === post.post.id);
+                  const postComments = allPostComments[post.post.id] || [];
                   
                   return (
                     <div
@@ -348,6 +360,17 @@ export default function Community() {
                           )}
                           data-testid={`view-comments-${post.post.id}`}
                         >
+                          {/* Avatares de quienes comentaron */}
+                          {postCommentCount > 0 && (
+                            <div className="flex items-center -space-x-2">
+                              {postComments.slice(0, 3).map((comment, idx) => (
+                                <Avatar key={idx} className="h-5 w-5 border border-[#1a1a1a]">
+                                  <AvatarImage src={comment.user?.profileImageUrl || undefined} />
+                                  <AvatarFallback className="text-xs">{(comment.user?.firstName?.charAt(0) || "U").toUpperCase()}</AvatarFallback>
+                                </Avatar>
+                              ))}
+                            </div>
+                          )}
                           <span>{postCommentCount} respuesta{postCommentCount !== 1 ? "s" : ""}</span>
                         </button>
                       </div>
