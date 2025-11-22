@@ -68,6 +68,7 @@ export default function Community() {
   const [sendingComment, setSendingComment] = useState(false);
   const [channelsSidebarOpen, setChannelsSidebarOpen] = useState(true);
   const [isAnunciosChannel, setIsAnunciosChannel] = useState(false);
+  const [postCommentCounts, setPostCommentCounts] = useState<{ [postId: string]: number }>({});
 
   // Fetch channels on mount
   useEffect(() => {
@@ -104,18 +105,34 @@ export default function Community() {
           // Fetch posts for announcements channel
           const res = await fetch(`/api/community/channels/${activeChannel.id}/posts?limit=50`);
           const data = await res.json();
-          setPosts(Array.isArray(data) ? data : []);
+          const postsData = Array.isArray(data) ? data : [];
+          setPosts(postsData);
           setSelectedPost(null);
           setComments([]);
+          
+          // Load comment counts for all posts
+          const counts: { [postId: string]: number } = {};
+          for (const post of postsData) {
+            try {
+              const commentsRes = await fetch(`/api/community/posts/${post.post.id}/comments`);
+              const commentsData = await commentsRes.json();
+              counts[post.post.id] = Array.isArray(commentsData) ? commentsData.length : 0;
+            } catch (err) {
+              counts[post.post.id] = 0;
+            }
+          }
+          setPostCommentCounts(counts);
         } else {
           // For regular channels, we could add message fetching here if needed
           setPosts([]);
           setSelectedPost(null);
           setComments([]);
+          setPostCommentCounts({});
         }
       } catch (error) {
         console.error("Error fetching content:", error);
         setPosts([]);
+        setPostCommentCounts({});
       }
     };
 
@@ -157,7 +174,13 @@ export default function Community() {
         // Refresh comments
         const newRes = await fetch(`/api/community/posts/${selectedPost.post.id}/comments`);
         const data = await newRes.json();
-        setComments(Array.isArray(data) ? data : []);
+        const newComments = Array.isArray(data) ? data : [];
+        setComments(newComments);
+        // Update the comment count
+        setPostCommentCounts(prev => ({
+          ...prev,
+          [selectedPost.post.id]: newComments.length
+        }));
         toast({ title: "Éxito", description: "Comentario enviado" });
       } else {
         const error = await res.json();
@@ -264,7 +287,7 @@ export default function Community() {
                 </div>
               ) : (
                 posts.map((post) => {
-                  const postCommentCount = comments.filter(c => c.comment.postId === post.post.id).length;
+                  const postCommentCount = postCommentCounts[post.post.id] || 0;
                   const postComments = comments.filter(c => c.comment.postId === post.post.id);
                   
                   return (
