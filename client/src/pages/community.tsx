@@ -533,7 +533,7 @@ export default function Community() {
 
           {/* Posts Feed - For all Comunidad section channels */}
           {posts.length > 0 || activeChannel?.section === "Comunidad" ? (
-            <div className="flex-1 overflow-y-auto px-6 py-6 space-y-4 max-w-4xl">
+            <div className="flex-1 overflow-y-auto px-6 py-6 space-y-4 max-w-4xl mx-auto w-full">
               {posts.length === 0 ? (
                 <div className="flex items-center justify-center h-full text-muted-foreground">
                   <p>No hay anuncios. Vuelve pronto.</p>
