@@ -121,7 +121,7 @@ export default function Sidebar({ onToggle }: SidebarProps = {}) {
   };
 
   return (
-    <aside className="hidden md:flex w-16 lg:w-[250px] bg-card border-r border-border flex-col fixed h-screen top-0 left-0 z-40">
+    <aside className="hidden md:flex w-16 lg:w-[250px] bg-card flex-col fixed h-screen top-0 left-0 z-40">
       {/* Logo */}
       <div className="px-4 py-4">
         <div className="flex items-center justify-center lg:justify-start">
