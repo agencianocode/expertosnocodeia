@@ -370,8 +370,8 @@ export default function Community() {
 
           {/* Sections */}
           <div className="flex-1 overflow-y-auto px-2 py-3 space-y-2">
-            {orderedSections.map((section, idx) => (
-              <div key={section.title} className={idx > 0 ? "border-t border-[#333333] pt-2" : ""}>
+            {orderedSections.map((section) => (
+              <div key={section.title}>
                 <div className="text-xs text-muted-foreground px-2 py-2 font-semibold uppercase">{section.title}</div>
                 {section.channels.map((channel) => (
                   <button
