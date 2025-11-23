@@ -543,14 +543,14 @@ export default function Community() {
                   const postCommentCount = postCommentCounts[post.post.id] || 0;
                   const postComments = allPostComments[post.post.id] || [];
                   const isExpanded = expandedPostId === post.post.id;
-                  const isReadOnlyChannel = activeChannel?.isReadOnly;
+                  const isAccordionChannel = activeChannel?.slug === 'empieza-aqui';
                   
                   return (
                     <div
                       key={post.post.id}
                       className={cn(
                         "rounded-lg border transition-colors",
-                        isReadOnlyChannel 
+                        isAccordionChannel 
                           ? "border-[#333333] bg-[#1a1a1a]" 
                           : cn(
                               "p-4 border-[#333333] bg-[#1a1a1a] cursor-pointer hover:border-[#555555]",
@@ -559,8 +559,8 @@ export default function Community() {
                       )}
                       data-testid={`post-${post.post.id}`}
                     >
-                      {/* Acordeón header - solo para read-only channels */}
-                      {isReadOnlyChannel && (
+                      {/* Acordeón header - solo para Empieza aquí */}
+                      {isAccordionChannel && (
                         <button
                           onClick={() => setExpandedPostId(isExpanded ? null : post.post.id)}
                           className="w-full text-left p-4 hover:bg-[#222222] transition-colors flex items-center justify-between"
@@ -575,10 +575,10 @@ export default function Community() {
                         </button>
                       )}
 
-                      {/* Contenido - mostrar si no es read-only O si está expandido */}
-                      {!isReadOnlyChannel || isExpanded ? (
+                      {/* Contenido - mostrar si no es accordion O si está expandido */}
+                      {!isAccordionChannel || isExpanded ? (
                         <>
-                          {!isReadOnlyChannel && (
+                          {!isAccordionChannel && (
                             <>
                               {/* Fecha */}
                               <p className="text-xs text-muted-foreground mb-3">
@@ -590,11 +590,11 @@ export default function Community() {
                             </>
                           )}
 
-                          {isReadOnlyChannel && <div className="border-t border-[#333333] px-4 py-3" />}
+                          {isAccordionChannel && <div className="border-t border-[#333333] px-4 py-3" />}
 
                           {/* Renderizar bloques si existen */}
                           {post.post.contentBlocks && post.post.contentBlocks.length > 0 ? (
-                            <div className={cn("space-y-3 mb-3", isReadOnlyChannel && "px-4")}>
+                            <div className={cn("space-y-3 mb-3", isAccordionChannel && "px-4")}>
                               {post.post.contentBlocks.map((block: any, idx: number) => {
                                 if (block.type === "text") {
                                   return (
@@ -692,7 +692,7 @@ export default function Community() {
 
                               {/* Contenido legacy - solo si no hay contentBlocks */}
                               {(!post.post.contentBlocks || post.post.contentBlocks.length === 0) && (
-                                <div className={cn("text-sm text-muted-foreground mb-3 whitespace-pre-wrap break-words", isReadOnlyChannel && "px-4")}>
+                                <div className={cn("text-sm text-muted-foreground mb-3 whitespace-pre-wrap break-words", isAccordionChannel && "px-4")}>
                                   {post.post.content.split(/(\bhttps?:\/\/[^\s]+)/g).map((part, idx) => {
                                     if (part.match(/^\bhttps?:\/\//)) {
                                       return (
@@ -732,8 +732,8 @@ export default function Community() {
                         </div>
                       </div>
 
-                      {/* Acciones - solo para canales no de solo lectura */}
-                      {!isReadOnlyChannel && (
+                      {/* Acciones - solo para canales que no son accordion */}
+                      {!isAccordionChannel && (
                         <div className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
                           {!activeChannel?.isReadOnly && (
                           <div className="relative">
