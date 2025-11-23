@@ -559,29 +559,145 @@ export default function Community() {
                       )}
                       data-testid={`post-${post.post.id}`}
                     >
-                      {/* Fecha */}
-                      <p className="text-xs text-muted-foreground mb-3">
-                        {new Date(post.post.createdAt).toLocaleDateString("es-ES", { year: "numeric", month: "long", day: "numeric" })}
-                      </p>
+                      {/* Acordeón header - solo para read-only channels */}
+                      {isReadOnlyChannel && (
+                        <button
+                          onClick={() => setExpandedPostId(isExpanded ? null : post.post.id)}
+                          className="w-full text-left p-4 hover:bg-[#222222] transition-colors flex items-center justify-between"
+                        >
+                          <div>
+                            <h3 className="font-bold text-white">{post.post.title}</h3>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              {new Date(post.post.createdAt).toLocaleDateString("es-ES", { year: "numeric", month: "long", day: "numeric" })}
+                            </p>
+                          </div>
+                          <ChevronDown className={cn("h-5 w-5 transition-transform", isExpanded && "rotate-180")} />
+                        </button>
+                      )}
 
-                      {/* Título */}
-                      <h3 className="font-bold text-white mb-3">{post.post.title}</h3>
+                      {/* Contenido - mostrar si no es read-only O si está expandido */}
+                      {!isReadOnlyChannel || isExpanded ? (
+                        <>
+                          {!isReadOnlyChannel && (
+                            <>
+                              {/* Fecha */}
+                              <p className="text-xs text-muted-foreground mb-3">
+                                {new Date(post.post.createdAt).toLocaleDateString("es-ES", { year: "numeric", month: "long", day: "numeric" })}
+                              </p>
 
-                      {/* Separador */}
-                      <div className="border-t border-[#333333] mb-3" />
+                              {/* Título */}
+                              <h3 className="font-bold text-white mb-3">{post.post.title}</h3>
+                            </>
+                          )}
 
-                      {/* Renderizar bloques si existen */}
-                      {post.post.contentBlocks && post.post.contentBlocks.length > 0 ? (
-                        <div className="space-y-3 mb-3">
-                          {post.post.contentBlocks.map((block: any, idx: number) => {
-                            if (block.type === "text") {
-                              return (
-                                <div key={idx} className="text-sm text-muted-foreground whitespace-pre-wrap break-words">
-                                  {block.content && block.content.split(/(\bhttps?:\/\/[^\s]+)/g).map((part: string, i: number) => {
+                          {isReadOnlyChannel && <div className="border-t border-[#333333] px-4 py-3" />}
+
+                          {/* Renderizar bloques si existen */}
+                          {post.post.contentBlocks && post.post.contentBlocks.length > 0 ? (
+                            <div className={cn("space-y-3 mb-3", isReadOnlyChannel && "px-4")}>
+                              {post.post.contentBlocks.map((block: any, idx: number) => {
+                                if (block.type === "text") {
+                                  return (
+                                    <div key={idx} className="text-sm text-muted-foreground whitespace-pre-wrap break-words">
+                                      {block.content && block.content.split(/(\bhttps?:\/\/[^\s]+)/g).map((part: string, i: number) => {
+                                        if (part.match(/^\bhttps?:\/\//)) {
+                                          return (
+                                            <a
+                                              key={i}
+                                              href={part}
+                                              target="_blank"
+                                              rel="noopener noreferrer"
+                                              className="text-cyan-500 hover:text-cyan-400 underline break-all"
+                                            >
+                                              {part}
+                                            </a>
+                                          );
+                                        }
+                                        return part;
+                                      })}
+                                    </div>
+                                  );
+                                } else if (block.type === "video") {
+                                  const isYouTube = /youtu\.be\/|youtube\.com/i.test(block.url);
+                                  const isVimeo = /vimeo\.com/i.test(block.url);
+                                  
+                                  if (isYouTube || isVimeo) {
+                                    return (
+                                      <div key={idx} className="w-full rounded overflow-hidden bg-black border-2 border-cyan-500">
+                                        <div style={{ position: "relative", paddingBottom: "56.25%", height: 0 }}>
+                                          <iframe
+                                            style={{
+                                              position: "absolute",
+                                              top: 0,
+                                              left: 0,
+                                              width: "100%",
+                                              height: "100%",
+                                            }}
+                                            src={block.url.replace(/youtu\.be\//, "youtube.com/embed/").replace(/vimeo\.com\//, "vimeo.com/video/")}
+                                            frameBorder="0"
+                                            allowFullScreen
+                                            title="Video"
+                                          ></iframe>
+                                        </div>
+                                      </div>
+                                    );
+                                  }
+                                } else if (block.type === "image") {
+                                  return (
+                                    <img key={idx} src={block.url} alt="" className="w-full h-64 object-cover rounded border-2 border-cyan-500" />
+                                  );
+                                }
+                                return null;
+                              })}
+                            </div>
+                          ) : (
+                            <>
+                              {post.post.videoUrl && (() => {
+                                const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(post.post.videoUrl);
+                                const isYouTube = /youtu\.be\/|youtube\.com/i.test(post.post.videoUrl);
+                                const isVimeo = /vimeo\.com/i.test(post.post.videoUrl);
+                                
+                                if (isImage) {
+                                  return <img src={post.post.videoUrl} alt="" className="w-full h-64 object-cover rounded mb-3 border-2 border-cyan-500" />;
+                                }
+                                
+                                if (isYouTube || isVimeo) {
+                                  return (
+                                    <div className="w-full mb-3 rounded overflow-hidden bg-black border-2 border-cyan-500">
+                                      <div style={{ position: "relative", paddingBottom: "56.25%", height: 0 }}>
+                                        <iframe
+                                          style={{
+                                            position: "absolute",
+                                            top: 0,
+                                            left: 0,
+                                            width: "100%",
+                                            height: "100%",
+                                          }}
+                                          src={post.post.videoUrl.replace(/youtu\.be\//, "youtube.com/embed/").replace(/vimeo\.com\//, "vimeo.com/video/")}
+                                          frameBorder="0"
+                                          allowFullScreen
+                                          title="Video"
+                                        ></iframe>
+                                      </div>
+                                    </div>
+                                  );
+                                }
+                                
+                                return null;
+                              })()}
+
+                              {post.post.imageUrl && (
+                                <img src={post.post.imageUrl} alt="" className="w-full h-64 object-cover rounded mb-3" />
+                              )}
+
+                              {/* Contenido legacy - solo si no hay contentBlocks */}
+                              {(!post.post.contentBlocks || post.post.contentBlocks.length === 0) && (
+                                <div className={cn("text-sm text-muted-foreground mb-3 whitespace-pre-wrap break-words", isReadOnlyChannel && "px-4")}>
+                                  {post.post.content.split(/(\bhttps?:\/\/[^\s]+)/g).map((part, idx) => {
                                     if (part.match(/^\bhttps?:\/\//)) {
                                       return (
                                         <a
-                                          key={i}
+                                          key={idx}
                                           href={part}
                                           target="_blank"
                                           rel="noopener noreferrer"
@@ -594,103 +710,11 @@ export default function Community() {
                                     return part;
                                   })}
                                 </div>
-                              );
-                            } else if (block.type === "video") {
-                              const isYouTube = /youtu\.be\/|youtube\.com/i.test(block.url);
-                              const isVimeo = /vimeo\.com/i.test(block.url);
-                              
-                              if (isYouTube || isVimeo) {
-                                return (
-                                  <div key={idx} className="w-full rounded overflow-hidden bg-black border-2 border-cyan-500">
-                                    <div style={{ position: "relative", paddingBottom: "56.25%", height: 0 }}>
-                                      <iframe
-                                        style={{
-                                          position: "absolute",
-                                          top: 0,
-                                          left: 0,
-                                          width: "100%",
-                                          height: "100%",
-                                        }}
-                                        src={block.url.replace(/youtu\.be\//, "youtube.com/embed/").replace(/vimeo\.com\//, "vimeo.com/video/")}
-                                        frameBorder="0"
-                                        allowFullScreen
-                                        title="Video"
-                                      ></iframe>
-                                    </div>
-                                  </div>
-                                );
-                              }
-                            } else if (block.type === "image") {
-                              return (
-                                <img key={idx} src={block.url} alt="" className="w-full h-64 object-cover rounded border-2 border-cyan-500" />
-                              );
-                            }
-                            return null;
-                          })}
-                        </div>
-                      ) : (
-                        <>
-                          {post.post.videoUrl && (() => {
-                            const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(post.post.videoUrl);
-                            const isYouTube = /youtu\.be\/|youtube\.com/i.test(post.post.videoUrl);
-                            const isVimeo = /vimeo\.com/i.test(post.post.videoUrl);
-                            
-                            if (isImage) {
-                              return <img src={post.post.videoUrl} alt="" className="w-full h-64 object-cover rounded mb-3 border-2 border-cyan-500" />;
-                            }
-                            
-                            if (isYouTube || isVimeo) {
-                              return (
-                                <div className="w-full mb-3 rounded overflow-hidden bg-black border-2 border-cyan-500">
-                                  <div style={{ position: "relative", paddingBottom: "56.25%", height: 0 }}>
-                                    <iframe
-                                      style={{
-                                        position: "absolute",
-                                        top: 0,
-                                        left: 0,
-                                        width: "100%",
-                                        height: "100%",
-                                      }}
-                                      src={post.post.videoUrl.replace(/youtu\.be\//, "youtube.com/embed/").replace(/vimeo\.com\//, "vimeo.com/video/")}
-                                      frameBorder="0"
-                                      allowFullScreen
-                                      title="Video"
-                                    ></iframe>
-                                  </div>
-                                </div>
-                              );
-                            }
-                            
-                            return null;
-                          })()}
-
-                          {post.post.imageUrl && (
-                            <img src={post.post.imageUrl} alt="" className="w-full h-64 object-cover rounded mb-3" />
-                          )}
-
-                          {/* Contenido legacy - solo si no hay contentBlocks */}
-                          {(!post.post.contentBlocks || post.post.contentBlocks.length === 0) && (
-                            <div className="text-sm text-muted-foreground mb-3 whitespace-pre-wrap break-words">
-                              {post.post.content.split(/(\bhttps?:\/\/[^\s]+)/g).map((part, idx) => {
-                                if (part.match(/^\bhttps?:\/\//)) {
-                                  return (
-                                    <a
-                                      key={idx}
-                                      href={part}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      className="text-cyan-500 hover:text-cyan-400 underline break-all"
-                                    >
-                                      {part}
-                                    </a>
-                                  );
-                                }
-                                return part;
-                              })}
-                            </div>
+                              )}
+                            </>
                           )}
                         </>
-                      )}
+                      ) : null}
 
                       {/* Header con nombre y hora */}
                       <div className="flex items-center gap-2 mb-3">
