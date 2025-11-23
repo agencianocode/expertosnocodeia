@@ -735,7 +735,6 @@ export default function Community() {
                       {/* Acciones - solo para canales que no son accordion */}
                       {!isAccordionChannel && (
                         <div className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
-                          {!activeChannel?.isReadOnly && (
                           <div className="relative">
                             <button 
                               onClick={() => setOpenReactionPostId(openReactionPostId === post.post.id ? null : post.post.id)}
@@ -781,10 +780,9 @@ export default function Community() {
                             </div>
                             )}
                           </div>
-                        )}
                         
                         {/* Show all reactions */}
-                        {!activeChannel?.isReadOnly && (allReactions[post.post.id] || []).length > 0 && (
+                        {(allReactions[post.post.id] || []).length > 0 && (
                           <div className="flex items-center gap-1 flex-wrap">
                             {(allReactions[post.post.id] || []).map((reaction, idx) => {
                               const isUserReaction = (userEmojis[post.post.id] || []).includes(reaction.emoji);
@@ -792,7 +790,6 @@ export default function Community() {
                                 <button
                                   key={idx}
                                   onClick={() => {
-                                    // Toggle reaction on click
                                     addReactionMutation.mutate({
                                       postId: post.post.id,
                                       emoji: reaction.emoji,
@@ -811,36 +808,33 @@ export default function Community() {
                             })}
                           </div>
                         )}
-                        {!activeChannel?.isReadOnly && (
-                          <button
-                            onClick={() => {
-                              if (selectedPost?.post.id === post.post.id) {
-                                setSelectedPost(null);
-                              } else {
-                                setSelectedPost(post);
-                              }
-                            }}
-                            className={cn(
-                              "flex items-center gap-2 transition-colors",
-                              selectedPost?.post.id === post.post.id ? "text-cyan-500" : "text-muted-foreground hover:text-cyan-500"
-                            )}
-                            data-testid={`view-comments-${post.post.id}`}
-                          >
-                            {/* Avatares de quienes comentaron */}
-                            {postCommentCount > 0 && (
-                              <div className="flex items-center -space-x-2">
-                                {postComments.slice(0, 3).map((comment, idx) => (
-                                  <Avatar key={idx} className="h-5 w-5 border border-[#1a1a1a]">
-                                    <AvatarImage src={comment.user?.profileImageUrl || undefined} />
-                                    <AvatarFallback className="text-xs">{(comment.user?.firstName?.charAt(0) || "U").toUpperCase()}</AvatarFallback>
-                                  </Avatar>
-                                ))}
-                              </div>
-                            )}
-                            <span>{postCommentCount} respuesta{postCommentCount !== 1 ? "s" : ""}</span>
-                          </button>
-                        )}
-                      </div>
+                        <button
+                          onClick={() => {
+                            if (selectedPost?.post.id === post.post.id) {
+                              setSelectedPost(null);
+                            } else {
+                              setSelectedPost(post);
+                            }
+                          }}
+                          className={cn(
+                            "flex items-center gap-2 transition-colors",
+                            selectedPost?.post.id === post.post.id ? "text-cyan-500" : "text-muted-foreground hover:text-cyan-500"
+                          )}
+                          data-testid={`view-comments-${post.post.id}`}
+                        >
+                          {postCommentCount > 0 && (
+                            <div className="flex items-center -space-x-2">
+                              {postComments.slice(0, 3).map((comment, idx) => (
+                                <Avatar key={idx} className="h-5 w-5 border border-[#1a1a1a]">
+                                  <AvatarImage src={comment.user?.profileImageUrl || undefined} />
+                                  <AvatarFallback className="text-xs">{(comment.user?.firstName?.charAt(0) || "U").toUpperCase()}</AvatarFallback>
+                                </Avatar>
+                              ))}
+                            </div>
+                          )}
+                          <span>{postCommentCount} respuesta{postCommentCount !== 1 ? "s" : ""}</span>
+                        </button>
+                        </div>
                       )}
                     </div>
                   );
