@@ -348,7 +348,7 @@ export default function Community() {
       <div className="md:ml-16 lg:ml-[250px] min-h-screen flex overflow-hidden">
         {/* Middle Sidebar - Channels (fixed) */}
         <div className={cn(
-          "hidden lg:flex fixed left-[250px] top-16 w-[280px] h-[calc(100vh-4rem)] bg-[#2a2a2a] border-r border-[#333333] overflow-y-auto flex-col transition-all duration-300 z-40",
+          "hidden lg:flex fixed left-[250px] top-0 w-[280px] h-screen bg-[#2a2a2a] border-r border-[#333333] overflow-y-auto flex-col transition-all duration-300 z-40",
           !channelsSidebarOpen && "lg:hidden"
         )}>
           {/* User Profile Section */}
