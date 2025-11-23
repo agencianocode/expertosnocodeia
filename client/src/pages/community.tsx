@@ -369,7 +369,7 @@ export default function Community() {
           </div>
 
           {/* Sections */}
-          <div className="flex-1 overflow-y-auto px-2 py-3 space-y-0">
+          <div className="flex-1 overflow-y-auto px-2 py-3 space-y-0 bg-[#232323]">
             {orderedSections.map((section) => (
               <div key={section.title}>
                 <div className="text-xs text-muted-foreground px-2 py-1 font-semibold uppercase">{section.title}</div>
