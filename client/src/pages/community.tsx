@@ -369,16 +369,16 @@ export default function Community() {
           </div>
 
           {/* Sections */}
-          <div className="flex-1 overflow-y-auto px-2 py-3 space-y-2">
+          <div className="flex-1 overflow-y-auto px-2 py-3 space-y-0">
             {orderedSections.map((section) => (
               <div key={section.title}>
-                <div className="text-xs text-muted-foreground px-2 py-2 font-semibold uppercase">{section.title}</div>
+                <div className="text-xs text-muted-foreground px-2 py-1 font-semibold uppercase">{section.title}</div>
                 {section.channels.map((channel) => (
                   <button
                     key={channel.id}
                     onClick={() => setActiveChannel(channel)}
                     className={cn(
-                      "w-full text-left px-3 py-2 rounded text-sm font-medium flex items-center gap-2 hover:bg-[#333333] transition-colors",
+                      "w-full text-left px-3 py-1.5 rounded text-sm font-medium flex items-center gap-2 hover:bg-[#333333] transition-colors",
                       activeChannel?.id === channel.id && "bg-[#404040] text-white"
                     )}
                     data-testid={`channel-${channel.slug}`}
