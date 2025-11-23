@@ -391,8 +391,7 @@ export default function Community() {
             ))}
           </div>
 
-          <div className="border-t border-[#333333] p-3 text-xs text-muted-foreground sticky bottom-0 bg-[#2a2a2a]">Conectado</div>
-        </div>
+          </div>
 
         {/* Center Content - Posts Feed */}
         <div className={cn(
