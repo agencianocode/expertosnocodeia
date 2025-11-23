@@ -288,7 +288,7 @@ export default function Sidebar({ onToggle }: SidebarProps = {}) {
             </div>
 
             {/* User Profile */}
-            <div className="p-4 border-t border-border">
+            <div className="p-4">
               <div className="flex items-center justify-center lg:justify-start lg:space-x-3">
                 <div className="w-8 h-8 bg-gradient-to-r from-purple-accent to-blue-accent rounded-full flex items-center justify-center">
                   {(user as any)?.profileImageUrl ? (
