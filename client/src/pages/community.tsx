@@ -352,6 +352,18 @@ export default function Community() {
           "hidden lg:flex fixed left-[250px] top-16 w-[280px] h-[calc(100vh-4rem)] bg-[#2a2a2a] border-r border-[#333333] overflow-y-auto flex-col transition-all duration-300 z-40",
           !channelsSidebarOpen && "lg:hidden"
         )}>
+          {/* User Profile Section */}
+          <div className="p-4 border-b border-[#333333] bg-[#2a2a2a] flex items-center gap-3">
+            <Avatar className="h-10 w-10">
+              <AvatarImage src={user?.profileImageUrl || undefined} />
+              <AvatarFallback>{(user?.firstName?.charAt(0) || "U").toUpperCase()}</AvatarFallback>
+            </Avatar>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-white truncate">{user?.firstName} {user?.lastName}</p>
+              <p className="text-xs text-cyan-500 font-medium">● En Línea</p>
+            </div>
+          </div>
+
           {/* Search */}
           <div className="p-4 border-b border-[#333333] sticky top-0 bg-[#2a2a2a] z-10">
             <Input type="search" placeholder="Buscar..." className="text-xs h-8 bg-[#1a1a1a] border-[#444444]" />
