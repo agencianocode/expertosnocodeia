@@ -352,7 +352,7 @@ export default function Community() {
           !channelsSidebarOpen && "lg:hidden"
         )}>
           {/* User Profile Section */}
-          <div className="p-4 flex items-center gap-3 bg-[#232323]">
+          <div className="p-4 flex items-center gap-3 bg-[#232323] pt-[9px] pb-[9px]">
             <Avatar className="h-10 w-10">
               <AvatarImage src={user?.profileImageUrl || undefined} />
               <AvatarFallback>{(user?.firstName?.charAt(0) || "U").toUpperCase()}</AvatarFallback>
