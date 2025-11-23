@@ -559,38 +559,20 @@ export default function Community() {
                       )}
                       data-testid={`post-${post.post.id}`}
                     >
-                      {/* Acordeón Header para canales de solo lectura */}
-                      {isReadOnlyChannel ? (
-                        <button
-                          onClick={() => setExpandedPostId(isExpanded ? null : post.post.id)}
-                          className="w-full text-left p-4 hover:bg-[#222222] transition-colors flex items-center justify-between"
-                        >
-                          <div>
-                            <h3 className="font-bold text-white">{post.post.title}</h3>
-                            <p className="text-xs text-muted-foreground mt-1">
-                              {new Date(post.post.createdAt).toLocaleDateString("es-ES", { year: "numeric", month: "long", day: "numeric" })}
-                            </p>
-                          </div>
-                          <ChevronDown className={cn("h-5 w-5 transition-transform", isExpanded && "rotate-180")} />
-                        </button>
-                      ) : (
-                        <>
-                          {/* Fecha arriba */}
-                          <p className="text-xs text-muted-foreground mb-2">
-                            {new Date(post.post.createdAt).toLocaleDateString("es-ES", { year: "numeric", month: "long", day: "numeric" })}
-                          </p>
-                        </>
-                      )}
+                      {/* Fecha */}
+                      <p className="text-xs text-muted-foreground mb-3">
+                        {new Date(post.post.createdAt).toLocaleDateString("es-ES", { year: "numeric", month: "long", day: "numeric" })}
+                      </p>
 
-                      {/* Contenido - solo mostrar si no es de solo lectura O si está expandido */}
-                      {!isReadOnlyChannel || isExpanded ? (
-                        <>
-                          {!isReadOnlyChannel && <h3 className="font-bold text-white mb-3">{post.post.title}</h3>}
-                          {isReadOnlyChannel && <div className="border-t border-[#333333] my-0" />}
+                      {/* Título */}
+                      <h3 className="font-bold text-white mb-3">{post.post.title}</h3>
 
-                          {/* Renderizar bloques si existen */}
-                          {post.post.contentBlocks && post.post.contentBlocks.length > 0 ? (
-                            <div className={cn("space-y-3 mb-3", isReadOnlyChannel && "px-4 py-3")}>
+                      {/* Separador */}
+                      <div className="border-t border-[#333333] mb-3" />
+
+                      {/* Renderizar bloques si existen */}
+                      {post.post.contentBlocks && post.post.contentBlocks.length > 0 ? (
+                        <div className="space-y-3 mb-3">
                           {post.post.contentBlocks.map((block: any, idx: number) => {
                             if (block.type === "text") {
                               return (
@@ -683,7 +665,29 @@ export default function Community() {
                           })()}
 
                           {post.post.imageUrl && (
-                            <img src={post.post.imageUrl} alt="" className="w-full h-64 object-cover rounded mb-4" />
+                            <img src={post.post.imageUrl} alt="" className="w-full h-64 object-cover rounded mb-3" />
+                          )}
+
+                          {/* Contenido legacy - solo si no hay contentBlocks */}
+                          {(!post.post.contentBlocks || post.post.contentBlocks.length === 0) && (
+                            <div className="text-sm text-muted-foreground mb-3 whitespace-pre-wrap break-words">
+                              {post.post.content.split(/(\bhttps?:\/\/[^\s]+)/g).map((part, idx) => {
+                                if (part.match(/^\bhttps?:\/\//)) {
+                                  return (
+                                    <a
+                                      key={idx}
+                                      href={part}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="text-cyan-500 hover:text-cyan-400 underline break-all"
+                                    >
+                                      {part}
+                                    </a>
+                                  );
+                                }
+                                return part;
+                              })}
+                            </div>
                           )}
                         </>
                       )}
@@ -704,35 +708,8 @@ export default function Community() {
                         </div>
                       </div>
 
-                          {/* Contenido - solo si no hay contentBlocks */}
-                          {(!post.post.contentBlocks || post.post.contentBlocks.length === 0) && (
-                            <div className={isReadOnlyChannel ? "px-4 py-3" : ""}>
-                              {!isReadOnlyChannel && <h3 className="font-bold text-white mb-2">{post.post.title}</h3>}
-                              <div className="text-sm text-muted-foreground mb-3 whitespace-pre-wrap break-words">
-                                {post.post.content.split(/(\bhttps?:\/\/[^\s]+)/g).map((part, idx) => {
-                                  if (part.match(/^\bhttps?:\/\//)) {
-                                    return (
-                                      <a
-                                        key={idx}
-                                        href={part}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="text-cyan-500 hover:text-cyan-400 underline break-all"
-                                      >
-                                        {part}
-                                      </a>
-                                    );
-                                  }
-                                  return part;
-                                })}
-                              </div>
-                            </div>
-                          )}
-                        </>
-                      ) : null}
-
-                      {/* Acciones - solo para canales no de solo lectura O si está expandido */}
-                      {!isReadOnlyChannel || isExpanded ? (
+                      {/* Acciones - solo para canales no de solo lectura */}
+                      {!isReadOnlyChannel && (
                         <div className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
                           {!activeChannel?.isReadOnly && (
                           <div className="relative">
@@ -839,8 +816,8 @@ export default function Community() {
                             <span>{postCommentCount} respuesta{postCommentCount !== 1 ? "s" : ""}</span>
                           </button>
                         )}
-                        </div>
-                      ) : null}
+                      </div>
+                      )}
                     </div>
                   );
                 })

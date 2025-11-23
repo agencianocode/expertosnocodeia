@@ -1960,8 +1960,8 @@ export function registerSimpleRoutes(app: Express): Server {
       // Determine sort order
       let orderClauses: any[];
       if (isReadOnly) {
-        // For read-only channels, always order by displayOrder, then createdAt
-        orderClauses = [communityPosts.displayOrder, desc(communityPosts.createdAt)];
+        // For read-only channels, order by newest first
+        orderClauses = [desc(communityPosts.createdAt)];
       } else {
         // For regular channels, use the sort parameter
         let orderClause: any;
