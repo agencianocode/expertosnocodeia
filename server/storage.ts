@@ -2627,7 +2627,7 @@ export class DatabaseStorage implements IStorage {
   async initializeCommunityChannels(): Promise<void> {
     // Core general channels
     const generalChannels = [
-      { slug: 'anuncios', name: 'Anuncios', description: 'Actualizaciones y noticias importantes', icon: '📢', section: 'Comunidad', order: 1, isReadOnly: false },
+      { slug: 'anuncios', name: 'Anuncios', description: 'Actualizaciones y noticias importantes', icon: '📢', section: 'Comunidad', order: 1, isReadOnly: true },
       { slug: 'empieza-aqui', name: 'Empieza aquí', description: 'Guías y tutoriales de cómo usar la plataforma', icon: '🏠', section: 'Comunidad', order: 2, isReadOnly: true },
       { slug: 'presentante', name: 'Presentante', description: 'Conoce a los miembros de la comunidad', icon: '👋', section: 'Comunidad', order: 3, isReadOnly: false },
       { slug: 'comparte-proyecto', name: 'Comparte tu proyecto o trabajo', description: 'Muestra tus proyectos y trabajos realizados', icon: '🚀', section: 'Comunidad', order: 4, isReadOnly: false },
