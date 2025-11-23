@@ -364,7 +364,7 @@ export default function Community() {
           </div>
 
           {/* Search */}
-          <div className="p-4 sticky top-0 bg-[#2a2a2a] z-10">
+          <div className="p-4 sticky top-0 z-10 bg-[#232323]">
             <Input type="search" placeholder="Buscar..." className="text-xs h-8 bg-[#1a1a1a] border-[#444444]" />
           </div>
 
