@@ -2024,41 +2024,6 @@ export function registerSimpleRoutes(app: Express): Server {
     }
   });
 
-  // User endpoint to create posts (for non-read-only channels)
-  app.post("/api/community/posts", simpleAdminAuth, async (req: Request, res: Response) => {
-    try {
-      const { channelId, title, content, imageUrl, videoUrl } = req.body;
-      const userId = (req as any).user?.claims?.sub || (req as any).user?.id;
-
-      if (!channelId || !title || !content) {
-        return res.status(400).json({ message: "channelId, title, and content are required" });
-      }
-
-      // Check if channel is read-only
-      const channelData = await db.select().from(communityChannels).where(eq(communityChannels.id, channelId));
-      if (channelData.length === 0) {
-        return res.status(404).json({ message: "Channel not found" });
-      }
-      if (channelData[0].isReadOnly) {
-        return res.status(403).json({ message: "Cannot post in read-only channels" });
-      }
-
-      const post = await db.insert(communityPosts).values({
-        channelId,
-        userId,
-        title,
-        content,
-        imageUrl: imageUrl || null,
-        videoUrl: videoUrl || null,
-      }).returning();
-
-      res.status(201).json(post[0]);
-    } catch (error) {
-      console.error("Error creating post:", error);
-      res.status(500).json({ message: "Failed to create post" });
-    }
-  });
-
   // Admin endpoint to create posts
   app.post("/api/admin/community/posts", simpleAdminAuth, isAdmin, async (req: Request, res: Response) => {
     try {

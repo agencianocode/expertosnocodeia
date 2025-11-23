@@ -104,9 +104,6 @@ export default function Community() {
     inAppNotifications: true,
     mobileNotifications: false,
   });
-  const [newPostTitle, setNewPostTitle] = useState("");
-  const [newPostContent, setNewPostContent] = useState("");
-  const [creatingPost, setCreatingPost] = useState(false);
 
   // Mutation for adding/removing reactions
   const addReactionMutation = useMutation({
@@ -536,90 +533,9 @@ export default function Community() {
           {/* Posts Feed - For all Comunidad section channels */}
           {posts.length > 0 || activeChannel?.section === "Comunidad" ? (
             <div className="flex-1 overflow-y-auto px-6 py-6 space-y-4 max-w-4xl mx-auto w-full">
-              {/* Create Post Form - only for non-read-only channels */}
-              {!activeChannel?.isReadOnly && (
-                <div className="rounded-lg border border-[#333333] bg-[#1a1a1a] p-4 space-y-3">
-                  <div className="flex items-center gap-2">
-                    <Avatar className="h-8 w-8">
-                      <AvatarImage src={(user as any)?.profileImageUrl || undefined} />
-                      <AvatarFallback>{(user?.firstName?.charAt(0) || "U").toUpperCase()}</AvatarFallback>
-                    </Avatar>
-                    <span className="text-sm text-muted-foreground">Inicia una publicación</span>
-                  </div>
-                  <input
-                    type="text"
-                    placeholder="Título de tu presentación"
-                    value={newPostTitle}
-                    onChange={(e) => setNewPostTitle(e.target.value)}
-                    className="w-full bg-[#2a2a2a] border border-[#333333] rounded px-3 py-2 text-sm text-white placeholder-muted-foreground focus:outline-none focus:border-cyan-500"
-                  />
-                  <textarea
-                    placeholder="Cuéntanos sobre ti..."
-                    value={newPostContent}
-                    onChange={(e) => setNewPostContent(e.target.value)}
-                    rows={4}
-                    className="w-full bg-[#2a2a2a] border border-[#333333] rounded px-3 py-2 text-sm text-white placeholder-muted-foreground focus:outline-none focus:border-cyan-500 resize-none"
-                  />
-                  <div className="flex justify-end gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        setNewPostTitle("");
-                        setNewPostContent("");
-                      }}
-                      className="border-[#333333]"
-                    >
-                      Cancelar
-                    </Button>
-                    <Button
-                      size="sm"
-                      className="bg-cyan-500 hover:bg-cyan-600 text-black font-semibold"
-                      onClick={async () => {
-                        if (!newPostTitle.trim() || !newPostContent.trim()) {
-                          toast({ title: "Error", description: "El título y contenido son requeridos", variant: "destructive" });
-                          return;
-                        }
-                        setCreatingPost(true);
-                        try {
-                          const res = await fetch("/api/community/posts", {
-                            method: "POST",
-                            headers: { "Content-Type": "application/json" },
-                            credentials: "include",
-                            body: JSON.stringify({
-                              channelId: activeChannel?.id,
-                              title: newPostTitle,
-                              content: newPostContent,
-                            }),
-                          });
-                          if (res.ok) {
-                            toast({ title: "Éxito", description: "Publicación creada" });
-                            setNewPostTitle("");
-                            setNewPostContent("");
-                            // Refresh posts
-                            const postsRes = await fetch(`/api/community/posts?channelId=${activeChannel?.id}`, { credentials: "include" });
-                            const postsData = await postsRes.json();
-                            setPosts(postsData);
-                          } else {
-                            toast({ title: "Error", description: "No se pudo crear la publicación", variant: "destructive" });
-                          }
-                        } catch (error) {
-                          toast({ title: "Error", description: "Error al crear la publicación", variant: "destructive" });
-                        } finally {
-                          setCreatingPost(false);
-                        }
-                      }}
-                      disabled={creatingPost}
-                    >
-                      {creatingPost ? <Loader2 className="h-4 w-4 animate-spin" /> : "Publicar"}
-                    </Button>
-                  </div>
-                </div>
-              )}
-
               {posts.length === 0 ? (
                 <div className="flex items-center justify-center h-full text-muted-foreground">
-                  <p>No hay publicaciones. Sé el primero en compartir.</p>
+                  <p>No hay anuncios. Vuelve pronto.</p>
                 </div>
               ) : (
                 posts.map((post) => {
