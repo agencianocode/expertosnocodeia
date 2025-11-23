@@ -344,7 +344,6 @@ export default function Community() {
     <div className="min-h-screen bg-background">
       {/* Left Sidebar - Main Navigation (fixed) */}
       <Sidebar />
-
       {/* Main Content Container - accounts for fixed sidebar */}
       <div className="md:ml-16 lg:ml-[250px] min-h-screen flex overflow-hidden">
         {/* Middle Sidebar - Channels (fixed) */}
@@ -392,9 +391,7 @@ export default function Community() {
             ))}
           </div>
 
-          <div className="border-t border-[#333333] p-3 text-xs text-muted-foreground sticky bottom-0 bg-[#2a2a2a]">
-            En vivo
-          </div>
+          <div className="border-t border-[#333333] p-3 text-xs text-muted-foreground sticky bottom-0 bg-[#2a2a2a]">Conectado</div>
         </div>
 
         {/* Center Content - Posts Feed */}
@@ -586,7 +583,6 @@ export default function Community() {
                           <ChevronDown className={cn("h-5 w-5 transition-transform", isExpanded && "rotate-180")} />
                         </button>
                       )}
-
                       {/* Contenido - mostrar si no es accordion O si está expandido */}
                       {!isAccordionChannel || isExpanded ? (
                         <>
@@ -727,7 +723,6 @@ export default function Community() {
                           )}
                         </>
                       ) : null}
-
                       {/* Header con nombre y hora */}
                       <div className="flex items-center gap-2 mb-3">
                         <Avatar className="h-8 w-8">
@@ -743,7 +738,6 @@ export default function Community() {
                           </p>
                         </div>
                       </div>
-
                       {/* Acciones - solo para canales que no son accordion */}
                       {!isAccordionChannel && (
                         <div className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
@@ -941,7 +935,6 @@ export default function Community() {
           </div>
         )}
       </div>
-
       <MobileNav />
     </div>
   );
