@@ -399,7 +399,7 @@ export default function Community() {
           selectedPost && isAnunciosChannel ? "lg:w-1/2" : ""
         )}>
           {/* Header */}
-          <div className="border-b border-[#333333] bg-[#1a1a1a] px-6 py-4 flex items-center justify-between gap-4">
+          <div className="bg-[#1a1a1a] px-6 py-4 flex items-center justify-between gap-4">
             <div className="flex items-center gap-4 flex-1">
               <Button
                 variant="ghost"
