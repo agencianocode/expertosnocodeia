@@ -123,7 +123,7 @@ export default function Sidebar({ onToggle }: SidebarProps = {}) {
   return (
     <aside className="hidden md:flex w-16 lg:w-[250px] bg-card border-r border-border flex-col fixed h-screen top-0 left-0 z-40">
       {/* Logo */}
-      <div className="px-4 py-4 border-b border-border">
+      <div className="px-4 py-4">
         <div className="flex items-center justify-center lg:justify-start">
           <div className="hidden lg:block">
             <h1 className="font-satoshi font-bold text-[14px]">
