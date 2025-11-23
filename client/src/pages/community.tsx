@@ -347,10 +347,10 @@ export default function Community() {
 
       {/* Main Content Container - accounts for fixed sidebar */}
       <div className="md:ml-16 lg:ml-[250px] min-h-screen flex overflow-hidden">
-        {/* Middle Sidebar - Channels */}
+        {/* Middle Sidebar - Channels (fixed) */}
         <div className={cn(
-          "w-[280px] bg-[#2a2a2a] border-r border-[#333333] overflow-y-auto flex flex-col transition-all duration-300",
-          !channelsSidebarOpen && "hidden lg:flex"
+          "hidden lg:flex fixed left-[250px] top-16 w-[280px] h-[calc(100vh-4rem)] bg-[#2a2a2a] border-r border-[#333333] overflow-y-auto flex-col transition-all duration-300 z-40",
+          !channelsSidebarOpen && "lg:hidden"
         )}>
           {/* Search */}
           <div className="p-4 border-b border-[#333333] sticky top-0 bg-[#2a2a2a] z-10">
@@ -387,7 +387,7 @@ export default function Community() {
 
         {/* Center Content - Posts Feed */}
         <div className={cn(
-          "flex-1 flex flex-col overflow-hidden",
+          "flex-1 flex flex-col overflow-hidden lg:ml-[280px]",
           selectedPost && isAnunciosChannel ? "lg:w-1/2" : ""
         )}>
           {/* Header */}
@@ -644,7 +644,7 @@ export default function Community() {
                                   }
                                 } else if (block.type === "image") {
                                   return (
-                                    <img key={idx} src={block.url} alt="" className="w-full h-64 object-cover rounded border-2 border-cyan-500" />
+                                    <img key={idx} src={block.url} alt="" className="w-full max-h-96 object-contain rounded border-2 border-cyan-500" />
                                   );
                                 }
                                 return null;
@@ -658,7 +658,7 @@ export default function Community() {
                                 const isVimeo = /vimeo\.com/i.test(post.post.videoUrl);
                                 
                                 if (isImage) {
-                                  return <img src={post.post.videoUrl} alt="" className="w-full h-64 object-cover rounded mb-3 border-2 border-cyan-500" />;
+                                  return <img src={post.post.videoUrl} alt="" className="w-full max-h-96 object-contain rounded mb-3 border-2 border-cyan-500" />;
                                 }
                                 
                                 if (isYouTube || isVimeo) {
@@ -687,7 +687,7 @@ export default function Community() {
                               })()}
 
                               {post.post.imageUrl && (
-                                <img src={post.post.imageUrl} alt="" className="w-full h-64 object-cover rounded mb-3" />
+                                <img src={post.post.imageUrl} alt="" className="w-full max-h-96 object-contain rounded mb-3" />
                               )}
 
                               {/* Contenido legacy - solo si no hay contentBlocks */}
