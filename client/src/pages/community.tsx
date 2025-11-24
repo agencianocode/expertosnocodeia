@@ -669,34 +669,36 @@ export default function Community() {
                                 )}
                               </p>
                             </div>
-                            <button
-                              onClick={async (e) => {
-                                e.stopPropagation();
-                                if (confirm("¿Eliminar esta publicación?")) {
-                                  try {
-                                    const res = await fetch(`/api/admin/community/posts/${post.post.id}`, {
-                                      method: "DELETE",
-                                      credentials: "include",
-                                    });
-                                    if (res.ok) {
-                                      // Refetch posts
-                                      const postsRes = await fetch(`/api/community/channels/${activeChannel?.id}/posts?limit=50&sort=${sortBy}`);
-                                      const postsData = await postsRes.json();
-                                      setPosts(Array.isArray(postsData) ? postsData : []);
-                                      toast({ title: "Éxito", description: "Publicación eliminada" });
-                                    } else {
-                                      toast({ title: "Error", description: "No se pudo eliminar la publicación", variant: "destructive" });
+                            {(user as any)?.isAdmin && (
+                              <button
+                                onClick={async (e) => {
+                                  e.stopPropagation();
+                                  if (confirm("¿Eliminar esta publicación?")) {
+                                    try {
+                                      const res = await fetch(`/api/admin/community/posts/${post.post.id}`, {
+                                        method: "DELETE",
+                                        credentials: "include",
+                                      });
+                                      if (res.ok) {
+                                        // Refetch posts
+                                        const postsRes = await fetch(`/api/community/channels/${activeChannel?.id}/posts?limit=50&sort=${sortBy}`);
+                                        const postsData = await postsRes.json();
+                                        setPosts(Array.isArray(postsData) ? postsData : []);
+                                        toast({ title: "Éxito", description: "Publicación eliminada" });
+                                      } else {
+                                        toast({ title: "Error", description: "No se pudo eliminar la publicación", variant: "destructive" });
+                                      }
+                                    } catch (error) {
+                                      toast({ title: "Error", description: "Error al eliminar la publicación", variant: "destructive" });
                                     }
-                                  } catch (error) {
-                                    toast({ title: "Error", description: "Error al eliminar la publicación", variant: "destructive" });
                                   }
-                                }
-                              }}
-                              className="p-1 hover:bg-[#333333] rounded transition-colors flex-shrink-0"
-                              data-testid={`delete-post-${post.post.id}`}
-                            >
-                              <Trash2 className="h-4 w-4 text-muted-foreground hover:text-red-500" />
-                            </button>
+                                }}
+                                className="p-1 hover:bg-[#333333] rounded transition-colors flex-shrink-0"
+                                data-testid={`delete-post-${post.post.id}`}
+                              >
+                                <Trash2 className="h-4 w-4 text-muted-foreground hover:text-red-500" />
+                              </button>
+                            )}
                           </div>
                           {(post.user as any)?.lastLoginAt && (
                             <p className="text-xs text-muted-foreground px-13">

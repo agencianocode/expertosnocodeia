@@ -251,6 +251,10 @@ export function registerSimpleRoutes(app: Express): Server {
       // Get user from database
       const user = await storage.getUser(userId);
       if (user) {
+        // Check if user is admin
+        const adminUser = await storage.getAdminUser(userId);
+        const isAdmin = !!adminUser;
+        
         res.json({
           id: user.id,
           email: user.email,
@@ -260,6 +264,7 @@ export function registerSimpleRoutes(app: Express): Server {
           experienceLevel: user.experienceLevel,
           preferredSkillType: user.preferredSkillType,
           preferredContentTypes: user.preferredContentTypes,
+          isAdmin,
         });
       } else {
         res.status(401).json({ message: "Usuario no encontrado" });
