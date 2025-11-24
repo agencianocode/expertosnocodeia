@@ -133,7 +133,7 @@ export default function Community() {
   const [openReactionCommentId, setOpenReactionCommentId] = useState<string | null>(null);
   const [userCommentEmojis, setUserCommentEmojis] = useState<{ [commentId: string]: string[] }>({});
   const [messages, setMessages] = useState<Message[]>([]);
-  const [messageInputByChannel, setMessageInputByChannel] = useState<{ [channelId: string]: string }>({});
+  const [messageInput, setMessageInput] = useState("");
   const [sendingMessage, setSendingMessage] = useState(false);
   const [isRedesChatChannel, setIsRedesChatChannel] = useState(false);
   const [onlineMembers, setOnlineMembers] = useState<any[]>([]);
@@ -142,9 +142,6 @@ export default function Community() {
   const [openReactionMessageId, setOpenReactionMessageId] = useState<string | null>(null);
   const [showMessageEmojiToolbar, setShowMessageEmojiToolbar] = useState(false);
   const isAccordionChannel = activeChannel?.slug === 'empieza-aqui';
-
-  // Get current message input for active channel
-  const messageInput = activeChannel ? (messageInputByChannel[activeChannel.id] || "") : "";
 
   // Group comments by date (oldest to newest)
   const groupCommentsByDate = (comments: Comment[]) => {
@@ -302,14 +299,8 @@ export default function Community() {
     setIsPresentanteChannel(isPresentante);
     setIsRedesChatChannel(isChatChannel);
 
-    // Cargar draft del localStorage para este canal
-    const savedDraft = localStorage.getItem(`draft-${activeChannel.id}`) || "";
-    if (savedDraft) {
-      setMessageInputByChannel(prev => ({
-        ...prev,
-        [activeChannel.id]: savedDraft
-      }));
-    }
+    // Reset message input when channel changes (drafts not persisted for now)
+    setMessageInput("");
 
     const fetchContent = async () => {
       try {
@@ -942,11 +933,8 @@ export default function Community() {
                       value={messageInput}
                       onChange={(e) => {
                         const newValue = e.target.value;
+                        setMessageInput(newValue);
                         if (activeChannel) {
-                          setMessageInputByChannel(prev => ({
-                            ...prev,
-                            [activeChannel.id]: newValue
-                          }));
                           localStorage.setItem(`draft-${activeChannel.id}`, newValue);
                         }
                         // Auto-expand textarea
@@ -972,11 +960,8 @@ export default function Community() {
                               if (res.ok) {
                                 const newMessage = await res.json();
                                 setMessages([...messages, newMessage]);
+                                setMessageInput("");
                                 if (activeChannel) {
-                                  setMessageInputByChannel(prev => ({
-                                    ...prev,
-                                    [activeChannel.id]: ""
-                                  }));
                                   localStorage.removeItem(`draft-${activeChannel.id}`);
                                 }
                                 toast({ title: "Éxito", description: "Mensaje enviado" });
@@ -1078,11 +1063,8 @@ export default function Community() {
                             if (res.ok) {
                               const newMessage = await res.json();
                               setMessages([...messages, newMessage]);
+                              setMessageInput("");
                               if (activeChannel) {
-                                setMessageInputByChannel(prev => ({
-                                  ...prev,
-                                  [activeChannel.id]: ""
-                                }));
                                 localStorage.removeItem(`draft-${activeChannel.id}`);
                               }
                               toast({ title: "Éxito", description: "Mensaje enviado" });
