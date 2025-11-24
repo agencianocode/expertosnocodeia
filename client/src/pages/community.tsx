@@ -724,6 +724,10 @@ export default function Community() {
                       ) : null}
                       {/* Header con nombre y hora */}
                       <div className="flex items-center gap-2 mb-3">
+                        <Avatar className="h-8 w-8">
+                          <AvatarImage src={post.user?.profileImageUrl || undefined} />
+                          <AvatarFallback>{(post.user?.firstName?.charAt(0) || "U").toUpperCase()}</AvatarFallback>
+                        </Avatar>
                         <div className="text-sm">
                           <p className="font-semibold text-white">
                             {post.user?.firstName} {post.user?.lastName}{" "}
