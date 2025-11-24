@@ -107,6 +107,7 @@ export default function Community() {
   const [newPostContent, setNewPostContent] = useState("");
   const [creatingPost, setCreatingPost] = useState(false);
   const [isPresentanteChannel, setIsPresentanteChannel] = useState(false);
+  const isAccordionChannel = activeChannel?.slug === 'empieza-aqui';
 
   // Mutation for adding/removing reactions
   const addReactionMutation = useMutation({
@@ -359,7 +360,7 @@ export default function Community() {
           {/* User Profile Section */}
           <div className="p-4 flex items-center gap-3 bg-[#232323] mt-[0px] mb-[0px] pl-[16px] pr-[16px] pt-[12px] pb-[12px]">
             <Avatar className="h-10 w-10">
-              <AvatarImage src={user?.profileImageUrl || undefined} />
+              <AvatarImage src={(user as any)?.profileImageUrl || undefined} />
               <AvatarFallback>{(user?.firstName?.charAt(0) || "U").toUpperCase()}</AvatarFallback>
             </Avatar>
             <div className="flex-1 min-w-0">
@@ -551,7 +552,7 @@ export default function Community() {
               {isPresentanteChannel && (
                 <div className="border border-[#333333] rounded-lg p-4 bg-[#1a1a1a] flex items-center gap-3">
                   <Avatar className="h-10 w-10">
-                    <AvatarImage src={user?.profileImageUrl || undefined} />
+                    <AvatarImage src={(user as any)?.profileImageUrl || undefined} />
                     <AvatarFallback>{(user?.firstName?.charAt(0) || "U").toUpperCase()}</AvatarFallback>
                   </Avatar>
                   <div className="flex-1 flex items-center gap-2">
@@ -610,7 +611,6 @@ export default function Community() {
                   const postCommentCount = postCommentCounts[post.post.id] || 0;
                   const postComments = allPostComments[post.post.id] || [];
                   const isExpanded = expandedPostId === post.post.id;
-                  const isAccordionChannel = activeChannel?.slug === 'empieza-aqui';
                   
                   return (
                     <div
