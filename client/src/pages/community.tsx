@@ -655,19 +655,32 @@ export default function Community() {
 
                       {/* Header para Presentante - arriba del contenido */}
                       {!isAccordionChannel && isPresentanteChannel && (
-                        <div className="flex items-center justify-between gap-2 mb-3">
-                          <div className="flex items-center gap-2">
-                            <Avatar className="h-8 w-8">
-                              <AvatarImage src={post.user?.profileImageUrl || undefined} />
+                        <div className="bg-[#232323] rounded-lg p-4 mb-4">
+                          <div className="flex items-center gap-3 mb-2">
+                            <Avatar className="h-10 w-10">
+                              <AvatarImage src={(post.user as any)?.profileImageUrl || undefined} />
                               <AvatarFallback>{(post.user?.firstName?.charAt(0) || "U").toUpperCase()}</AvatarFallback>
                             </Avatar>
-                            <p className="font-semibold text-white">
-                              {post.user?.firstName} {post.user?.lastName}
-                            </p>
+                            <div className="flex-1">
+                              <p className="font-semibold text-white">
+                                {post.user?.firstName} {post.user?.lastName}
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                {(post.user as any)?.createdAt ? (
+                                  <>
+                                    Miembro desde el {new Date((post.user as any).createdAt).toLocaleDateString("es-ES", { year: "numeric", month: "long", day: "numeric" })}
+                                  </>
+                                ) : (
+                                  "Miembro"
+                                )}
+                              </p>
+                            </div>
                           </div>
-                          <p className="text-xs text-muted-foreground whitespace-nowrap">
-                            {new Date(post.post.createdAt).toLocaleDateString("es-ES", { year: "numeric", month: "long", day: "numeric" })}
-                          </p>
+                          {(post.user as any)?.lastLoginAt && (
+                            <p className="text-xs text-muted-foreground px-13">
+                              Última conexión: {new Date((post.user as any).lastLoginAt).toLocaleDateString("es-ES", { year: "numeric", month: "long", day: "numeric" })}
+                            </p>
+                          )}
                         </div>
                       )}
 
