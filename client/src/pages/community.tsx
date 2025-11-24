@@ -142,8 +142,6 @@ export default function Community() {
   const [openReactionMessageId, setOpenReactionMessageId] = useState<string | null>(null);
   const [showMessageEmojiToolbar, setShowMessageEmojiToolbar] = useState(false);
   const isAccordionChannel = activeChannel?.slug === 'empieza-aqui';
-  const prevChannelIdRef = useRef<string | null>(null);
-  const messageInputRef = useRef<string>("");
 
   // Group comments by date (oldest to newest)
   const groupCommentsByDate = (comments: Comment[]) => {
@@ -288,22 +286,9 @@ export default function Community() {
     }
   }, [user]);
 
-  // Keep messageInputRef in sync with messageInput state
-  useEffect(() => {
-    messageInputRef.current = messageInput;
-  }, [messageInput]);
-
   // Fetch content when channel changes
   useEffect(() => {
     if (!activeChannel) return;
-
-    // FIRST: Save the current messageInput to the PREVIOUS channel before switching
-    if (prevChannelIdRef.current && messageInputRef.current.trim()) {
-      localStorage.setItem(`message-draft-${prevChannelIdRef.current}`, messageInputRef.current);
-    } else if (prevChannelIdRef.current && !messageInputRef.current.trim()) {
-      localStorage.removeItem(`message-draft-${prevChannelIdRef.current}`);
-    }
-    prevChannelIdRef.current = activeChannel.id;
 
     // Check if this channel should show posts (all "Comunidad" section channels show posts EXCEPT redes-chat)
     const isChatChannel = activeChannel.slug === "redes-chat";
@@ -313,10 +298,6 @@ export default function Community() {
     setIsAnunciosChannel(isAnuncios);
     setIsPresentanteChannel(isPresentante);
     setIsRedesChatChannel(isChatChannel);
-
-    // THEN: Load message draft from localStorage for THIS channel
-    const savedDraft = localStorage.getItem(`message-draft-${activeChannel.id}`) || "";
-    setMessageInput(savedDraft);
 
     const fetchContent = async () => {
       try {
@@ -399,13 +380,6 @@ export default function Community() {
     };
 
     fetchContent();
-
-    // Cleanup: Save draft before leaving this channel
-    return () => {
-      if (prevChannelIdRef.current && messageInputRef.current.trim()) {
-        localStorage.setItem(`message-draft-${prevChannelIdRef.current}`, messageInputRef.current);
-      }
-    };
   }, [activeChannel, sortBy]);
 
 
@@ -981,7 +955,6 @@ export default function Community() {
                                 const newMessage = await res.json();
                                 setMessages([...messages, newMessage]);
                                 setMessageInput("");
-                                localStorage.removeItem(`message-draft-${activeChannel?.id}`);
                                 toast({ title: "Éxito", description: "Mensaje enviado" });
                               } else {
                                 const error = await res.json();
@@ -1082,7 +1055,6 @@ export default function Community() {
                               const newMessage = await res.json();
                               setMessages([...messages, newMessage]);
                               setMessageInput("");
-                              localStorage.removeItem(`message-draft-${activeChannel?.id}`);
                               toast({ title: "Éxito", description: "Mensaje enviado" });
                             }
                           } catch (error) {
