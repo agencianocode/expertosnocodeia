@@ -760,8 +760,8 @@ export default function Community() {
               )}
 
               {/* Message Input */}
-              <div className="flex-shrink-0 px-6 py-4 border-t border-[#333333] bg-[#0f0f0f] flex justify-center w-full">
-                <div className="flex items-end gap-3 max-w-3xl w-full">
+              <div className="flex-shrink-0 border-t border-[#333333] bg-[#0f0f0f] flex justify-center">
+                <div className="flex items-end gap-3 max-w-3xl px-6 py-4">
                   <Input
                     placeholder="Escribe un mensaje..."
                     value={messageInput}
