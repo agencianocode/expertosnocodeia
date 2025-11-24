@@ -4,7 +4,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Send, Loader2, Menu, Heart, MessageCircle, X, Smile, ChevronDown, MoreVertical, Bell, Plus } from "lucide-react";
+import { Send, Loader2, Menu, Heart, MessageCircle, X, Smile, ChevronDown, MoreVertical, Bell, Plus, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Sidebar from "@/components/layout/sidebar";
 import MobileNav from "@/components/layout/mobile-nav";
@@ -649,7 +649,7 @@ export default function Community() {
 
                       {/* Header para Presentante - arriba del contenido */}
                       {!isAccordionChannel && isPresentanteChannel && (
-                        <div className="bg-[#232323] rounded-lg p-4 mb-4">
+                        <div className="bg-[#232323] rounded-lg p-4 mb-4 relative">
                           <div className="flex items-center gap-3 mb-2">
                             <Avatar className="h-10 w-10">
                               <AvatarImage src={(post.user as any)?.profileImageUrl || undefined} />
@@ -669,6 +669,34 @@ export default function Community() {
                                 )}
                               </p>
                             </div>
+                            <button
+                              onClick={async (e) => {
+                                e.stopPropagation();
+                                if (confirm("¿Eliminar esta publicación?")) {
+                                  try {
+                                    const res = await fetch(`/api/admin/community/posts/${post.post.id}`, {
+                                      method: "DELETE",
+                                      credentials: "include",
+                                    });
+                                    if (res.ok) {
+                                      // Refetch posts
+                                      const postsRes = await fetch(`/api/community/channels/${activeChannel?.id}/posts?limit=50&sort=${sortBy}`);
+                                      const postsData = await postsRes.json();
+                                      setPosts(Array.isArray(postsData) ? postsData : []);
+                                      toast({ title: "Éxito", description: "Publicación eliminada" });
+                                    } else {
+                                      toast({ title: "Error", description: "No se pudo eliminar la publicación", variant: "destructive" });
+                                    }
+                                  } catch (error) {
+                                    toast({ title: "Error", description: "Error al eliminar la publicación", variant: "destructive" });
+                                  }
+                                }
+                              }}
+                              className="p-1 hover:bg-[#333333] rounded transition-colors flex-shrink-0"
+                              data-testid={`delete-post-${post.post.id}`}
+                            >
+                              <Trash2 className="h-4 w-4 text-muted-foreground hover:text-red-500" />
+                            </button>
                           </div>
                           {(post.user as any)?.lastLoginAt && (
                             <p className="text-xs text-muted-foreground px-13">
