@@ -133,7 +133,7 @@ export default function Community() {
   const [openReactionCommentId, setOpenReactionCommentId] = useState<string | null>(null);
   const [userCommentEmojis, setUserCommentEmojis] = useState<{ [commentId: string]: string[] }>({});
   const [messages, setMessages] = useState<Message[]>([]);
-  const [messageInput, setMessageInput] = useState("");
+  const [messageInputByChannel, setMessageInputByChannel] = useState<{ [channelId: string]: string }>({});
   const [sendingMessage, setSendingMessage] = useState(false);
   const [isRedesChatChannel, setIsRedesChatChannel] = useState(false);
   const [onlineMembers, setOnlineMembers] = useState<any[]>([]);
@@ -142,6 +142,17 @@ export default function Community() {
   const [openReactionMessageId, setOpenReactionMessageId] = useState<string | null>(null);
   const [showMessageEmojiToolbar, setShowMessageEmojiToolbar] = useState(false);
   const isAccordionChannel = activeChannel?.slug === 'empieza-aqui';
+
+  // Get current message input for active channel
+  const messageInput = activeChannel ? (messageInputByChannel[activeChannel.id] || "") : "";
+  const setMessageInput = (value: string) => {
+    if (activeChannel) {
+      setMessageInputByChannel(prev => ({
+        ...prev,
+        [activeChannel.id]: value
+      }));
+    }
+  };
 
   // Group comments by date (oldest to newest)
   const groupCommentsByDate = (comments: Comment[]) => {
