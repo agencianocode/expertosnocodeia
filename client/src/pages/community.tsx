@@ -396,7 +396,7 @@ export default function Community() {
       {/* Left Sidebar - Main Navigation (fixed) */}
       <Sidebar />
       {/* Main Content Container - accounts for fixed sidebar */}
-      <div className="md:ml-16 lg:ml-[250px] min-h-screen flex overflow-hidden">
+      <div className={cn("md:ml-16 lg:ml-[250px] min-h-screen flex overflow-hidden transition-all", !isAccordionChannel && selectedPost && "lg:mr-[420px]")}>
         {/* Middle Sidebar - Channels (fixed) */}
         <div className={cn(
           "hidden lg:flex fixed left-[250px] top-0 w-[280px] h-screen bg-[#2a2a2a] overflow-y-auto flex-col transition-all duration-300 z-40",
