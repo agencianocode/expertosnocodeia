@@ -142,7 +142,7 @@ export default function Community() {
   const [openReactionMessageId, setOpenReactionMessageId] = useState<string | null>(null);
   const [showMessageEmojiToolbar, setShowMessageEmojiToolbar] = useState(false);
   const isAccordionChannel = activeChannel?.slug === 'empieza-aqui';
-  const isLoadingDraftRef = useRef(false);
+  const lastLoadedDraftRef = useRef<string>("");
 
   // Group comments by date (oldest to newest)
   const groupCommentsByDate = (comments: Comment[]) => {
@@ -301,9 +301,8 @@ export default function Community() {
     setIsRedesChatChannel(isChatChannel);
 
     // Load message draft from localStorage for this channel
-    // Mark that we're loading a draft so onChange doesn't save it
-    isLoadingDraftRef.current = true;
     const savedDraft = localStorage.getItem(`message-draft-${activeChannel.id}`) || "";
+    lastLoadedDraftRef.current = savedDraft;
     setMessageInput(savedDraft);
 
     const fetchContent = async () => {
@@ -389,11 +388,10 @@ export default function Community() {
     fetchContent();
   }, [activeChannel, sortBy]);
 
-  // Reset the loading flag after the draft has been loaded
+  // After messageInput is set (draft loaded), update the ref to track the loaded state
   useEffect(() => {
-    // This runs AFTER the component renders, so we reset the flag after messageInput is updated
-    isLoadingDraftRef.current = false;
-  }, [messageInput]);
+    lastLoadedDraftRef.current = messageInput;
+  }, [activeChannel?.id]);
 
 
   // Fetch comments when post is selected
@@ -943,8 +941,8 @@ export default function Community() {
                       onChange={(e) => {
                         const newValue = e.target.value;
                         setMessageInput(newValue);
-                        // Only save to localStorage if we're not loading a draft
-                        if (!isLoadingDraftRef.current && activeChannel) {
+                        // Always save to localStorage immediately
+                        if (activeChannel) {
                           if (newValue.trim()) {
                             localStorage.setItem(`message-draft-${activeChannel.id}`, newValue);
                           } else {
