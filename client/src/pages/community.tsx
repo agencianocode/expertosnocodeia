@@ -251,9 +251,9 @@ export default function Community() {
   useEffect(() => {
     if (!activeChannel) return;
 
-    // Check if this channel should show posts (all "Comunidad" section channels show posts)
-    const hasPostsFeed = activeChannel.section === "Comunidad";
+    // Check if this channel should show posts (all "Comunidad" section channels show posts EXCEPT redes-chat)
     const isChatChannel = activeChannel.slug === "redes-chat";
+    const hasPostsFeed = !isChatChannel && activeChannel.section === "Comunidad";
     const isAnuncios = activeChannel.slug === "anuncios";
     const isPresentante = activeChannel.slug === "presentante" || activeChannel.slug === "comparte-proyecto";
     setIsAnunciosChannel(isAnuncios);
@@ -326,6 +326,9 @@ export default function Community() {
           // For non-post channels (chat channels), clear posts
           setPosts([]);
           setSelectedPost(null);
+          setComments([]);
+          setMessages([]);
+          setOnlineMembers([]);
           setComments([]);
           setPostCommentCounts({});
           setAllPostComments({});
