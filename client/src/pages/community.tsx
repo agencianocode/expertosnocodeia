@@ -82,6 +82,21 @@ interface Comment {
   }>;
 }
 
+interface Message {
+  id: string;
+  channelId: string;
+  userId: string;
+  content: string;
+  createdAt: string;
+  updatedAt: string;
+  user?: {
+    id: string;
+    firstName?: string;
+    lastName?: string;
+    profileImageUrl?: string;
+  } | null;
+}
+
 export default function Community() {
   const { isAuthenticated, user } = useSimpleAuth();
   const { toast } = useToast();
@@ -115,6 +130,14 @@ export default function Community() {
   const [commentReactions, setCommentReactions] = useState<{ [commentId: string]: { emoji: string; count: number; users: string[] }[] }>({});
   const [openReactionCommentId, setOpenReactionCommentId] = useState<string | null>(null);
   const [userCommentEmojis, setUserCommentEmojis] = useState<{ [commentId: string]: string[] }>({});
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [messageInput, setMessageInput] = useState("");
+  const [sendingMessage, setSendingMessage] = useState(false);
+  const [isRedesChatChannel, setIsRedesChatChannel] = useState(false);
+  const [onlineMembers, setOnlineMembers] = useState<any[]>([]);
+  const [messageReactions, setMessageReactions] = useState<{ [messageId: string]: { emoji: string; count: number; users: string[] }[] }>({});
+  const [userMessageEmojis, setUserMessageEmojis] = useState<{ [messageId: string]: string[] }>({});
+  const [openReactionMessageId, setOpenReactionMessageId] = useState<string | null>(null);
   const isAccordionChannel = activeChannel?.slug === 'empieza-aqui';
 
   // Group comments by date (oldest to newest)
@@ -230,14 +253,30 @@ export default function Community() {
 
     // Check if this channel should show posts (all "Comunidad" section channels show posts)
     const hasPostsFeed = activeChannel.section === "Comunidad";
+    const isChatChannel = activeChannel.slug === "redes-chat";
     const isAnuncios = activeChannel.slug === "anuncios";
     const isPresentante = activeChannel.slug === "presentante" || activeChannel.slug === "comparte-proyecto";
     setIsAnunciosChannel(isAnuncios);
     setIsPresentanteChannel(isPresentante);
+    setIsRedesChatChannel(isChatChannel);
 
     const fetchContent = async () => {
       try {
-        if (hasPostsFeed) {
+        if (isChatChannel) {
+          // Fetch messages for chat channels
+          const res = await fetch(`/api/community/channels/${activeChannel.id}/messages?limit=100`);
+          const data = await res.json();
+          const messagesData = Array.isArray(data) ? data : [];
+          setMessages(messagesData);
+          setMessageInput("");
+          // Get unique users from messages to show as online members
+          const userIds = new Set();
+          messagesData.forEach((msg: any) => {
+            if (msg.userId) userIds.add(msg.userId);
+          });
+          // For now, we'll show the unique users as "online"
+          setOnlineMembers(messagesData.map((msg: any) => msg.user).filter((u: any, i: number, arr: any[]) => u && arr.findIndex(x => x?.id === u.id) === i));
+        } else if (hasPostsFeed) {
           // Fetch posts for all channels with sorting
           const res = await fetch(`/api/community/channels/${activeChannel.id}/posts?limit=50&sort=${sortBy}`);
           const data = await res.json();
@@ -1043,9 +1082,184 @@ export default function Community() {
                 })
               )}
             </div>
+          ) : isRedesChatChannel ? (
+            <div className="flex-1 flex flex-col overflow-hidden">
+              {/* Messages Feed */}
+              <div className="flex-1 overflow-y-auto px-6 py-6 space-y-4 max-w-4xl mx-auto w-full">
+                {messages.length === 0 ? (
+                  <div className="flex items-center justify-center h-full text-muted-foreground">
+                    <p>No hay mensajes. ¡Sé el primero en escribir!</p>
+                  </div>
+                ) : (
+                  messages.map((message) => (
+                    <div key={message.id} className="rounded-lg border border-[#333333] bg-[#1a1a1a] p-4">
+                      <div className="flex items-start gap-3 mb-2">
+                        <Avatar className="h-8 w-8 flex-shrink-0">
+                          <AvatarImage src={message.user?.profileImageUrl || undefined} />
+                          <AvatarFallback>{(message.user?.firstName?.charAt(0) || "U").toUpperCase()}</AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <p className="font-semibold text-white">
+                              {message.user?.firstName} {message.user?.lastName}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              {new Date(message.createdAt).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })}
+                            </p>
+                          </div>
+                          <p className="text-sm text-muted-foreground mt-1 whitespace-pre-wrap break-words">{message.content}</p>
+                        </div>
+                        {(user as any)?.isAdmin && (
+                          <button
+                            onClick={async (e) => {
+                              e.stopPropagation();
+                              if (confirm("¿Eliminar este mensaje?")) {
+                                try {
+                                  const res = await fetch(`/api/community/messages/${message.id}`, {
+                                    method: "DELETE",
+                                    credentials: "include",
+                                  });
+                                  if (res.ok) {
+                                    setMessages(messages.filter(m => m.id !== message.id));
+                                    toast({ title: "Éxito", description: "Mensaje eliminado" });
+                                  }
+                                } catch (error) {
+                                  toast({ title: "Error", description: "No se pudo eliminar el mensaje", variant: "destructive" });
+                                }
+                              }
+                            }}
+                            className="opacity-0 group-hover:opacity-100 transition-opacity"
+                            data-testid={`delete-message-${message.id}`}
+                          >
+                            <Trash2 className="h-4 w-4 text-muted-foreground hover:text-red-500" />
+                          </button>
+                        )}
+                      </div>
+                      {/* Message reactions */}
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground ml-11 flex-wrap">
+                        <div className="relative">
+                          <button 
+                            onClick={() => setOpenReactionMessageId(openReactionMessageId === message.id ? null : message.id)}
+                            disabled={(userMessageEmojis[message.id] || []).length >= 3}
+                            className={cn(
+                              "flex items-center gap-1 transition-colors",
+                              (userMessageEmojis[message.id] || []).length >= 3 
+                                ? "text-muted-foreground cursor-not-allowed opacity-50" 
+                                : "hover:text-cyan-500"
+                            )}
+                          >
+                            <Smile className="h-3 w-3" />
+                          </button>
+                          {openReactionMessageId === message.id && (
+                            <div className="absolute bottom-full left-0 mb-2 bg-[#2a2a2a] border border-[#444444] rounded-lg p-2 grid grid-cols-5 gap-1 w-40 z-50 shadow-lg">
+                              {["👍", "❤️", "😂", "😮", "🎉"].map((emoji) => (
+                                <button
+                                  key={emoji}
+                                  onClick={async () => {
+                                    // Simple emoji addition - would need full API in production
+                                    const currentEmojis = userMessageEmojis[message.id] || [];
+                                    if (!currentEmojis.includes(emoji)) {
+                                      setUserMessageEmojis({
+                                        ...userMessageEmojis,
+                                        [message.id]: [...currentEmojis, emoji]
+                                      });
+                                    }
+                                    setOpenReactionMessageId(null);
+                                  }}
+                                  className="text-lg hover:scale-125 transition-transform cursor-pointer"
+                                >
+                                  {emoji}
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                        {(userMessageEmojis[message.id] || []).length > 0 && (
+                          <div className="flex gap-1">
+                            {(userMessageEmojis[message.id] || []).map((emoji) => (
+                              <span key={emoji} className="text-sm px-1.5 py-0.5 rounded-full bg-[#292929]">{emoji}</span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              {/* Message Input */}
+              <div className="flex-shrink-0 px-6 py-4 border-t border-[#333333] bg-[#0f0f0f]">
+                <div className="flex items-end gap-3 max-w-4xl mx-auto w-full">
+                  <Input
+                    placeholder="Escribe un mensaje..."
+                    value={messageInput}
+                    onChange={(e) => setMessageInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && !e.shiftKey && messageInput.trim()) {
+                        e.preventDefault();
+                        (async () => {
+                          setSendingMessage(true);
+                          try {
+                            const res = await fetch(`/api/community/channels/${activeChannel?.id}/messages`, {
+                              method: "POST",
+                              headers: { "Content-Type": "application/json" },
+                              credentials: "include",
+                              body: JSON.stringify({ content: messageInput }),
+                            });
+                            if (res.ok) {
+                              const newMessage = await res.json();
+                              setMessages([...messages, newMessage]);
+                              setMessageInput("");
+                              toast({ title: "Éxito", description: "Mensaje enviado" });
+                            }
+                          } catch (error) {
+                            toast({ title: "Error", description: "No se pudo enviar el mensaje", variant: "destructive" });
+                          } finally {
+                            setSendingMessage(false);
+                          }
+                        })();
+                      }
+                    }}
+                    disabled={sendingMessage}
+                    className="flex-1 bg-[#1a1a1a] border-[#333333] text-white"
+                    data-testid="message-input"
+                  />
+                  <Button
+                    size="sm"
+                    onClick={async () => {
+                      if (!messageInput.trim()) return;
+                      setSendingMessage(true);
+                      try {
+                        const res = await fetch(`/api/community/channels/${activeChannel?.id}/messages`, {
+                          method: "POST",
+                          headers: { "Content-Type": "application/json" },
+                          credentials: "include",
+                          body: JSON.stringify({ content: messageInput }),
+                        });
+                        if (res.ok) {
+                          const newMessage = await res.json();
+                          setMessages([...messages, newMessage]);
+                          setMessageInput("");
+                          toast({ title: "Éxito", description: "Mensaje enviado" });
+                        }
+                      } catch (error) {
+                        toast({ title: "Error", description: "No se pudo enviar el mensaje", variant: "destructive" });
+                      } finally {
+                        setSendingMessage(false);
+                      }
+                    }}
+                    disabled={sendingMessage || !messageInput.trim()}
+                    className="bg-cyan-500 hover:bg-cyan-600 text-black font-semibold"
+                    data-testid="send-message-button"
+                  >
+                    {sendingMessage ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                  </Button>
+                </div>
+              </div>
+            </div>
           ) : (
             <div className="flex-1 overflow-y-auto px-6 py-6 text-muted-foreground text-center">
-              <p>Este canal utiliza mensajes de chat. Implementar aquí si es necesario.</p>
+              <p>Este canal no tiene contenido configurado.</p>
             </div>
           )}
         </div>
@@ -1260,6 +1474,48 @@ export default function Community() {
                   {sendingComment ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
                 </Button>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* Right Sidebar - Members (for Redes de Chat) */}
+        {isRedesChatChannel && (
+          <div className="hidden lg:fixed right-0 top-0 h-screen w-[420px] lg:flex flex-col bg-[#1a1a1a] overflow-hidden z-40 border-l border-[#333333]">
+            {/* Members Header */}
+            <div className="flex-shrink-0 px-6 py-4 bg-[#232323] border-b border-[#333333]">
+              <div>
+                <h2 className="text-lg font-bold text-white">Detalles</h2>
+                <p className="text-xs text-muted-foreground mt-1">{activeChannel?.name}</p>
+              </div>
+            </div>
+
+            {/* Channel Description */}
+            <div className="flex-shrink-0 px-6 py-4 border-b border-[#333333]">
+              <p className="text-sm text-muted-foreground">{activeChannel?.description}</p>
+            </div>
+
+            {/* Members List - scrollable */}
+            <div className="flex-1 overflow-y-auto px-6 py-4 space-y-2 scrollbar-thin">
+              <h3 className="text-sm font-semibold text-white mb-3">EN LÍNEA ({onlineMembers.length})</h3>
+              {onlineMembers.length === 0 ? (
+                <p className="text-xs text-muted-foreground">No hay miembros en línea</p>
+              ) : (
+                onlineMembers.map((member) => (
+                  <div key={member?.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-[#232323] transition-colors cursor-pointer">
+                    <Avatar className="h-8 w-8 flex-shrink-0">
+                      <AvatarImage src={member?.profileImageUrl || undefined} />
+                      <AvatarFallback>{(member?.firstName?.charAt(0) || "U").toUpperCase()}</AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm text-white truncate">
+                        {member?.firstName} {member?.lastName}
+                      </p>
+                      <p className="text-xs text-muted-foreground">En línea</p>
+                    </div>
+                    <div className="h-2 w-2 rounded-full bg-green-500 flex-shrink-0"></div>
+                  </div>
+                ))
+              )}
             </div>
           </div>
         )}
