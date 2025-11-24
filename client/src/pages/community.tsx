@@ -142,7 +142,8 @@ export default function Community() {
   const [openReactionMessageId, setOpenReactionMessageId] = useState<string | null>(null);
   const [showMessageEmojiToolbar, setShowMessageEmojiToolbar] = useState(false);
   const isAccordionChannel = activeChannel?.slug === 'empieza-aqui';
-  const skipSaveRef = useRef(false);
+  const skipNextSaveRef = useRef(false);
+  const currentChannelIdRef = useRef<string | null>(null);
 
   // Group comments by date (oldest to newest)
   const groupCommentsByDate = (comments: Comment[]) => {
@@ -301,7 +302,8 @@ export default function Community() {
     setIsRedesChatChannel(isChatChannel);
 
     // Load message draft from localStorage for this channel
-    skipSaveRef.current = true;
+    skipNextSaveRef.current = true;
+    currentChannelIdRef.current = activeChannel.id;
     const savedDraft = localStorage.getItem(`message-draft-${activeChannel.id}`);
     setMessageInput(savedDraft || "");
 
@@ -388,22 +390,24 @@ export default function Community() {
     fetchContent();
   }, [activeChannel, sortBy]);
 
-  // Save message draft to localStorage when messageInput changes
+  // Save message draft to localStorage when messageInput changes (only)
   useEffect(() => {
-    if (!activeChannel) return;
-    
     // Skip saving on initial channel load
-    if (skipSaveRef.current) {
-      skipSaveRef.current = false;
+    if (skipNextSaveRef.current) {
+      skipNextSaveRef.current = false;
       return;
     }
     
+    // Save to the current channel's localStorage
+    const channelId = currentChannelIdRef.current;
+    if (!channelId) return;
+    
     if (messageInput.trim()) {
-      localStorage.setItem(`message-draft-${activeChannel.id}`, messageInput);
+      localStorage.setItem(`message-draft-${channelId}`, messageInput);
     } else {
-      localStorage.removeItem(`message-draft-${activeChannel.id}`);
+      localStorage.removeItem(`message-draft-${channelId}`);
     }
-  }, [messageInput, activeChannel]);
+  }, [messageInput]);
 
   // Fetch comments when post is selected
   useEffect(() => {
