@@ -656,7 +656,7 @@ export default function Community() {
             <div className="flex-1 flex flex-col overflow-hidden">
               {/* Messages Feed - Always centered */}
               {messages.length === 0 ? (
-                <div className="flex-1 h-full w-full flex items-center justify-center text-muted-foreground px-6 py-6">
+                <div className="flex-1 flex items-center justify-center text-muted-foreground px-6 py-6">
                   <p>No hay mensajes. ¡Sé el primero en escribir!</p>
                 </div>
               ) : (
