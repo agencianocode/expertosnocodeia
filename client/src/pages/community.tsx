@@ -142,7 +142,7 @@ export default function Community() {
   const [openReactionMessageId, setOpenReactionMessageId] = useState<string | null>(null);
   const [showMessageEmojiToolbar, setShowMessageEmojiToolbar] = useState(false);
   const isAccordionChannel = activeChannel?.slug === 'empieza-aqui';
-  const skipNextSaveRef = useRef(false);
+  const loadedDraftRef = useRef<string>("");
   const currentChannelIdRef = useRef<string | null>(null);
 
   // Group comments by date (oldest to newest)
@@ -302,10 +302,10 @@ export default function Community() {
     setIsRedesChatChannel(isChatChannel);
 
     // Load message draft from localStorage for this channel
-    skipNextSaveRef.current = true;
     currentChannelIdRef.current = activeChannel.id;
-    const savedDraft = localStorage.getItem(`message-draft-${activeChannel.id}`);
-    setMessageInput(savedDraft || "");
+    const savedDraft = localStorage.getItem(`message-draft-${activeChannel.id}`) || "";
+    loadedDraftRef.current = savedDraft;
+    setMessageInput(savedDraft);
 
     const fetchContent = async () => {
       try {
@@ -390,15 +390,11 @@ export default function Community() {
     fetchContent();
   }, [activeChannel, sortBy]);
 
-  // Save message draft to localStorage when messageInput changes (only)
+  // Save message draft to localStorage when messageInput changes (only if user typed)
   useEffect(() => {
-    // Skip saving on initial channel load
-    if (skipNextSaveRef.current) {
-      skipNextSaveRef.current = false;
-      return;
-    }
+    // Don't save if this is the value we just loaded from localStorage
+    if (messageInput === loadedDraftRef.current) return;
     
-    // Save to the current channel's localStorage
     const channelId = currentChannelIdRef.current;
     if (!channelId) return;
     
