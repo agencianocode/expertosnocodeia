@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useSimpleAuth } from "@/hooks/use-simple-auth";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -142,6 +142,7 @@ export default function Community() {
   const [openReactionMessageId, setOpenReactionMessageId] = useState<string | null>(null);
   const [showMessageEmojiToolbar, setShowMessageEmojiToolbar] = useState(false);
   const isAccordionChannel = activeChannel?.slug === 'empieza-aqui';
+  const isLoadingDraftRef = useRef(false);
 
   // Group comments by date (oldest to newest)
   const groupCommentsByDate = (comments: Comment[]) => {
@@ -301,7 +302,12 @@ export default function Community() {
 
     // Load message draft from localStorage for this channel
     const savedDraft = localStorage.getItem(`message-draft-${activeChannel.id}`);
+    isLoadingDraftRef.current = true;
     setMessageInput(savedDraft || "");
+    // Reset the flag after state is updated
+    setTimeout(() => {
+      isLoadingDraftRef.current = false;
+    }, 0);
 
     const fetchContent = async () => {
       try {
@@ -388,6 +394,9 @@ export default function Community() {
 
   // Save message draft to localStorage when messageInput changes
   useEffect(() => {
+    // Don't save if we're currently loading a draft from localStorage
+    if (isLoadingDraftRef.current) return;
+    
     if (activeChannel) {
       if (messageInput.trim()) {
         localStorage.setItem(`message-draft-${activeChannel.id}`, messageInput);
