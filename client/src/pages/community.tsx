@@ -231,7 +231,7 @@ export default function Community() {
     // Check if this channel should show posts (all "Comunidad" section channels show posts)
     const hasPostsFeed = activeChannel.section === "Comunidad";
     const isAnuncios = activeChannel.slug === "anuncios";
-    const isPresentante = activeChannel.slug === "presentante" || activeChannel.slug === "comparte-tu-proyecto-o-trabajo";
+    const isPresentante = activeChannel.slug === "presentante" || activeChannel.slug === "comparte-proyecto";
     setIsAnunciosChannel(isAnuncios);
     setIsPresentanteChannel(isPresentante);
 
