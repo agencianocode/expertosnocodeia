@@ -875,6 +875,18 @@ export const communityPostComments = pgTable("community_post_comments", {
   index("idx_post_comments_user").on(table.userId),
 ]);
 
+// Community post comment reactions
+export const communityPostCommentReactions = pgTable("community_post_comment_reactions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  commentId: varchar("comment_id").references(() => communityPostComments.id, { onDelete: "cascade" }).notNull(),
+  userId: varchar("user_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
+  emoji: varchar("emoji").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("idx_comment_reactions_comment").on(table.commentId),
+  index("idx_comment_reactions_user").on(table.userId),
+]);
+
 // Community post reactions
 export const communityPostReactions = pgTable("community_post_reactions", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -989,13 +1001,25 @@ export const communityPostsRelations = relations(communityPosts, ({ one, many })
   reactions: many(communityPostReactions),
 }));
 
-export const communityPostCommentsRelations = relations(communityPostComments, ({ one }) => ({
+export const communityPostCommentsRelations = relations(communityPostComments, ({ one, many }) => ({
   post: one(communityPosts, {
     fields: [communityPostComments.postId],
     references: [communityPosts.id],
   }),
   user: one(users, {
     fields: [communityPostComments.userId],
+    references: [users.id],
+  }),
+  reactions: many(communityPostCommentReactions),
+}));
+
+export const communityPostCommentReactionsRelations = relations(communityPostCommentReactions, ({ one }) => ({
+  comment: one(communityPostComments, {
+    fields: [communityPostCommentReactions.commentId],
+    references: [communityPostComments.id],
+  }),
+  user: one(users, {
+    fields: [communityPostCommentReactions.userId],
     references: [users.id],
   }),
 }));
@@ -1083,6 +1107,11 @@ export const insertCommunityPostCommentSchema = createInsertSchema(communityPost
   updatedAt: true,
 });
 
+export const insertCommunityPostCommentReactionSchema = createInsertSchema(communityPostCommentReactions).omit({
+  id: true,
+  createdAt: true,
+});
+
 export const insertUserNotificationPreferencesSchema = createInsertSchema(userNotificationPreferences).omit({
   id: true,
   createdAt: true,
@@ -1107,6 +1136,7 @@ export type CommunityMessage = typeof communityMessages.$inferSelect;
 export type MessageReaction = typeof messageReactions.$inferSelect;
 export type CommunityPost = typeof communityPosts.$inferSelect;
 export type CommunityPostComment = typeof communityPostComments.$inferSelect;
+export type CommunityPostCommentReaction = typeof communityPostCommentReactions.$inferSelect;
 export type UserNotificationPreference = typeof userNotificationPreferences.$inferSelect;
 
 // Insert Types
@@ -1121,6 +1151,7 @@ export type InsertCommunityMessage = z.infer<typeof insertCommunityMessageSchema
 export type InsertMessageReaction = z.infer<typeof insertMessageReactionSchema>;
 export type InsertCommunityPost = z.infer<typeof insertCommunityPostSchema>;
 export type InsertCommunityPostComment = z.infer<typeof insertCommunityPostCommentSchema>;
+export type InsertCommunityPostCommentReaction = z.infer<typeof insertCommunityPostCommentReactionSchema>;
 export type InsertUserNotificationPreference = z.infer<typeof insertUserNotificationPreferencesSchema>;
 
 // Update Types

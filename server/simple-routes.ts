@@ -9,7 +9,7 @@ import { SupabaseStorageService } from "./supabaseStorage";
 import { ObjectStorageService, ObjectNotFoundError, objectStorageClient, parseObjectPath } from "./objectStorage";
 import { supabaseAuth, optionalSupabaseAuth, supabaseAdminAuth, AuthenticatedRequest } from "./supabaseAuth";
 import { setupSupabaseAuthRoutes } from "./supabaseAuthRoutes";
-import { insertLessonResourceSchema, updateRoomSchema, userSavedCourses, courses, communityChannels, communityMessages, communityPosts, communityPostComments, communityPostReactions, users, rooms, userNotificationPreferences } from "../shared/schema";
+import { insertLessonResourceSchema, updateRoomSchema, userSavedCourses, courses, communityChannels, communityMessages, communityPosts, communityPostComments, communityPostReactions, communityPostCommentReactions, users, rooms, userNotificationPreferences } from "../shared/schema";
 import { sendNewCommentNotification, getAdminNotificationEmails } from "./emailNotifications";
 import { db } from "./db";
 import { eq, desc, and, sql } from "drizzle-orm";
@@ -2481,6 +2481,88 @@ export function registerSimpleRoutes(app: Express): Server {
     } catch (error) {
       console.error("Error fetching user reactions:", error);
       res.status(500).json({ message: "Failed to fetch user reactions" });
+    }
+  });
+
+  // Endpoint to add reaction to comment
+  app.post("/api/community/comments/:commentId/reactions", simpleAdminAuth, async (req: Request, res: Response) => {
+    try {
+      const { commentId } = req.params;
+      const { emoji } = req.body;
+      const userId = (req as any).user?.claims?.sub || (req as any).user?.id;
+
+      if (!emoji) {
+        return res.status(400).json({ message: "Emoji is required" });
+      }
+
+      if (!userId) {
+        return res.status(401).json({ message: "Usuario no autenticado" });
+      }
+
+      // Check if comment exists
+      const comment = await db.select().from(communityPostComments).where(eq(communityPostComments.id, commentId));
+      if (comment.length === 0) {
+        return res.status(404).json({ message: "Comment not found" });
+      }
+
+      // Check if user already reacted with this emoji
+      const existing = await db
+        .select()
+        .from(communityPostCommentReactions)
+        .where(
+          and(
+            eq(communityPostCommentReactions.commentId, commentId),
+            eq(communityPostCommentReactions.userId, userId),
+            eq(communityPostCommentReactions.emoji, emoji)
+          )
+        );
+
+      if (existing.length > 0) {
+        // Remove reaction if already exists
+        await db
+          .delete(communityPostCommentReactions)
+          .where(eq(communityPostCommentReactions.id, existing[0].id));
+      } else {
+        // Add new reaction
+        await db.insert(communityPostCommentReactions).values({
+          commentId,
+          userId,
+          emoji,
+        });
+      }
+
+      // Return all reactions for this comment
+      const reactions = await db
+        .select()
+        .from(communityPostCommentReactions)
+        .where(eq(communityPostCommentReactions.commentId, commentId));
+
+      res.json(reactions);
+    } catch (error) {
+      console.error("Error adding reaction to comment:", error);
+      res.status(500).json({ message: "Failed to add reaction" });
+    }
+  });
+
+  // Endpoint to get reactions for a comment
+  app.get("/api/community/comments/:commentId/reactions", async (req: Request, res: Response) => {
+    try {
+      const { commentId } = req.params;
+
+      const reactions = await db
+        .select({
+          emoji: communityPostCommentReactions.emoji,
+          count: sql<number>`count(*)`.mapWith(Number),
+          users: sql<string[]>`array_agg(${communityPostCommentReactions.userId})`.mapWith(el => (el as string[]) || []),
+        })
+        .from(communityPostCommentReactions)
+        .where(eq(communityPostCommentReactions.commentId, commentId))
+        .groupBy(communityPostCommentReactions.emoji);
+
+      res.json(reactions);
+    } catch (error) {
+      console.error("Error fetching comment reactions:", error);
+      res.status(500).json({ message: "Failed to fetch reactions" });
     }
   });
 

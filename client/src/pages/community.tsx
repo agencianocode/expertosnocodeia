@@ -75,6 +75,11 @@ interface Comment {
     lastName?: string;
     profileImageUrl?: string;
   } | null;
+  reactions?: Array<{
+    emoji: string;
+    count: number;
+    users?: string[];
+  }>;
 }
 
 export default function Community() {
@@ -107,7 +112,25 @@ export default function Community() {
   const [newPostContent, setNewPostContent] = useState("");
   const [creatingPost, setCreatingPost] = useState(false);
   const [isPresentanteChannel, setIsPresentanteChannel] = useState(false);
+  const [commentReactions, setCommentReactions] = useState<{ [commentId: string]: { emoji: string; count: number; users: string[] }[] }>({});
   const isAccordionChannel = activeChannel?.slug === 'empieza-aqui';
+
+  // Group comments by date
+  const groupCommentsByDate = (comments: Comment[]) => {
+    const grouped: { [date: string]: Comment[] } = {};
+    comments.forEach(comment => {
+      const date = new Date(comment.comment.createdAt).toLocaleDateString("es-ES", { 
+        year: "numeric", 
+        month: "long", 
+        day: "numeric" 
+      });
+      if (!grouped[date]) {
+        grouped[date] = [];
+      }
+      grouped[date].push(comment);
+    });
+    return grouped;
+  };
 
   // Mutation for adding/removing reactions
   const addReactionMutation = useMutation({
@@ -278,7 +301,22 @@ export default function Community() {
       try {
         const res = await fetch(`/api/community/posts/${selectedPost.post.id}/comments`);
         const data = await res.json();
-        setComments(Array.isArray(data) ? data : []);
+        const comments = Array.isArray(data) ? data : [];
+        setComments(comments);
+        
+        // Load reactions for each comment
+        const reactionsMap: { [commentId: string]: { emoji: string; count: number; users: string[] }[] } = {};
+        for (const comment of comments) {
+          try {
+            const reactionsRes = await fetch(`/api/community/comments/${comment.comment.id}/reactions`);
+            const reactions = await reactionsRes.json();
+            reactionsMap[comment.comment.id] = Array.isArray(reactions) ? reactions : [];
+          } catch (error) {
+            console.error("Error fetching reactions:", error);
+            reactionsMap[comment.comment.id] = [];
+          }
+        }
+        setCommentReactions(reactionsMap);
       } catch (error) {
         console.error("Error fetching comments:", error);
         setComments([]);
@@ -1032,7 +1070,7 @@ export default function Community() {
               </Button>
             </div>
 
-            {/* Comments List - scrollable, stuck to input */}
+            {/* Comments List - scrollable, stuck to input, grouped by date */}
             <div className="flex-shrink-0 max-h-64 overflow-y-auto px-6 py-4 space-y-4 bg-[#232323]">
               {comments.length === 0 ? (
                 <div className="flex items-center justify-center text-muted-foreground text-sm">
@@ -1040,23 +1078,90 @@ export default function Community() {
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {comments.map((comment) => (
-                    <div key={comment.comment.id} className="flex gap-3">
-                      <Avatar className="h-8 w-8 flex-shrink-0">
-                        <AvatarImage src={comment.user?.profileImageUrl || undefined} />
-                        <AvatarFallback>{(comment.user?.firstName?.charAt(0) || "U").toUpperCase()}</AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <p className="text-sm font-semibold text-white">
-                            {comment.user?.firstName} {comment.user?.lastName}
-                          </p>
-                          <span className="text-xs text-muted-foreground">
-                            {new Date(comment.comment.createdAt).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })}
-                          </span>
-                        </div>
-                        <p className="text-sm text-muted-foreground break-words mt-1">{comment.comment.content}</p>
+                  {Object.entries(groupCommentsByDate(comments)).map(([date, groupedComments]) => (
+                    <div key={date} className="space-y-3">
+                      {/* Date separator */}
+                      <div className="text-center">
+                        <span className="text-xs bg-[#333333] px-3 py-1 rounded-full text-muted-foreground">
+                          {date}
+                        </span>
                       </div>
+                      {/* Comments in this date group */}
+                      {groupedComments.map((comment) => (
+                        <div key={comment.comment.id} className="bg-[#1f1f1f] rounded-lg p-3 border border-[#333333]">
+                          <div className="flex gap-2">
+                            <Avatar className="h-8 w-8 flex-shrink-0">
+                              <AvatarImage src={comment.user?.profileImageUrl || undefined} />
+                              <AvatarFallback className="text-xs">{(comment.user?.firstName?.charAt(0) || "U").toUpperCase()}</AvatarFallback>
+                            </Avatar>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 mb-1">
+                                <p className="text-sm font-semibold text-white">
+                                  {comment.user?.firstName} {comment.user?.lastName}
+                                </p>
+                                <span className="text-xs text-muted-foreground">
+                                  {new Date(comment.comment.createdAt).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })}
+                                </span>
+                              </div>
+                              <p className="text-sm text-muted-foreground break-words">{comment.comment.content}</p>
+                              
+                              {/* Emoji reactions */}
+                              <div className="flex items-center gap-2 mt-2 flex-wrap">
+                                {commentReactions[comment.comment.id]?.map((reaction, idx) => (
+                                  <button
+                                    key={idx}
+                                    onClick={async () => {
+                                      try {
+                                        await fetch(`/api/community/comments/${comment.comment.id}/reactions`, {
+                                          method: "POST",
+                                          headers: { "Content-Type": "application/json" },
+                                          credentials: "include",
+                                          body: JSON.stringify({ emoji: reaction.emoji }),
+                                        });
+                                        // Refresh comments
+                                        const res = await fetch(`/api/community/posts/${selectedPost?.post.id}/comments`);
+                                        const data = await res.json();
+                                        setComments(Array.isArray(data) ? data : []);
+                                      } catch (error) {
+                                        console.error("Error adding reaction:", error);
+                                      }
+                                    }}
+                                    className="text-xs bg-[#2a2a2a] hover:bg-[#333333] px-2 py-1 rounded transition"
+                                    data-testid={`reaction-${comment.comment.id}-${reaction.emoji}`}
+                                  >
+                                    {reaction.emoji} <span className="text-[10px] text-muted-foreground ml-1">{reaction.count}</span>
+                                  </button>
+                                ))}
+                                {/* Add reaction button */}
+                                <button
+                                  onClick={() => {
+                                    // Show emoji picker (for now, using simple emoji list)
+                                    const emojis = ['❤️', '👍', '😊', '🎉', '💯'];
+                                    const selected = prompt(`Choose emoji: ${emojis.join(' ')}`);
+                                    if (selected) {
+                                      fetch(`/api/community/comments/${comment.comment.id}/reactions`, {
+                                        method: "POST",
+                                        headers: { "Content-Type": "application/json" },
+                                        credentials: "include",
+                                        body: JSON.stringify({ emoji: selected }),
+                                      }).then(() => {
+                                        const res = fetch(`/api/community/posts/${selectedPost?.post.id}/comments`);
+                                        return res.then(r => r.json());
+                                      }).then(data => {
+                                        setComments(Array.isArray(data) ? data : []);
+                                      }).catch(error => console.error("Error adding reaction:", error));
+                                    }
+                                  }}
+                                  className="text-xs bg-transparent hover:bg-[#2a2a2a] px-2 py-1 rounded transition"
+                                  data-testid={`add-reaction-${comment.comment.id}`}
+                                >
+                                  <Smile className="h-4 w-4" />
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   ))}
                 </div>

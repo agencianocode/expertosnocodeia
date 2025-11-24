@@ -2601,7 +2601,7 @@ export class DatabaseStorage implements IStorage {
       .from(communityPostComments)
       .leftJoin(users, eq(communityPostComments.userId, users.id))
       .where(eq(communityPostComments.postId, postId))
-      .orderBy(desc(communityPostComments.createdAt));
+      .orderBy(communityPostComments.createdAt);
 
     return comments;
   }
