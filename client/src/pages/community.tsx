@@ -1021,7 +1021,7 @@ export default function Community() {
                         }
                       }}
                       disabled={sendingMessage}
-                      className="flex-1 bg-transparent border-0 text-white resize-none min-h-[40px] max-h-[120px] overflow-y-auto outline-none"
+                      className="flex-1 bg-transparent border-0 text-white text-left resize-none min-h-[40px] max-h-[120px] overflow-y-auto outline-none"
                       rows={3}
                       data-testid="message-input"
                     />
