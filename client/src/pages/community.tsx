@@ -985,8 +985,6 @@ export default function Community() {
                       </button>
                     </div>
                     
-                    {/* Separator */}
-                    <div className="w-px h-6 bg-[#333333]"></div>
                     <textarea
                       placeholder="Escribe un mensaje... (Shift+Enter para nueva línea)"
                       value={messageInput}
