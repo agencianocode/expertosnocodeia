@@ -115,10 +115,11 @@ export default function Community() {
   const [commentReactions, setCommentReactions] = useState<{ [commentId: string]: { emoji: string; count: number; users: string[] }[] }>({});
   const isAccordionChannel = activeChannel?.slug === 'empieza-aqui';
 
-  // Group comments by date
+  // Group comments by date (oldest to newest)
   const groupCommentsByDate = (comments: Comment[]) => {
+    const sorted = [...comments].reverse(); // Reverse to show oldest first
     const grouped: { [date: string]: Comment[] } = {};
-    comments.forEach(comment => {
+    sorted.forEach(comment => {
       const date = new Date(comment.comment.createdAt).toLocaleDateString("es-ES", { 
         year: "numeric", 
         month: "long", 
@@ -129,7 +130,13 @@ export default function Community() {
       }
       grouped[date].push(comment);
     });
-    return grouped;
+    // Sort the dates in ascending order (oldest to newest)
+    const sortedKeys = Object.keys(grouped).sort((a, b) => new Date(a).getTime() - new Date(b).getTime());
+    const orderedGrouped: { [date: string]: Comment[] } = {};
+    sortedKeys.forEach(date => {
+      orderedGrouped[date] = grouped[date];
+    });
+    return orderedGrouped;
   };
 
   // Mutation for adding/removing reactions
@@ -1071,7 +1078,7 @@ export default function Community() {
             </div>
 
             {/* Comments List - scrollable, stuck to input, grouped by date */}
-            <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4 bg-[#232323]">
+            <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4 bg-[#232323] scrollbar-thin">
               {comments.length === 0 ? (
                 <div className="flex items-center justify-center text-muted-foreground text-sm">
                   <p>Sin comentarios aún. ¡Sé el primero!</p>
