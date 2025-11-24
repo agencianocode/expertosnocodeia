@@ -758,7 +758,7 @@ export default function Community() {
 
                               {/* Contenido legacy - solo si no hay contentBlocks */}
                               {(!post.post.contentBlocks || post.post.contentBlocks.length === 0) && (
-                                <div className={cn("text-sm text-muted-foreground mb-3 whitespace-pre-wrap break-words", isAccordionChannel && "px-4")}>
+                                <div className={cn("text-sm text-muted-foreground mb-3 whitespace-pre-line break-words leading-relaxed", isAccordionChannel && "px-4")}>
                                   {post.post.content.split(/(\bhttps?:\/\/[^\s]+)/g).map((part, idx) => {
                                     if (part.match(/^\bhttps?:\/\//)) {
                                       return (
