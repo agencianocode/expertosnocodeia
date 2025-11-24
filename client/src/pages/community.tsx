@@ -269,13 +269,13 @@ export default function Community() {
           const messagesData = Array.isArray(data) ? data : [];
           setMessages(messagesData);
           setMessageInput("");
-          // Get unique users from messages to show as online members
-          const userIds = new Set();
-          messagesData.forEach((msg: any) => {
-            if (msg.userId) userIds.add(msg.userId);
-          });
-          // For now, we'll show the unique users as "online"
-          setOnlineMembers(messagesData.map((msg: any) => msg.user).filter((u: any, i: number, arr: any[]) => u && arr.findIndex(x => x?.id === u.id) === i));
+          // Get unique users from messages and include current user
+          const uniqueUsers = messagesData.map((msg: any) => msg.user).filter((u: any, i: number, arr: any[]) => u && arr.findIndex(x => x?.id === u.id) === i);
+          // Always include current user as online
+          const onlineUsers = user && !uniqueUsers.find((u: any) => u?.id === user.id) 
+            ? [user as any, ...uniqueUsers] 
+            : uniqueUsers.length > 0 ? uniqueUsers : (user ? [user as any] : []);
+          setOnlineMembers(onlineUsers);
         } else if (hasPostsFeed) {
           // Fetch posts for all channels with sorting
           const res = await fetch(`/api/community/channels/${activeChannel.id}/posts?limit=50&sort=${sortBy}`);
@@ -655,7 +655,8 @@ export default function Community() {
           {isRedesChatChannel ? (
             <div className="flex-1 flex flex-col overflow-hidden">
               {/* Messages Feed */}
-              <div className="flex-1 overflow-y-auto px-6 py-6 space-y-4 max-w-4xl mx-auto w-full">
+              <div className="flex-1 overflow-y-auto px-6 py-6 space-y-4 flex flex-col items-center w-full">
+                <div className="w-full max-w-3xl">
                 {messages.length === 0 ? (
                   <div className="flex items-center justify-center h-full text-muted-foreground">
                     <p>No hay mensajes. ¡Sé el primero en escribir!</p>
@@ -754,11 +755,12 @@ export default function Community() {
                     </div>
                   ))
                 )}
+                </div>
               </div>
 
               {/* Message Input */}
               <div className="flex-shrink-0 px-6 py-4 border-t border-[#333333] bg-[#0f0f0f]">
-                <div className="flex items-end gap-3 max-w-4xl mx-auto w-full">
+                <div className="flex items-end gap-3 max-w-3xl mx-auto w-full">
                   <Input
                     placeholder="Escribe un mensaje..."
                     value={messageInput}
