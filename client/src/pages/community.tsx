@@ -925,7 +925,7 @@ export default function Community() {
             </div>
 
             {/* Comments Header */}
-            <div className="px-6 py-4 flex items-center justify-between">
+            <div className="px-6 py-4 flex items-center justify-between bg-[#232323]">
               <div>
                 <h2 className="text-lg font-bold text-white">Comentarios</h2>
                 <p className="text-xs text-muted-foreground mt-1">{comments.length} comentarios</p>
