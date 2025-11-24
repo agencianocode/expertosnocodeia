@@ -299,6 +299,10 @@ export default function Community() {
     setIsPresentanteChannel(isPresentante);
     setIsRedesChatChannel(isChatChannel);
 
+    // Load message draft from localStorage for this channel
+    const savedDraft = localStorage.getItem(`message-draft-${activeChannel.id}`);
+    setMessageInput(savedDraft || "");
+
     const fetchContent = async () => {
       try {
         if (isChatChannel) {
@@ -307,7 +311,6 @@ export default function Community() {
           const data = await res.json();
           const messagesData = Array.isArray(data) ? data : [];
           setMessages(messagesData);
-          setMessageInput("");
           // Get unique users from messages and include current user
           const uniqueUsers = messagesData.map((msg: any) => msg.user).filter((u: any, i: number, arr: any[]) => u && arr.findIndex(x => x?.id === u.id) === i);
           // Always include current user as online
@@ -382,6 +385,17 @@ export default function Community() {
 
     fetchContent();
   }, [activeChannel, sortBy]);
+
+  // Save message draft to localStorage when messageInput changes
+  useEffect(() => {
+    if (activeChannel) {
+      if (messageInput.trim()) {
+        localStorage.setItem(`message-draft-${activeChannel.id}`, messageInput);
+      } else {
+        localStorage.removeItem(`message-draft-${activeChannel.id}`);
+      }
+    }
+  }, [messageInput, activeChannel]);
 
   // Fetch comments when post is selected
   useEffect(() => {
@@ -953,6 +967,7 @@ export default function Community() {
                                 const newMessage = await res.json();
                                 setMessages([...messages, newMessage]);
                                 setMessageInput("");
+                                localStorage.removeItem(`message-draft-${activeChannel?.id}`);
                                 toast({ title: "Éxito", description: "Mensaje enviado" });
                               } else {
                                 const error = await res.json();
@@ -1053,6 +1068,7 @@ export default function Community() {
                               const newMessage = await res.json();
                               setMessages([...messages, newMessage]);
                               setMessageInput("");
+                              localStorage.removeItem(`message-draft-${activeChannel?.id}`);
                               toast({ title: "Éxito", description: "Mensaje enviado" });
                             }
                           } catch (error) {
