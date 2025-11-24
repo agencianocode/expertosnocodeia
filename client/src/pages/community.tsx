@@ -1057,9 +1057,6 @@ export default function Community() {
               </p>
             </div>
 
-            {/* Spacer - takes up remaining vertical space */}
-            <div className="flex-1 bg-[#232323]" />
-
             {/* Comments Header */}
             <div className="flex-shrink-0 px-6 py-4 flex items-center justify-between bg-[#232323]">
               <div>
