@@ -142,6 +142,7 @@ export default function Community() {
   const [openReactionMessageId, setOpenReactionMessageId] = useState<string | null>(null);
   const [showMessageEmojiToolbar, setShowMessageEmojiToolbar] = useState(false);
   const isAccordionChannel = activeChannel?.slug === 'empieza-aqui';
+  const messageInputRef = useRef<string>("");
 
   // Group comments by date (oldest to newest)
   const groupCommentsByDate = (comments: Comment[]) => {
@@ -300,7 +301,9 @@ export default function Community() {
     setIsRedesChatChannel(isChatChannel);
 
     // Load message draft from localStorage for this channel
-    const savedDraft = localStorage.getItem(`message-draft-${activeChannel.id}`) || "";
+    // First, use a temporary ref to track which channel we're loading for
+    const draftKey = `message-draft-${activeChannel.id}`;
+    const savedDraft = localStorage.getItem(draftKey) || "";
     setMessageInput(savedDraft);
 
     const fetchContent = async () => {
@@ -386,20 +389,27 @@ export default function Community() {
     fetchContent();
   }, [activeChannel, sortBy]);
 
-  // Save message draft when message input changes (debounced to 500ms)
+  // Save message draft when message input changes - immediately via ref
   useEffect(() => {
+    messageInputRef.current = messageInput;
+    
     if (!activeChannel) return;
     
-    const timer = setTimeout(() => {
-      if (messageInput.trim()) {
-        localStorage.setItem(`message-draft-${activeChannel.id}`, messageInput);
-      } else {
-        localStorage.removeItem(`message-draft-${activeChannel.id}`);
+    if (messageInput.trim()) {
+      localStorage.setItem(`message-draft-${activeChannel.id}`, messageInput);
+    } else {
+      localStorage.removeItem(`message-draft-${activeChannel.id}`);
+    }
+  }, [messageInput, activeChannel?.id]);
+  
+  // Before switching channels, make sure current draft is saved
+  useEffect(() => {
+    return () => {
+      if (activeChannel && messageInputRef.current.trim()) {
+        localStorage.setItem(`message-draft-${activeChannel.id}`, messageInputRef.current);
       }
-    }, 500);
-    
-    return () => clearTimeout(timer);
-  }, [messageInput, activeChannel]);
+    };
+  }, [activeChannel?.id]);
 
   // Fetch comments when post is selected
   useEffect(() => {
