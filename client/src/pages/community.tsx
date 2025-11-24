@@ -652,17 +652,42 @@ export default function Community() {
                           <ChevronDown className={cn("h-5 w-5 transition-transform", isExpanded && "rotate-180")} />
                         </button>
                       )}
+
+                      {/* Header para Presentante - arriba del contenido */}
+                      {!isAccordionChannel && isPresentanteChannel && (
+                        <div className="flex items-center justify-between gap-2 mb-3">
+                          <div className="flex items-center gap-2">
+                            <Avatar className="h-8 w-8">
+                              <AvatarImage src={post.user?.profileImageUrl || undefined} />
+                              <AvatarFallback>{(post.user?.firstName?.charAt(0) || "U").toUpperCase()}</AvatarFallback>
+                            </Avatar>
+                            <p className="font-semibold text-white">
+                              {post.user?.firstName} {post.user?.lastName}
+                            </p>
+                          </div>
+                          <p className="text-xs text-muted-foreground whitespace-nowrap">
+                            {new Date(post.post.createdAt).toLocaleDateString("es-ES", { year: "numeric", month: "long", day: "numeric" })}
+                          </p>
+                        </div>
+                      )}
+
                       {/* Contenido - mostrar si no es accordion O si está expandido */}
                       {!isAccordionChannel || isExpanded ? (
                         <>
-                          {!isAccordionChannel && (
+                          {!isAccordionChannel && !isPresentanteChannel && (
                             <>
-                              {/* Fecha */}
+                              {/* Fecha - solo para no Presentante */}
                               <p className="text-xs text-muted-foreground mb-3">
                                 {new Date(post.post.createdAt).toLocaleDateString("es-ES", { year: "numeric", month: "long", day: "numeric" })}
                               </p>
 
                               {/* Título */}
+                              <h3 className="font-bold text-white mb-3">{post.post.title}</h3>
+                            </>
+                          )}
+                          {isPresentanteChannel && (
+                            <>
+                              {/* Título - solo para Presentante */}
                               <h3 className="font-bold text-white mb-3">{post.post.title}</h3>
                             </>
                           )}
@@ -792,41 +817,22 @@ export default function Community() {
                           )}
                         </>
                       ) : null}
-                      {/* Header con nombre y fecha - solo para canales que no son accordion */}
-                      {!isAccordionChannel && (
-                        <>
-                          {isPresentanteChannel ? (
-                            <div className="flex items-center justify-between gap-2 mb-3">
-                              <div className="flex items-center gap-2">
-                                <Avatar className="h-8 w-8">
-                                  <AvatarImage src={post.user?.profileImageUrl || undefined} />
-                                  <AvatarFallback>{(post.user?.firstName?.charAt(0) || "U").toUpperCase()}</AvatarFallback>
-                                </Avatar>
-                                <p className="font-semibold text-white">
-                                  {post.user?.firstName} {post.user?.lastName}
-                                </p>
-                              </div>
-                              <p className="text-xs text-muted-foreground whitespace-nowrap">
-                                {new Date(post.post.createdAt).toLocaleDateString("es-ES", { year: "numeric", month: "long", day: "numeric" })}
-                              </p>
-                            </div>
-                          ) : (
-                            <div className="flex flex-col gap-2 mb-3">
-                              <div className="flex items-center gap-2">
-                                <Avatar className="h-8 w-8">
-                                  <AvatarImage src={post.user?.profileImageUrl || undefined} />
-                                  <AvatarFallback>{(post.user?.firstName?.charAt(0) || "U").toUpperCase()}</AvatarFallback>
-                                </Avatar>
-                                <p className="font-semibold text-white">
-                                  {post.user?.firstName} {post.user?.lastName}
-                                </p>
-                              </div>
-                              <p className="text-xs text-muted-foreground">
-                                {new Date(post.post.createdAt).toLocaleDateString("es-ES", { year: "numeric", month: "long", day: "numeric" })}
-                              </p>
-                            </div>
-                          )}
-                        </>
+                      {/* Header con nombre y fecha - solo para canales que no son accordion (no Presentante) */}
+                      {!isAccordionChannel && !isPresentanteChannel && (
+                        <div className="flex flex-col gap-2 mb-3">
+                          <div className="flex items-center gap-2">
+                            <Avatar className="h-8 w-8">
+                              <AvatarImage src={post.user?.profileImageUrl || undefined} />
+                              <AvatarFallback>{(post.user?.firstName?.charAt(0) || "U").toUpperCase()}</AvatarFallback>
+                            </Avatar>
+                            <p className="font-semibold text-white">
+                              {post.user?.firstName} {post.user?.lastName}
+                            </p>
+                          </div>
+                          <p className="text-xs text-muted-foreground">
+                            {new Date(post.post.createdAt).toLocaleDateString("es-ES", { year: "numeric", month: "long", day: "numeric" })}
+                          </p>
+                        </div>
                       )}
                       {/* Acciones - solo para canales que no son accordion */}
                       {!isAccordionChannel && (
