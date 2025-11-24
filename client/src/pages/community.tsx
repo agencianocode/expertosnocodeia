@@ -550,7 +550,7 @@ export default function Community() {
             <div className="flex-1 overflow-y-auto px-6 py-6 space-y-4 max-w-4xl mx-auto w-full">
               {/* Inicia una publicación - solo para Presentante */}
               {isPresentanteChannel && (
-                <div className="border border-[#333333] rounded-lg p-3 bg-[#1a1a1a] flex items-center gap-3 max-w-2xl">
+                <div className="border border-[#333333] rounded-lg p-3 bg-[#1a1a1a] flex items-center gap-3 w-full">
                   <Avatar className="h-8 w-8 flex-shrink-0">
                     <AvatarImage src={(user as any)?.profileImageUrl || undefined} />
                     <AvatarFallback>{(user?.firstName?.charAt(0) || "U").toUpperCase()}</AvatarFallback>
