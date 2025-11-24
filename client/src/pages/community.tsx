@@ -142,7 +142,7 @@ export default function Community() {
   const [openReactionMessageId, setOpenReactionMessageId] = useState<string | null>(null);
   const [showMessageEmojiToolbar, setShowMessageEmojiToolbar] = useState(false);
   const isAccordionChannel = activeChannel?.slug === 'empieza-aqui';
-  const messageInputRef = useRef<string>("");
+  const prevChannelRef = useRef<string | null>(null);
 
   // Group comments by date (oldest to newest)
   const groupCommentsByDate = (comments: Comment[]) => {
@@ -291,6 +291,14 @@ export default function Community() {
   useEffect(() => {
     if (!activeChannel) return;
 
+    // BEFORE switching: Save the current messageInput to the PREVIOUS channel
+    if (prevChannelRef.current && messageInput.trim()) {
+      localStorage.setItem(`message-draft-${prevChannelRef.current}`, messageInput);
+    }
+    
+    // NOW switch to the new channel and load its draft
+    prevChannelRef.current = activeChannel.id;
+
     // Check if this channel should show posts (all "Comunidad" section channels show posts EXCEPT redes-chat)
     const isChatChannel = activeChannel.slug === "redes-chat";
     const hasPostsFeed = !isChatChannel && activeChannel.section === "Comunidad";
@@ -301,9 +309,7 @@ export default function Community() {
     setIsRedesChatChannel(isChatChannel);
 
     // Load message draft from localStorage for this channel
-    // First, use a temporary ref to track which channel we're loading for
-    const draftKey = `message-draft-${activeChannel.id}`;
-    const savedDraft = localStorage.getItem(draftKey) || "";
+    const savedDraft = localStorage.getItem(`message-draft-${activeChannel.id}`) || "";
     setMessageInput(savedDraft);
 
     const fetchContent = async () => {
@@ -389,27 +395,6 @@ export default function Community() {
     fetchContent();
   }, [activeChannel, sortBy]);
 
-  // Save message draft when message input changes - immediately via ref
-  useEffect(() => {
-    messageInputRef.current = messageInput;
-    
-    if (!activeChannel) return;
-    
-    if (messageInput.trim()) {
-      localStorage.setItem(`message-draft-${activeChannel.id}`, messageInput);
-    } else {
-      localStorage.removeItem(`message-draft-${activeChannel.id}`);
-    }
-  }, [messageInput, activeChannel?.id]);
-  
-  // Before switching channels, make sure current draft is saved
-  useEffect(() => {
-    return () => {
-      if (activeChannel && messageInputRef.current.trim()) {
-        localStorage.setItem(`message-draft-${activeChannel.id}`, messageInputRef.current);
-      }
-    };
-  }, [activeChannel?.id]);
 
   // Fetch comments when post is selected
   useEffect(() => {
