@@ -811,7 +811,7 @@ export default function Community() {
                                     {new Date(message.createdAt).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })}
                                   </p>
                                 </div>
-                                <p className="text-sm text-muted-foreground mt-1 whitespace-pre-wrap break-words">{message.content}</p>
+                                <p className="text-sm mt-1 whitespace-pre-wrap break-words text-[#ffffff]">{message.content}</p>
                               </div>
                               {(user as any)?.isAdmin && (
                                 <div className="flex gap-1 flex-shrink-0">
