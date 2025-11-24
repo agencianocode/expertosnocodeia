@@ -654,13 +654,13 @@ export default function Community() {
           {/* Content Feed - Posts OR Chat depending on channel type */}
           {isRedesChatChannel ? (
             <div className="flex-1 flex flex-col overflow-hidden">
-              {/* Messages Feed */}
-              <div className="flex-1 overflow-y-auto px-6 py-6 w-full flex flex-col">
-                {messages.length === 0 ? (
-                  <div className="flex items-center justify-center flex-1 text-muted-foreground">
-                    <p>No hay mensajes. ¡Sé el primero en escribir!</p>
-                  </div>
-                ) : (
+              {/* Messages Feed - Always centered */}
+              {messages.length === 0 ? (
+                <div className="flex-1 flex items-center justify-center text-muted-foreground px-6 py-6">
+                  <p>No hay mensajes. ¡Sé el primero en escribir!</p>
+                </div>
+              ) : (
+                <div className="flex-1 overflow-y-auto px-6 py-6 w-full flex flex-col">
                   <div className="w-full max-w-3xl mx-auto space-y-4">
                   {messages.map((message) => (
                     <div key={message.id} className="rounded-lg border border-[#333333] bg-[#1a1a1a] p-4">
@@ -756,8 +756,8 @@ export default function Community() {
                   ))
                   }
                   </div>
-                )}
-              </div>
+                </div>
+              )}
 
               {/* Message Input */}
               <div className="flex-shrink-0 px-6 py-4 border-t border-[#333333] bg-[#0f0f0f]">
