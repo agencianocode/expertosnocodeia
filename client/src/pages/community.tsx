@@ -912,70 +912,72 @@ export default function Community() {
               {/* Message Input with Toolbar */}
               <div className="flex-shrink-0 border-t border-[#333333] bg-[#0f0f0f] flex justify-center w-full">
                 <div className="flex flex-col w-full px-6 py-4 max-w-3xl">
-                  {/* Toolbar */}
-                  <div className="flex gap-2 mb-3 pb-3 border-b border-[#333333] relative">
-                    <div className="relative">
+                  {/* Text Input with Integrated Toolbar */}
+                  <div className="flex items-end gap-3 border border-[#333333] rounded-lg bg-[#1a1a1a] p-3">
+                    {/* Toolbar - Inside the input box */}
+                    <div className="flex gap-1 flex-shrink-0 relative">
+                      <div className="relative">
+                        <button 
+                          onClick={() => setShowMessageEmojiToolbar(!showMessageEmojiToolbar)}
+                          className="p-1 hover:bg-[#292929] rounded transition-colors" 
+                          data-testid="toolbar-emoji" 
+                          title="Emoticones"
+                        >
+                          <Smile className="h-4 w-4 text-muted-foreground hover:text-cyan-400" />
+                        </button>
+                        {showMessageEmojiToolbar && (
+                          <div className="absolute bottom-full left-0 mb-2 bg-[#2a2a2a] border border-[#444444] rounded-lg p-2 grid grid-cols-5 gap-1 w-40 z-50 shadow-lg">
+                            {["👍", "❤️", "😂", "😮", "🎉", "🔥", "👀", "💯", "🙏", "😍", "😱", "😭", "🤔", "👌", "🚀"].map((emoji) => (
+                              <button
+                                key={emoji}
+                                onClick={() => {
+                                  setMessageInput(messageInput + emoji);
+                                  setShowMessageEmojiToolbar(false);
+                                }}
+                                className="text-lg hover:scale-125 transition-transform cursor-pointer"
+                              >
+                                {emoji}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
                       <button 
-                        onClick={() => setShowMessageEmojiToolbar(!showMessageEmojiToolbar)}
-                        className="p-2 hover:bg-[#1a1a1a] rounded transition-colors" 
-                        data-testid="toolbar-emoji" 
-                        title="Emoticones"
+                        onClick={() => toast({ title: "Próximamente", description: "Adjuntar archivos está en desarrollo", variant: "default" })}
+                        className="p-1 hover:bg-[#292929] rounded transition-colors" 
+                        data-testid="toolbar-attachments" 
+                        title="Archivos"
                       >
-                        <Smile className="h-4 w-4 text-muted-foreground hover:text-cyan-400" />
+                        <Paperclip className="h-4 w-4 text-muted-foreground hover:text-cyan-400" />
                       </button>
-                      {showMessageEmojiToolbar && (
-                        <div className="absolute bottom-full left-0 mb-2 bg-[#2a2a2a] border border-[#444444] rounded-lg p-2 grid grid-cols-5 gap-1 w-40 z-50 shadow-lg">
-                          {["👍", "❤️", "😂", "😮", "🎉", "🔥", "👀", "💯", "🙏", "😍", "😱", "😭", "🤔", "👌", "🚀"].map((emoji) => (
-                            <button
-                              key={emoji}
-                              onClick={() => {
-                                setMessageInput(messageInput + emoji);
-                                setShowMessageEmojiToolbar(false);
-                              }}
-                              className="text-lg hover:scale-125 transition-transform cursor-pointer"
-                            >
-                              {emoji}
-                            </button>
-                          ))}
-                        </div>
-                      )}
+                      <button 
+                        onClick={() => toast({ title: "Próximamente", description: "Cargar imágenes está en desarrollo", variant: "default" })}
+                        className="p-1 hover:bg-[#292929] rounded transition-colors" 
+                        data-testid="toolbar-image" 
+                        title="Imagen"
+                      >
+                        <Plus className="h-4 w-4 text-muted-foreground hover:text-cyan-400" />
+                      </button>
+                      <button 
+                        onClick={() => toast({ title: "Próximamente", description: "Grabar audio está en desarrollo", variant: "default" })}
+                        className="p-1 hover:bg-[#292929] rounded transition-colors" 
+                        data-testid="toolbar-audio" 
+                        title="Audio"
+                      >
+                        <Music className="h-4 w-4 text-muted-foreground hover:text-cyan-400" />
+                      </button>
+                      <button 
+                        onClick={() => toast({ title: "Próximamente", description: "Mencionar usuarios está en desarrollo", variant: "default" })}
+                        className="p-1 hover:bg-[#292929] rounded transition-colors" 
+                        data-testid="toolbar-mention" 
+                        title="Mencionar"
+                      >
+                        <AtSign className="h-4 w-4 text-muted-foreground hover:text-cyan-400" />
+                      </button>
                     </div>
-                    <button 
-                      onClick={() => toast({ title: "Próximamente", description: "Adjuntar archivos está en desarrollo", variant: "default" })}
-                      className="p-2 hover:bg-[#1a1a1a] rounded transition-colors" 
-                      data-testid="toolbar-attachments" 
-                      title="Archivos"
-                    >
-                      <Paperclip className="h-4 w-4 text-muted-foreground hover:text-cyan-400" />
-                    </button>
-                    <button 
-                      onClick={() => toast({ title: "Próximamente", description: "Cargar imágenes está en desarrollo", variant: "default" })}
-                      className="p-2 hover:bg-[#1a1a1a] rounded transition-colors" 
-                      data-testid="toolbar-image" 
-                      title="Imagen"
-                    >
-                      <Plus className="h-4 w-4 text-muted-foreground hover:text-cyan-400" />
-                    </button>
-                    <button 
-                      onClick={() => toast({ title: "Próximamente", description: "Grabar audio está en desarrollo", variant: "default" })}
-                      className="p-2 hover:bg-[#1a1a1a] rounded transition-colors" 
-                      data-testid="toolbar-audio" 
-                      title="Audio"
-                    >
-                      <Music className="h-4 w-4 text-muted-foreground hover:text-cyan-400" />
-                    </button>
-                    <button 
-                      onClick={() => toast({ title: "Próximamente", description: "Mencionar usuarios está en desarrollo", variant: "default" })}
-                      className="p-2 hover:bg-[#1a1a1a] rounded transition-colors" 
-                      data-testid="toolbar-mention" 
-                      title="Mencionar"
-                    >
-                      <AtSign className="h-4 w-4 text-muted-foreground hover:text-cyan-400" />
-                    </button>
-                  </div>
-                  
-                  {/* Text Input */}
-                  <div className="flex items-end gap-3">
+                    
+                    {/* Separator */}
+                    <div className="w-px h-6 bg-[#333333]"></div>
                     <textarea
                       placeholder="Escribe un mensaje... (Shift+Enter para nueva línea)"
                       value={messageInput}
@@ -1010,7 +1012,7 @@ export default function Community() {
                         }
                       }}
                       disabled={sendingMessage}
-                      className="flex-1 bg-[#1a1a1a] border border-[#333333] text-white p-2 rounded resize-none min-h-[40px] max-h-[120px] overflow-y-auto"
+                      className="flex-1 bg-transparent border-0 text-white resize-none min-h-[40px] max-h-[120px] overflow-y-auto outline-none"
                       rows={3}
                       data-testid="message-input"
                     />
@@ -1039,7 +1041,7 @@ export default function Community() {
                         }
                       }}
                       disabled={sendingMessage || !messageInput.trim()}
-                      className="bg-cyan-500 hover:bg-cyan-600 text-black font-semibold"
+                      className="bg-cyan-500 hover:bg-cyan-600 text-black font-semibold flex-shrink-0"
                       data-testid="send-message-button"
                     >
                       {sendingMessage ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
