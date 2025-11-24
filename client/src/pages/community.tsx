@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useSimpleAuth } from "@/hooks/use-simple-auth";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -145,14 +145,15 @@ export default function Community() {
 
   // Get current message input for active channel
   const messageInput = activeChannel ? (messageInputByChannel[activeChannel.id] || "") : "";
-  const setMessageInput = (value: string) => {
-    if (activeChannel) {
-      setMessageInputByChannel(prev => ({
+  const setMessageInput = useCallback((value: string) => {
+    setMessageInputByChannel(prev => {
+      if (!activeChannel) return prev;
+      return {
         ...prev,
         [activeChannel.id]: value
-      }));
-    }
-  };
+      };
+    });
+  }, [activeChannel]);
 
   // Group comments by date (oldest to newest)
   const groupCommentsByDate = (comments: Comment[]) => {
