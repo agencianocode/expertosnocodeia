@@ -927,7 +927,16 @@ export default function Community() {
                     <textarea
                       placeholder="Escribe un mensaje... (Shift+Enter para nueva línea)"
                       value={messageInput}
-                      onChange={(e) => setMessageInput(e.target.value)}
+                      onChange={(e) => {
+                        setMessageInput(e.target.value);
+                        // Auto-expand textarea
+                        setTimeout(() => {
+                          const textarea = e.target as HTMLTextAreaElement;
+                          textarea.style.height = "auto";
+                          const newHeight = Math.min(textarea.scrollHeight, 120);
+                          textarea.style.height = newHeight + "px";
+                        }, 0);
+                      }}
                       onKeyDown={(e) => {
                         if (e.key === "Enter" && !e.shiftKey && messageInput.trim()) {
                           e.preventDefault();
