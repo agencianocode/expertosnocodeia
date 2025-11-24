@@ -4,7 +4,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Send, Loader2, Menu, Heart, MessageCircle, X, Smile, ChevronDown, MoreVertical, Bell, Plus, Trash2 } from "lucide-react";
+import { Send, Loader2, Menu, Heart, MessageCircle, X, Smile, ChevronDown, MoreVertical, Bell, Plus, Trash2, Pin, Paperclip, Music, AtSign } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Sidebar from "@/components/layout/sidebar";
 import MobileNav from "@/components/layout/mobile-nav";
@@ -87,6 +87,8 @@ interface Message {
   channelId: string;
   userId: string;
   content: string;
+  isPinned?: boolean;
+  attachments?: Array<{type: string; url: string; name?: string}>;
   createdAt: string;
   updatedAt: string;
   user?: {
@@ -162,6 +164,33 @@ export default function Community() {
       orderedGrouped[date] = grouped[date];
     });
     return orderedGrouped;
+  };
+
+  // Group messages by date (oldest to newest) and separate pinned messages
+  const groupMessagesByDate = (msgs: Message[]) => {
+    const pinned = msgs.filter(m => m.isPinned);
+    const unpinned = msgs.filter(m => !m.isPinned);
+    
+    const grouped: { [date: string]: Message[] } = {};
+    unpinned.forEach(message => {
+      const date = new Date(message.createdAt).toLocaleDateString("es-ES", { 
+        year: "numeric", 
+        month: "long", 
+        day: "numeric" 
+      });
+      if (!grouped[date]) {
+        grouped[date] = [];
+      }
+      grouped[date].push(message);
+    });
+    
+    const sortedKeys = Object.keys(grouped).sort((a, b) => new Date(a).getTime() - new Date(b).getTime());
+    const orderedGrouped: { [date: string]: Message[] } = {};
+    sortedKeys.forEach(date => {
+      orderedGrouped[date] = grouped[date];
+    });
+    
+    return { pinned, grouped: orderedGrouped };
   };
 
   // Mutation for adding/removing reactions
@@ -665,174 +694,313 @@ export default function Community() {
               ) : (
                 <div className="flex-1 overflow-y-auto px-6 py-6 w-full flex flex-col">
                   <div className="w-full max-w-3xl mx-auto space-y-4">
-                  {messages.map((message) => (
-                    <div key={message.id} className="rounded-lg border border-[#333333] bg-[#1a1a1a] p-4">
-                      <div className="flex items-start gap-3 mb-2">
-                        <Avatar className="h-8 w-8 flex-shrink-0">
-                          <AvatarImage src={message.user?.profileImageUrl || undefined} />
-                          <AvatarFallback>{(message.user?.firstName?.charAt(0) || "U").toUpperCase()}</AvatarFallback>
-                        </Avatar>
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2">
-                            <p className="font-semibold text-white">
-                              {message.user?.firstName} {message.user?.lastName}
-                            </p>
-                            <p className="text-xs text-muted-foreground">
-                              {new Date(message.createdAt).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })}
-                            </p>
-                          </div>
-                          <p className="text-sm text-muted-foreground mt-1 whitespace-pre-wrap break-words">{message.content}</p>
+                    {/* Pinned Messages Section */}
+                    {groupMessagesByDate(messages).pinned.length > 0 && (
+                      <div className="space-y-3 pb-4 border-b border-[#444444]">
+                        <div className="flex items-center gap-2 text-xs font-semibold text-cyan-400">
+                          <Pin className="h-3 w-3" />
+                          <span>Mensajes fijados</span>
                         </div>
-                        {(user as any)?.isAdmin && (
-                          <button
-                            onClick={async (e) => {
-                              e.stopPropagation();
-                              if (confirm("¿Eliminar este mensaje?")) {
-                                try {
-                                  const res = await fetch(`/api/community/messages/${message.id}`, {
-                                    method: "DELETE",
-                                    credentials: "include",
-                                  });
-                                  if (res.ok) {
-                                    setMessages(messages.filter(m => m.id !== message.id));
-                                    toast({ title: "Éxito", description: "Mensaje eliminado" });
-                                  }
-                                } catch (error) {
-                                  toast({ title: "Error", description: "No se pudo eliminar el mensaje", variant: "destructive" });
-                                }
-                              }
-                            }}
-                            className="opacity-0 group-hover:opacity-100 transition-opacity"
-                            data-testid={`delete-message-${message.id}`}
-                          >
-                            <Trash2 className="h-4 w-4 text-muted-foreground hover:text-red-500" />
-                          </button>
-                        )}
-                      </div>
-                      {/* Message reactions */}
-                      <div className="flex items-center gap-2 text-xs text-muted-foreground ml-11 flex-wrap">
-                        <div className="relative">
-                          <button 
-                            onClick={() => setOpenReactionMessageId(openReactionMessageId === message.id ? null : message.id)}
-                            disabled={(userMessageEmojis[message.id] || []).length >= 3}
-                            className={cn(
-                              "flex items-center gap-1 transition-colors",
-                              (userMessageEmojis[message.id] || []).length >= 3 
-                                ? "text-muted-foreground cursor-not-allowed opacity-50" 
-                                : "hover:text-cyan-500"
-                            )}
-                          >
-                            <Smile className="h-3 w-3" />
-                          </button>
-                          {openReactionMessageId === message.id && (
-                            <div className="absolute bottom-full left-0 mb-2 bg-[#2a2a2a] border border-[#444444] rounded-lg p-2 grid grid-cols-5 gap-1 w-40 z-50 shadow-lg">
-                              {["👍", "❤️", "😂", "😮", "🎉"].map((emoji) => (
-                                <button
-                                  key={emoji}
-                                  onClick={async () => {
-                                    const currentEmojis = userMessageEmojis[message.id] || [];
-                                    if (!currentEmojis.includes(emoji)) {
-                                      setUserMessageEmojis({
-                                        ...userMessageEmojis,
-                                        [message.id]: [...currentEmojis, emoji]
-                                      });
-                                    }
-                                    setOpenReactionMessageId(null);
-                                  }}
-                                  className="text-lg hover:scale-125 transition-transform cursor-pointer"
-                                >
-                                  {emoji}
-                                </button>
-                              ))}
+                        {groupMessagesByDate(messages).pinned.map((message) => (
+                          <div key={message.id} className="rounded-lg border border-[#444444] bg-[#252525] p-3">
+                            <div className="flex items-start gap-3">
+                              <Avatar className="h-6 w-6 flex-shrink-0">
+                                <AvatarImage src={message.user?.profileImageUrl || undefined} />
+                                <AvatarFallback>{(message.user?.firstName?.charAt(0) || "U").toUpperCase()}</AvatarFallback>
+                              </Avatar>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2">
+                                  <p className="font-semibold text-white text-sm">
+                                    {message.user?.firstName} {message.user?.lastName}
+                                  </p>
+                                  <p className="text-xs text-muted-foreground">
+                                    {new Date(message.createdAt).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })}
+                                  </p>
+                                </div>
+                                <p className="text-sm text-muted-foreground mt-1 whitespace-pre-wrap break-words">{message.content}</p>
+                              </div>
+                              {(user as any)?.isAdmin && (
+                                <div className="flex gap-1 flex-shrink-0">
+                                  <button
+                                    onClick={async (e) => {
+                                      e.stopPropagation();
+                                      try {
+                                        const res = await fetch(`/api/community/messages/${message.id}/pin`, {
+                                          method: "PATCH",
+                                          headers: { "Content-Type": "application/json" },
+                                          credentials: "include",
+                                          body: JSON.stringify({ isPinned: false }),
+                                        });
+                                        if (res.ok) {
+                                          setMessages(messages.map(m => m.id === message.id ? { ...m, isPinned: false } : m));
+                                          toast({ title: "Éxito", description: "Mensaje desf ijado" });
+                                        }
+                                      } catch (error) {
+                                        toast({ title: "Error", description: "No se pudo desfijar el mensaje", variant: "destructive" });
+                                      }
+                                    }}
+                                    className="opacity-0 group-hover:opacity-100 transition-opacity"
+                                    data-testid={`unpin-message-${message.id}`}
+                                  >
+                                    <Pin className="h-3 w-3 text-muted-foreground hover:text-cyan-400" />
+                                  </button>
+                                  <button
+                                    onClick={async (e) => {
+                                      e.stopPropagation();
+                                      if (confirm("¿Eliminar este mensaje?")) {
+                                        try {
+                                          const res = await fetch(`/api/community/messages/${message.id}`, {
+                                            method: "DELETE",
+                                            credentials: "include",
+                                          });
+                                          if (res.ok) {
+                                            setMessages(messages.filter(m => m.id !== message.id));
+                                            toast({ title: "Éxito", description: "Mensaje eliminado" });
+                                          }
+                                        } catch (error) {
+                                          toast({ title: "Error", description: "No se pudo eliminar el mensaje", variant: "destructive" });
+                                        }
+                                      }
+                                    }}
+                                    className="opacity-0 group-hover:opacity-100 transition-opacity"
+                                    data-testid={`delete-message-${message.id}`}
+                                  >
+                                    <Trash2 className="h-3 w-3 text-muted-foreground hover:text-red-500" />
+                                  </button>
+                                </div>
+                              )}
                             </div>
-                          )}
-                        </div>
-                        {(userMessageEmojis[message.id] || []).length > 0 && (
-                          <div className="flex gap-1">
-                            {(userMessageEmojis[message.id] || []).map((emoji) => (
-                              <span key={emoji} className="text-sm px-1.5 py-0.5 rounded-full bg-[#292929]">{emoji}</span>
-                            ))}
                           </div>
-                        )}
+                        ))}
                       </div>
-                    </div>
-                  ))
-                  }
+                    )}
+
+                    {/* Regular Messages Grouped by Date */}
+                    {Object.entries(groupMessagesByDate(messages).grouped).map(([date, dateMessages]) => (
+                      <div key={date} className="space-y-3">
+                        <div className="flex items-center justify-center gap-3">
+                          <div className="flex-1 border-t border-[#333333]"></div>
+                          <span className="text-xs text-muted-foreground px-3 py-1 rounded-full bg-[#1a1a1a] border border-[#333333]">
+                            {date}
+                          </span>
+                          <div className="flex-1 border-t border-[#333333]"></div>
+                        </div>
+                        {dateMessages.map((message) => (
+                          <div key={message.id} className="rounded-lg border border-[#333333] bg-[#1a1a1a] p-4 group">
+                            <div className="flex items-start gap-3 mb-2">
+                              <Avatar className="h-8 w-8 flex-shrink-0">
+                                <AvatarImage src={message.user?.profileImageUrl || undefined} />
+                                <AvatarFallback>{(message.user?.firstName?.charAt(0) || "U").toUpperCase()}</AvatarFallback>
+                              </Avatar>
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2">
+                                  <p className="font-semibold text-white">
+                                    {message.user?.firstName} {message.user?.lastName}
+                                  </p>
+                                  <p className="text-xs text-muted-foreground">
+                                    {new Date(message.createdAt).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })}
+                                  </p>
+                                </div>
+                                <p className="text-sm text-muted-foreground mt-1 whitespace-pre-wrap break-words">{message.content}</p>
+                              </div>
+                              {(user as any)?.isAdmin && (
+                                <div className="flex gap-1 flex-shrink-0">
+                                  <button
+                                    onClick={async (e) => {
+                                      e.stopPropagation();
+                                      try {
+                                        const res = await fetch(`/api/community/messages/${message.id}/pin`, {
+                                          method: "PATCH",
+                                          headers: { "Content-Type": "application/json" },
+                                          credentials: "include",
+                                          body: JSON.stringify({ isPinned: true }),
+                                        });
+                                        if (res.ok) {
+                                          setMessages(messages.map(m => m.id === message.id ? { ...m, isPinned: true } : m));
+                                          toast({ title: "Éxito", description: "Mensaje fijado" });
+                                        }
+                                      } catch (error) {
+                                        toast({ title: "Error", description: "No se pudo fijar el mensaje", variant: "destructive" });
+                                      }
+                                    }}
+                                    className="opacity-0 group-hover:opacity-100 transition-opacity"
+                                    data-testid={`pin-message-${message.id}`}
+                                  >
+                                    <Pin className="h-4 w-4 text-muted-foreground hover:text-cyan-400" />
+                                  </button>
+                                  <button
+                                    onClick={async (e) => {
+                                      e.stopPropagation();
+                                      if (confirm("¿Eliminar este mensaje?")) {
+                                        try {
+                                          const res = await fetch(`/api/community/messages/${message.id}`, {
+                                            method: "DELETE",
+                                            credentials: "include",
+                                          });
+                                          if (res.ok) {
+                                            setMessages(messages.filter(m => m.id !== message.id));
+                                            toast({ title: "Éxito", description: "Mensaje eliminado" });
+                                          }
+                                        } catch (error) {
+                                          toast({ title: "Error", description: "No se pudo eliminar el mensaje", variant: "destructive" });
+                                        }
+                                      }
+                                    }}
+                                    className="opacity-0 group-hover:opacity-100 transition-opacity"
+                                    data-testid={`delete-message-${message.id}`}
+                                  >
+                                    <Trash2 className="h-4 w-4 text-muted-foreground hover:text-red-500" />
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                            {/* Message reactions */}
+                            <div className="flex items-center gap-2 text-xs text-muted-foreground ml-11 flex-wrap">
+                              <div className="relative">
+                                <button 
+                                  onClick={() => setOpenReactionMessageId(openReactionMessageId === message.id ? null : message.id)}
+                                  disabled={(userMessageEmojis[message.id] || []).length >= 3}
+                                  className={cn(
+                                    "flex items-center gap-1 transition-colors",
+                                    (userMessageEmojis[message.id] || []).length >= 3 
+                                      ? "text-muted-foreground cursor-not-allowed opacity-50" 
+                                      : "hover:text-cyan-500"
+                                  )}
+                                >
+                                  <Smile className="h-3 w-3" />
+                                </button>
+                                {openReactionMessageId === message.id && (
+                                  <div className="absolute bottom-full left-0 mb-2 bg-[#2a2a2a] border border-[#444444] rounded-lg p-2 grid grid-cols-5 gap-1 w-40 z-50 shadow-lg">
+                                    {["👍", "❤️", "😂", "😮", "🎉"].map((emoji) => (
+                                      <button
+                                        key={emoji}
+                                        onClick={async () => {
+                                          const currentEmojis = userMessageEmojis[message.id] || [];
+                                          if (!currentEmojis.includes(emoji)) {
+                                            setUserMessageEmojis({
+                                              ...userMessageEmojis,
+                                              [message.id]: [...currentEmojis, emoji]
+                                            });
+                                          }
+                                          setOpenReactionMessageId(null);
+                                        }}
+                                        className="text-lg hover:scale-125 transition-transform cursor-pointer"
+                                      >
+                                        {emoji}
+                                      </button>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                              {(userMessageEmojis[message.id] || []).length > 0 && (
+                                <div className="flex gap-1">
+                                  {(userMessageEmojis[message.id] || []).map((emoji) => (
+                                    <span key={emoji} className="text-sm px-1.5 py-0.5 rounded-full bg-[#292929]">{emoji}</span>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ))}
                   </div>
                 </div>
               )}
 
-              {/* Message Input */}
+              {/* Message Input with Toolbar */}
               <div className="flex-shrink-0 border-t border-[#333333] bg-[#0f0f0f] flex justify-center w-full">
-                <div className="flex items-end gap-3 w-full px-6 py-4">
-                  <textarea
-                    placeholder="Escribe un mensaje... (Shift+Enter para nueva línea)"
-                    value={messageInput}
-                    onChange={(e) => setMessageInput(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" && !e.shiftKey && messageInput.trim()) {
-                        e.preventDefault();
-                        (async () => {
-                          setSendingMessage(true);
-                          try {
-                            const res = await fetch(`/api/community/channels/${activeChannel?.id}/messages`, {
-                              method: "POST",
-                              headers: { "Content-Type": "application/json" },
-                              credentials: "include",
-                              body: JSON.stringify({ content: messageInput }),
-                            });
-                            if (res.ok) {
-                              const newMessage = await res.json();
-                              setMessages([...messages, newMessage]);
-                              setMessageInput("");
-                              toast({ title: "Éxito", description: "Mensaje enviado" });
-                            } else {
-                              const error = await res.json();
-                              toast({ title: "Error", description: error.message || "No se pudo enviar el mensaje", variant: "destructive" });
+                <div className="flex flex-col w-full px-6 py-4 max-w-3xl">
+                  {/* Toolbar */}
+                  <div className="flex gap-2 mb-3 pb-3 border-b border-[#333333]">
+                    <button className="p-2 hover:bg-[#1a1a1a] rounded transition-colors" data-testid="toolbar-emoji" title="Emoticones">
+                      <Smile className="h-4 w-4 text-muted-foreground" />
+                    </button>
+                    <button className="p-2 hover:bg-[#1a1a1a] rounded transition-colors" data-testid="toolbar-attachments" title="Archivos">
+                      <Paperclip className="h-4 w-4 text-muted-foreground" />
+                    </button>
+                    <button className="p-2 hover:bg-[#1a1a1a] rounded transition-colors" data-testid="toolbar-image" title="Imagen">
+                      <Plus className="h-4 w-4 text-muted-foreground" />
+                    </button>
+                    <button className="p-2 hover:bg-[#1a1a1a] rounded transition-colors" data-testid="toolbar-audio" title="Audio">
+                      <Music className="h-4 w-4 text-muted-foreground" />
+                    </button>
+                    <button className="p-2 hover:bg-[#1a1a1a] rounded transition-colors" data-testid="toolbar-mention" title="Mencionar">
+                      <AtSign className="h-4 w-4 text-muted-foreground" />
+                    </button>
+                  </div>
+                  
+                  {/* Text Input */}
+                  <div className="flex items-end gap-3">
+                    <textarea
+                      placeholder="Escribe un mensaje... (Shift+Enter para nueva línea)"
+                      value={messageInput}
+                      onChange={(e) => setMessageInput(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && !e.shiftKey && messageInput.trim()) {
+                          e.preventDefault();
+                          (async () => {
+                            setSendingMessage(true);
+                            try {
+                              const res = await fetch(`/api/community/channels/${activeChannel?.id}/messages`, {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                credentials: "include",
+                                body: JSON.stringify({ content: messageInput }),
+                              });
+                              if (res.ok) {
+                                const newMessage = await res.json();
+                                setMessages([...messages, newMessage]);
+                                setMessageInput("");
+                                toast({ title: "Éxito", description: "Mensaje enviado" });
+                              } else {
+                                const error = await res.json();
+                                toast({ title: "Error", description: error.message || "No se pudo enviar el mensaje", variant: "destructive" });
+                              }
+                            } catch (error) {
+                              toast({ title: "Error", description: "No se pudo enviar el mensaje", variant: "destructive" });
+                            } finally {
+                              setSendingMessage(false);
                             }
-                          } catch (error) {
-                            toast({ title: "Error", description: "No se pudo enviar el mensaje", variant: "destructive" });
-                          } finally {
-                            setSendingMessage(false);
-                          }
-                        })();
-                      }
-                    }}
-                    disabled={sendingMessage}
-                    className="flex-1 bg-[#1a1a1a] border border-[#333333] text-white p-2 rounded resize-none min-h-[40px] max-h-[120px] overflow-y-auto"
-                    rows={3}
-                    data-testid="message-input"
-                  />
-                  <Button
-                    size="sm"
-                    onClick={async () => {
-                      if (!messageInput.trim()) return;
-                      setSendingMessage(true);
-                      try {
-                        const res = await fetch(`/api/community/channels/${activeChannel?.id}/messages`, {
-                          method: "POST",
-                          headers: { "Content-Type": "application/json" },
-                          credentials: "include",
-                          body: JSON.stringify({ content: messageInput }),
-                        });
-                        if (res.ok) {
-                          const newMessage = await res.json();
-                          setMessages([...messages, newMessage]);
-                          setMessageInput("");
-                          toast({ title: "Éxito", description: "Mensaje enviado" });
+                          })();
                         }
-                      } catch (error) {
-                        toast({ title: "Error", description: "No se pudo enviar el mensaje", variant: "destructive" });
-                      } finally {
-                        setSendingMessage(false);
-                      }
-                    }}
-                    disabled={sendingMessage || !messageInput.trim()}
-                    className="bg-cyan-500 hover:bg-cyan-600 text-black font-semibold"
-                    data-testid="send-message-button"
-                  >
-                    {sendingMessage ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-                  </Button>
+                      }}
+                      disabled={sendingMessage}
+                      className="flex-1 bg-[#1a1a1a] border border-[#333333] text-white p-2 rounded resize-none min-h-[40px] max-h-[120px] overflow-y-auto"
+                      rows={3}
+                      data-testid="message-input"
+                    />
+                    <Button
+                      size="sm"
+                      onClick={async () => {
+                        if (!messageInput.trim()) return;
+                        setSendingMessage(true);
+                        try {
+                          const res = await fetch(`/api/community/channels/${activeChannel?.id}/messages`, {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            credentials: "include",
+                            body: JSON.stringify({ content: messageInput }),
+                          });
+                          if (res.ok) {
+                            const newMessage = await res.json();
+                            setMessages([...messages, newMessage]);
+                            setMessageInput("");
+                            toast({ title: "Éxito", description: "Mensaje enviado" });
+                          }
+                        } catch (error) {
+                          toast({ title: "Error", description: "No se pudo enviar el mensaje", variant: "destructive" });
+                        } finally {
+                          setSendingMessage(false);
+                        }
+                      }}
+                      disabled={sendingMessage || !messageInput.trim()}
+                      className="bg-cyan-500 hover:bg-cyan-600 text-black font-semibold"
+                      data-testid="send-message-button"
+                    >
+                      {sendingMessage ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                    </Button>
+                  </div>
                 </div>
               </div>
             </div>

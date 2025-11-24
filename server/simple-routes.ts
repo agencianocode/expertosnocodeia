@@ -1949,6 +1949,39 @@ export function registerSimpleRoutes(app: Express): Server {
     }
   });
 
+  // Delete message (admin only)
+  app.delete("/api/community/messages/:messageId", simpleAdminAuth, isAdmin, async (req: Request, res: Response) => {
+    try {
+      const { messageId } = req.params;
+      await storage.deleteMessage(messageId);
+      res.json({ success: true, message: "Mensaje eliminado" });
+    } catch (error) {
+      console.error("Error deleting message:", error);
+      res.status(500).json({ message: "Failed to delete message" });
+    }
+  });
+
+  // Pin/Unpin message (admin only)
+  app.patch("/api/community/messages/:messageId/pin", simpleAdminAuth, isAdmin, async (req: Request, res: Response) => {
+    try {
+      const { messageId } = req.params;
+      const { isPinned } = req.body;
+
+      if (typeof isPinned !== "boolean") {
+        return res.status(400).json({ message: "isPinned must be a boolean" });
+      }
+
+      const message = isPinned 
+        ? await storage.pinMessage(messageId)
+        : await storage.unpinMessage(messageId);
+
+      res.json(message);
+    } catch (error) {
+      console.error("Error updating pin status:", error);
+      res.status(500).json({ message: "Failed to update pin status" });
+    }
+  });
+
   // Community posts endpoints
   app.get("/api/community/channels/:channelId/posts", async (req, res) => {
     try {

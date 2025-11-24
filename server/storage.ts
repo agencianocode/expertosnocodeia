@@ -2566,6 +2566,32 @@ export class DatabaseStorage implements IStorage {
     return message;
   }
 
+  async deleteMessage(messageId: string): Promise<void> {
+    await db
+      .delete(communityMessages)
+      .where(eq(communityMessages.id, messageId));
+  }
+
+  async pinMessage(messageId: string): Promise<CommunityMessage> {
+    const [message] = await db
+      .update(communityMessages)
+      .set({ isPinned: true })
+      .where(eq(communityMessages.id, messageId))
+      .returning();
+
+    return message;
+  }
+
+  async unpinMessage(messageId: string): Promise<CommunityMessage> {
+    const [message] = await db
+      .update(communityMessages)
+      .set({ isPinned: false })
+      .where(eq(communityMessages.id, messageId))
+      .returning();
+
+    return message;
+  }
+
   // Community posts methods
   async getChannelPosts(channelId: string, limit: number = 50): Promise<any[]> {
     const posts = await db

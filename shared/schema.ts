@@ -821,12 +821,15 @@ export const communityMessages = pgTable("community_messages", {
   channelId: varchar("channel_id").references(() => communityChannels.id, { onDelete: "cascade" }).notNull(),
   userId: varchar("user_id").references(() => users.id, { onDelete: "set null" }),
   content: text("content").notNull(),
+  isPinned: boolean("is_pinned").default(false),
+  attachments: jsonb("attachments").$type<Array<{type: string; url: string; name?: string}>>().default([]),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 }, (table) => [
   index("idx_messages_channel").on(table.channelId),
   index("idx_messages_user").on(table.userId),
   index("idx_messages_created").on(table.createdAt),
+  index("idx_messages_pinned").on(table.isPinned),
 ]);
 
 // Message reactions
