@@ -174,7 +174,11 @@ export default function Community() {
     
     const grouped: { [date: string]: Message[] } = {};
     unpinned.forEach(message => {
-      const date = new Date(message.createdAt).toLocaleDateString("es-ES", { 
+      if (!message.createdAt) return;
+      const dateObj = new Date(message.createdAt);
+      if (isNaN(dateObj.getTime())) return; // Skip invalid dates
+      
+      const date = dateObj.toLocaleDateString("es-ES", { 
         year: "numeric", 
         month: "long", 
         day: "numeric" 
@@ -185,7 +189,12 @@ export default function Community() {
       grouped[date].push(message);
     });
     
-    const sortedKeys = Object.keys(grouped).sort((a, b) => new Date(a).getTime() - new Date(b).getTime());
+    const sortedKeys = Object.keys(grouped).sort((a, b) => {
+      const dateA = new Date(a).getTime();
+      const dateB = new Date(b).getTime();
+      if (isNaN(dateA) || isNaN(dateB)) return 0;
+      return dateA - dateB;
+    });
     const orderedGrouped: { [date: string]: Message[] } = {};
     sortedKeys.forEach(date => {
       orderedGrouped[date] = grouped[date];
