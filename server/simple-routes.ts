@@ -1993,6 +1993,8 @@ export function registerSimpleRoutes(app: Express): Server {
             firstName: users.firstName,
             lastName: users.lastName,
             profileImageUrl: users.profileImageUrl,
+            createdAt: users.createdAt,
+            lastLoginAt: users.lastLoginAt,
           },
         })
         .from(communityPosts)
