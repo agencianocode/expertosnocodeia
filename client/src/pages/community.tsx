@@ -958,13 +958,13 @@ export default function Community() {
                         }
                       }}
                       disabled={sendingMessage}
-                      className="w-full bg-transparent border-0 text-white text-left resize-none min-h-[40px] max-h-[120px] overflow-y-auto outline-none"
-                      rows={3}
+                      className="w-full bg-transparent border-0 text-white text-left resize-none min-h-[24px] max-h-[120px] overflow-y-auto outline-none"
+                      rows={1}
                       data-testid="message-input"
                     />
                     
                     {/* Toolbar and Send Button - Bottom row */}
-                    <div className="flex items-center gap-3 mt-2">
+                    <div className="flex items-center gap-3 mt-1">
                       {/* Toolbar - Left side */}
                       <div className="flex gap-1 flex-shrink-0 relative">
                         <div className="relative">
