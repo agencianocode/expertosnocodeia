@@ -550,12 +550,17 @@ export default function Community() {
             <div className="flex-1 overflow-y-auto px-6 py-6 space-y-4 max-w-4xl mx-auto w-full">
               {/* Inicia una publicación - solo para Presentante */}
               {isPresentanteChannel && (
-                <div className="border border-[#333333] rounded-lg p-4 bg-[#1a1a1a] flex items-center gap-3">
-                  <Avatar className="h-10 w-10">
-                    <AvatarImage src={(user as any)?.profileImageUrl || undefined} />
-                    <AvatarFallback>{(user?.firstName?.charAt(0) || "U").toUpperCase()}</AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1 flex flex-col gap-2">
+                <div className="border border-[#333333] rounded-lg p-4 bg-[#1a1a1a] flex flex-col gap-3 max-w-2xl">
+                  <div className="flex items-center gap-3">
+                    <Avatar className="h-10 w-10">
+                      <AvatarImage src={(user as any)?.profileImageUrl || undefined} />
+                      <AvatarFallback>{(user?.firstName?.charAt(0) || "U").toUpperCase()}</AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <p className="text-sm font-semibold text-white">{user?.firstName} {user?.lastName}</p>
+                    </div>
+                  </div>
+                  <div className="flex flex-col gap-2">
                     <textarea
                       placeholder="Inicia una publicación... (presiona Ctrl+Enter para enviar)"
                       value={newPostContent}
@@ -567,7 +572,7 @@ export default function Community() {
                           button?.click();
                         }
                       }}
-                      className="flex-1 min-h-[80px] max-h-[200px] bg-[#232323] border border-[#333333] rounded px-3 py-2 text-sm text-white placeholder-muted-foreground focus:outline-none focus:border-cyan-500 resize-none"
+                      className="w-full min-h-[80px] max-h-[200px] bg-[#232323] border border-[#333333] rounded px-3 py-2 text-sm text-white placeholder-muted-foreground focus:outline-none focus:border-cyan-500 resize-none"
                       data-testid="new-post-input"
                     />
                     <Button
@@ -787,21 +792,21 @@ export default function Community() {
                           )}
                         </>
                       ) : null}
-                      {/* Header con nombre y hora - solo para canales que no son accordion */}
+                      {/* Header con nombre y fecha - solo para canales que no son accordion */}
                       {!isAccordionChannel && (
-                        <div className="flex items-center gap-2 mb-3">
-                          <Avatar className="h-8 w-8">
-                            <AvatarImage src={post.user?.profileImageUrl || undefined} />
-                            <AvatarFallback>{(post.user?.firstName?.charAt(0) || "U").toUpperCase()}</AvatarFallback>
-                          </Avatar>
-                          <div className="text-sm">
+                        <div className="flex flex-col gap-2 mb-3">
+                          <div className="flex items-center gap-2">
+                            <Avatar className="h-8 w-8">
+                              <AvatarImage src={post.user?.profileImageUrl || undefined} />
+                              <AvatarFallback>{(post.user?.firstName?.charAt(0) || "U").toUpperCase()}</AvatarFallback>
+                            </Avatar>
                             <p className="font-semibold text-white">
-                              {post.user?.firstName} {post.user?.lastName}{" "}
-                              <span className="text-xs text-muted-foreground font-normal">
-                                {new Date(post.post.createdAt).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })}
-                              </span>
+                              {post.user?.firstName} {post.user?.lastName}
                             </p>
                           </div>
+                          <p className="text-xs text-muted-foreground">
+                            {new Date(post.post.createdAt).toLocaleDateString("es-ES", { year: "numeric", month: "long", day: "numeric" })}
+                          </p>
                         </div>
                       )}
                       {/* Acciones - solo para canales que no son accordion */}
