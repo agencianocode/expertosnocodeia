@@ -555,13 +555,19 @@ export default function Community() {
                     <AvatarImage src={(user as any)?.profileImageUrl || undefined} />
                     <AvatarFallback>{(user?.firstName?.charAt(0) || "U").toUpperCase()}</AvatarFallback>
                   </Avatar>
-                  <div className="flex-1 flex items-center gap-2">
-                    <input
-                      type="text"
-                      placeholder="Inicia una publicación"
+                  <div className="flex-1 flex flex-col gap-2">
+                    <textarea
+                      placeholder="Inicia una publicación... (presiona Ctrl+Enter para enviar)"
                       value={newPostContent}
                       onChange={(e) => setNewPostContent(e.target.value)}
-                      className="flex-1 bg-[#232323] border border-[#333333] rounded px-3 py-2 text-sm text-white placeholder-muted-foreground focus:outline-none focus:border-cyan-500"
+                      onKeyDown={(e) => {
+                        if (e.ctrlKey && e.key === "Enter" && newPostContent.trim()) {
+                          e.preventDefault();
+                          const button = e.currentTarget.nextElementSibling as HTMLButtonElement;
+                          button?.click();
+                        }
+                      }}
+                      className="flex-1 min-h-[80px] max-h-[200px] bg-[#232323] border border-[#333333] rounded px-3 py-2 text-sm text-white placeholder-muted-foreground focus:outline-none focus:border-cyan-500 resize-none"
                       data-testid="new-post-input"
                     />
                     <Button
@@ -594,7 +600,7 @@ export default function Community() {
                         }
                       }}
                       disabled={creatingPost || !newPostContent.trim()}
-                      className="bg-cyan-500 hover:bg-cyan-600 text-black font-semibold"
+                      className="bg-cyan-500 hover:bg-cyan-600 text-black font-semibold self-end"
                       data-testid="create-post-button"
                     >
                       {creatingPost ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
