@@ -653,10 +653,10 @@ export default function Community() {
 
           {/* Content Feed - Posts OR Chat depending on channel type */}
           {isRedesChatChannel ? (
-            <div className="flex-1 w-full flex flex-col">
+            <div className="flex-1 w-full flex flex-col justify-center items-center">
               {/* Messages Feed - Always centered */}
               {messages.length === 0 ? (
-                <div className="flex-1 flex items-center justify-center text-muted-foreground">
+                <div className="max-w-3xl px-6 text-muted-foreground text-center">
                   <p>No hay mensajes. ¡Sé el primero en escribir!</p>
                 </div>
               ) : (
