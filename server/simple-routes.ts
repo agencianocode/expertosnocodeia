@@ -2320,6 +2320,46 @@ export function registerSimpleRoutes(app: Express): Server {
     }
   });
 
+  // Endpoint for users to create posts in a channel
+  app.post("/api/community/channels/:channelId/posts", simpleAdminAuth, async (req: Request, res: Response) => {
+    try {
+      const { channelId } = req.params;
+      const { title, content } = req.body;
+      const userId = (req as any).user?.claims?.sub || (req as any).user?.id;
+
+      if (!userId) {
+        return res.status(401).json({ message: "Usuario no autenticado" });
+      }
+
+      if (!content || !content.trim()) {
+        return res.status(400).json({ message: "Content is required" });
+      }
+
+      // Check if channel is read-only
+      const channel = await db.select().from(communityChannels).where(eq(communityChannels.id, channelId));
+      if (channel.length === 0) {
+        return res.status(404).json({ message: "Canal no encontrado" });
+      }
+
+      if (channel[0].isReadOnly) {
+        return res.status(403).json({ message: "Este canal no permite publicaciones" });
+      }
+
+      // Create post
+      const post = await db.insert(communityPosts).values({
+        channelId,
+        userId,
+        title: title || "",
+        content,
+      }).returning();
+
+      res.status(201).json(post[0]);
+    } catch (error) {
+      console.error("Error creating post:", error);
+      res.status(500).json({ message: "Failed to create post" });
+    }
+  });
+
   // Endpoint to add reaction to post
   app.post("/api/community/posts/:postId/reactions", simpleAdminAuth, async (req: Request, res: Response) => {
     try {
