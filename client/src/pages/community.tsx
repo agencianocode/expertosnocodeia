@@ -914,8 +914,8 @@ export default function Community() {
           )}
         </div>
 
-        {/* Right Sidebar - Comments (only for Anuncios when post selected) */}
-        {isAnunciosChannel && selectedPost && (
+        {/* Right Sidebar - Comments (for all channels except empieza-aqui when post selected) */}
+        {!isAccordionChannel && selectedPost && (
           <div className="hidden lg:flex w-1/3 flex-col border-l border-[#333333] bg-[#1a1a1a] overflow-hidden">
             {/* Header con fecha del post */}
             <div className="border-b border-[#333333] px-6 py-4 text-center">
