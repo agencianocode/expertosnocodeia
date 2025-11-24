@@ -4,7 +4,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Send, Loader2, Menu, Heart, MessageCircle, X, Smile, ChevronDown, MoreVertical, Bell } from "lucide-react";
+import { Send, Loader2, Menu, Heart, MessageCircle, X, Smile, ChevronDown, MoreVertical, Bell, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Sidebar from "@/components/layout/sidebar";
 import MobileNav from "@/components/layout/mobile-nav";
@@ -104,6 +104,9 @@ export default function Community() {
     inAppNotifications: true,
     mobileNotifications: false,
   });
+  const [newPostContent, setNewPostContent] = useState("");
+  const [creatingPost, setCreatingPost] = useState(false);
+  const [isPresentanteChannel, setIsPresentanteChannel] = useState(false);
 
   // Mutation for adding/removing reactions
   const addReactionMutation = useMutation({
@@ -195,7 +198,9 @@ export default function Community() {
     // Check if this channel should show posts (all "Comunidad" section channels show posts)
     const hasPostsFeed = activeChannel.section === "Comunidad";
     const isAnuncios = activeChannel.slug === "anuncios";
+    const isPresentante = activeChannel.slug === "presentante";
     setIsAnunciosChannel(isAnuncios);
+    setIsPresentanteChannel(isPresentante);
 
     const fetchContent = async () => {
       try {
@@ -542,6 +547,60 @@ export default function Community() {
           {/* Posts Feed - For all Comunidad section channels */}
           {posts.length > 0 || activeChannel?.section === "Comunidad" ? (
             <div className="flex-1 overflow-y-auto px-6 py-6 space-y-4 max-w-4xl mx-auto w-full">
+              {/* Inicia una publicación - solo para Presentante */}
+              {isPresentanteChannel && (
+                <div className="border border-[#333333] rounded-lg p-4 bg-[#1a1a1a] flex items-center gap-3">
+                  <Avatar className="h-10 w-10">
+                    <AvatarImage src={user?.profileImageUrl || undefined} />
+                    <AvatarFallback>{(user?.firstName?.charAt(0) || "U").toUpperCase()}</AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1 flex items-center gap-2">
+                    <input
+                      type="text"
+                      placeholder="Inicia una publicación"
+                      value={newPostContent}
+                      onChange={(e) => setNewPostContent(e.target.value)}
+                      className="flex-1 bg-[#232323] border border-[#333333] rounded px-3 py-2 text-sm text-white placeholder-muted-foreground focus:outline-none focus:border-cyan-500"
+                      data-testid="new-post-input"
+                    />
+                    <Button
+                      size="sm"
+                      onClick={async () => {
+                        if (!newPostContent.trim()) return;
+                        setCreatingPost(true);
+                        try {
+                          const res = await fetch(`/api/community/channels/${activeChannel?.id}/posts`, {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            credentials: "include",
+                            body: JSON.stringify({
+                              title: "",
+                              content: newPostContent,
+                            }),
+                          });
+                          if (res.ok) {
+                            setNewPostContent("");
+                            // Refetch posts
+                            const postsRes = await fetch(`/api/community/channels/${activeChannel?.id}/posts?limit=50&sort=${sortBy}`);
+                            const postsData = await postsRes.json();
+                            setPosts(Array.isArray(postsData) ? postsData : []);
+                            toast({ title: "Éxito", description: "Publicación creada" });
+                          }
+                        } catch (error) {
+                          toast({ title: "Error", description: "No se pudo crear la publicación", variant: "destructive" });
+                        } finally {
+                          setCreatingPost(false);
+                        }
+                      }}
+                      disabled={creatingPost || !newPostContent.trim()}
+                      className="bg-cyan-500 hover:bg-cyan-600 text-black font-semibold"
+                      data-testid="create-post-button"
+                    >
+                      {creatingPost ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+                    </Button>
+                  </div>
+                </div>
+              )}
               {posts.length === 0 ? (
                 <div className="flex items-center justify-center h-full text-muted-foreground">
                   <p>No hay anuncios. Vuelve pronto.</p>
