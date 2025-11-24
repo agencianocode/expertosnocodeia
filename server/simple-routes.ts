@@ -245,6 +245,9 @@ export function registerSimpleRoutes(app: Express): Server {
         return res.status(401).json({ message: "Usuario no autenticado" });
       }
       
+      // Update last login
+      await storage.updateUserLastLogin(userId);
+      
       // Get user from database
       const user = await storage.getUser(userId);
       if (user) {
