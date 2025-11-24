@@ -655,9 +655,9 @@ export default function Community() {
           {isRedesChatChannel ? (
             <div className="flex-1 flex flex-col overflow-hidden">
               {/* Messages Feed */}
-              <div className="flex-1 overflow-y-auto px-6 py-6 space-y-4 w-full">
+              <div className="flex-1 overflow-y-auto px-6 py-6 w-full flex flex-col">
                 {messages.length === 0 ? (
-                  <div className="flex items-center justify-center h-full text-muted-foreground">
+                  <div className="flex items-center justify-center flex-1 text-muted-foreground">
                     <p>No hay mensajes. ¡Sé el primero en escribir!</p>
                   </div>
                 ) : (
