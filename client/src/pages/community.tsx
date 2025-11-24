@@ -113,6 +113,8 @@ export default function Community() {
   const [creatingPost, setCreatingPost] = useState(false);
   const [isPresentanteChannel, setIsPresentanteChannel] = useState(false);
   const [commentReactions, setCommentReactions] = useState<{ [commentId: string]: { emoji: string; count: number; users: string[] }[] }>({});
+  const [openReactionCommentId, setOpenReactionCommentId] = useState<string | null>(null);
+  const [userCommentEmojis, setUserCommentEmojis] = useState<{ [commentId: string]: string[] }>({});
   const isAccordionChannel = activeChannel?.slug === 'empieza-aqui';
 
   // Group comments by date (oldest to newest)
@@ -1111,56 +1113,127 @@ export default function Community() {
                               
                               {/* Emoji reactions */}
                               <div className="flex items-center gap-2 mt-2 flex-wrap">
-                                {commentReactions[comment.comment.id]?.map((reaction, idx) => (
-                                  <button
-                                    key={idx}
-                                    onClick={async () => {
-                                      try {
-                                        await fetch(`/api/community/comments/${comment.comment.id}/reactions`, {
-                                          method: "POST",
-                                          headers: { "Content-Type": "application/json" },
-                                          credentials: "include",
-                                          body: JSON.stringify({ emoji: reaction.emoji }),
-                                        });
-                                        // Refresh comments
-                                        const res = await fetch(`/api/community/posts/${selectedPost?.post.id}/comments`);
-                                        const data = await res.json();
-                                        setComments(Array.isArray(data) ? data : []);
-                                      } catch (error) {
-                                        console.error("Error adding reaction:", error);
-                                      }
-                                    }}
-                                    className="text-xs bg-[#2a2a2a] hover:bg-[#333333] px-2 py-1 rounded transition"
-                                    data-testid={`reaction-${comment.comment.id}-${reaction.emoji}`}
+                                <div className="relative">
+                                  <button 
+                                    onClick={() => setOpenReactionCommentId(openReactionCommentId === comment.comment.id ? null : comment.comment.id)}
+                                    disabled={(userCommentEmojis[comment.comment.id] || []).length >= 3}
+                                    className={cn(
+                                      "flex items-center gap-1 text-xs transition-colors",
+                                      (userCommentEmojis[comment.comment.id] || []).length >= 3 
+                                        ? "text-muted-foreground cursor-not-allowed opacity-50" 
+                                        : "hover:text-cyan-500"
+                                    )}
                                   >
-                                    {reaction.emoji} <span className="text-[10px] text-muted-foreground ml-1">{reaction.count}</span>
+                                    <Smile className="h-4 w-4" />
                                   </button>
-                                ))}
-                                {/* Add reaction button */}
-                                <button
-                                  onClick={() => {
-                                    // Show emoji picker (for now, using simple emoji list)
-                                    const emojis = ['❤️', '👍', '😊', '🎉', '💯'];
-                                    const selected = prompt(`Choose emoji: ${emojis.join(' ')}`);
-                                    if (selected) {
-                                      fetch(`/api/community/comments/${comment.comment.id}/reactions`, {
-                                        method: "POST",
-                                        headers: { "Content-Type": "application/json" },
-                                        credentials: "include",
-                                        body: JSON.stringify({ emoji: selected }),
-                                      }).then(() => {
-                                        const res = fetch(`/api/community/posts/${selectedPost?.post.id}/comments`);
-                                        return res.then(r => r.json());
-                                      }).then(data => {
-                                        setComments(Array.isArray(data) ? data : []);
-                                      }).catch(error => console.error("Error adding reaction:", error));
-                                    }
-                                  }}
-                                  className="text-xs bg-transparent hover:bg-[#2a2a2a] px-2 py-1 rounded transition"
-                                  data-testid={`add-reaction-${comment.comment.id}`}
-                                >
-                                  <Smile className="h-4 w-4" />
-                                </button>
+                                  {/* Emoji selector popup */}
+                                  {openReactionCommentId === comment.comment.id && (
+                                    <div className="absolute bottom-full left-0 mb-2 bg-[#2a2a2a] border border-[#444444] rounded-lg p-2 grid grid-cols-5 gap-1 w-56 z-50 shadow-lg">
+                                      {["👍", "❤️", "😂", "😮", "🎉", "🔥", "🍊", "🌟", "👏", "🎯"].map((emoji) => {
+                                        const hasEmoji = (userCommentEmojis[comment.comment.id] || []).includes(emoji);
+                                        const userReactionsCount = (userCommentEmojis[comment.comment.id] || []).length;
+                                        const canAdd = hasEmoji || userReactionsCount < 3;
+                                        
+                                        return (
+                                          <button
+                                            key={emoji}
+                                            onClick={async () => {
+                                              try {
+                                                await fetch(`/api/community/comments/${comment.comment.id}/reactions`, {
+                                                  method: "POST",
+                                                  headers: { "Content-Type": "application/json" },
+                                                  credentials: "include",
+                                                  body: JSON.stringify({ emoji }),
+                                                });
+                                                setOpenReactionCommentId(null);
+                                                // Refresh comments
+                                                const res = await fetch(`/api/community/posts/${selectedPost?.post.id}/comments`);
+                                                const data = await res.json();
+                                                const comments = Array.isArray(data) ? data : [];
+                                                setComments(comments);
+                                                
+                                                // Reload reactions
+                                                const reactionsMap: { [commentId: string]: { emoji: string; count: number; users: string[] }[] } = {};
+                                                for (const c of comments) {
+                                                  try {
+                                                    const reactionsRes = await fetch(`/api/community/comments/${c.comment.id}/reactions`);
+                                                    const reactions = await reactionsRes.json();
+                                                    reactionsMap[c.comment.id] = Array.isArray(reactions) ? reactions : [];
+                                                  } catch (error) {
+                                                    console.error("Error fetching reactions:", error);
+                                                    reactionsMap[c.comment.id] = [];
+                                                  }
+                                                }
+                                                setCommentReactions(reactionsMap);
+                                              } catch (error) {
+                                                console.error("Error adding reaction:", error);
+                                              }
+                                            }}
+                                            disabled={!canAdd}
+                                            className={cn(
+                                              "text-2xl transition-transform",
+                                              hasEmoji ? "ring-2 ring-cyan-500 rounded-lg scale-110" : "",
+                                              canAdd ? "hover:scale-125 cursor-pointer" : "opacity-30 cursor-not-allowed"
+                                            )}
+                                          >
+                                            {emoji}
+                                          </button>
+                                        );
+                                      })}
+                                    </div>
+                                  )}
+                                </div>
+                                
+                                {/* Show all reactions */}
+                                {(commentReactions[comment.comment.id] || []).length > 0 && (
+                                  <div className="flex items-center gap-1 flex-wrap">
+                                    {(commentReactions[comment.comment.id] || []).map((reaction, idx) => (
+                                      <button
+                                        key={idx}
+                                        onClick={async () => {
+                                          try {
+                                            await fetch(`/api/community/comments/${comment.comment.id}/reactions`, {
+                                              method: "POST",
+                                              headers: { "Content-Type": "application/json" },
+                                              credentials: "include",
+                                              body: JSON.stringify({ emoji: reaction.emoji }),
+                                            });
+                                            // Refresh comments
+                                            const res = await fetch(`/api/community/posts/${selectedPost?.post.id}/comments`);
+                                            const data = await res.json();
+                                            const comments = Array.isArray(data) ? data : [];
+                                            setComments(comments);
+                                            
+                                            // Reload reactions
+                                            const reactionsMap: { [commentId: string]: { emoji: string; count: number; users: string[] }[] } = {};
+                                            for (const c of comments) {
+                                              try {
+                                                const reactionsRes = await fetch(`/api/community/comments/${c.comment.id}/reactions`);
+                                                const reactions = await reactionsRes.json();
+                                                reactionsMap[c.comment.id] = Array.isArray(reactions) ? reactions : [];
+                                              } catch (error) {
+                                                console.error("Error fetching reactions:", error);
+                                                reactionsMap[c.comment.id] = [];
+                                              }
+                                            }
+                                            setCommentReactions(reactionsMap);
+                                          } catch (error) {
+                                            console.error("Error adding reaction:", error);
+                                          }
+                                        }}
+                                        className={cn(
+                                          "text-sm px-2 py-1 rounded-full transition-all cursor-pointer bg-[#292929]",
+                                          (userCommentEmojis[comment.comment.id] || []).includes(reaction.emoji)
+                                            ? "text-white" 
+                                            : "text-muted-foreground hover:text-white"
+                                        )}
+                                        data-testid={`reaction-${comment.comment.id}-${reaction.emoji}`}
+                                      >
+                                        {reaction.emoji} {reaction.count}
+                                      </button>
+                                    ))}
+                                  </div>
+                                )}
                               </div>
                             </div>
                           </div>
