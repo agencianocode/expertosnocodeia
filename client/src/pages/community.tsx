@@ -942,7 +942,7 @@ export default function Community() {
             </div>
 
             {/* Comments List */}
-            <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4 bg-[#191919]">
+            <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4 bg-[#232323]">
               {comments.length === 0 ? (
                 <div className="flex items-center justify-center h-full text-muted-foreground text-sm">
                   <p>Sin comentarios aún. ¡Sé el primero!</p>
