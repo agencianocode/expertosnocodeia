@@ -142,7 +142,7 @@ export default function Community() {
   const [openReactionMessageId, setOpenReactionMessageId] = useState<string | null>(null);
   const [showMessageEmojiToolbar, setShowMessageEmojiToolbar] = useState(false);
   const isAccordionChannel = activeChannel?.slug === 'empieza-aqui';
-  const isLoadingDraftRef = useRef(false);
+  const skipSaveRef = useRef(false);
 
   // Group comments by date (oldest to newest)
   const groupCommentsByDate = (comments: Comment[]) => {
@@ -301,13 +301,9 @@ export default function Community() {
     setIsRedesChatChannel(isChatChannel);
 
     // Load message draft from localStorage for this channel
+    skipSaveRef.current = true;
     const savedDraft = localStorage.getItem(`message-draft-${activeChannel.id}`);
-    isLoadingDraftRef.current = true;
     setMessageInput(savedDraft || "");
-    // Reset the flag after state is updated
-    setTimeout(() => {
-      isLoadingDraftRef.current = false;
-    }, 0);
 
     const fetchContent = async () => {
       try {
@@ -394,15 +390,18 @@ export default function Community() {
 
   // Save message draft to localStorage when messageInput changes
   useEffect(() => {
-    // Don't save if we're currently loading a draft from localStorage
-    if (isLoadingDraftRef.current) return;
+    if (!activeChannel) return;
     
-    if (activeChannel) {
-      if (messageInput.trim()) {
-        localStorage.setItem(`message-draft-${activeChannel.id}`, messageInput);
-      } else {
-        localStorage.removeItem(`message-draft-${activeChannel.id}`);
-      }
+    // Skip saving on initial channel load
+    if (skipSaveRef.current) {
+      skipSaveRef.current = false;
+      return;
+    }
+    
+    if (messageInput.trim()) {
+      localStorage.setItem(`message-draft-${activeChannel.id}`, messageInput);
+    } else {
+      localStorage.removeItem(`message-draft-${activeChannel.id}`);
     }
   }, [messageInput, activeChannel]);
 
