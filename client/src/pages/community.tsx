@@ -1042,7 +1042,7 @@ export default function Community() {
 
         {/* Right Sidebar - Comments (for all channels except empieza-aqui when post selected) */}
         {!isAccordionChannel && selectedPost && (
-          <div className="hidden lg:flex w-1/3 flex-col bg-[#1a1a1a] overflow-hidden">
+          <div className="hidden lg:fixed right-0 top-0 h-screen w-1/3 lg:flex flex-col bg-[#1a1a1a] overflow-hidden pt-16">
             {/* Header con fecha del post */}
             <div className="flex-shrink-0 px-6 py-4 text-center bg-[#232323]">
               <p className="text-xs text-muted-foreground mb-3">
@@ -1071,7 +1071,7 @@ export default function Community() {
             </div>
 
             {/* Comments List - scrollable, stuck to input, grouped by date */}
-            <div className="flex-shrink-0 max-h-64 overflow-y-auto px-6 py-4 space-y-4 bg-[#232323]">
+            <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4 bg-[#232323]">
               {comments.length === 0 ? (
                 <div className="flex items-center justify-center text-muted-foreground text-sm">
                   <p>Sin comentarios aún. ¡Sé el primero!</p>
