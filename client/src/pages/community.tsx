@@ -491,7 +491,8 @@ export default function Community() {
         {/* Center Content - Posts Feed */}
         <div className={cn(
           "flex-1 flex flex-col overflow-hidden lg:ml-[280px]",
-          selectedPost && isAnunciosChannel ? "lg:w-1/2" : ""
+          selectedPost && isAnunciosChannel ? "lg:w-1/2" : "",
+          isRedesChatChannel && "lg:mr-[420px]"
         )}>
           {/* Header */}
           <div className="bg-[#1a1a1a] px-6 py-4 flex items-center justify-between gap-4">
