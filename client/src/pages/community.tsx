@@ -920,9 +920,9 @@ export default function Community() {
 
               {/* Message Input with Toolbar */}
               <div className="flex-shrink-0 border-t border-[#333333] flex justify-center w-full bg-[#1a1a1a]">
-                <div className="flex flex-col w-full px-6 py-4 max-w-3xl bg-[#1a1a1a]">
+                <div className="flex flex-col w-full px-6 py-2 max-w-3xl bg-[#1a1a1a]">
                   {/* Text Input with Integrated Toolbar */}
-                  <div className="flex flex-col border border-[#333333] rounded-lg bg-[#1a1a1a] p-3">
+                  <div className="flex flex-col border border-[#333333] rounded-lg bg-[#1a1a1a] p-2">
                     {/* Textarea - Full width on top */}
                     <textarea
                       placeholder="Escribe un mensaje... (Shift+Enter para nueva línea)"
