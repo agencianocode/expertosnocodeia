@@ -852,6 +852,7 @@ export const communityPosts = pgTable("community_posts", {
   videoUrl: varchar("video_url"),
   contentBlocks: jsonb("content_blocks").$type<Array<{type: "text" | "video"; content?: string; url?: string}>>().default([]),
   displayOrder: integer("display_order").default(0), // For ordering posts in read-only channels like "Empieza aquí"
+  isAdminPost: boolean("is_admin_post").default(false), // Whether post was created by admin
   likes: integer("likes").default(0),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),

@@ -934,7 +934,8 @@ export default function Community() {
                         </div>
                       )}
                       {/* Acciones - solo para canales que no son accordion */}
-                      {!isAccordionChannel && (
+                      {/* Hide reactions and comments for admin posts in Presentante/Comparte-proyecto channels */}
+                      {!isAccordionChannel && !(isPresentanteChannel && post.post.isAdminPost) && (
                         <div className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
                           <div className="relative">
                             <button 

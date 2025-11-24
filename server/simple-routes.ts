@@ -2037,7 +2037,7 @@ export function registerSimpleRoutes(app: Express): Server {
   // Admin endpoint to create posts
   app.post("/api/admin/community/posts", simpleAdminAuth, isAdmin, async (req: Request, res: Response) => {
     try {
-      const { channelId, title, content, imageUrl, videoUrl } = req.body;
+      const { channelId, title, content, imageUrl, videoUrl, contentBlocks } = req.body;
       const userId = (req as any).user?.claims?.sub || (req as any).user?.id;
 
       if (!channelId || !title || !content) {
@@ -2051,6 +2051,8 @@ export function registerSimpleRoutes(app: Express): Server {
         content,
         imageUrl: imageUrl || null,
         videoUrl: videoUrl || null,
+        contentBlocks: contentBlocks || [],
+        isAdminPost: true,
       }).returning();
 
       res.status(201).json(post[0]);
@@ -2094,7 +2096,7 @@ export function registerSimpleRoutes(app: Express): Server {
 
       const [updated] = await db
         .update(communityPosts)
-        .set({ title, content, imageUrl, videoUrl, contentBlocks, displayOrder, updatedAt: new Date() })
+        .set({ title, content, imageUrl, videoUrl, contentBlocks, displayOrder, isAdminPost: true, updatedAt: new Date() })
         .where(eq(communityPosts.id, postId))
         .returning();
 
