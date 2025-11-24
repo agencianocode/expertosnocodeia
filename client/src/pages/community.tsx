@@ -1032,31 +1032,33 @@ export default function Community() {
             </div>
 
             {/* Comments List */}
-            <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4 bg-[#232323]">
+            <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4 bg-[#232323] flex flex-col">
               {comments.length === 0 ? (
                 <div className="flex items-center justify-center h-full text-muted-foreground text-sm">
                   <p>Sin comentarios aún. ¡Sé el primero!</p>
                 </div>
               ) : (
-                comments.map((comment) => (
-                  <div key={comment.comment.id} className="flex gap-3">
-                    <Avatar className="h-8 w-8 flex-shrink-0">
-                      <AvatarImage src={comment.user?.profileImageUrl || undefined} />
-                      <AvatarFallback>{(comment.user?.firstName?.charAt(0) || "U").toUpperCase()}</AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <p className="text-sm font-semibold text-white">
-                          {comment.user?.firstName} {comment.user?.lastName}
-                        </p>
-                        <span className="text-xs text-muted-foreground">
-                          {new Date(comment.comment.createdAt).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })}
-                        </span>
+                <div className="space-y-4">
+                  {[...comments].reverse().map((comment) => (
+                    <div key={comment.comment.id} className="flex gap-3">
+                      <Avatar className="h-8 w-8 flex-shrink-0">
+                        <AvatarImage src={comment.user?.profileImageUrl || undefined} />
+                        <AvatarFallback>{(comment.user?.firstName?.charAt(0) || "U").toUpperCase()}</AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <p className="text-sm font-semibold text-white">
+                            {comment.user?.firstName} {comment.user?.lastName}
+                          </p>
+                          <span className="text-xs text-muted-foreground">
+                            {new Date(comment.comment.createdAt).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })}
+                          </span>
+                        </div>
+                        <p className="text-sm text-muted-foreground break-words mt-1">{comment.comment.content}</p>
                       </div>
-                      <p className="text-sm text-muted-foreground break-words mt-1">{comment.comment.content}</p>
                     </div>
-                  </div>
-                ))
+                  ))}
+                </div>
               )}
             </div>
 
