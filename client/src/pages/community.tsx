@@ -550,67 +550,61 @@ export default function Community() {
             <div className="flex-1 overflow-y-auto px-6 py-6 space-y-4 max-w-4xl mx-auto w-full">
               {/* Inicia una publicación - solo para Presentante */}
               {isPresentanteChannel && (
-                <div className="border border-[#333333] rounded-lg p-4 bg-[#1a1a1a] flex flex-col gap-3 max-w-2xl">
-                  <div className="flex items-center gap-3">
-                    <Avatar className="h-10 w-10">
-                      <AvatarImage src={(user as any)?.profileImageUrl || undefined} />
-                      <AvatarFallback>{(user?.firstName?.charAt(0) || "U").toUpperCase()}</AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <p className="text-sm font-semibold text-white">{user?.firstName} {user?.lastName}</p>
-                    </div>
-                  </div>
-                  <div className="flex flex-col gap-2">
-                    <textarea
-                      placeholder="Inicia una publicación... (presiona Ctrl+Enter para enviar)"
-                      value={newPostContent}
-                      onChange={(e) => setNewPostContent(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.ctrlKey && e.key === "Enter" && newPostContent.trim()) {
-                          e.preventDefault();
-                          const button = e.currentTarget.nextElementSibling as HTMLButtonElement;
-                          button?.click();
+                <div className="border border-[#333333] rounded-lg p-3 bg-[#1a1a1a] flex items-center gap-3 max-w-2xl">
+                  <Avatar className="h-8 w-8 flex-shrink-0">
+                    <AvatarImage src={(user as any)?.profileImageUrl || undefined} />
+                    <AvatarFallback>{(user?.firstName?.charAt(0) || "U").toUpperCase()}</AvatarFallback>
+                  </Avatar>
+                  <input
+                    type="text"
+                    placeholder="Inicia una publicación"
+                    value={newPostContent}
+                    onChange={(e) => setNewPostContent(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && newPostContent.trim()) {
+                        e.preventDefault();
+                        const button = e.currentTarget.parentElement?.querySelector('[data-testid="create-post-button"]') as HTMLButtonElement;
+                        button?.click();
+                      }
+                    }}
+                    className="flex-1 bg-transparent border-0 outline-none text-sm text-white placeholder-muted-foreground focus:ring-0"
+                    data-testid="new-post-input"
+                  />
+                  <Button
+                    size="sm"
+                    onClick={async () => {
+                      if (!newPostContent.trim()) return;
+                      setCreatingPost(true);
+                      try {
+                        const res = await fetch(`/api/community/channels/${activeChannel?.id}/posts`, {
+                          method: "POST",
+                          headers: { "Content-Type": "application/json" },
+                          credentials: "include",
+                          body: JSON.stringify({
+                            title: "",
+                            content: newPostContent,
+                          }),
+                        });
+                        if (res.ok) {
+                          setNewPostContent("");
+                          // Refetch posts
+                          const postsRes = await fetch(`/api/community/channels/${activeChannel?.id}/posts?limit=50&sort=${sortBy}`);
+                          const postsData = await postsRes.json();
+                          setPosts(Array.isArray(postsData) ? postsData : []);
+                          toast({ title: "Éxito", description: "Publicación creada" });
                         }
-                      }}
-                      className="w-full min-h-[80px] max-h-[200px] bg-[#232323] border border-[#333333] rounded px-3 py-2 text-sm text-white placeholder-muted-foreground focus:outline-none focus:border-cyan-500 resize-none"
-                      data-testid="new-post-input"
-                    />
-                    <Button
-                      size="sm"
-                      onClick={async () => {
-                        if (!newPostContent.trim()) return;
-                        setCreatingPost(true);
-                        try {
-                          const res = await fetch(`/api/community/channels/${activeChannel?.id}/posts`, {
-                            method: "POST",
-                            headers: { "Content-Type": "application/json" },
-                            credentials: "include",
-                            body: JSON.stringify({
-                              title: "",
-                              content: newPostContent,
-                            }),
-                          });
-                          if (res.ok) {
-                            setNewPostContent("");
-                            // Refetch posts
-                            const postsRes = await fetch(`/api/community/channels/${activeChannel?.id}/posts?limit=50&sort=${sortBy}`);
-                            const postsData = await postsRes.json();
-                            setPosts(Array.isArray(postsData) ? postsData : []);
-                            toast({ title: "Éxito", description: "Publicación creada" });
-                          }
-                        } catch (error) {
-                          toast({ title: "Error", description: "No se pudo crear la publicación", variant: "destructive" });
-                        } finally {
-                          setCreatingPost(false);
-                        }
-                      }}
-                      disabled={creatingPost || !newPostContent.trim()}
-                      className="bg-cyan-500 hover:bg-cyan-600 text-black font-semibold self-end"
-                      data-testid="create-post-button"
-                    >
-                      {creatingPost ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
-                    </Button>
-                  </div>
+                      } catch (error) {
+                        toast({ title: "Error", description: "No se pudo crear la publicación", variant: "destructive" });
+                      } finally {
+                        setCreatingPost(false);
+                      }
+                    }}
+                    disabled={creatingPost || !newPostContent.trim()}
+                    className="bg-cyan-500 hover:bg-cyan-600 text-black font-semibold flex-shrink-0"
+                    data-testid="create-post-button"
+                  >
+                    {creatingPost ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+                  </Button>
                 </div>
               )}
               {posts.length === 0 ? (
