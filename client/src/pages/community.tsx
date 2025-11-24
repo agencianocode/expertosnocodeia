@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useSimpleAuth } from "@/hooks/use-simple-auth";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -145,15 +145,6 @@ export default function Community() {
 
   // Get current message input for active channel
   const messageInput = activeChannel ? (messageInputByChannel[activeChannel.id] || "") : "";
-  const setMessageInput = useCallback((value: string) => {
-    setMessageInputByChannel(prev => {
-      if (!activeChannel) return prev;
-      return {
-        ...prev,
-        [activeChannel.id]: value
-      };
-    });
-  }, [activeChannel]);
 
   // Group comments by date (oldest to newest)
   const groupCommentsByDate = (comments: Comment[]) => {
@@ -310,6 +301,15 @@ export default function Community() {
     setIsAnunciosChannel(isAnuncios);
     setIsPresentanteChannel(isPresentante);
     setIsRedesChatChannel(isChatChannel);
+
+    // Cargar draft del localStorage para este canal
+    const savedDraft = localStorage.getItem(`draft-${activeChannel.id}`) || "";
+    if (savedDraft) {
+      setMessageInputByChannel(prev => ({
+        ...prev,
+        [activeChannel.id]: savedDraft
+      }));
+    }
 
     const fetchContent = async () => {
       try {
@@ -942,7 +942,13 @@ export default function Community() {
                       value={messageInput}
                       onChange={(e) => {
                         const newValue = e.target.value;
-                        setMessageInput(newValue);
+                        if (activeChannel) {
+                          setMessageInputByChannel(prev => ({
+                            ...prev,
+                            [activeChannel.id]: newValue
+                          }));
+                          localStorage.setItem(`draft-${activeChannel.id}`, newValue);
+                        }
                         // Auto-expand textarea
                         setTimeout(() => {
                           const textarea = e.target as HTMLTextAreaElement;
@@ -966,7 +972,13 @@ export default function Community() {
                               if (res.ok) {
                                 const newMessage = await res.json();
                                 setMessages([...messages, newMessage]);
-                                setMessageInput("");
+                                if (activeChannel) {
+                                  setMessageInputByChannel(prev => ({
+                                    ...prev,
+                                    [activeChannel.id]: ""
+                                  }));
+                                  localStorage.removeItem(`draft-${activeChannel.id}`);
+                                }
                                 toast({ title: "Éxito", description: "Mensaje enviado" });
                               } else {
                                 const error = await res.json();
@@ -1066,7 +1078,13 @@ export default function Community() {
                             if (res.ok) {
                               const newMessage = await res.json();
                               setMessages([...messages, newMessage]);
-                              setMessageInput("");
+                              if (activeChannel) {
+                                setMessageInputByChannel(prev => ({
+                                  ...prev,
+                                  [activeChannel.id]: ""
+                                }));
+                                localStorage.removeItem(`draft-${activeChannel.id}`);
+                              }
                               toast({ title: "Éxito", description: "Mensaje enviado" });
                             }
                           } catch (error) {
