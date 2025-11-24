@@ -722,21 +722,23 @@ export default function Community() {
                           )}
                         </>
                       ) : null}
-                      {/* Header con nombre y hora */}
-                      <div className="flex items-center gap-2 mb-3">
-                        <Avatar className="h-8 w-8">
-                          <AvatarImage src={post.user?.profileImageUrl || undefined} />
-                          <AvatarFallback>{(post.user?.firstName?.charAt(0) || "U").toUpperCase()}</AvatarFallback>
-                        </Avatar>
-                        <div className="text-sm">
-                          <p className="font-semibold text-white">
-                            {post.user?.firstName} {post.user?.lastName}{" "}
-                            <span className="text-xs text-muted-foreground font-normal">
-                              {new Date(post.post.createdAt).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })}
-                            </span>
-                          </p>
+                      {/* Header con nombre y hora - solo para canales que no son accordion */}
+                      {!isAccordionChannel && (
+                        <div className="flex items-center gap-2 mb-3">
+                          <Avatar className="h-8 w-8">
+                            <AvatarImage src={post.user?.profileImageUrl || undefined} />
+                            <AvatarFallback>{(post.user?.firstName?.charAt(0) || "U").toUpperCase()}</AvatarFallback>
+                          </Avatar>
+                          <div className="text-sm">
+                            <p className="font-semibold text-white">
+                              {post.user?.firstName} {post.user?.lastName}{" "}
+                              <span className="text-xs text-muted-foreground font-normal">
+                                {new Date(post.post.createdAt).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })}
+                              </span>
+                            </p>
+                          </div>
                         </div>
-                      </div>
+                      )}
                       {/* Acciones - solo para canales que no son accordion */}
                       {!isAccordionChannel && (
                         <div className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
