@@ -142,8 +142,6 @@ export default function Community() {
   const [openReactionMessageId, setOpenReactionMessageId] = useState<string | null>(null);
   const [showMessageEmojiToolbar, setShowMessageEmojiToolbar] = useState(false);
   const isAccordionChannel = activeChannel?.slug === 'empieza-aqui';
-  const loadedDraftRef = useRef<string>("");
-  const currentChannelIdRef = useRef<string | null>(null);
 
   // Group comments by date (oldest to newest)
   const groupCommentsByDate = (comments: Comment[]) => {
@@ -302,9 +300,7 @@ export default function Community() {
     setIsRedesChatChannel(isChatChannel);
 
     // Load message draft from localStorage for this channel
-    currentChannelIdRef.current = activeChannel.id;
     const savedDraft = localStorage.getItem(`message-draft-${activeChannel.id}`) || "";
-    loadedDraftRef.current = savedDraft;
     setMessageInput(savedDraft);
 
     const fetchContent = async () => {
@@ -390,20 +386,20 @@ export default function Community() {
     fetchContent();
   }, [activeChannel, sortBy]);
 
-  // Save message draft to localStorage when messageInput changes (only if user typed)
+  // Save message draft when message input changes (debounced to 500ms)
   useEffect(() => {
-    // Don't save if this is the value we just loaded from localStorage
-    if (messageInput === loadedDraftRef.current) return;
+    if (!activeChannel) return;
     
-    const channelId = currentChannelIdRef.current;
-    if (!channelId) return;
+    const timer = setTimeout(() => {
+      if (messageInput.trim()) {
+        localStorage.setItem(`message-draft-${activeChannel.id}`, messageInput);
+      } else {
+        localStorage.removeItem(`message-draft-${activeChannel.id}`);
+      }
+    }, 500);
     
-    if (messageInput.trim()) {
-      localStorage.setItem(`message-draft-${channelId}`, messageInput);
-    } else {
-      localStorage.removeItem(`message-draft-${channelId}`);
-    }
-  }, [messageInput]);
+    return () => clearTimeout(timer);
+  }, [messageInput, activeChannel]);
 
   // Fetch comments when post is selected
   useEffect(() => {
