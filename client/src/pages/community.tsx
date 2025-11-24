@@ -305,10 +305,6 @@ export default function Community() {
     isLoadingDraftRef.current = true;
     const savedDraft = localStorage.getItem(`message-draft-${activeChannel.id}`) || "";
     setMessageInput(savedDraft);
-    // Reset the flag after a tiny delay to allow setState to complete
-    setTimeout(() => {
-      isLoadingDraftRef.current = false;
-    }, 0);
 
     const fetchContent = async () => {
       try {
@@ -392,6 +388,12 @@ export default function Community() {
 
     fetchContent();
   }, [activeChannel, sortBy]);
+
+  // Reset the loading flag after the draft has been loaded
+  useEffect(() => {
+    // This runs AFTER the component renders, so we reset the flag after messageInput is updated
+    isLoadingDraftRef.current = false;
+  }, [messageInput]);
 
 
   // Fetch comments when post is selected
