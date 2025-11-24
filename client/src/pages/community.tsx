@@ -300,6 +300,8 @@ export default function Community() {
     // FIRST: Save the current messageInput to the PREVIOUS channel before switching
     if (prevChannelIdRef.current && messageInputRef.current.trim()) {
       localStorage.setItem(`message-draft-${prevChannelIdRef.current}`, messageInputRef.current);
+    } else if (prevChannelIdRef.current && !messageInputRef.current.trim()) {
+      localStorage.removeItem(`message-draft-${prevChannelIdRef.current}`);
     }
     prevChannelIdRef.current = activeChannel.id;
 
@@ -315,7 +317,6 @@ export default function Community() {
     // THEN: Load message draft from localStorage for THIS channel
     const savedDraft = localStorage.getItem(`message-draft-${activeChannel.id}`) || "";
     setMessageInput(savedDraft);
-    messageInputRef.current = savedDraft; // Update ref immediately so onChange uses correct value
 
     const fetchContent = async () => {
       try {
@@ -398,6 +399,13 @@ export default function Community() {
     };
 
     fetchContent();
+
+    // Cleanup: Save draft before leaving this channel
+    return () => {
+      if (prevChannelIdRef.current && messageInputRef.current.trim()) {
+        localStorage.setItem(`message-draft-${prevChannelIdRef.current}`, messageInputRef.current);
+      }
+    };
   }, [activeChannel, sortBy]);
 
 
@@ -949,14 +957,6 @@ export default function Community() {
                       onChange={(e) => {
                         const newValue = e.target.value;
                         setMessageInput(newValue);
-                        // Save using the ref to the current channel (not activeChannel which changes)
-                        if (prevChannelIdRef.current) {
-                          if (newValue.trim()) {
-                            localStorage.setItem(`message-draft-${prevChannelIdRef.current}`, newValue);
-                          } else {
-                            localStorage.removeItem(`message-draft-${prevChannelIdRef.current}`);
-                          }
-                        }
                         // Auto-expand textarea
                         setTimeout(() => {
                           const textarea = e.target as HTMLTextAreaElement;
