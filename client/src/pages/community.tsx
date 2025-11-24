@@ -422,38 +422,55 @@ export default function Community() {
               </div>
             </div>
 
-            {/* Sorting and Menu - only for Anuncios channel */}
-            {isAnunciosChannel && (
+            {/* Sorting and Menu - for Anuncios and Presentante channels */}
+            {(isAnunciosChannel || isPresentanteChannel) && (
               <div className="flex items-center gap-2">
-                {/* Sort Dropdown */}
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="sm" className="text-xs gap-1">
-                      El último
-                      <ChevronDown className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-40">
-                    <DropdownMenuItem onClick={() => setSortBy("recent")} className={sortBy === "recent" ? "bg-[#333333]" : ""}>
-                      Más reciente
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => setSortBy("activity")} className={sortBy === "activity" ? "bg-[#333333]" : ""}>
-                      Nueva actividad
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => setSortBy("oldest")} className={sortBy === "oldest" ? "bg-[#333333]" : ""}>
-                      Más antiguo
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => setSortBy("popular")} className={sortBy === "popular" ? "bg-[#333333]" : ""}>
-                      Popular
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => setSortBy("likes")} className={sortBy === "likes" ? "bg-[#333333]" : ""}>
-                      Me gusta
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => setSortBy("alphabetical")} className={sortBy === "alphabetical" ? "bg-[#333333]" : ""}>
-                      Alfabético
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                {/* Sort Dropdown - only for Anuncios */}
+                {isAnunciosChannel && (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="sm" className="text-xs gap-1">
+                        El último
+                        <ChevronDown className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-40">
+                      <DropdownMenuItem onClick={() => setSortBy("recent")} className={sortBy === "recent" ? "bg-[#333333]" : ""}>
+                        Más reciente
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => setSortBy("activity")} className={sortBy === "activity" ? "bg-[#333333]" : ""}>
+                        Nueva actividad
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => setSortBy("oldest")} className={sortBy === "oldest" ? "bg-[#333333]" : ""}>
+                        Más antiguo
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => setSortBy("popular")} className={sortBy === "popular" ? "bg-[#333333]" : ""}>
+                        Popular
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => setSortBy("likes")} className={sortBy === "likes" ? "bg-[#333333]" : ""}>
+                        Me gusta
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => setSortBy("alphabetical")} className={sortBy === "alphabetical" ? "bg-[#333333]" : ""}>
+                        Alfabético
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                )}
+
+                {/* New post button - only for Presentante */}
+                {isPresentanteChannel && (
+                  <Button
+                    onClick={() => {
+                      // Focus on the input if it exists
+                      const input = document.querySelector('[data-testid="new-post-input"]') as HTMLInputElement;
+                      if (input) input.focus();
+                    }}
+                    className="bg-cyan-500 hover:bg-cyan-600 text-black font-semibold px-4 py-1 h-8 text-sm"
+                    data-testid="header-new-post-button"
+                  >
+                    Nueva publicación
+                  </Button>
+                )}
 
                 {/* Notification Preferences Menu */}
                 <DropdownMenu>
