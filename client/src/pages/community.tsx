@@ -958,7 +958,7 @@ export default function Community() {
                         }
                       }}
                       disabled={sendingMessage}
-                      className="w-full bg-transparent border-0 text-white text-left resize-none min-h-[24px] max-h-[120px] overflow-y-auto outline-none"
+                      className="w-full bg-transparent border-0 text-white text-left resize-none min-h-[24px] max-h-[120px] overflow-y-auto outline-none text-sm"
                       rows={1}
                       data-testid="message-input"
                     />
