@@ -142,7 +142,6 @@ export default function Community() {
   const [openReactionMessageId, setOpenReactionMessageId] = useState<string | null>(null);
   const [showMessageEmojiToolbar, setShowMessageEmojiToolbar] = useState(false);
   const isAccordionChannel = activeChannel?.slug === 'empieza-aqui';
-  const prevChannelRef = useRef<string | null>(null);
 
   // Group comments by date (oldest to newest)
   const groupCommentsByDate = (comments: Comment[]) => {
@@ -290,14 +289,6 @@ export default function Community() {
   // Fetch content when channel changes
   useEffect(() => {
     if (!activeChannel) return;
-
-    // BEFORE switching: Save the current messageInput to the PREVIOUS channel
-    if (prevChannelRef.current && messageInput.trim()) {
-      localStorage.setItem(`message-draft-${prevChannelRef.current}`, messageInput);
-    }
-    
-    // NOW switch to the new channel and load its draft
-    prevChannelRef.current = activeChannel.id;
 
     // Check if this channel should show posts (all "Comunidad" section channels show posts EXCEPT redes-chat)
     const isChatChannel = activeChannel.slug === "redes-chat";
@@ -941,7 +932,16 @@ export default function Community() {
                       placeholder="Escribe un mensaje... (Shift+Enter para nueva línea)"
                       value={messageInput}
                       onChange={(e) => {
-                        setMessageInput(e.target.value);
+                        const newValue = e.target.value;
+                        setMessageInput(newValue);
+                        // Save to localStorage IMMEDIATELY
+                        if (activeChannel) {
+                          if (newValue.trim()) {
+                            localStorage.setItem(`message-draft-${activeChannel.id}`, newValue);
+                          } else {
+                            localStorage.removeItem(`message-draft-${activeChannel.id}`);
+                          }
+                        }
                         // Auto-expand textarea
                         setTimeout(() => {
                           const textarea = e.target as HTMLTextAreaElement;
