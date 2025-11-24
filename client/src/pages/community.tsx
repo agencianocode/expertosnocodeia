@@ -794,7 +794,10 @@ export default function Community() {
                       ) : null}
                       {/* Header con nombre y fecha - solo para canales que no son accordion */}
                       {!isAccordionChannel && (
-                        <div className="flex flex-col gap-2 mb-3">
+                        <div className={cn(
+                          "mb-3",
+                          isPresentanteChannel ? "flex items-center justify-between gap-2" : "flex flex-col gap-2"
+                        )}>
                           <div className="flex items-center gap-2">
                             <Avatar className="h-8 w-8">
                               <AvatarImage src={post.user?.profileImageUrl || undefined} />
