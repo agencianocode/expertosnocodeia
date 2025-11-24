@@ -315,6 +315,7 @@ export default function Community() {
     // THEN: Load message draft from localStorage for THIS channel
     const savedDraft = localStorage.getItem(`message-draft-${activeChannel.id}`) || "";
     setMessageInput(savedDraft);
+    messageInputRef.current = savedDraft; // Update ref immediately so onChange uses correct value
 
     const fetchContent = async () => {
       try {
