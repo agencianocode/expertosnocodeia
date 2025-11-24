@@ -1049,7 +1049,7 @@ export default function Community() {
 
         {/* Right Sidebar - Comments (for all channels except empieza-aqui when post selected) */}
         {!isAccordionChannel && selectedPost && (
-          <div className="hidden lg:flex w-[420px] h-screen flex-col bg-[#1a1a1a] overflow-hidden">
+          <div className="hidden lg:fixed right-0 top-0 h-screen w-[420px] lg:flex flex-col bg-[#1a1a1a] overflow-hidden z-40">
             {/* Header con fecha del post */}
             <div className="flex-shrink-0 px-6 py-4 text-center bg-[#232323]">
               <p className="text-xs text-muted-foreground mb-3">
