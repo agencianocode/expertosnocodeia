@@ -457,11 +457,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/community/channels/:channelId/messages", supabaseAuth, async (req: AuthenticatedRequest, res) => {
+  app.post("/api/community/channels/:channelId/messages", async (req: AuthenticatedRequest, res) => {
     try {
       const { channelId } = req.params;
       const { content } = req.body;
-      const userId = req.user!.id;
+      
+      // Get user from session or request (from supabaseAuthRoutes setup)
+      const userId = req.user?.id || (req as any).user?.claims?.sub;
+      
+      if (!userId) {
+        return res.status(401).json({ message: "Autenticación requerida" });
+      }
 
       if (!content || !content.trim()) {
         return res.status(400).json({ message: "Message content is required" });
