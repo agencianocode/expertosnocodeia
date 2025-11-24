@@ -2212,6 +2212,81 @@ export function registerSimpleRoutes(app: Express): Server {
     }
   });
 
+  // Generic endpoint to upload images for content blocks
+  app.post("/api/upload-image", simpleAdminAuth, async (req: Request, res: Response) => {
+    try {
+      // Handle multipart form data
+      const bb = Busboy({ headers: req.headers, limits: { fileSize: 10 * 1024 * 1024 } });
+      
+      let fileData: Buffer | null = null;
+      let fileName: string | null = null;
+
+      bb.on("file", (fieldname: string, file: any, info: any) => {
+        const chunks: Buffer[] = [];
+        file.on("data", (data: Buffer) => {
+          chunks.push(data);
+        });
+        file.on("end", () => {
+          fileData = Buffer.concat(chunks);
+          fileName = info.filename;
+        });
+      });
+
+      bb.on("close", async () => {
+        if (!fileData || !fileName) {
+          return res.status(400).json({ message: "No file provided" });
+        }
+
+        try {
+          // Generate unique filename
+          const ext = fileName.split(".").pop() || "jpg";
+          const uniqueFileId = randomUUID();
+          const uniqueFileName = `image-${uniqueFileId}.${ext}`;
+
+          // Use PRIVATE directory with post-images path
+          const objectStorageService = new ObjectStorageService();
+          const privateDir = objectStorageService.getPrivateObjectDir();
+          
+          if (!privateDir) {
+            return res.status(500).json({ message: "Object storage not configured" });
+          }
+
+          // Use private directory with post-images path
+          const uploadPath = `${privateDir}/post-images/${uniqueFileName}`;
+          const { bucketName, objectName } = parseObjectPath(uploadPath);
+          
+          const bucket = objectStorageClient.bucket(bucketName);
+          const file = bucket.file(objectName);
+          
+          // Upload file to object storage
+          await file.save(fileData, {
+            metadata: {
+              contentType: `image/${ext === "jpg" ? "jpeg" : ext}`,
+            },
+          });
+
+          // Use proxy URL that works for private object storage
+          const proxyUrl = `/api/object-proxy/objects/post-images/${uniqueFileName}`;
+
+          console.log("Image uploaded successfully:", { proxyUrl, objectName, uniqueFileName });
+
+          res.json({ 
+            message: "Image uploaded successfully",
+            url: proxyUrl 
+          });
+        } catch (uploadError) {
+          console.error("Error uploading image:", uploadError);
+          res.status(500).json({ message: "Error uploading image to storage" });
+        }
+      });
+
+      req.pipe(bb);
+    } catch (error) {
+      console.error("Error uploading image:", error);
+      res.status(500).json({ message: "Error uploading image" });
+    }
+  });
+
   app.post("/api/community/posts/:postId/comments", simpleAdminAuth, async (req: Request, res: Response) => {
     try {
       const { postId } = req.params;
