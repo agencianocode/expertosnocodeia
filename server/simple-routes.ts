@@ -1927,7 +1927,7 @@ export function registerSimpleRoutes(app: Express): Server {
     }
   });
 
-  app.post("/api/community/channels/:channelId/messages", legacyAuth, async (req: Request, res: Response) => {
+  app.post("/api/community/channels/:channelId/messages", simpleAdminAuth, async (req: Request, res: Response) => {
     try {
       const { channelId } = req.params;
       const { content } = req.body;

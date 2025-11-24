@@ -765,8 +765,8 @@ export default function Community() {
               {/* Message Input */}
               <div className="flex-shrink-0 border-t border-[#333333] bg-[#0f0f0f] flex justify-center w-full">
                 <div className="flex items-end gap-3 w-full px-6 py-4">
-                  <Input
-                    placeholder="Escribe un mensaje..."
+                  <textarea
+                    placeholder="Escribe un mensaje... (Shift+Enter para nueva línea)"
                     value={messageInput}
                     onChange={(e) => setMessageInput(e.target.value)}
                     onKeyDown={(e) => {
@@ -786,6 +786,9 @@ export default function Community() {
                               setMessages([...messages, newMessage]);
                               setMessageInput("");
                               toast({ title: "Éxito", description: "Mensaje enviado" });
+                            } else {
+                              const error = await res.json();
+                              toast({ title: "Error", description: error.message || "No se pudo enviar el mensaje", variant: "destructive" });
                             }
                           } catch (error) {
                             toast({ title: "Error", description: "No se pudo enviar el mensaje", variant: "destructive" });
@@ -796,7 +799,8 @@ export default function Community() {
                       }
                     }}
                     disabled={sendingMessage}
-                    className="flex-1 bg-[#1a1a1a] border-[#333333] text-white"
+                    className="flex-1 bg-[#1a1a1a] border border-[#333333] text-white p-2 rounded resize-none min-h-[40px] max-h-[120px] overflow-y-auto"
+                    rows={3}
                     data-testid="message-input"
                   />
                   <Button
