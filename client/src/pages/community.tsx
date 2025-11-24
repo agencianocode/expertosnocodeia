@@ -1008,14 +1008,17 @@ export default function Community() {
         {!isAccordionChannel && selectedPost && (
           <div className="hidden lg:flex w-1/3 flex-col bg-[#1a1a1a] overflow-hidden">
             {/* Header con fecha del post */}
-            <div className="px-6 py-4 text-center bg-[#232323]">
+            <div className="flex-shrink-0 px-6 py-4 text-center bg-[#232323]">
               <p className="text-xs text-muted-foreground mb-3">
                 {new Date(selectedPost.post.createdAt).toLocaleDateString("es-ES", { year: "numeric", month: "long", day: "numeric" })}
               </p>
             </div>
 
+            {/* Spacer - takes up remaining vertical space */}
+            <div className="flex-1" />
+
             {/* Comments Header */}
-            <div className="px-6 py-4 flex items-center justify-between bg-[#232323]">
+            <div className="flex-shrink-0 px-6 py-4 flex items-center justify-between bg-[#232323]">
               <div>
                 <h2 className="text-lg font-bold text-white">Comentarios</h2>
                 <p className="text-xs text-muted-foreground mt-1">{comments.length} comentarios</p>
@@ -1031,15 +1034,15 @@ export default function Community() {
               </Button>
             </div>
 
-            {/* Comments List */}
-            <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4 bg-[#232323] flex flex-col">
+            {/* Comments List - scrollable, stuck to input */}
+            <div className="flex-shrink-0 max-h-64 overflow-y-auto px-6 py-4 space-y-4 bg-[#232323]">
               {comments.length === 0 ? (
-                <div className="flex items-center justify-center h-full text-muted-foreground text-sm">
+                <div className="flex items-center justify-center text-muted-foreground text-sm">
                   <p>Sin comentarios aún. ¡Sé el primero!</p>
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {[...comments].reverse().map((comment) => (
+                  {comments.map((comment) => (
                     <div key={comment.comment.id} className="flex gap-3">
                       <Avatar className="h-8 w-8 flex-shrink-0">
                         <AvatarImage src={comment.user?.profileImageUrl || undefined} />
@@ -1063,7 +1066,7 @@ export default function Community() {
             </div>
 
             {/* Comment Input */}
-            <div className="bg-[#1a1a1a] px-6 py-4">
+            <div className="flex-shrink-0 bg-[#1a1a1a] px-6 py-4">
               <div className="flex gap-2">
                 <Input
                   placeholder="Escribe un comentario..."
