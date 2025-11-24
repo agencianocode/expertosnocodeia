@@ -918,7 +918,7 @@ export default function Community() {
         {!isAccordionChannel && selectedPost && (
           <div className="hidden lg:flex w-1/3 flex-col bg-[#1a1a1a] overflow-hidden">
             {/* Header con fecha del post */}
-            <div className="px-6 py-4 text-center">
+            <div className="px-6 py-4 text-center bg-[#232323]">
               <p className="text-xs text-muted-foreground mb-3">
                 {new Date(selectedPost.post.createdAt).toLocaleDateString("es-ES", { year: "numeric", month: "long", day: "numeric" })}
               </p>
