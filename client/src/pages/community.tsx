@@ -1173,7 +1173,7 @@ export default function Community() {
             </div>
 
             {/* Comment Input */}
-            <div className="flex-shrink-0 bg-[#1a1a1a] px-6 py-4">
+            <div className="flex-shrink-0 px-6 py-4 bg-[#232323]">
               <div className="flex gap-2">
                 <Input
                   placeholder="Escribe un comentario..."
