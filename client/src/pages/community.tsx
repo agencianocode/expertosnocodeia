@@ -948,12 +948,12 @@ export default function Community() {
                       onChange={(e) => {
                         const newValue = e.target.value;
                         setMessageInput(newValue);
-                        // Always save to localStorage immediately
-                        if (activeChannel) {
+                        // Save using the ref to the current channel (not activeChannel which changes)
+                        if (prevChannelIdRef.current) {
                           if (newValue.trim()) {
-                            localStorage.setItem(`message-draft-${activeChannel.id}`, newValue);
+                            localStorage.setItem(`message-draft-${prevChannelIdRef.current}`, newValue);
                           } else {
-                            localStorage.removeItem(`message-draft-${activeChannel.id}`);
+                            localStorage.removeItem(`message-draft-${prevChannelIdRef.current}`);
                           }
                         }
                         // Auto-expand textarea
