@@ -922,69 +922,8 @@ export default function Community() {
               <div className="flex-shrink-0 border-t border-[#333333] flex justify-center w-full bg-[#1a1a1a]">
                 <div className="flex flex-col w-full px-6 py-4 max-w-3xl bg-[#1a1a1a]">
                   {/* Text Input with Integrated Toolbar */}
-                  <div className="flex items-end gap-3 border border-[#333333] rounded-lg bg-[#1a1a1a] p-3 pl-[12px] pr-[12px] pt-[0px] pb-[0px]">
-                    {/* Toolbar - Inside the input box */}
-                    <div className="flex gap-1 flex-shrink-0 relative">
-                      <div className="relative">
-                        <button 
-                          onClick={() => setShowMessageEmojiToolbar(!showMessageEmojiToolbar)}
-                          className="p-1 hover:bg-[#292929] rounded transition-colors" 
-                          data-testid="toolbar-emoji" 
-                          title="Emoticones"
-                        >
-                          <Smile className="h-4 w-4 text-muted-foreground hover:text-cyan-400" />
-                        </button>
-                        {showMessageEmojiToolbar && (
-                          <div className="absolute bottom-full left-0 mb-2 bg-[#2a2a2a] border border-[#444444] rounded-lg p-2 grid grid-cols-5 gap-1 w-40 z-50 shadow-lg">
-                            {["👍", "❤️", "😂", "😮", "🎉", "🔥", "👀", "💯", "🙏", "😍", "😱", "😭", "🤔", "👌", "🚀"].map((emoji) => (
-                              <button
-                                key={emoji}
-                                onClick={() => {
-                                  setMessageInput(messageInput + emoji);
-                                  setShowMessageEmojiToolbar(false);
-                                }}
-                                className="text-lg hover:scale-125 transition-transform cursor-pointer"
-                              >
-                                {emoji}
-                              </button>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                      <button 
-                        onClick={() => toast({ title: "Próximamente", description: "Adjuntar archivos está en desarrollo", variant: "default" })}
-                        className="p-1 hover:bg-[#292929] rounded transition-colors" 
-                        data-testid="toolbar-attachments" 
-                        title="Archivos"
-                      >
-                        <Paperclip className="h-4 w-4 text-muted-foreground hover:text-cyan-400" />
-                      </button>
-                      <button 
-                        onClick={() => toast({ title: "Próximamente", description: "Cargar imágenes está en desarrollo", variant: "default" })}
-                        className="p-1 hover:bg-[#292929] rounded transition-colors" 
-                        data-testid="toolbar-image" 
-                        title="Imagen"
-                      >
-                        <Plus className="h-4 w-4 text-muted-foreground hover:text-cyan-400" />
-                      </button>
-                      <button 
-                        onClick={() => toast({ title: "Próximamente", description: "Grabar audio está en desarrollo", variant: "default" })}
-                        className="p-1 hover:bg-[#292929] rounded transition-colors" 
-                        data-testid="toolbar-audio" 
-                        title="Audio"
-                      >
-                        <Music className="h-4 w-4 text-muted-foreground hover:text-cyan-400" />
-                      </button>
-                      <button 
-                        onClick={() => toast({ title: "Próximamente", description: "Mencionar usuarios está en desarrollo", variant: "default" })}
-                        className="p-1 hover:bg-[#292929] rounded transition-colors" 
-                        data-testid="toolbar-mention" 
-                        title="Mencionar"
-                      >
-                        <AtSign className="h-4 w-4 text-muted-foreground hover:text-cyan-400" />
-                      </button>
-                    </div>
-                    
+                  <div className="flex flex-col border border-[#333333] rounded-lg bg-[#1a1a1a] p-3">
+                    {/* Textarea - Full width on top */}
                     <textarea
                       placeholder="Escribe un mensaje... (Shift+Enter para nueva línea)"
                       value={messageInput}
@@ -1019,40 +958,107 @@ export default function Community() {
                         }
                       }}
                       disabled={sendingMessage}
-                      className="flex-1 bg-transparent border-0 text-white text-left resize-none min-h-[40px] max-h-[120px] overflow-y-auto outline-none px-0"
+                      className="w-full bg-transparent border-0 text-white text-left resize-none min-h-[40px] max-h-[120px] overflow-y-auto outline-none"
                       rows={3}
                       data-testid="message-input"
                     />
-                    <Button
-                      size="sm"
-                      onClick={async () => {
-                        if (!messageInput.trim()) return;
-                        setSendingMessage(true);
-                        try {
-                          const res = await fetch(`/api/community/channels/${activeChannel?.id}/messages`, {
-                            method: "POST",
-                            headers: { "Content-Type": "application/json" },
-                            credentials: "include",
-                            body: JSON.stringify({ content: messageInput }),
-                          });
-                          if (res.ok) {
-                            const newMessage = await res.json();
-                            setMessages([...messages, newMessage]);
-                            setMessageInput("");
-                            toast({ title: "Éxito", description: "Mensaje enviado" });
+                    
+                    {/* Toolbar and Send Button - Bottom row */}
+                    <div className="flex items-center gap-3 mt-2">
+                      {/* Toolbar - Left side */}
+                      <div className="flex gap-1 flex-shrink-0 relative">
+                        <div className="relative">
+                          <button 
+                            onClick={() => setShowMessageEmojiToolbar(!showMessageEmojiToolbar)}
+                            className="p-1 hover:bg-[#292929] rounded transition-colors" 
+                            data-testid="toolbar-emoji" 
+                            title="Emoticones"
+                          >
+                            <Smile className="h-4 w-4 text-muted-foreground hover:text-cyan-400" />
+                          </button>
+                          {showMessageEmojiToolbar && (
+                            <div className="absolute bottom-full left-0 mb-2 bg-[#2a2a2a] border border-[#444444] rounded-lg p-2 grid grid-cols-5 gap-1 w-40 z-50 shadow-lg">
+                              {["👍", "❤️", "😂", "😮", "🎉", "🔥", "👀", "💯", "🙏", "😍", "😱", "😭", "🤔", "👌", "🚀"].map((emoji) => (
+                                <button
+                                  key={emoji}
+                                  onClick={() => {
+                                    setMessageInput(messageInput + emoji);
+                                    setShowMessageEmojiToolbar(false);
+                                  }}
+                                  className="text-lg hover:scale-125 transition-transform cursor-pointer"
+                                >
+                                  {emoji}
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                        <button 
+                          onClick={() => toast({ title: "Próximamente", description: "Adjuntar archivos está en desarrollo", variant: "default" })}
+                          className="p-1 hover:bg-[#292929] rounded transition-colors" 
+                          data-testid="toolbar-attachments" 
+                          title="Archivos"
+                        >
+                          <Paperclip className="h-4 w-4 text-muted-foreground hover:text-cyan-400" />
+                        </button>
+                        <button 
+                          onClick={() => toast({ title: "Próximamente", description: "Cargar imágenes está en desarrollo", variant: "default" })}
+                          className="p-1 hover:bg-[#292929] rounded transition-colors" 
+                          data-testid="toolbar-image" 
+                          title="Imagen"
+                        >
+                          <Plus className="h-4 w-4 text-muted-foreground hover:text-cyan-400" />
+                        </button>
+                        <button 
+                          onClick={() => toast({ title: "Próximamente", description: "Grabar audio está en desarrollo", variant: "default" })}
+                          className="p-1 hover:bg-[#292929] rounded transition-colors" 
+                          data-testid="toolbar-audio" 
+                          title="Audio"
+                        >
+                          <Music className="h-4 w-4 text-muted-foreground hover:text-cyan-400" />
+                        </button>
+                        <button 
+                          onClick={() => toast({ title: "Próximamente", description: "Mencionar usuarios está en desarrollo", variant: "default" })}
+                          className="p-1 hover:bg-[#292929] rounded transition-colors" 
+                          data-testid="toolbar-mention" 
+                          title="Mencionar"
+                        >
+                          <AtSign className="h-4 w-4 text-muted-foreground hover:text-cyan-400" />
+                        </button>
+                      </div>
+                      
+                      {/* Send Button - Right side */}
+                      <Button
+                        size="sm"
+                        onClick={async () => {
+                          if (!messageInput.trim()) return;
+                          setSendingMessage(true);
+                          try {
+                            const res = await fetch(`/api/community/channels/${activeChannel?.id}/messages`, {
+                              method: "POST",
+                              headers: { "Content-Type": "application/json" },
+                              credentials: "include",
+                              body: JSON.stringify({ content: messageInput }),
+                            });
+                            if (res.ok) {
+                              const newMessage = await res.json();
+                              setMessages([...messages, newMessage]);
+                              setMessageInput("");
+                              toast({ title: "Éxito", description: "Mensaje enviado" });
+                            }
+                          } catch (error) {
+                            toast({ title: "Error", description: "No se pudo enviar el mensaje", variant: "destructive" });
+                          } finally {
+                            setSendingMessage(false);
                           }
-                        } catch (error) {
-                          toast({ title: "Error", description: "No se pudo enviar el mensaje", variant: "destructive" });
-                        } finally {
-                          setSendingMessage(false);
-                        }
-                      }}
-                      disabled={sendingMessage || !messageInput.trim()}
-                      className="bg-cyan-500 hover:bg-cyan-600 text-black font-semibold flex-shrink-0 pt-[0px] pb-[0px] mt-[16px] mb-[16px]"
-                      data-testid="send-message-button"
-                    >
-                      {sendingMessage ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-                    </Button>
+                        }}
+                        disabled={sendingMessage || !messageInput.trim()}
+                        className="bg-cyan-500 hover:bg-cyan-600 text-black font-semibold flex-shrink-0"
+                        data-testid="send-message-button"
+                      >
+                        {sendingMessage ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                      </Button>
+                    </div>
                   </div>
                 </div>
               </div>
