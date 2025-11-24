@@ -663,7 +663,6 @@ export default function Community() {
                           <ChevronDown className={cn("h-5 w-5 transition-transform", isExpanded && "rotate-180")} />
                         </button>
                       )}
-
                       {/* Header para Presentante - arriba del contenido */}
                       {!isAccordionChannel && isPresentanteChannel && (
                         <div className="bg-[#232323] rounded-lg p-4 mb-4 relative">
@@ -724,7 +723,6 @@ export default function Community() {
                           )}
                         </div>
                       )}
-
                       {/* Contenido - mostrar si no es accordion O si está expandido */}
                       {!isAccordionChannel || isExpanded ? (
                         <>
@@ -1015,7 +1013,7 @@ export default function Community() {
             </div>
 
             {/* Spacer - takes up remaining vertical space */}
-            <div className="flex-1" />
+            <div className="flex-1 bg-[#232323]" />
 
             {/* Comments Header */}
             <div className="flex-shrink-0 px-6 py-4 flex items-center justify-between bg-[#232323]">
