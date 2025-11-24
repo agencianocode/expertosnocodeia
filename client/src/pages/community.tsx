@@ -1060,11 +1060,7 @@ export default function Community() {
             </div>
 
             {/* Comments Header */}
-            <div className="flex-shrink-0 px-6 py-4 flex items-center justify-between bg-[#232323]">
-              <div>
-                <h2 className="text-lg font-bold text-white">Comentarios</h2>
-                <p className="text-xs text-muted-foreground mt-1">{comments.length} comentarios</p>
-              </div>
+            <div className="flex-shrink-0 px-6 py-4 flex items-center justify-end bg-[#232323]">
               <Button
                 variant="ghost"
                 size="sm"
