@@ -1050,7 +1050,7 @@ export default function Community() {
                         }
                       }}
                       disabled={sendingMessage || !messageInput.trim()}
-                      className="bg-cyan-500 hover:bg-cyan-600 text-black font-semibold flex-shrink-0"
+                      className="bg-cyan-500 hover:bg-cyan-600 text-black font-semibold flex-shrink-0 pt-[0px] pb-[0px] mt-[16px] mb-[16px]"
                       data-testid="send-message-button"
                     >
                       {sendingMessage ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
