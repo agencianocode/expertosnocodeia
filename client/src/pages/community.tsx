@@ -1177,7 +1177,7 @@ export default function Community() {
               <div className="flex gap-2">
                 <Input
                   placeholder="Escribe un comentario..."
-                  className="bg-[#2a2a2a] border-[#444444] text-white text-sm"
+                  className="border-[#444444] text-white text-sm bg-[#181818]"
                   value={commentInput}
                   onChange={(e) => setCommentInput(e.target.value)}
                   onKeyPress={(e) => e.key === "Enter" && handleSendComment()}
