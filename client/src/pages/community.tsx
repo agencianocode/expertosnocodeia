@@ -142,7 +142,8 @@ export default function Community() {
   const [openReactionMessageId, setOpenReactionMessageId] = useState<string | null>(null);
   const [showMessageEmojiToolbar, setShowMessageEmojiToolbar] = useState(false);
   const isAccordionChannel = activeChannel?.slug === 'empieza-aqui';
-  const lastLoadedDraftRef = useRef<string>("");
+  const prevChannelIdRef = useRef<string | null>(null);
+  const messageInputRef = useRef<string>("");
 
   // Group comments by date (oldest to newest)
   const groupCommentsByDate = (comments: Comment[]) => {
@@ -287,9 +288,20 @@ export default function Community() {
     }
   }, [user]);
 
+  // Keep messageInputRef in sync with messageInput state
+  useEffect(() => {
+    messageInputRef.current = messageInput;
+  }, [messageInput]);
+
   // Fetch content when channel changes
   useEffect(() => {
     if (!activeChannel) return;
+
+    // FIRST: Save the current messageInput to the PREVIOUS channel before switching
+    if (prevChannelIdRef.current && messageInputRef.current.trim()) {
+      localStorage.setItem(`message-draft-${prevChannelIdRef.current}`, messageInputRef.current);
+    }
+    prevChannelIdRef.current = activeChannel.id;
 
     // Check if this channel should show posts (all "Comunidad" section channels show posts EXCEPT redes-chat)
     const isChatChannel = activeChannel.slug === "redes-chat";
@@ -300,9 +312,8 @@ export default function Community() {
     setIsPresentanteChannel(isPresentante);
     setIsRedesChatChannel(isChatChannel);
 
-    // Load message draft from localStorage for this channel
+    // THEN: Load message draft from localStorage for THIS channel
     const savedDraft = localStorage.getItem(`message-draft-${activeChannel.id}`) || "";
-    lastLoadedDraftRef.current = savedDraft;
     setMessageInput(savedDraft);
 
     const fetchContent = async () => {
@@ -388,10 +399,6 @@ export default function Community() {
     fetchContent();
   }, [activeChannel, sortBy]);
 
-  // After messageInput is set (draft loaded), update the ref to track the loaded state
-  useEffect(() => {
-    lastLoadedDraftRef.current = messageInput;
-  }, [activeChannel?.id]);
 
 
   // Fetch comments when post is selected
