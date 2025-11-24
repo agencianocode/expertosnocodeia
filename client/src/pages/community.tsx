@@ -916,16 +916,16 @@ export default function Community() {
 
         {/* Right Sidebar - Comments (for all channels except empieza-aqui when post selected) */}
         {!isAccordionChannel && selectedPost && (
-          <div className="hidden lg:flex w-1/3 flex-col border-l border-[#333333] bg-[#1a1a1a] overflow-hidden">
+          <div className="hidden lg:flex w-1/3 flex-col bg-[#1a1a1a] overflow-hidden">
             {/* Header con fecha del post */}
-            <div className="border-b border-[#333333] px-6 py-4 text-center">
+            <div className="px-6 py-4 text-center">
               <p className="text-xs text-muted-foreground mb-3">
                 {new Date(selectedPost.post.createdAt).toLocaleDateString("es-ES", { year: "numeric", month: "long", day: "numeric" })}
               </p>
             </div>
 
             {/* Comments Header */}
-            <div className="border-b border-[#333333] px-6 py-4 flex items-center justify-between">
+            <div className="px-6 py-4 flex items-center justify-between">
               <div>
                 <h2 className="text-lg font-bold text-white">Comentarios</h2>
                 <p className="text-xs text-muted-foreground mt-1">{comments.length} comentarios</p>
@@ -971,7 +971,7 @@ export default function Community() {
             </div>
 
             {/* Comment Input */}
-            <div className="border-t border-[#333333] bg-[#1a1a1a] px-6 py-4">
+            <div className="bg-[#1a1a1a] px-6 py-4">
               <div className="flex gap-2">
                 <Input
                   placeholder="Escribe un comentario..."
