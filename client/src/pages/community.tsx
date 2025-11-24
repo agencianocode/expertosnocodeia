@@ -142,6 +142,7 @@ export default function Community() {
   const [openReactionMessageId, setOpenReactionMessageId] = useState<string | null>(null);
   const [showMessageEmojiToolbar, setShowMessageEmojiToolbar] = useState(false);
   const isAccordionChannel = activeChannel?.slug === 'empieza-aqui';
+  const isLoadingDraftRef = useRef(false);
 
   // Group comments by date (oldest to newest)
   const groupCommentsByDate = (comments: Comment[]) => {
@@ -300,8 +301,14 @@ export default function Community() {
     setIsRedesChatChannel(isChatChannel);
 
     // Load message draft from localStorage for this channel
+    // Mark that we're loading a draft so onChange doesn't save it
+    isLoadingDraftRef.current = true;
     const savedDraft = localStorage.getItem(`message-draft-${activeChannel.id}`) || "";
     setMessageInput(savedDraft);
+    // Reset the flag after a tiny delay to allow setState to complete
+    setTimeout(() => {
+      isLoadingDraftRef.current = false;
+    }, 0);
 
     const fetchContent = async () => {
       try {
@@ -934,8 +941,8 @@ export default function Community() {
                       onChange={(e) => {
                         const newValue = e.target.value;
                         setMessageInput(newValue);
-                        // Save to localStorage IMMEDIATELY
-                        if (activeChannel) {
+                        // Only save to localStorage if we're not loading a draft
+                        if (!isLoadingDraftRef.current && activeChannel) {
                           if (newValue.trim()) {
                             localStorage.setItem(`message-draft-${activeChannel.id}`, newValue);
                           } else {
