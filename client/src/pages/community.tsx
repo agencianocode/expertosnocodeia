@@ -922,7 +922,7 @@ export default function Community() {
               <div className="flex-shrink-0 border-t border-[#333333] flex justify-center w-full bg-[#1a1a1a]">
                 <div className="flex flex-col w-full px-6 py-4 max-w-3xl bg-[#1a1a1a]">
                   {/* Text Input with Integrated Toolbar */}
-                  <div className="flex items-end gap-3 border border-[#333333] rounded-lg bg-[#1a1a1a] p-3">
+                  <div className="flex items-end gap-3 border border-[#333333] rounded-lg bg-[#1a1a1a] p-3 pl-[12px] pr-[12px] pt-[0px] pb-[0px]">
                     {/* Toolbar - Inside the input box */}
                     <div className="flex gap-1 flex-shrink-0 relative">
                       <div className="relative">
