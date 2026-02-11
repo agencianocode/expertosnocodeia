@@ -73,7 +73,9 @@ export async function setupVite(app: Express, server: Server) {
 }
 
 export function serveStatic(app: Express) {
-  const distPath = path.resolve(__dirname, "..", "dist", "public");
+  // Use process.cwd() as fallback if __dirname doesn't work in compiled code
+  const baseDir = __dirname || process.cwd();
+  const distPath = path.resolve(baseDir, "..", "dist", "public");
 
   if (!fs.existsSync(distPath)) {
     throw new Error(
