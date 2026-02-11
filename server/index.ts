@@ -13,6 +13,9 @@ const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5000';
 const allowedOrigins = [
   frontendUrl,
   frontendUrl.replace('http://', 'https://'),
+  'https://expertosnocodeia.com',
+  'https://www.expertosnocodeia.com',
+  'https://app.expertosnocodeia.com',
   'http://localhost:5000',
   'http://localhost:5173',
 ];

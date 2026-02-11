@@ -96,7 +96,23 @@ function Router() {
     }
     
     // En producción, detectar app.expertosnocodeia.com vs expertosnocodeia.com
-    return hostname.startsWith('app.');
+    // Si es app.expertosnocodeia.com → mostrar app
+    if (hostname === 'app.expertosnocodeia.com' || hostname.startsWith('app.')) {
+      return true; // App domain
+    }
+    
+    // Si es el dominio principal (expertosnocodeia.com) → landing
+    if (hostname === 'expertosnocodeia.com' || hostname === 'www.expertosnocodeia.com') {
+      return false; // Landing domain
+    }
+    
+    // Para Railway temporal domains, usar landing por defecto
+    if (hostname.includes('railway.app')) {
+      return false; // Landing por defecto en Railway temporal
+    }
+    
+    // Default: asumir app domain
+    return true;
   };
 
   // Preview routes and public landing pages - ALWAYS available regardless of domain

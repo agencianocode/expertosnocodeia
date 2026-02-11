@@ -33,6 +33,25 @@ export default function MarketingLanding() {
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const { toast } = useToast();
 
+  // Helper function to get app URL (app.expertosnocodeia.com)
+  const getAppUrl = (path: string = '') => {
+    if (typeof window === 'undefined') return path;
+    const hostname = window.location.hostname;
+    
+    // Si ya estamos en app.expertosnocodeia.com, usar path relativo
+    if (hostname === 'app.expertosnocodeia.com' || hostname.startsWith('app.')) {
+      return path;
+    }
+    
+    // Si estamos en expertosnocodeia.com, redirigir a app.expertosnocodeia.com
+    if (hostname === 'expertosnocodeia.com' || hostname === 'www.expertosnocodeia.com') {
+      return `https://app.expertosnocodeia.com${path}`;
+    }
+    
+    // Para desarrollo local o Railway temporal, usar path relativo
+    return path;
+  };
+
   const handleNewsletterSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newsletterEmail || !newsletterEmail.includes('@')) {
@@ -169,25 +188,25 @@ export default function MarketingLanding() {
               <span className="text-xl font-bold">Expertos NoCode IA</span>
             </div>
             <nav className="hidden lg:flex items-center space-x-6">
-              <Link href="/guides" className="text-gray-300 hover:text-white transition-colors text-sm">
+              <a href={getAppUrl('/guides')} className="text-gray-300 hover:text-white transition-colors text-sm">
                 Guías
-              </Link>
-              <Link href="/courses" className="text-gray-300 hover:text-white transition-colors text-sm">
+              </a>
+              <a href={getAppUrl('/courses')} className="text-gray-300 hover:text-white transition-colors text-sm">
                 Cursos
-              </Link>
-              <Link href="/planes" className="text-gray-300 hover:text-white transition-colors text-sm">
+              </a>
+              <a href={getAppUrl('/planes')} className="text-gray-300 hover:text-white transition-colors text-sm">
                 Precios
-              </Link>
-              <Link href="/login">
+              </a>
+              <a href={getAppUrl('/login')}>
                 <Button variant="ghost" size="sm" className="text-gray-300 hover:text-white">
                   Iniciar Sesión
                 </Button>
-              </Link>
-              <Link href="/planes">
+              </a>
+              <a href={getAppUrl('/planes')}>
                 <Button size="sm" className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700">
                   Comenzar
                 </Button>
-              </Link>
+              </a>
             </nav>
           </div>
         </div>
@@ -222,7 +241,7 @@ export default function MarketingLanding() {
 
             {/* Primary CTA - Solo membresía */}
             <div className="mb-8">
-              <Link href="/planes">
+              <a href={getAppUrl('/planes')}>
                 <Button 
                   size="lg" 
                   className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white text-lg px-10 py-7 rounded-full font-semibold shadow-lg shadow-purple-500/50"
@@ -230,7 +249,7 @@ export default function MarketingLanding() {
                   Comenzar Prueba Gratis
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </Button>
-              </Link>
+              </a>
             </div>
 
             {/* Newsletter como alternativa sutil */}
@@ -458,11 +477,11 @@ export default function MarketingLanding() {
                     <span>Comunidad privada</span>
                   </li>
                 </ul>
-                <Link href="/planes">
+                <a href={getAppUrl('/planes')}>
                   <Button className="w-full" variant="outline">
                     Empezar Prueba
                   </Button>
-                </Link>
+                </a>
               </CardContent>
             </Card>
 
@@ -494,11 +513,11 @@ export default function MarketingLanding() {
                     <span>Certificados de finalización</span>
                   </li>
                 </ul>
-                <Link href="/planes">
+                <a href={getAppUrl('/planes')}>
                   <Button className="w-full bg-gradient-to-r from-purple-600 to-blue-600">
                     Empezar Ahora
                   </Button>
-                </Link>
+                </a>
               </CardContent>
             </Card>
 
@@ -537,21 +556,21 @@ export default function MarketingLanding() {
                     <span>Sesiones 1:1 mensuales</span>
                   </li>
                 </ul>
-                <Link href="/planes">
+                <a href={getAppUrl('/planes')}>
                   <Button className="w-full bg-gradient-to-r from-purple-600 to-blue-600">
                     Empezar Ahora
                   </Button>
-                </Link>
+                </a>
               </CardContent>
             </Card>
           </div>
 
           <div className="text-center mt-8">
-            <Link href="/planes">
+            <a href={getAppUrl('/planes')}>
               <Button variant="link" className="text-purple-400 hover:text-purple-300">
                 Ver todos los planes y detalles →
               </Button>
-            </Link>
+            </a>
           </div>
         </div>
       </section>
@@ -603,7 +622,7 @@ export default function MarketingLanding() {
             Únete a miles de profesionales que ya están dominando NoCode e IA
           </p>
           {/* Solo CTA principal, sin newsletter */}
-          <Link href="/planes">
+          <a href={getAppUrl('/planes')}>
             <Button 
               size="lg" 
               className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white text-lg px-10 py-7 rounded-full font-semibold shadow-lg shadow-purple-500/50"
@@ -611,7 +630,7 @@ export default function MarketingLanding() {
               Comenzar Prueba Gratis
               <ArrowRight className="ml-2 h-5 w-5" />
             </Button>
-          </Link>
+          </a>
           <p className="text-sm text-gray-400 mt-6">
             ✓ 14 días gratis • Sin tarjeta de crédito • Cancela cuando quieras
           </p>
@@ -636,16 +655,16 @@ export default function MarketingLanding() {
             <div>
               <h3 className="font-semibold mb-4">Producto</h3>
               <ul className="space-y-2 text-sm text-gray-400">
-                <li><Link href="/guides" className="hover:text-white transition-colors">Guías</Link></li>
-                <li><Link href="/courses" className="hover:text-white transition-colors">Cursos</Link></li>
-                <li><Link href="/planes" className="hover:text-white transition-colors">Precios</Link></li>
+                <li><a href={getAppUrl('/guides')} className="hover:text-white transition-colors">Guías</a></li>
+                <li><a href={getAppUrl('/courses')} className="hover:text-white transition-colors">Cursos</a></li>
+                <li><a href={getAppUrl('/planes')} className="hover:text-white transition-colors">Precios</a></li>
               </ul>
             </div>
             <div>
               <h3 className="font-semibold mb-4">Compañía</h3>
               <ul className="space-y-2 text-sm text-gray-400">
-                <li><Link href="/login" className="hover:text-white transition-colors">Iniciar Sesión</Link></li>
-                <li><Link href="/register" className="hover:text-white transition-colors">Registrarse</Link></li>
+                <li><a href={getAppUrl('/login')} className="hover:text-white transition-colors">Iniciar Sesión</a></li>
+                <li><a href={getAppUrl('/register')} className="hover:text-white transition-colors">Registrarse</a></li>
               </ul>
             </div>
             <div>
