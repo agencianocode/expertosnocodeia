@@ -220,41 +220,44 @@ export default function MarketingLanding() {
               Únete a profesionales que están transformando sus carreras sin escribir código
             </p>
 
-            {/* Dual CTAs */}
-            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-12">
+            {/* Primary CTA - Solo membresía */}
+            <div className="mb-8">
               <Link href="/planes">
                 <Button 
                   size="lg" 
-                  className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white text-lg px-8 py-6 rounded-full font-semibold shadow-lg shadow-purple-500/50 w-full sm:w-auto"
+                  className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white text-lg px-10 py-7 rounded-full font-semibold shadow-lg shadow-purple-500/50"
                 >
                   Comenzar Prueba Gratis
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </Button>
               </Link>
-              <div className="text-gray-400 text-sm">o</div>
-              <form onSubmit={handleNewsletterSubmit} className="flex gap-2 w-full sm:w-auto max-w-md">
+            </div>
+
+            {/* Newsletter como alternativa sutil */}
+            <div className="mb-12">
+              <p className="text-sm text-gray-400 mb-3">
+                ¿No estás listo aún? Recibe tips gratis por email
+              </p>
+              <form onSubmit={handleNewsletterSubmit} className="flex gap-2 justify-center max-w-md mx-auto">
                 <Input
                   type="email"
-                  placeholder="Tu email para newsletter gratis"
+                  placeholder="Tu email"
                   value={newsletterEmail}
                   onChange={(e) => setNewsletterEmail(e.target.value)}
-                  className="bg-gray-900 border-gray-700 text-white placeholder:text-gray-500 rounded-full px-6 py-6"
+                  className="bg-gray-900/50 border-gray-700 text-white placeholder:text-gray-500 rounded-full px-5 py-3 text-sm"
                   disabled={isNewsletterSubmitting}
                 />
                 <Button
                   type="submit"
-                  size="lg"
-                  variant="outline"
-                  className="border-gray-700 text-white hover:bg-gray-800 rounded-full px-6 py-6 whitespace-nowrap"
+                  size="sm"
+                  variant="ghost"
+                  className="text-gray-400 hover:text-white rounded-full px-4"
                   disabled={isNewsletterSubmitting}
                 >
                   {isNewsletterSubmitting ? (
-                    <Loader2 className="h-5 w-5 animate-spin" />
+                    <Loader2 className="h-4 w-4 animate-spin" />
                   ) : (
-                    <>
-                      Newsletter Gratis
-                      <ArrowRight className="ml-2 h-5 w-5" />
-                    </>
+                    "Newsletter Gratis"
                   )}
                 </Button>
               </form>
@@ -599,41 +602,16 @@ export default function MarketingLanding() {
           <p className="text-xl text-gray-300 mb-8 max-w-2xl mx-auto">
             Únete a miles de profesionales que ya están dominando NoCode e IA
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-            <Link href="/planes">
-              <Button 
-                size="lg" 
-                className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white text-lg px-8 py-6 rounded-full font-semibold shadow-lg shadow-purple-500/50"
-              >
-                Comenzar Prueba Gratis
-                <ArrowRight className="ml-2 h-5 w-5" />
-              </Button>
-            </Link>
-            <div className="text-gray-400">o</div>
-            <form onSubmit={handleNewsletterSubmit} className="flex gap-2">
-              <Input
-                type="email"
-                placeholder="Newsletter gratis"
-                value={newsletterEmail}
-                onChange={(e) => setNewsletterEmail(e.target.value)}
-                className="bg-gray-900 border-gray-700 text-white placeholder:text-gray-500 rounded-full px-6"
-                disabled={isNewsletterSubmitting}
-              />
-              <Button
-                type="submit"
-                size="lg"
-                variant="outline"
-                className="border-gray-700 text-white hover:bg-gray-800 rounded-full"
-                disabled={isNewsletterSubmitting}
-              >
-                {isNewsletterSubmitting ? (
-                  <Loader2 className="h-5 w-5 animate-spin" />
-                ) : (
-                  "Suscribirme"
-                )}
-              </Button>
-            </form>
-          </div>
+          {/* Solo CTA principal, sin newsletter */}
+          <Link href="/planes">
+            <Button 
+              size="lg" 
+              className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white text-lg px-10 py-7 rounded-full font-semibold shadow-lg shadow-purple-500/50"
+            >
+              Comenzar Prueba Gratis
+              <ArrowRight className="ml-2 h-5 w-5" />
+            </Button>
+          </Link>
           <p className="text-sm text-gray-400 mt-6">
             ✓ 14 días gratis • Sin tarjeta de crédito • Cancela cuando quieras
           </p>
