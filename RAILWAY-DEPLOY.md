@@ -23,7 +23,15 @@ Esta guía te ayudará a desplegar tu aplicación en Railway paso a paso.
 
 ---
 
-## ⚙️ **Paso 2: Configurar Variables de Entorno**
+## ⚙️ **Paso 2: Configurar Node.js 20**
+
+Railway debería detectar automáticamente Node.js 20 desde `railway.json`, pero si no:
+1. Ve a **Settings** → **Service**
+2. En **Build Command**, asegúrate de que esté: `npm run build`
+3. En **Start Command**, asegúrate de que esté: `npm start`
+4. Railway usará Node.js 20 automáticamente (configurado en `railway.json`)
+
+## ⚙️ **Paso 3: Configurar Variables de Entorno**
 
 En Railway, ve a tu proyecto → **Variables** y agrega todas estas variables:
 
@@ -86,7 +94,7 @@ Copia el resultado y úsalo como `SESSION_SECRET`.
 
 ---
 
-## 🗄️ **Paso 3: Configurar Base de Datos PostgreSQL**
+## 🗄️ **Paso 4: Configurar Base de Datos PostgreSQL**
 
 Railway puede crear una base de datos PostgreSQL automáticamente:
 
@@ -101,7 +109,7 @@ Railway puede crear una base de datos PostgreSQL automáticamente:
 
 ---
 
-## 🏗️ **Paso 4: Configurar Build y Deploy**
+## 🏗️ **Paso 5: Configurar Build y Deploy**
 
 Railway detectará automáticamente:
 - ✅ `package.json` con scripts de build
@@ -118,7 +126,7 @@ Si no lo detecta automáticamente, en **Settings** → **Deploy**:
 
 ---
 
-## 🌐 **Paso 5: Configurar Dominio Personalizado (Opcional)**
+## 🌐 **Paso 6: Configurar Dominio Personalizado (Opcional)**
 
 ### Opción A: Usar dominio de Railway (gratis)
 - Railway te dará un dominio como: `tu-proyecto.railway.app`
@@ -135,7 +143,7 @@ Si no lo detecta automáticamente, en **Settings** → **Deploy**:
 
 ---
 
-## 🔄 **Paso 6: Primer Deploy**
+## 🔄 **Paso 7: Primer Deploy**
 
 1. Railway comenzará a hacer deploy automáticamente cuando:
    - Conectes el repositorio
@@ -153,7 +161,7 @@ Si no lo detecta automáticamente, en **Settings** → **Deploy**:
 
 ---
 
-## ✅ **Paso 7: Verificar que Todo Funciona**
+## ✅ **Paso 8: Verificar que Todo Funciona**
 
 1. **Verifica que el servidor está corriendo:**
    - Ve a tu dominio de Railway
