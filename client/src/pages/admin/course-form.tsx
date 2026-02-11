@@ -22,13 +22,45 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ObjectUploader } from "@/components/ObjectUploader";
+import { RichTextEditor } from "@/components/ui/rich-text-editor";
 import { ArrowLeft, Save, Eye } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAdmin } from "@/hooks/useAdmin";
 import { apiRequest } from "@/lib/queryClient";
 
+// Helper function to generate slug from title
+function generateSlug(title: string): string {
+  return title
+    .toLowerCase()
+    .normalize('NFD') // Normaliza caracteres especiales (á → a)
+    .replace(/[\u0300-\u036f]/g, '') // Elimina diacríticos
+    .replace(/[^a-z0-9]+/g, '-') // Reemplaza espacios y caracteres especiales con guiones
+    .replace(/^-+|-+$/g, '') // Elimina guiones al inicio y final
+    .substring(0, 100); // Limita la longitud
+}
+
+function formatDateInput(dateValue?: string | Date | null): string {
+  if (!dateValue) return "";
+  const date = typeof dateValue === "string" ? new Date(dateValue) : dateValue;
+  if (Number.isNaN(date.getTime())) return "";
+  return date.toISOString().slice(0, 10);
+}
+
+function parseMetadata(raw: any): Record<string, any> {
+  if (!raw) return {};
+  if (typeof raw === "string") {
+    try {
+      return JSON.parse(raw);
+    } catch {
+      return {};
+    }
+  }
+  return raw;
+}
+
 const courseSchema = z.object({
   title: z.string().min(1, "El título es requerido"),
+  slug: z.string().optional(), // Slug opcional, se generará automáticamente si no se proporciona
   description: z.string().min(1, "La descripción es requerida"),
   categoryId: z.string().optional(), // Made optional - will be set conditionally
   selectedCategoryIds: z.array(z.string()).optional(), // For guides with multiple categories
@@ -41,6 +73,11 @@ const courseSchema = z.object({
   prerequisites: z.string().optional(),
   roomId: z.string().optional(), // Sala a la que pertenece
   phaseId: z.string().optional(), // Fase dentro de la sala
+  publishedAt: z.string().optional(), // Solo para guías
+  guideVideoUrl: z.string().optional(), // Solo para guías
+  guideSummary: z.string().optional(), // Solo para guías
+  guideTools: z.string().optional(), // Solo para guías
+  guideUpdatedAt: z.string().optional(), // Solo para guías
 }).superRefine((data, ctx) => {
   // Conditional validation based on type
   if (data.type === 'guide') {
@@ -80,14 +117,40 @@ export default function CourseForm() {
   const { isAdmin, isLoading: adminLoading } = useAdmin();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [, navigate] = useLocation();
+  const [location] = useLocation();
+
+  const requestedType = (() => {
+    if (!matchNew) return null;
+    const query = location.split('?')[1];
+    if (!query) return null;
+    const type = new URLSearchParams(query).get('type');
+    if (type === 'course' || type === 'guide' || type === 'workshop') {
+      return type;
+    }
+    return null;
+  })();
+
+  const initialType = requestedType ?? "course";
 
   const { data: categories } = useQuery({
     queryKey: ["/api/categories"],
   });
 
   const { data: rooms } = useQuery({
-    queryKey: ["/api/rooms"],
+    queryKey: ["/api/admin/rooms"],
+    queryFn: async () => {
+      try {
+        const response = await apiRequest('GET', '/api/admin/rooms');
+        return response.json();
+      } catch (error) {
+        // Fallback to public rooms if admin auth is not available
+        const fallbackResponse = await fetch('/api/rooms', { credentials: 'include' });
+        if (!fallbackResponse.ok) {
+          throw error;
+        }
+        return fallbackResponse.json();
+      }
+    },
   });
 
   const { data: course, isLoading: courseLoading } = useQuery({
@@ -104,10 +167,11 @@ export default function CourseForm() {
     resolver: zodResolver(courseSchema),
     defaultValues: {
       title: "",
+      slug: "",
       description: "",
       categoryId: "",
       selectedCategoryIds: [],
-      type: "course",
+      type: initialType,
       difficulty: undefined,
       estimatedHours: 1,
       isPublished: false,
@@ -116,6 +180,11 @@ export default function CourseForm() {
       prerequisites: "",
       roomId: "",
       phaseId: "",
+      publishedAt: "",
+      guideVideoUrl: "",
+      guideSummary: "",
+      guideTools: "",
+      guideUpdatedAt: "",
     },
   });
 
@@ -130,10 +199,25 @@ export default function CourseForm() {
     enabled: !!selectedRoomId,
   });
 
+  // Auto-generate slug when title changes
+  const title = form.watch('title');
+  useEffect(() => {
+    if (title && !isEditing) {
+      const generatedSlug = generateSlug(title);
+      const currentSlug = form.getValues('slug');
+      // Only auto-generate if slug is empty or matches the previous title's slug
+      if (!currentSlug || currentSlug === generateSlug(form.formState.defaultValues?.title || '')) {
+        form.setValue('slug', generatedSlug);
+      }
+    }
+  }, [title, isEditing, form]);
+
   useEffect(() => {
     if (course && isEditing) {
+      const metadata = parseMetadata((course as any)?.metadata);
       form.reset({
         title: course.title,
+        slug: (course as any).slug || "",
         description: course.description,
         categoryId: course.categoryId,
         selectedCategoryIds: course.categories || [course.categoryId], // Use multiple categories if available, fallback to single
@@ -146,6 +230,11 @@ export default function CourseForm() {
         prerequisites: course.prerequisites || "",
         roomId: course.roomId || "",
         phaseId: course.phaseId || "",
+        publishedAt: formatDateInput(course.createdAt),
+        guideVideoUrl: metadata.videoUrl || "",
+        guideSummary: metadata.summary || "",
+        guideTools: metadata.tools || "",
+        guideUpdatedAt: formatDateInput(metadata.updatedAt),
       });
     }
   }, [course, isEditing, form]);
@@ -207,15 +296,59 @@ export default function CourseForm() {
     // Prepare data for submission
     const submitData = { ...data };
     
+    // Generate slug if not provided
+    if (!submitData.slug || submitData.slug.trim() === '') {
+      submitData.slug = generateSlug(data.title);
+    } else {
+      // Normalize slug if provided manually
+      submitData.slug = generateSlug(submitData.slug);
+    }
+    
     // For guides, include categoryIds and ensure categoryId is set
     if (data.type === 'guide' && data.selectedCategoryIds && data.selectedCategoryIds.length > 0) {
-      submitData.categoryIds = data.selectedCategoryIds;
+      (submitData as any).categoryIds = data.selectedCategoryIds;
       submitData.categoryId = data.selectedCategoryIds[0]; // Set primary category
+      if (submitData.publishedAt) {
+        (submitData as any).createdAt = new Date(submitData.publishedAt);
+      }
+      const existingMetadata = parseMetadata((course as any)?.metadata);
+      const videoUrl = submitData.guideVideoUrl?.trim();
+      const summary = submitData.guideSummary?.trim();
+      const tools = submitData.guideTools?.trim();
+      const updatedAt = submitData.guideUpdatedAt ? new Date(submitData.guideUpdatedAt).toISOString() : "";
+      const nextMetadata = { ...existingMetadata };
+      if (videoUrl) {
+        nextMetadata.videoUrl = videoUrl;
+      } else {
+        delete (nextMetadata as any).videoUrl;
+      }
+      if (summary) {
+        nextMetadata.summary = summary;
+      } else {
+        delete (nextMetadata as any).summary;
+      }
+      if (tools) {
+        nextMetadata.tools = tools;
+      } else {
+        delete (nextMetadata as any).tools;
+      }
+      if (updatedAt) {
+        nextMetadata.updatedAt = updatedAt;
+      } else {
+        delete (nextMetadata as any).updatedAt;
+      }
+      (submitData as any).metadata = nextMetadata;
     } else if (data.type !== 'guide') {
       // For non-guides, clear categoryIds and keep only categoryId
-      delete submitData.selectedCategoryIds;
-      submitData.categoryIds = []; // Signal to clear multiple categories
+      delete (submitData as any).selectedCategoryIds;
+      (submitData as any).categoryIds = []; // Signal to clear multiple categories
     }
+
+    delete (submitData as any).publishedAt;
+    delete (submitData as any).guideVideoUrl;
+    delete (submitData as any).guideSummary;
+    delete (submitData as any).guideTools;
+    delete (submitData as any).guideUpdatedAt;
     
     saveMutation.mutate(submitData);
   };
@@ -298,17 +431,100 @@ export default function CourseForm() {
                 </div>
 
                 <div>
+                  <Label htmlFor="slug" className="text-white">Slug (URL) *</Label>
+                  <Input
+                    id="slug"
+                    {...form.register("slug")}
+                    className="bg-slate-800 border-slate-600 text-white"
+                    placeholder="ia-para-consultoria-empresarial"
+                    data-testid="input-slug"
+                  />
+                  <p className="text-xs text-gray-400 mt-1">
+                    URL amigable para SEO. Se genera automáticamente desde el título, pero puedes editarlo.
+                  </p>
+                  {form.formState.errors.slug && (
+                    <p className="text-red-400 text-sm mt-1">{form.formState.errors.slug.message}</p>
+                  )}
+                </div>
+
+                <div>
                   <Label htmlFor="description" className="text-white">Descripción *</Label>
-                  <Textarea
-                    id="description"
-                    {...form.register("description")}
-                    className="bg-slate-800 border-slate-600 text-white min-h-[100px]"
+                  <RichTextEditor
+                    content={form.watch("description") || ""}
+                    onChange={(content) => form.setValue("description", content)}
                     placeholder="Describe el contenido y objetivos del curso..."
+                    className="mt-2"
                   />
                   {form.formState.errors.description && (
                     <p className="text-red-400 text-sm mt-1">{form.formState.errors.description.message}</p>
                   )}
                 </div>
+
+                {currentType === 'guide' && (
+                  <div>
+                    <Label htmlFor="publishedAt" className="text-white">Fecha de publicación</Label>
+                    <Input
+                      id="publishedAt"
+                      type="date"
+                      {...form.register("publishedAt")}
+                      className="bg-slate-800 border-slate-600 text-white"
+                    />
+                    <p className="text-xs text-gray-400 mt-1">
+                      Se usa para ordenar y mostrar la fecha en la guía.
+                    </p>
+                  </div>
+                )}
+
+                {currentType === 'guide' && (
+                  <div>
+                    <Label htmlFor="guideVideoUrl" className="text-white">URL del video de la guía</Label>
+                    <Input
+                      id="guideVideoUrl"
+                      {...form.register("guideVideoUrl")}
+                      className="bg-slate-800 border-slate-600 text-white"
+                      placeholder="https://www.youtube.com/watch?v=..."
+                    />
+                    <p className="text-xs text-gray-400 mt-1">
+                      Si agregas un video, se mostrará aquí y la imagen será su carátula.
+                    </p>
+                  </div>
+                )}
+
+                {currentType === 'guide' && (
+                  <div>
+                    <Label htmlFor="guideSummary" className="text-white">Resumen</Label>
+                    <Textarea
+                      id="guideSummary"
+                      {...form.register("guideSummary")}
+                      className="bg-slate-800 border-slate-600 text-white"
+                      placeholder="Breve resumen que aparecerá en la cabecera de la guía"
+                    />
+                  </div>
+                )}
+
+                {currentType === 'guide' && (
+                  <div>
+                    <Label htmlFor="guideTools" className="text-white">Herramientas necesarias</Label>
+                    <Input
+                      id="guideTools"
+                      {...form.register("guideTools")}
+                      className="bg-slate-800 border-slate-600 text-white"
+                      placeholder="Ej: No se requiere ninguno"
+                    />
+                  </div>
+                )}
+
+                {currentType === 'guide' && (
+                  <div>
+                    <Label htmlFor="guideUpdatedAt" className="text-white">Actualizado</Label>
+                    <Input
+                      id="guideUpdatedAt"
+                      type="date"
+                      {...form.register("guideUpdatedAt")}
+                      className="bg-slate-800 border-slate-600 text-white"
+                    />
+                  </div>
+                )}
 
                 <div>
                   <Label htmlFor="prerequisites" className="text-white">Prerrequisitos</Label>

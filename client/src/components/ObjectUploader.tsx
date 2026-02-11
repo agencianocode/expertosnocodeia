@@ -68,9 +68,16 @@ export function ObjectUploader({
           const { method, url } = await onGetUploadParameters();
           console.log('Upload parameters:', { method, url, fileName: file.name });
           
+          if (!url) {
+            throw new Error('No se recibió una URL de subida válida');
+          }
+          
           const response = await fetch(url, {
             method,
             body: file,
+            headers: {
+              'Content-Type': file.type || 'image/jpeg',
+            },
           });
 
           console.log('Upload response status:', response.status, response.statusText);
@@ -81,7 +88,21 @@ export function ObjectUploader({
             throw new Error(`Upload failed: ${response.status} ${response.statusText}`);
           }
 
-          const fileUrl = url.split('?')[0]; // Remove query parameters
+          // Try to get publicUrl from response, fallback to upload URL
+          let fileUrl = url.split('?')[0]; // Remove query parameters
+          try {
+            const responseData = await response.json();
+            if (responseData.publicUrl) {
+              fileUrl = responseData.publicUrl;
+            } else if (responseData.path) {
+              // If we have path, construct public URL
+              fileUrl = responseData.path;
+            }
+          } catch (e) {
+            // If response is not JSON, use the upload URL
+            console.log('Response is not JSON, using upload URL');
+          }
+
           uploadResults.push({
             uploadURL: fileUrl,
             name: file.name
@@ -91,11 +112,11 @@ export function ObjectUploader({
             title: "Archivo subido",
             description: `${file.name} se ha subido correctamente`
           });
-        } catch (error) {
+        } catch (error: any) {
           console.error(`Error uploading ${file.name}:`, error);
           toast({
             title: "Error",
-            description: `No se pudo subir ${file.name}: ${error.message}`,
+            description: `No se pudo subir ${file.name}: ${error?.message || 'Error desconocido'}`,
             variant: "destructive"
           });
         }

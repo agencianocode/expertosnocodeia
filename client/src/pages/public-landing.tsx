@@ -1,7 +1,10 @@
+import { useState } from "react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { useToast } from "@/hooks/use-toast";
 import { 
   ArrowRight, 
   CheckCircle, 
@@ -16,10 +19,58 @@ import {
   Target,
   Lightbulb,
   FileText,
-  MessageSquare
+  MessageSquare,
+  Loader2
 } from "lucide-react";
 
 export default function PublicLanding() {
+  const [email, setEmail] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { toast } = useToast();
+
+  const handleEmailSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email || !email.includes('@')) {
+      toast({
+        title: "Email inválido",
+        description: "Por favor ingresa un email válido",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      // Subscribe to Beehiiv via public endpoint
+      const response = await fetch('/api/beehiiv/subscribe', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email }),
+      });
+
+      if (response.ok) {
+        toast({
+          title: "¡Suscripción exitosa!",
+          description: "Te hemos enviado un email de confirmación",
+        });
+        setEmail("");
+      } else {
+        const error = await response.json();
+        throw new Error(error.message || 'Error al suscribirse');
+      }
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "No se pudo completar la suscripción. Intenta de nuevo.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const companies = [
     { name: "Google", logo: "https://cdn.prod.website-files.com/67ab272a36622522cbb3ba8f/67ab54e492157fb1f222485a_google.png" },
     { name: "Meta", logo: "https://cdn.prod.website-files.com/67ab272a36622522cbb3ba8f/67ab54e4121a347e91e20453_meta.png" },
@@ -255,17 +306,30 @@ export default function PublicLanding() {
           </div>
 
           {/* CTA Section */}
-          <div className="text-center">
-            <Button 
-              size="lg" 
-              className="bg-white text-black hover:bg-gray-100 text-lg px-8 py-4 rounded-lg mb-4"
-              onClick={() => window.location.href = '/universidad-nocode-ia'}
-            >
-              Comience una prueba gratuita →
-            </Button>
-            <p className="text-sm text-gray-400 mb-8">
+          <div className="text-center space-y-4">
+            <Link href="/planes">
+              <Button 
+                size="lg" 
+                className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white text-lg px-8 py-6 rounded-full font-semibold shadow-lg shadow-purple-500/50"
+              >
+                Ver Planes y Precios
+                <ArrowRight className="ml-2 h-5 w-5" />
+              </Button>
+            </Link>
+            <p className="text-sm text-gray-400">
               <span className="text-green-400">✓</span> Más de 10,000 miembros • Prueba gratuita de 14 días
             </p>
+            <div>
+              <p className="text-gray-400 text-sm mb-2">¿Ya tienes cuenta?</p>
+              <Link href="/login">
+                <Button
+                  variant="outline"
+                  className="border-gray-700 text-white hover:bg-gray-800/50"
+                >
+                  Iniciar Sesión
+                </Button>
+              </Link>
+            </div>
 
             {/* Quote */}
             <div className="border-l-4 border-blue-500 pl-6 max-w-4xl mx-auto">

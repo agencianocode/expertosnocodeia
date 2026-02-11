@@ -10,11 +10,15 @@ interface OnboardingProgress {
 }
 
 export function useOnboardingProgress() {
+  // Only make requests if there's a token
+  const hasToken = typeof window !== 'undefined' && !!localStorage.getItem('simpleAuthToken');
+  
   // Check if user completed onboarding survey
   const { data: onboardingResponse } = useQuery({
     queryKey: ['/api/onboarding/response'],
     retry: false,
     staleTime: 5 * 60 * 1000, // 5 minutes
+    enabled: hasToken,
   });
 
   // Check if user has started any course (dashboard data includes course progress)
@@ -22,6 +26,7 @@ export function useOnboardingProgress() {
     queryKey: ['/api/dashboard'],
     retry: false,
     staleTime: 5 * 60 * 1000, // 5 minutes
+    enabled: hasToken,
   });
 
   // Calculate progress based on completed tasks

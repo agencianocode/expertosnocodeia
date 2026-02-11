@@ -408,6 +408,52 @@ body {
   background: transparent;
 }
 
+/* Placeholder styles - simple gray text, no background patterns or stripes */
+.ProseMirror p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  color: hsl(0, 0%, 50%);
+  pointer-events: none;
+  height: 0;
+  background: transparent !important;
+  background-image: none !important;
+}
+
+.ProseMirror .is-editor-empty::before {
+  content: attr(data-placeholder);
+  float: left;
+  color: hsl(0, 0%, 50%);
+  pointer-events: none;
+  height: 0;
+  background: transparent !important;
+  background-image: none !important;
+}
+
+/* Remove any background patterns, stripes, or gradients from empty editor */
+.ProseMirror.is-editor-empty {
+  background: transparent !important;
+  background-image: none !important;
+  background-size: auto !important;
+  background-repeat: no-repeat !important;
+  background-position: center !important;
+}
+
+.ProseMirror.is-editor-empty::before {
+  background: transparent !important;
+  background-image: none !important;
+}
+
+/* Ensure no striped patterns anywhere in the editor */
+.ProseMirror,
+.ProseMirror * {
+  background-image: none !important;
+}
+
+/* Only allow background images for actual img tags */
+.ProseMirror img {
+  background-image: none !important;
+}
+
 .ProseMirror p {
   margin: 0.75rem 0;
   color: hsl(0, 0%, 85%);
@@ -470,6 +516,10 @@ body {
   padding: 1rem;
   margin: 1.5rem 0;
   overflow-x: auto;
+  font-family: 'Courier New', 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: hsl(0, 0%, 85%);
 }
 
 .ProseMirror pre code {
@@ -477,7 +527,8 @@ body {
   padding: 0;
   color: inherit;
   border: none;
-  font-size: 0.875rem;
+  font-size: inherit;
+  font-family: inherit;
 }
 
 .ProseMirror blockquote {

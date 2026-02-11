@@ -84,6 +84,11 @@ export default function Onboarding() {
 
         const result = await response.json();
         console.log('Onboarding data saved successfully:', result);
+        
+        // If recommendations are included, store them for later
+        if (result.recommendations) {
+          // Recommendations will be available via API
+        }
       } catch (error) {
         console.error('Error saving onboarding data:', error);
         // Continue even if save fails
@@ -94,8 +99,8 @@ export default function Onboarding() {
         setIsLoading(false);
       }, 2000);
     } else if (currentStep === 13) {
-      // Redirect to dashboard
-      setLocation('/');
+      // Redirect to personalized recommendations
+      setLocation('/recommendations');
     } else {
       setCurrentStep(currentStep + 1);
     }

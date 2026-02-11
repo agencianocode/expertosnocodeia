@@ -21,7 +21,9 @@ import {
 } from "@/components/ui/tooltip";
 import { LessonResources } from "@/components/lesson-resources";
 import { LessonComments } from "@/components/LessonComments";
-import { Award, Check, ChevronRight, ChevronLeft, Menu, Users, Bot, Code, Megaphone, Settings, DollarSign, Heart, Building, CheckSquare, Scale, BarChart, GraduationCap, PlayCircle, Clock, CheckCircle2, BookOpen, Play, Lock } from "lucide-react";
+import { Award, Check, ChevronRight, ChevronLeft, Menu, Users, Bot, Code, Megaphone, Settings, DollarSign, Heart, Building, CheckSquare, Scale, BarChart, GraduationCap, PlayCircle, Clock, CheckCircle2, BookOpen, Play, Lock, MessageCirclePlus, Link as LinkIcon } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -54,12 +56,125 @@ export default function Course() {
   const [location, setLocation] = useLocation();
   const isRoomContext = location.startsWith('/sala/'); // Detect if viewing from a room context
   const isAgentesIARoom = isRoomContext && roomSlug === 'agentes-ia'; // Only Agentes IA 2.0 room gets orange theme
+  
+  // Debug: Log room detection
+  useEffect(() => {
+    if (isRoomContext) {
+      console.log('🏠 Room Context Detected:', { roomSlug, isAgentesIARoom, location });
+    }
+  }, [roomSlug, isAgentesIARoom, isRoomContext, location]);
   const backUrl = isRoomContext && roomSlug ? `/sala/${roomSlug}` : '/courses';
   const [currentLessonIndex, setCurrentLessonIndex] = useState(0);
   const [hasCheckedSavedPosition, setHasCheckedSavedPosition] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  // Right sidebar state - starts expanded on large screens, collapsed on smaller
+  const [rightSidebarOpen, setRightSidebarOpen] = useState(true);
+  // Tab state for lesson content/comments
+  const [activeTab, setActiveTab] = useState<'content' | 'comments'>('content');
+  // Ask question modal state
+  const [askQuestionOpen, setAskQuestionOpen] = useState(false);
+  const [questionText, setQuestionText] = useState("");
+  const [isSubmittingQuestion, setIsSubmittingQuestion] = useState(false);
   const queryClient = useQueryClient();
   const { getSavedLessonPosition, saveLessonPosition } = useLessonPosition();
+
+  // Fetch channels to find the correct one for the question
+  const { data: channels } = useQuery({
+    queryKey: ["/api/community/channels"],
+    enabled: askQuestionOpen && !!roomSlug,
+  });
+
+  // Find the channel for the current room
+  const questionChannel = useMemo(() => {
+    if (!roomSlug || !channels) return null;
+    const channelSlug = `dudas-${roomSlug}`;
+    return (channels as any[])?.find((ch: any) => ch.slug === channelSlug);
+  }, [roomSlug, channels]);
+
+  // Handle question submission
+  const handleSubmitQuestion = async () => {
+    if (!questionText.trim() || !questionChannel) {
+      toast({
+        title: "Error",
+        description: "Por favor escribe una pregunta y asegúrate de que el curso pertenezca a una sala.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!currentLesson) {
+      toast({
+        title: "Error",
+        description: "No hay una lección seleccionada.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsSubmittingQuestion(true);
+    try {
+      // Create post content with just the question text (clean and focused)
+      const postContent = questionText.trim();
+
+      // Create post in community channel with lesson reference in metadata
+      const postData: any = {
+        title: "",
+        content: postContent,
+      };
+
+      // Add lesson reference to metadata if available
+      if (currentLesson) {
+        postData.metadata = {
+          lessonId: currentLesson.id,
+          courseId: courseId,
+          lessonTitle: currentLesson.title,
+        };
+      }
+
+      const communityResponse = await apiRequest('POST', `/api/community/channels/${questionChannel.id}/posts`, postData);
+
+      if (!communityResponse.ok) {
+        throw new Error("Error al publicar la pregunta en la comunidad");
+      }
+
+      toast({
+        title: "¡Pregunta publicada!",
+        description: `Tu pregunta se ha publicado en ${questionChannel.name}`,
+      });
+      setAskQuestionOpen(false);
+      setQuestionText("");
+      // Optionally redirect to community
+      // window.location.href = `/community?channel=${questionChannel.slug}`;
+    } catch (error: any) {
+      console.error("Error submitting question:", error);
+      toast({
+        title: "Error",
+        description: error.message || "No se pudo publicar la pregunta. Intenta de nuevo.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmittingQuestion(false);
+    }
+  };
+
+  // Initialize right sidebar based on screen width
+  useEffect(() => {
+    const handleResize = () => {
+      // Auto-collapse on screens smaller than 1440px
+      if (window.innerWidth < 1440) {
+        setRightSidebarOpen(false);
+      } else {
+        setRightSidebarOpen(true);
+      }
+    };
+    
+    // Check on mount
+    handleResize();
+    
+    // Listen for resize
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // Final Exam Modal State
   const [isExamModalOpen, setIsExamModalOpen] = useState(false);
@@ -268,20 +383,25 @@ export default function Course() {
     enabled: !!id, // Allow fetching for all users to show real course info
   });
 
+  // Extract the actual course ID (in case id is a slug)
+  const courseId: string = (course && typeof course === 'object' && 'id' in course && typeof (course as any).id === 'string') 
+    ? (course as any).id 
+    : id;
+
   // Get next course in room if in room context
-  const { data: nextCourse } = useQuery<{ courseId: string; title: string; coverImageUrl: string | null } | null>({
-    queryKey: [`/api/rooms/${roomSlug}/next-course/${id}`],
-    enabled: !!roomSlug && !!id && isRoomContext,
+  const { data: nextCourse } = useQuery<{ courseId: string; slug?: string; title: string; coverImageUrl: string | null } | null>({
+    queryKey: [`/api/rooms/${roomSlug}/next-course/${courseId}`],
+    enabled: !!roomSlug && !!courseId && isRoomContext,
   });
 
   const { data: lessons, isLoading: lessonsLoading } = useQuery({
-    queryKey: [`/api/courses/${id}/lessons`],
-    enabled: !!id, // Allow fetching for all users to show real lesson list
+    queryKey: [`/api/courses/${courseId}/lessons`],
+    enabled: !!courseId, // Use actual course ID, not slug
   });
 
   const { data: completedLessons = [] } = useQuery<string[]>({
-    queryKey: [`/api/courses/${id}/progress`],
-    enabled: isAuthenticated && !!id, // Only fetch progress if authenticated
+    queryKey: [`/api/courses/${courseId}/progress`],
+    enabled: isAuthenticated && !!courseId, // Use actual course ID, not slug
   });
 
   // Check if course is saved/bookmarked
@@ -292,7 +412,7 @@ export default function Course() {
   });
   
   const isSaved = Array.isArray(savedCourses) && savedCourses.some(
-    (savedCourse: any) => savedCourse.courseId === id
+    (savedCourse: any) => savedCourse.courseId === courseId
   );
   
   // Save/unsave course mutation
@@ -305,7 +425,7 @@ export default function Course() {
       
       if (method === 'POST') {
         return await apiRequest('POST', url, { 
-          courseId: id,
+          courseId: courseId,
           roomSlug: roomSlug || null, // Include room context if available
         });
       } else {
@@ -358,6 +478,63 @@ export default function Course() {
     
     return grouped;
   }, [lessonsArray]);
+
+  // Detect if course should show as numbered list (no modules structure)
+  // This happens when:
+  // 1. All lessons are direct (no parentLessonId) and none have sublessons
+  // 2. All lessons are orphaned sublessons (parent doesn't exist)
+  // 3. Mix of direct lessons and orphaned sublessons
+  const hasNoModulesButHasLessons = useMemo(() => {
+    // Check if there are any lessons at all
+    if (lessonsArray.length === 0) {
+      return false;
+    }
+    
+    // Check if there are orphaned sublessons (sublessons whose parent doesn't exist)
+    const moduleIds = new Set(modules.map((m: any) => m.id));
+    const orphanedSubLessons = lessonsArray.filter((lesson: any) => 
+      lesson.parentLessonId && !moduleIds.has(lesson.parentLessonId)
+    );
+    
+    // Check if there are direct lessons (no parent)
+    const directLessons = lessonsArray.filter((lesson: any) => !lesson.parentLessonId);
+    
+    // Check if any direct lessons have sublessons (if so, they're modules)
+    const directLessonsWithSubLessons = directLessons.filter((lesson: any) => 
+      subLessonsByParent[lesson.id] && subLessonsByParent[lesson.id].length > 0
+    );
+    
+    // If all direct lessons have sublessons, they are modules - use normal view
+    if (directLessons.length > 0 && directLessons.length === directLessonsWithSubLessons.length && orphanedSubLessons.length === 0) {
+      return false;
+    }
+    
+    // Show as numbered list if:
+    // - All lessons are direct and none have sublessons (simple list)
+    // - There are orphaned sublessons (parent module doesn't exist)
+    // - Mix of direct lessons without sublessons and orphaned sublessons
+    const shouldShow = orphanedSubLessons.length > 0 || 
+                      (directLessons.length > 0 && directLessonsWithSubLessons.length === 0);
+    
+    return shouldShow;
+  }, [modules, lessonsArray, subLessonsByParent]);
+
+  // Get lessons to display as numbered list (when no modules)
+  const directLessonsForList = useMemo(() => {
+    if (!hasNoModulesButHasLessons) {
+      return [];
+    }
+    
+    // Get all lessons that should be shown (direct lessons + orphaned sublessons)
+    const moduleIds = new Set(modules.map((m: any) => m.id));
+    const lessonsToShow = lessonsArray.filter((lesson: any) => {
+      // Include direct lessons (no parent) or orphaned sublessons (parent doesn't exist in modules)
+      return !lesson.parentLessonId || !moduleIds.has(lesson.parentLessonId);
+    });
+    
+    // Sort by order
+    return lessonsToShow.sort((a: any, b: any) => a.order - b.order);
+  }, [hasNoModulesButHasLessons, modules, lessonsArray]);
   
   // Calculate progress per module for room context timeline
   const moduleProgress = useMemo(() => {
@@ -412,6 +589,20 @@ export default function Course() {
     
     return indices;
   }, [lessonsArray, subLessonsByParent]);
+
+  // Get the first navigable lesson index (for non-authenticated users)
+  const firstNavigableLessonIndex = navigableLessonIndices.length > 0 ? navigableLessonIndices[0] : -1;
+  
+  // Check if a lesson is the first navigable lesson (accessible for non-authenticated users)
+  const isFirstNavigableLesson = (lessonIndex: number) => {
+    return lessonIndex === firstNavigableLessonIndex;
+  };
+  
+  // Check if a lesson is accessible for non-authenticated users
+  const isLessonAccessible = (lessonIndex: number) => {
+    if (isAuthenticated) return true;
+    return isFirstNavigableLesson(lessonIndex);
+  };
   
   // Initialize collapsed modules - only keep first module open
   useEffect(() => {
@@ -464,6 +655,13 @@ export default function Course() {
       }
       
       // No saved lesson found - find first playable lesson (first sub-lesson or first module without children)
+      // For non-authenticated users, always use the first navigable lesson
+      if (!isAuthenticated && firstNavigableLessonIndex !== -1) {
+        setCurrentLessonIndex(firstNavigableLessonIndex);
+        setHasCheckedSavedPosition(true);
+        return;
+      }
+      
       const firstModule = modules[0];
       if (firstModule) {
         const firstModuleSubLessons = subLessonsByParent[firstModule.id];
@@ -480,20 +678,40 @@ export default function Course() {
       // console.log('✅ Setting hasCheckedSavedPosition to true');
       setHasCheckedSavedPosition(true);
     }
-  }, [id, lessonsArray, hasCheckedSavedPosition, getSavedLessonPosition, setLocation, modules, subLessonsByParent]);
+  }, [id, lessonsArray, hasCheckedSavedPosition, getSavedLessonPosition, setLocation, modules, subLessonsByParent, isAuthenticated, firstNavigableLessonIndex]);
 
   const markLessonCompleteMutation = useMutation({
     mutationFn: async (lessonId: string) => {
       return await apiRequest('POST', `/api/lessons/${lessonId}/complete`);
     },
+    onMutate: async (lessonId: string) => {
+      // Optimistically update the completed lessons list
+      await queryClient.cancelQueries({ queryKey: [`/api/courses/${courseId}/progress`] });
+      const previousCompletedLessons = queryClient.getQueryData<string[]>([`/api/courses/${courseId}/progress`]);
+      queryClient.setQueryData<string[]>([`/api/courses/${courseId}/progress`], (old = []) => {
+        if (!old.includes(lessonId)) {
+          return [...old, lessonId];
+        }
+        return old;
+      });
+      return { previousCompletedLessons };
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/courses/${id}/progress`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/courses/${courseId}/progress`] });
+      // Also invalidate room progress if in room context
+      if (roomSlug && isRoomContext) {
+        queryClient.invalidateQueries({ queryKey: [`/api/rooms/${roomSlug}/user-progress`] });
+      }
       toast({
         title: "Lección completada",
         description: "Has marcado la lección como completada exitosamente.",
       });
     },
-    onError: (error) => {
+    onError: (error: any, lessonId: string, context: any) => {
+      // Rollback optimistic update on error
+      if (context?.previousCompletedLessons) {
+        queryClient.setQueryData([`/api/courses/${courseId}/progress`], context.previousCompletedLessons);
+      }
       if (isUnauthorizedError(error)) {
         toast({
           title: "Unauthorized",
@@ -517,14 +735,31 @@ export default function Course() {
     mutationFn: async (lessonId: string) => {
       return await apiRequest('DELETE', `/api/lessons/${lessonId}/complete`);
     },
+    onMutate: async (lessonId: string) => {
+      // Optimistically update the completed lessons list
+      await queryClient.cancelQueries({ queryKey: [`/api/courses/${courseId}/progress`] });
+      const previousCompletedLessons = queryClient.getQueryData<string[]>([`/api/courses/${courseId}/progress`]);
+      queryClient.setQueryData<string[]>([`/api/courses/${courseId}/progress`], (old = []) => {
+        return old.filter(id => id !== lessonId);
+      });
+      return { previousCompletedLessons };
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/courses/${id}/progress`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/courses/${courseId}/progress`] });
+      // Also invalidate room progress if in room context
+      if (roomSlug && isRoomContext) {
+        queryClient.invalidateQueries({ queryKey: [`/api/rooms/${roomSlug}/user-progress`] });
+      }
       toast({
         title: "Lección desmarcada",
         description: "Has desmarcado la lección como completada.",
       });
     },
-    onError: (error) => {
+    onError: (error: any, lessonId: string, context: any) => {
+      // Rollback optimistic update on error
+      if (context?.previousCompletedLessons) {
+        queryClient.setQueryData([`/api/courses/${courseId}/progress`], context.previousCompletedLessons);
+      }
       if (isUnauthorizedError(error)) {
         toast({
           title: "Unauthorized",
@@ -650,11 +885,20 @@ export default function Course() {
   const currentLesson = lessonsArray[currentLessonIndex];
 
   const handleLessonClick = (lessonIndex: number) => {
+    // Block navigation to non-accessible lessons for non-authenticated users
+    if (!isLessonAccessible(lessonIndex)) {
+      toast({
+        title: "Acceso restringido",
+        description: "Necesitas suscribirte para acceder a esta lección.",
+        variant: "destructive",
+      });
+      return;
+    }
     setCurrentLessonIndex(lessonIndex);
     // Guardar la posición de la nueva lección
     const lesson = lessonsArray[lessonIndex];
-    if (lesson && id) {
-      saveLessonPosition(id, lesson.id, (course as any)?.type, roomSlug);
+    if (lesson && courseId) {
+      saveLessonPosition(courseId, lesson.id, (course as any)?.type, roomSlug);
     }
   };
 
@@ -679,7 +923,7 @@ export default function Course() {
         setCurrentLessonIndex(prevNavigable);
         const lesson = lessonsArray[prevNavigable];
         if (lesson && id) {
-          saveLessonPosition(id, lesson.id, (course as any)?.type, roomSlug);
+          saveLessonPosition(courseId, lesson.id, (course as any)?.type, roomSlug);
         }
       } else {
         console.log('❌ No previous navigable lesson found');
@@ -692,7 +936,7 @@ export default function Course() {
       // Guardar la posición de la nueva lección
       const lesson = lessonsArray[newIndex];
       if (lesson && id) {
-        saveLessonPosition(id, lesson.id, (course as any)?.type, roomSlug);
+        saveLessonPosition(courseId, lesson.id, (course as any)?.type, roomSlug);
       }
     } else {
       console.log('❌ Already at first lesson');
@@ -721,7 +965,7 @@ export default function Course() {
         setCurrentLessonIndex(nextNavigable);
         const lesson = lessonsArray[nextNavigable];
         if (lesson && id) {
-          saveLessonPosition(id, lesson.id, (course as any)?.type, roomSlug);
+          saveLessonPosition(courseId, lesson.id, (course as any)?.type, roomSlug);
         }
       } else {
         console.log('❌ No next navigable lesson found');
@@ -734,7 +978,7 @@ export default function Course() {
       // Guardar la posición de la nueva lección
       const lesson = lessonsArray[newIndex];
       if (lesson && id) {
-        saveLessonPosition(id, lesson.id, (course as any)?.type, roomSlug);
+        saveLessonPosition(courseId, lesson.id, (course as any)?.type, roomSlug);
       }
     } else {
       console.log('❌ Already at last lesson');
@@ -783,11 +1027,12 @@ export default function Course() {
         )}
         
       <div className={cn(
-        "flex-1 flex bg-background lg:mr-[640px] h-screen overflow-y-auto hide-scrollbar transition-all duration-300",
-        sidebarOpen ? "lg:ml-[250px]" : "lg:ml-0"
+        "flex-1 flex bg-background h-screen overflow-y-auto hide-scrollbar transition-all duration-300",
+        sidebarOpen ? "lg:ml-[250px]" : "lg:ml-0",
+        rightSidebarOpen ? "lg:mr-[320px] xl:mr-[360px] 2xl:mr-[30vw]" : "lg:mr-0"
       )}>
         {/* Main Content - Center Column - Full width on mobile */}
-        <main className="flex-1 lg:w-[840px] bg-background overflow-y-auto hide-scrollbar h-screen">
+        <main className="flex-1 w-full bg-background overflow-y-auto hide-scrollbar h-screen">
           {/* Top Navigation Bar */}
           <div className="px-4 lg:px-8 py-4 flex items-center justify-between">
             <Link href={backUrl} className="flex-1 mt-[5px] mb-[5px]">
@@ -814,7 +1059,7 @@ export default function Course() {
 
           {/* Course Title */}
           <div className="px-4 lg:px-8 pb-4">
-            <h1 className="text-xl lg:text-2xl font-bold text-foreground">{(course as any)?.title}</h1>
+            <h1 className="text-xl lg:text-2xl xl:text-3xl font-bold text-foreground">{(course as any)?.title}</h1>
             {/* Progress bar - Only on mobile - Clickeable */}
             <div 
               className="lg:hidden mt-3 flex items-center gap-2 text-sm text-muted-foreground cursor-pointer hover:text-foreground transition-colors"
@@ -833,10 +1078,10 @@ export default function Course() {
             {/* Current Lesson Content */}
             {currentLesson && (
               <section>
-                {!isAuthenticated ? (
-                  // Blocked video/media for ALL lessons when not authenticated
+                {!isAuthenticated && !isFirstNavigableLesson(currentLessonIndex) ? (
+                  // Blocked video/media for lessons after the first when not authenticated
                   (<>
-                    {/* Media Area - Always blocked for non-authenticated users */}
+                    {/* Media Area - Blocked for non-authenticated users (except first lesson) */}
                     <div className="relative rounded-lg overflow-hidden mb-6 lg:mb-8 bg-black" style={{ paddingBottom: '56.25%' }}>
                       <div className="absolute top-0 left-0 w-full h-full flex items-center justify-center bg-black">
                         <div className="text-center text-white">
@@ -883,137 +1128,156 @@ export default function Course() {
                   </>)
                 )}
 
+                {/* Lesson Content with Tabs and Side-by-side Layout */}
                 <div className="space-y-6 lg:space-y-8">
-                  <div className="bg-card rounded-xl px-4 lg:px-8 py-3 lg:py-5 font-satoshi font-normal text-[14px] lg:text-[16px] leading-[22px] lg:leading-[26px] text-card-foreground pl-[20px] pr-[20px] pt-[5px] pb-[5px]">
-                    {/* Lesson Title inside content card */}
-                    <div className="mb-4 lg:mb-6">
-                      <h2 className="text-lg lg:text-xl font-bold text-foreground flex items-center justify-between font-satoshi mt-[0px] mb-[0px] pl-[0px] pr-[0px] ml-[0px] mr-[0px]" style={{fontSize: '24px'}}>
-                        <div className="flex items-center flex-1">
-                          <div className="w-8 h-8 rounded-lg mr-3 flex items-center justify-center flex-shrink-0" style={{backgroundColor: '#363636'}}>
-                            <GraduationCap className="h-4 w-4 text-foreground" />
-                          </div>
-                          <span className="flex-1 text-[22px]">{currentLesson.title}</span>
+                  {/* Lesson Header with Title and Action Buttons */}
+                  <div className="bg-card rounded-xl px-4 lg:px-8 py-4 lg:py-6">
+                    <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-4">
+                      <div className="flex items-center flex-1">
+                        <div className="w-7 h-7 lg:w-8 lg:h-8 rounded-lg mr-2 lg:mr-3 flex items-center justify-center flex-shrink-0" style={{backgroundColor: '#363636'}}>
+                          <GraduationCap className="h-3.5 w-3.5 lg:h-4 lg:w-4 text-foreground" />
                         </div>
-                        {isAuthenticated && (
-                          <TooltipProvider>
-                            <div className="flex gap-2 ml-4">
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => handleToggleComplete(currentLesson.id)}
-                                    disabled={markLessonCompleteMutation.isPending || unmarkLessonCompleteMutation.isPending}
-                                    data-testid="button-toggle-lesson-complete"
-                                    className={cn(
-                                      "h-8 px-3",
-                                      isRoomContext && !isLessonCompleted(currentLesson.id) && "hover:bg-black hover:text-white",
-                                      isLessonCompleted(currentLesson.id) && (isAgentesIARoom ? "bg-[#faa318] text-white border-[#faa318] hover:bg-[#faa318]/90" : "bg-primary text-white border-primary hover:bg-primary/90")
-                                    )}
-                                  >
-                                    {isLessonCompleted(currentLesson.id) ? (
-                                      <CheckCircle2 className="h-4 w-4 fill-current" />
-                                    ) : (
-                                      <CheckCircle2 className="h-4 w-4" />
-                                    )}
-                                    <span className="ml-2 hidden xl:inline">
-                                      {isLessonCompleted(currentLesson.id) ? 'Completado' : 'Completar'}
-                                    </span>
-                                  </Button>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                  <p>{isLessonCompleted(currentLesson.id) ? 'Marcar como no completada' : 'Marcar como completada'}</p>
-                                </TooltipContent>
-                              </Tooltip>
-                              
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => saveCourseMutation.mutate()}
-                                    disabled={saveCourseMutation.isPending}
-                                    data-testid="button-save-course"
-                                    className={cn(
-                                      "h-8 px-3",
-                                      isRoomContext && !isSaved && "hover:bg-black hover:text-white",
-                                      isSaved && (isAgentesIARoom ? "bg-[#faa318] text-white border-[#faa318] hover:bg-[#faa318]/90" : "bg-primary text-white border-primary hover:bg-primary/90")
-                                    )}
-                                  >
-                                    {isSaved ? (
-                                      <Heart className="h-4 w-4 fill-current" />
-                                    ) : (
-                                      <Heart className="h-4 w-4" />
-                                    )}
-                                    <span className="ml-2 hidden xl:inline">Favorito</span>
-                                  </Button>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                  <p>{isSaved ? 'Remover de favoritos' : 'Guardar curso'}</p>
-                                </TooltipContent>
-                              </Tooltip>
-                            </div>
-                          </TooltipProvider>
-                        )}
-                      </h2>
-                      {currentLesson.description && (
-                        <p className="text-muted-foreground text-sm lg:text-base">
-                          {currentLesson.description}
-                        </p>
+                        <h2 className="text-base lg:text-lg font-bold text-foreground font-satoshi flex-1 text-[16px] lg:text-[18px]">
+                          {currentLesson.title}
+                        </h2>
+                      </div>
+                      {isAuthenticated && (
+                        <div className="flex gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleToggleComplete(currentLesson.id)}
+                            disabled={markLessonCompleteMutation.isPending || unmarkLessonCompleteMutation.isPending}
+                            className={cn(
+                              "h-8 px-3",
+                              isLessonCompleted(currentLesson.id) && (isAgentesIARoom ? "bg-[#faa318] text-white border-[#faa318] hover:bg-[#faa318]/90" : "bg-primary text-white border-primary hover:bg-primary/90")
+                            )}
+                          >
+                            <CheckCircle2 className={cn("h-4 w-4", isLessonCompleted(currentLesson.id) && "fill-current")} />
+                            <span className="ml-2 hidden sm:inline">Concluir</span>
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => saveCourseMutation.mutate()}
+                            disabled={saveCourseMutation.isPending}
+                            className={cn(
+                              "h-8 px-3",
+                              isSaved && (isAgentesIARoom ? "bg-[#faa318] text-white border-[#faa318] hover:bg-[#faa318]/90" : "bg-primary text-white border-primary hover:bg-primary/90")
+                            )}
+                          >
+                            <Heart className={cn("h-4 w-4", isSaved && "fill-current")} />
+                            <span className="ml-2 hidden sm:inline">Favoritos</span>
+                          </Button>
+                        </div>
                       )}
                     </div>
-                    
-                    {!isAuthenticated ? (
-                      // Blocked content for non-authenticated users
-                      (currentLessonIndex === 0 ? // Primera lección: contenido completamente visible
-                      (<div className="prose prose-sm lg:prose-base max-w-none">
-                        {currentLesson.content && (
-                          <div className={cn("markdown-content", isRoomContext && "room-context")}>
-                            <ReactMarkdown 
-                              remarkPlugins={[remarkGfm]}
-                              rehypePlugins={[rehypeHighlight, rehypeRaw]}
-                            >
-                              {currentLesson.content}
-                            </ReactMarkdown>
-                          </div>
+                    {currentLesson.description && (
+                      <p className="text-muted-foreground text-sm lg:text-base mb-4">
+                        {currentLesson.description}
+                      </p>
+                    )}
+
+                    {/* Tabs - Mobile: Switch between content/comments, Desktop: Always visible */}
+                    <div className="flex items-center gap-6 border-b border-border">
+                      <button
+                        onClick={() => setActiveTab('content')}
+                        className={cn(
+                          "pb-3 px-1 text-sm font-medium transition-colors border-b-2",
+                          activeTab === 'content'
+                            ? isAgentesIARoom 
+                              ? "text-[#faa318] border-[#faa318]" 
+                              : "text-primary border-primary"
+                            : "text-muted-foreground border-transparent hover:text-foreground"
                         )}
-                        {!currentLesson.content && !currentLesson.videoUrl && !currentLesson.imageUrl && (
-                          <p className="text-muted-foreground italic">Contenido de la lección no disponible.</p>
-                        )}
-                      </div>) : // Lecciones 2+: contenido bloqueado
-                      (<div className="py-8">
-                        <p className="text-muted-foreground mb-6">Debes registrarte en Universidad Expertos NoCode IA para ver esta lección.</p>
-                        <Button 
-                          onClick={() => window.location.href = "/planes"}
-                          className="bg-primary text-primary-foreground hover:bg-primary/90"
+                      >
+                        Información
+                      </button>
+                      {isAuthenticated && (
+                        <button
+                          onClick={() => setActiveTab('comments')}
+                          className={cn(
+                            "pb-3 px-1 text-sm font-medium transition-colors border-b-2",
+                            activeTab === 'comments'
+                              ? isAgentesIARoom 
+                                ? "text-[#faa318] border-[#faa318]" 
+                                : "text-primary border-primary"
+                              : "text-muted-foreground border-transparent hover:text-foreground"
+                          )}
                         >
-                          Inscribirse
-                        </Button>
-                      </div>))
-                    ) : (
-                      // Normal content for authenticated users  
-                      (<div className="prose prose-sm lg:prose-base max-w-none">
-                        {currentLesson.content && (
-                          <div className={cn("markdown-content", isRoomContext && "room-context")}>
-                            <ReactMarkdown 
-                              remarkPlugins={[remarkGfm]}
-                              rehypePlugins={[rehypeHighlight, rehypeRaw]}
-                            >
-                              {currentLesson.content}
-                            </ReactMarkdown>
+                          Comentários
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Content Area - Shows only active tab content */}
+                  <div>
+                    {/* Informações Tab Content */}
+                    {activeTab === 'content' && (
+                      <div className="bg-card rounded-xl px-4 lg:px-8 py-4 lg:py-6 font-satoshi font-normal text-[13px] lg:text-[15px] leading-[20px] lg:leading-[24px] text-card-foreground">
+                        {!isAuthenticated ? (
+                          currentLessonIndex === 0 ? (
+                            <div className="prose prose-sm lg:prose-base max-w-none">
+                              {currentLesson.content && (
+                                <div className={cn("markdown-content", isRoomContext && "room-context")}>
+                                  <ReactMarkdown 
+                                    remarkPlugins={[remarkGfm]}
+                                    rehypePlugins={[rehypeHighlight, rehypeRaw]}
+                                  >
+                                    {currentLesson.content}
+                                  </ReactMarkdown>
+                                </div>
+                              )}
+                              {!currentLesson.content && !currentLesson.videoUrl && !currentLesson.imageUrl && (
+                                <p className="text-muted-foreground italic">Contenido de la lección no disponible.</p>
+                              )}
+                            </div>
+                          ) : (
+                            <div className="py-8">
+                              <p className="text-muted-foreground mb-6">Debes registrarte en Universidad Expertos NoCode IA para ver esta lección.</p>
+                              <Button 
+                                onClick={() => window.location.href = "/planes"}
+                                className="bg-primary text-primary-foreground hover:bg-primary/90"
+                              >
+                                Inscribirse
+                              </Button>
+                            </div>
+                          )
+                        ) : (
+                          <div className="prose prose-sm lg:prose-base max-w-none">
+                            {currentLesson.content && (
+                              <div className={cn("markdown-content", isRoomContext && "room-context")}>
+                                <ReactMarkdown 
+                                  remarkPlugins={[remarkGfm]}
+                                  rehypePlugins={[rehypeHighlight, rehypeRaw]}
+                                >
+                                  {currentLesson.content}
+                                </ReactMarkdown>
+                              </div>
+                            )}
+                            {!currentLesson.content && !currentLesson.videoUrl && !currentLesson.imageUrl && (
+                              <p className="text-muted-foreground italic">Contenido de la lección no disponible.</p>
+                            )}
                           </div>
                         )}
-                        {!currentLesson.content && !currentLesson.videoUrl && !currentLesson.imageUrl && (
-                          <p className="text-muted-foreground italic">Contenido de la lección no disponible.</p>
-                        )}
-                      </div>)
+                      </div>
+                    )}
+
+                    {/* Comentários Tab Content */}
+                    {activeTab === 'comments' && isAuthenticated && currentLesson && (
+                      <div>
+                        <LessonComments lessonId={currentLesson.id} />
+                      </div>
                     )}
                   </div>
                 </div>
 
-                {/* Lesson Comments Section - Only for authenticated users */}
-                {isAuthenticated && currentLesson && (
-                  <LessonComments lessonId={currentLesson.id} />
+                {/* Lesson Resources Section - Mobile Only */}
+                {currentLesson && (
+                  <div className="lg:hidden mt-6">
+                    <LessonResources lessonId={currentLesson.id} />
+                  </div>
                 )}
 
                 {/* Mobile & Tablet Lesson Navigation */}
@@ -1075,38 +1339,192 @@ export default function Course() {
           </div>
         </main>
 
+        {/* Right Sidebar Toggle Button - Shows when sidebar is collapsed */}
+        {!rightSidebarOpen && (
+          <button
+            onClick={() => setRightSidebarOpen(true)}
+            className="hidden lg:flex fixed right-0 top-1/2 -translate-y-1/2 z-50 bg-card hover:bg-muted border border-border rounded-l-lg p-2 transition-all duration-200 shadow-lg"
+            title="Mostrar contenido del curso"
+          >
+            <ChevronLeft className="h-5 w-5 text-muted-foreground" />
+          </button>
+        )}
+
         {/* Right Sidebar - Course Info & Lessons - Hidden on mobile */}
-        <aside className="hidden lg:block w-[640px] bg-background fixed right-0 top-0 h-screen overflow-y-auto scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent">
-          {/* Save Course Button - Aligned with top navigation */}
-          <div className="pl-6 pr-12 py-4 flex justify-end">
-            <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground text-[16px] bg-muted hover:bg-muted/80 mt-[6px] mb-[6px]">
-              <BookOpen className="h-4 w-4 mr-1" />
+        <aside className={cn(
+          "hidden lg:block w-[320px] xl:w-[360px] 2xl:w-[30vw] bg-background fixed right-0 top-0 h-screen overflow-y-auto scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent transition-transform duration-300 ease-in-out z-40",
+          rightSidebarOpen ? "translate-x-0" : "translate-x-full"
+        )}>
+          {/* Collapse Button */}
+          <div className="pl-3 xl:pl-4 2xl:pl-6 pr-3 xl:pr-4 2xl:pr-8 py-4 flex items-center justify-between">
+            <button
+              onClick={() => setRightSidebarOpen(false)}
+              className="p-1.5 hover:bg-muted rounded-lg transition-colors"
+              title="Ocultar panel"
+            >
+              <ChevronRight className="h-4 w-4 text-muted-foreground" />
+            </button>
+          </div>
+
+          {/* Action Buttons - Save Course & Ask Question - Aligned with video */}
+          <div className="px-4 xl:px-5 2xl:px-6 min-[1920px]:px-8 pt-[88px] lg:pt-[70px] pb-2 space-y-2">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="w-full text-muted-foreground hover:text-foreground text-[13px] xl:text-[14px] 2xl:text-[16px] bg-muted hover:bg-muted/80 justify-start"
+              onClick={() => saveCourseMutation.mutate()}
+              disabled={saveCourseMutation.isPending}
+            >
+              <BookOpen className="h-4 w-4 mr-2" />
               Guardar curso
             </Button>
+            {isAuthenticated && (
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="w-full text-muted-foreground hover:text-foreground text-[13px] xl:text-[14px] 2xl:text-[16px] bg-muted hover:bg-muted/80 justify-start"
+                onClick={() => setAskQuestionOpen(true)}
+              >
+                <MessageCirclePlus className="h-4 w-4 mr-2" />
+                Haz una pregunta
+              </Button>
+            )}
           </div>
           
-          <div className="pl-6 pr-12 pt-12 space-y-6">
+          <div className="px-4 xl:px-5 2xl:px-6 min-[1920px]:px-8 pt-2 space-y-2 xl:space-y-2.5 2xl:space-y-3 min-[1920px]:space-y-3.5 flex flex-col" style={{ maxHeight: 'calc(100vh - 280px)' }}>
             {/* Progress Card - Aligned with video */}
-            <div className="bg-card rounded-lg p-5">
+            <div className="bg-card rounded-lg p-4 xl:p-5 min-[1920px]:p-6">
               <div className="flex justify-between items-center mb-3">
-                <span className="font-satoshi font-medium text-foreground text-[16px]">Progreso del curso</span>
-                <span className="font-satoshi font-normal text-[14px] leading-[20px] text-muted-foreground">
+                <span className="font-satoshi font-medium text-foreground text-sm xl:text-[15px] min-[1920px]:text-base">Progreso del curso</span>
+                <span className="font-satoshi font-normal text-xs xl:text-sm min-[1920px]:text-[15px] leading-[20px] text-muted-foreground">
                   {isAuthenticated ? `${Math.round(progressPercentage)}% Completado` : "0% Completado"}
                 </span>
               </div>
-              <Progress value={isAuthenticated ? progressPercentage : 0} className={cn("h-2 bg-muted", isAgentesIARoom ? "[&>div]:bg-[#faa318]" : "[&>div]:bg-primary")} />
+              <Progress value={isAuthenticated ? progressPercentage : 0} className={cn("h-2 min-[1920px]:h-2.5 bg-muted", isAgentesIARoom ? "[&>div]:bg-[#faa318]" : "[&>div]:bg-primary")} />
             </div>
 
             {/* Lesson Resources Card - Show only if current lesson has resources */}
             {currentLesson && (
-              <LessonResources lessonId={currentLesson.id} />
+              <div className="flex-shrink-0">
+                <LessonResources lessonId={currentLesson.id} />
+              </div>
             )}
 
             {/* Lessons List Card - Separate card */}
-            <div className="bg-card rounded-lg p-5 mt-[11px] mb-[11px]">
-              <h3 className="font-satoshi font-medium text-foreground mb-5 text-[20px]">Contenido del curso</h3>
-              <div className="space-y-2 max-h-[475px] overflow-y-auto scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent pr-2">
-                {isRoomContext ? (
+            <div className="bg-card rounded-lg p-4 xl:p-5 2xl:p-6 min-[1920px]:p-7 mt-0 mb-2 flex-1 flex flex-col min-h-0">
+              <h3 className="font-satoshi font-medium text-foreground mb-4 text-[15px] xl:text-base 2xl:text-lg min-[1920px]:text-xl">Contenido del curso</h3>
+              <div className="space-y-2 min-[1920px]:space-y-3 flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent pr-2">
+                {hasNoModulesButHasLessons && directLessonsForList.length > 0 ? (
+                  /* Numbered List View for courses without modules - Similar to image style */
+                  <div className="relative pl-8">
+                    {directLessonsForList.map((lesson: any, index: number) => {
+                      const lessonIndex = lessonsArray.findIndex((l: any) => l.id === lesson.id);
+                      const isCurrentLesson = lessonIndex === currentLessonIndex;
+                      const isCompleted = isLessonCompleted(lesson.id);
+                      const isLast = index === directLessonsForList.length - 1;
+                      const lessonNumber = index + 1;
+
+                      // Check if current lesson is completed to determine line style
+                      // The line connects the current lesson to the next one, so it should be solid if current is completed
+                      const currentLessonCompleted = isCompleted;
+
+                      return (
+                        <div key={`lesson-${lesson.id}-${currentLessonCompleted}`} className="relative flex items-start gap-4 pb-6">
+                          {/* Vertical line connector - solid and colored if current lesson is completed */}
+                          {!isLast && (
+                            <div 
+                              key={`line-${lesson.id}-${currentLessonCompleted ? 'solid' : 'dashed'}`}
+                              className="absolute left-[15px] top-8 bottom-0 w-[2px] transition-all duration-300 z-0"
+                              style={currentLessonCompleted ? {
+                                // Solid colored line when current lesson is completed
+                                backgroundColor: isAgentesIARoom ? '#faa318' : '#6366f1',
+                                backgroundImage: 'none',
+                                opacity: 1
+                              } : {
+                                // Dashed line when current lesson is not completed - ALWAYS GRAY
+                                // Pattern: 6px line, 3px gap = 9px cycle (shows exactly 3 dashes: 6+3+6+3+6 = 24px)
+                                backgroundImage: `repeating-linear-gradient(
+                                  to bottom,
+                                  #6b7280 0px,
+                                  #6b7280 6px,
+                                  transparent 6px,
+                                  transparent 9px
+                                )`,
+                                backgroundColor: 'transparent',
+                                opacity: 1
+                              }}
+                            />
+                          )}
+                          
+                          {/* Circle with number or checkmark */}
+                          <div className="relative z-10 flex-shrink-0">
+                            <div
+                              className={cn(
+                                "w-8 h-8 rounded-full border-2 flex items-center justify-center transition-all",
+                                isCompleted
+                                  ? isAgentesIARoom 
+                                    ? "bg-[#faa318] border-[#faa318]" 
+                                    : "bg-primary border-primary"
+                                  : isCurrentLesson && isAgentesIARoom
+                                    ? "bg-transparent border-[#faa318]"
+                                    : isCurrentLesson
+                                    ? "bg-transparent border-primary"
+                                    : "bg-transparent border-border/60",
+                                isCurrentLesson && (isAgentesIARoom ? "ring-2 ring-[#faa318]/40" : "ring-2 ring-primary/40"),
+                                isLessonAccessible(lessonIndex) && "cursor-pointer hover:scale-110"
+                              )}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (isLessonAccessible(lessonIndex)) {
+                                  handleToggleComplete(lesson.id);
+                                }
+                              }}
+                            >
+                              {isCompleted ? (
+                                <Check size={16} className="text-white" />
+                              ) : (
+                                <span className={cn(
+                                  "text-sm font-semibold leading-none",
+                                  isCurrentLesson 
+                                    ? isAgentesIARoom ? "text-[#faa318]" : "text-primary"
+                                    : "text-muted-foreground"
+                                )}>
+                                  {lessonNumber}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Lesson content */}
+                          <div 
+                            className={cn(
+                              "flex-1 min-w-0 pt-1",
+                              isLessonAccessible(lessonIndex) && "cursor-pointer"
+                            )}
+                            onClick={() => isLessonAccessible(lessonIndex) && handleLessonClick(lessonIndex)}
+                          >
+                            <div className={cn(
+                              "font-satoshi text-sm xl:text-[15px] min-[1920px]:text-base transition-colors",
+                              isCurrentLesson
+                                ? isAgentesIARoom ? "text-[#faa318] font-semibold" : "text-primary font-semibold"
+                                : "text-foreground hover:text-primary"
+                            )}>
+                              {lesson.title}
+                            </div>
+                            
+                            {/* Lock icon for non-authenticated users */}
+                            {!isAuthenticated && !isFirstNavigableLesson(lessonIndex) && (
+                              <div className="flex items-center gap-2 mt-1">
+                                <Lock size={12} className="text-muted-foreground" />
+                                <span className="text-xs text-muted-foreground">Bloqueado</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : isRoomContext ? (
                   /* Room Context Timeline Design */
                   (modules.map((module: any, moduleIdx: number) => {
                     const moduleIndex = lessonsArray.findIndex((l: any) => l.id === module.id);
@@ -1127,7 +1545,9 @@ export default function Course() {
                           )}
                           onClick={() => {
                             if (!hasSubLessons) {
-                              isAuthenticated && handleLessonClick(moduleIndex);
+                              if (isLessonAccessible(moduleIndex)) {
+                                handleLessonClick(moduleIndex);
+                              }
                             } else {
                               toggleModuleCollapse(module.id);
                             }
@@ -1136,10 +1556,10 @@ export default function Course() {
                           <div className="h-3 w-3 rounded-full border border-primary/60 bg-transparent flex-shrink-0 mt-2" />
                           <div className="flex-1">
                             <div className="flex items-start justify-between">
-                              <h4 className="font-satoshi font-medium text-foreground text-[16px]">
+                              <h4 className="font-satoshi font-medium text-foreground text-sm xl:text-[15px] min-[1920px]:text-base">
                                 {module.title}
                               </h4>
-                              <span className={cn("font-semibold text-sm ml-2 flex-shrink-0", isAgentesIARoom ? "text-[#faa318]" : "text-primary")}>
+                              <span className={cn("font-semibold text-sm min-[1920px]:text-[15px] ml-2 flex-shrink-0", isAgentesIARoom ? "text-[#faa318]" : "text-primary")}>
                                 {progress.percentage}%
                               </span>
                             </div>
@@ -1189,12 +1609,12 @@ export default function Course() {
                                           ? isAgentesIARoom ? "bg-[#faa318] border-[#faa318]" : "bg-primary border-primary" 
                                           : "bg-transparent border-border",
                                         isCurrentLesson && (isAgentesIARoom ? "ring-2 ring-[#faa318]/40" : "ring-2 ring-primary/40"),
-                                        !isAuthenticated && "bg-muted border-muted",
-                                        isAuthenticated && "cursor-pointer hover:scale-110"
+                                        !isLessonAccessible(subIndex) && "bg-muted border-muted",
+                                        isLessonAccessible(subIndex) && "cursor-pointer hover:scale-110"
                                       )}
                                       onClick={(e) => {
                                         e.stopPropagation();
-                                        if (isAuthenticated) {
+                                        if (isLessonAccessible(subIndex)) {
                                           handleToggleComplete(subLesson.id);
                                         }
                                       }}
@@ -1208,17 +1628,17 @@ export default function Course() {
                                     <div 
                                       className={cn(
                                         "flex-1 min-w-0",
-                                        isAuthenticated && "cursor-pointer"
+                                        isLessonAccessible(subIndex) && "cursor-pointer"
                                       )}
-                                      onClick={() => isAuthenticated && handleLessonClick(subIndex)}
+                                      onClick={() => isLessonAccessible(subIndex) && handleLessonClick(subIndex)}
                                     >
                                       <div className={cn("font-satoshi pr-2 transition-colors text-muted-foreground text-[15px]", isAgentesIARoom ? "hover:text-[#faa318]" : "hover:text-primary")}>
                                         {subLesson.title}
                                       </div>
                                     </div>
                                     
-                                    {/* Lock Icon */}
-                                    {!isAuthenticated && (
+                                    {/* Lock Icon - Show for non-authenticated users except first lesson */}
+                                    {!isAuthenticated && !isFirstNavigableLesson(subIndex) && (
                                       <Lock size={12} className="text-muted-foreground flex-shrink-0 mt-1" />
                                     )}
                                   </div>
@@ -1258,7 +1678,9 @@ export default function Course() {
                         )}
                         onClick={() => {
                           if (!hasSubLessons) {
-                            handleLessonClick(moduleIndex);
+                            if (isLessonAccessible(moduleIndex)) {
+                              handleLessonClick(moduleIndex);
+                            }
                           } else {
                             toggleModuleCollapse(module.id);
                           }
@@ -1269,7 +1691,7 @@ export default function Course() {
                             className="flex items-start space-x-3 flex-1"
                           >
                             <div className="w-6 h-6 rounded border flex items-center justify-center font-medium flex-shrink-0 bg-muted text-foreground border-border text-[14px]">
-                              {!isAuthenticated ? (
+                              {!hasSubLessons && !isLessonAccessible(moduleIndex) ? (
                                 <Lock size={10} className="text-muted-foreground" />
                               ) : !hasSubLessons && isLessonCompleted(module.id) ? (
                                 <Check size={12} />
@@ -1288,7 +1710,7 @@ export default function Course() {
                           </div>
                           
                           <div className="flex items-center gap-2">
-                            {!hasSubLessons && !isAuthenticated && (
+                            {!hasSubLessons && !isLessonAccessible(moduleIndex) && (
                               <Lock size={14} className="text-muted-foreground mt-1" />
                             )}
                             
@@ -1318,27 +1740,28 @@ export default function Course() {
                         const subIndex = lessonsArray.findIndex((l: any) => l.id === subLesson.id);
                         const subLessonNumber = `${moduleNumber}.${subIdx + 1}`;
                         const isCurrentLesson = subIndex === currentLessonIndex;
+                        const isAccessible = isLessonAccessible(subIndex);
                         
                         return (
                           <div
                             key={subLesson.id}
-                            onClick={() => handleLessonClick(subIndex)}
+                            onClick={() => isAccessible && handleLessonClick(subIndex)}
                             className={cn(
                               "group py-3 px-4 ml-6 rounded-lg transition-colors",
-                              isAuthenticated 
+                              isAccessible 
                                 ? cn(
                                     "cursor-pointer text-muted-foreground",
                                     isCurrentLesson 
                                       ? "bg-muted border border-border" 
                                       : "hover:bg-muted/50 hover:border hover:border-border"
                                   )
-                                : "cursor-pointer hover:bg-muted/30 text-muted-foreground"
+                                : "cursor-not-allowed hover:bg-muted/30 text-muted-foreground"
                             )}
                           >
                             <div className="flex items-start justify-between">
                               <div className="flex items-start space-x-3">
                                 <div className="w-auto min-w-[28px] h-5 px-1.5 rounded border flex items-center justify-center font-medium flex-shrink-0 bg-muted text-foreground border-border text-[12px]">
-                                  {!isAuthenticated ? (
+                                  {!isAccessible ? (
                                     <Lock size={8} className="text-muted-foreground" />
                                   ) : isLessonCompleted(subLesson.id) ? (
                                     <Check size={8} />
@@ -1355,7 +1778,7 @@ export default function Course() {
                                   </div>
                                 </div>
                               </div>
-                              {!isAuthenticated && (
+                              {!isAccessible && (
                                 <Lock size={12} className="text-muted-foreground mt-1" />
                               )}
                             </div>
@@ -1387,7 +1810,7 @@ export default function Course() {
 
               {/* Next Course Card - Desktop - Only show in room context when there is a next course */}
               {isRoomContext && nextCourse && (
-                <Link href={`/sala/${roomSlug}/curso/${nextCourse.courseId}`}>
+                <Link href={`/sala/${roomSlug}/curso/${nextCourse.slug || nextCourse.courseId}`}>
                   <div className={cn("p-4 bg-[#1a1a1a] border rounded-lg cursor-pointer hover:bg-[#1a1a1a]/80 transition-all pt-[6px] pb-[6px] mt-[16px] mb-[16px]", isAgentesIARoom ? "border-[#faa318]" : "border-primary")}>
                     <div className="text-xs text-gray-400 mb-2 font-satoshi">Próximo contenido</div>
                     <div className="flex items-center gap-3">
@@ -1700,7 +2123,7 @@ export default function Course() {
           {/* Background overlay - partial transparency to show content behind */}
           <div className="absolute inset-0 bg-black/40" onClick={() => setIsMobileLessonsOpen(false)}></div>
           {/* Sliding sidebar from right */}
-          <div className="fixed right-0 top-0 h-full w-[85%] max-w-sm bg-[#171717] flex flex-col animate-in slide-in-from-right duration-300">
+          <div className="fixed right-0 top-0 h-full w-[85%] max-w-md bg-[#171717] flex flex-col animate-in slide-in-from-right duration-300">
             {/* Header */}
             <div className="flex items-center justify-between p-4 border-b border-gray-700">
               <div className="flex items-center space-x-3">
@@ -2030,7 +2453,7 @@ export default function Course() {
 
                 {/* Next Course Card - Only show in room context when there is a next course */}
                 {isRoomContext && nextCourse && (
-                  <Link href={`/sala/${roomSlug}/curso/${nextCourse.courseId}`}>
+                  <Link href={`/sala/${roomSlug}/curso/${nextCourse.slug || nextCourse.courseId}`}>
                     <div className={cn("mt-4 p-4 bg-[#1a1a1a] border rounded-lg cursor-pointer hover:bg-[#1a1a1a]/80 transition-all", isAgentesIARoom ? "border-[#faa318]" : "border-primary")}>
                       <div className="text-xs text-gray-400 mb-2 font-satoshi">Próximo contenido</div>
                       <div className="flex items-center gap-3">
@@ -2058,6 +2481,67 @@ export default function Course() {
           </div>
         </div>
       )}
+
+      {/* Ask Question Modal */}
+      <Dialog open={askQuestionOpen} onOpenChange={setAskQuestionOpen}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle>Haz una pregunta</DialogTitle>
+            <DialogDescription className="text-sm text-muted-foreground">
+              Escribe tu pregunta y se publicará en el canal de dudas correspondiente.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <Textarea
+              placeholder="Escribe tu pregunta aquí..."
+              value={questionText}
+              onChange={(e) => setQuestionText(e.target.value)}
+              className="min-h-[150px] resize-none"
+            />
+            
+            {!questionChannel && roomSlug && askQuestionOpen && (
+              <p className="text-sm text-muted-foreground">
+                Buscando canal de dudas para esta sala...
+              </p>
+            )}
+            
+            {!roomSlug && (
+              <p className="text-sm text-amber-500">
+                Este curso no está asociado a una sala. Las preguntas solo están disponibles para cursos dentro de salas.
+              </p>
+            )}
+            
+            {questionChannel && (
+              <p className="text-sm text-muted-foreground">
+                Tu pregunta se publicará en: <span className="font-medium text-foreground">#{questionChannel.name}</span>
+              </p>
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setAskQuestionOpen(false);
+                setQuestionText("");
+              }}
+              disabled={isSubmittingQuestion}
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleSubmitQuestion}
+              disabled={!questionText.trim() || !questionChannel || isSubmittingQuestion}
+              className={cn(
+                isAgentesIARoom ? "bg-[#faa318] hover:bg-[#faa318]/90" : "bg-primary hover:bg-primary/90"
+              )}
+            >
+              {isSubmittingQuestion ? "Publicando..." : questionChannel ? `Publicar en #${questionChannel.name}` : "Publicar"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

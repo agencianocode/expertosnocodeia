@@ -21,7 +21,12 @@ import {
   Bell,
   Edit,
   Check,
-  X
+  X,
+  Eye,
+  EyeOff,
+  Mail,
+  MailCheck,
+  AlertCircle
 } from "lucide-react";
 
 export default function Profile() {
@@ -33,9 +38,15 @@ export default function Profile() {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
+  const [shortDescription, setShortDescription] = useState("");
+  const [bio, setBio] = useState("");
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [isResendingVerification, setIsResendingVerification] = useState(false);
   
   // Focus preferences states
   const [experienceLevel, setExperienceLevel] = useState("");
@@ -60,6 +71,8 @@ export default function Profile() {
       setFirstName((user as any)?.firstName || "");
       setLastName((user as any)?.lastName || "");
       setEmail((user as any)?.email || "");
+      setShortDescription((user as any)?.shortDescription || "");
+      setBio((user as any)?.bio || "");
       // Initialize focus preferences
       setExperienceLevel((user as any)?.experienceLevel || "Principiante");
       setPreferredSkillType((user as any)?.preferredSkillType || "Consultoría");
@@ -106,7 +119,12 @@ export default function Profile() {
   // Update password mutation
   const updatePasswordMutation = useMutation({
     mutationFn: async (data: any) => {
-      return apiRequest('PATCH', '/api/users/change-password', data);
+      const response = await apiRequest('PATCH', '/api/users/change-password', data);
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Error al cambiar la contraseña');
+      }
+      return response.json();
     },
     onSuccess: () => {
       toast({
@@ -117,14 +135,46 @@ export default function Profile() {
       setNewPassword("");
       setConfirmPassword("");
     },
-    onError: () => {
+    onError: (error: any) => {
       toast({
         title: "Error",
-        description: "No se pudo cambiar tu contraseña. Verifica tus datos.",
+        description: error.message || "No se pudo cambiar tu contraseña. Verifica tus datos.",
         variant: "destructive",
       });
     },
   });
+
+  // Resend verification email mutation
+  const resendVerificationMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest('POST', '/api/auth/resend-verification', {});
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Error al reenviar el email');
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Email enviado",
+        description: "Se ha enviado un nuevo email de verificación. Por favor revisa tu bandeja de entrada.",
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/auth/user'] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "No se pudo reenviar el email de verificación",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleResendVerification = () => {
+    setIsResendingVerification(true);
+    resendVerificationMutation.mutate();
+    setTimeout(() => setIsResendingVerification(false), 2000);
+  };
 
   // Update focus preferences mutation
   const updateFocusMutation = useMutation({
@@ -154,11 +204,33 @@ export default function Profile() {
       firstName,
       lastName,
       email,
+      shortDescription,
+      bio,
     });
   };
 
   const handleUpdatePassword = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validate inputs
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      toast({
+        title: "Error",
+        description: "Todos los campos son requeridos.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate password strength
+    if (newPassword.length < 6) {
+      toast({
+        title: "Error",
+        description: "La nueva contraseña debe tener al menos 6 caracteres.",
+        variant: "destructive",
+      });
+      return;
+    }
     
     if (newPassword !== confirmPassword) {
       toast({
@@ -364,6 +436,30 @@ export default function Profile() {
                         />
                       </div>
 
+                      <div>
+                        <label className="block text-sm text-gray-400 mb-2">Descripción corta</label>
+                        <Input
+                          value={shortDescription}
+                          onChange={(e) => setShortDescription(e.target.value)}
+                          className="bg-[#2a2a2a] border-dark-border text-white"
+                          placeholder="Una breve descripción sobre ti..."
+                          maxLength={150}
+                        />
+                        <p className="text-xs text-gray-500 mt-1">{shortDescription.length}/150</p>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm text-gray-400 mb-2">Biografía</label>
+                        <textarea
+                          value={bio}
+                          onChange={(e) => setBio(e.target.value)}
+                          className="w-full bg-[#2a2a2a] border border-dark-border text-white rounded px-3 py-2 min-h-[120px] resize-y"
+                          placeholder="Cuéntanos más sobre ti..."
+                          maxLength={1000}
+                        />
+                        <p className="text-xs text-gray-500 mt-1">{bio.length}/1000</p>
+                      </div>
+
                       <Button 
                         type="submit" 
                         disabled={updateProfileMutation.isPending}
@@ -376,6 +472,45 @@ export default function Profile() {
                 </Card>
               </section>
 
+              {/* Verificación de email */}
+              {!(user as any)?.isEmailVerified && (
+                <section>
+                  <Card className="bg-yellow-500/10 border-yellow-500/20">
+                    <CardContent className="p-6">
+                      <div className="flex items-start gap-4">
+                        <div className="w-10 h-10 bg-yellow-500/20 rounded-full flex items-center justify-center flex-shrink-0">
+                          <AlertCircle className="w-5 h-5 text-yellow-500" />
+                        </div>
+                        <div className="flex-1">
+                          <h3 className="text-white font-semibold mb-1">Email no verificado</h3>
+                          <p className="text-gray-400 text-sm mb-4">
+                            Por favor verifica tu email para acceder a todas las funcionalidades. Revisa tu bandeja de entrada o carpeta de spam.
+                          </p>
+                          <Button
+                            onClick={handleResendVerification}
+                            disabled={isResendingVerification}
+                            size="sm"
+                            className="bg-yellow-500 hover:bg-yellow-600 text-white"
+                          >
+                            {isResendingVerification ? (
+                              <>
+                                <Mail className="w-4 h-4 mr-2 animate-spin" />
+                                Enviando...
+                              </>
+                            ) : (
+                              <>
+                                <Mail className="w-4 h-4 mr-2" />
+                                Reenviar email de verificación
+                              </>
+                            )}
+                          </Button>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </section>
+              )}
+
               {/* Datos */}
               <section>
                 <h2 className="text-lg font-semibold text-white mb-4">Datos</h2>
@@ -385,6 +520,17 @@ export default function Profile() {
                       <div className="flex justify-between items-center">
                         <span className="text-gray-400">ID de usuario</span>
                         <span className="text-white">{(user as any)?.id}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-400">Email</span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-white">{(user as any)?.email}</span>
+                          {(user as any)?.isEmailVerified ? (
+                            <MailCheck className="w-4 h-4 text-green-500" />
+                          ) : (
+                            <Mail className="w-4 h-4 text-yellow-500" />
+                          )}
+                        </div>
                       </div>
                       <div className="flex justify-between items-center">
                         <span className="text-gray-400">Miembro desde</span>
@@ -407,35 +553,62 @@ export default function Profile() {
                     <form onSubmit={handleUpdatePassword} className="space-y-4">
                       <div>
                         <label className="block text-sm text-gray-400 mb-2">Contraseña actual</label>
-                        <Input
-                          type="password"
-                          value={currentPassword}
-                          onChange={(e) => setCurrentPassword(e.target.value)}
-                          className="bg-[#2a2a2a] border-dark-border text-white"
-                          placeholder="Tu contraseña actual"
-                        />
+                        <div className="relative">
+                          <Input
+                            type={showCurrentPassword ? "text" : "password"}
+                            value={currentPassword}
+                            onChange={(e) => setCurrentPassword(e.target.value)}
+                            className="bg-[#2a2a2a] border-dark-border text-white pr-10"
+                            placeholder="Tu contraseña actual"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white"
+                          >
+                            {showCurrentPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                          </button>
+                        </div>
                       </div>
                       
                       <div>
                         <label className="block text-sm text-gray-400 mb-2">Nueva contraseña</label>
-                        <Input
-                          type="password"
-                          value={newPassword}
-                          onChange={(e) => setNewPassword(e.target.value)}
-                          className="bg-[#2a2a2a] border-dark-border text-white"
-                          placeholder="Tu nueva contraseña"
-                        />
+                        <div className="relative">
+                          <Input
+                            type={showNewPassword ? "text" : "password"}
+                            value={newPassword}
+                            onChange={(e) => setNewPassword(e.target.value)}
+                            className="bg-[#2a2a2a] border-dark-border text-white pr-10"
+                            placeholder="Tu nueva contraseña"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowNewPassword(!showNewPassword)}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white"
+                          >
+                            {showNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                          </button>
+                        </div>
                       </div>
 
                       <div>
                         <label className="block text-sm text-gray-400 mb-2">Confirmar nueva contraseña</label>
-                        <Input
-                          type="password"
-                          value={confirmPassword}
-                          onChange={(e) => setConfirmPassword(e.target.value)}
-                          className="bg-[#2a2a2a] border-dark-border text-white"
-                          placeholder="Confirma tu nueva contraseña"
-                        />
+                        <div className="relative">
+                          <Input
+                            type={showConfirmPassword ? "text" : "password"}
+                            value={confirmPassword}
+                            onChange={(e) => setConfirmPassword(e.target.value)}
+                            className="bg-[#2a2a2a] border-dark-border text-white pr-10"
+                            placeholder="Confirma tu nueva contraseña"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white"
+                          >
+                            {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                          </button>
+                        </div>
                       </div>
 
                       <Button 

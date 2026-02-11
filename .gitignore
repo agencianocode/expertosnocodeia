@@ -73,3 +73,10 @@ vite.config.ts.*
 # Supabase
 supabase/.branches
 supabase/.temp
+
+# Replit (obsoleto - ya no se usa)
+.replit
+
+# Archivos temporales de migración
+backups/
+scripts/migration-temp/

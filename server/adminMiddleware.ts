@@ -7,15 +7,28 @@ export const isAdmin: RequestHandler = async (req: any, res, next) => {
     console.log("isAdmin middleware - req.user:", req.user);
     // Get userId from req.user (set by supabaseAuth middleware)
     const userId = req.user?.id || req.user?.claims?.sub;
+    const userEmail = req.user?.email;
     console.log("isAdmin middleware - userId:", userId);
+    console.log("isAdmin middleware - userEmail:", userEmail);
     
-    if (!userId) {
-      console.log("isAdmin middleware - No userId found");
+    if (!userId && !userEmail) {
+      console.log("isAdmin middleware - No userId or email found");
       return res.status(401).json({ message: "Usuario no autenticado" });
     }
 
-    const adminUser = await storage.getAdminUser(userId);
-    console.log("isAdmin middleware - adminUser:", adminUser);
+    let adminUser = await storage.getAdminUser(userId);
+    console.log("isAdmin middleware - adminUser by ID:", adminUser);
+    
+    // If not found by ID and we have an email, try finding by email
+    if ((!adminUser || !adminUser.isActive) && userEmail) {
+      console.log("isAdmin middleware - Trying to find user by email:", userEmail);
+      const dbUser = await storage.getUserByEmail(userEmail);
+      if (dbUser) {
+        console.log("isAdmin middleware - Found user by email, ID:", dbUser.id);
+        adminUser = await storage.getAdminUser(dbUser.id);
+        console.log("isAdmin middleware - adminUser by email lookup:", adminUser);
+      }
+    }
     
     if (!adminUser || !adminUser.isActive) {
       console.log("isAdmin middleware - Admin user not found or inactive");

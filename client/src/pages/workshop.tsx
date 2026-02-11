@@ -300,17 +300,71 @@ export default function Workshop() {
                               variant="ghost" 
                               size="sm" 
                               className="text-gray-400 hover:text-white p-2"
-                              onClick={() => {
+                              onClick={async () => {
                                 if (resource.fileUrl) {
-                                  // Check if it's a cloud storage file (internal path) or external URL
+                                  try {
+                                    // Construct the download URL
+                                    let downloadUrl: string;
+                                    
+                                    // Check if it's a server-relative path or Supabase URL
                                   if (resource.fileUrl.startsWith('/lesson-resources/')) {
-                                    // Internal cloud storage file - construct the correct API URL
+                                      // Server-relative path - construct the correct API URL
                                     const cleanPath = resource.fileUrl.substring(1); // Remove leading '/'
-                                    const downloadUrl = `/api/${cleanPath}`;
-                                    window.open(downloadUrl, '_blank');
+                                      downloadUrl = `/api/${cleanPath}`;
+                                    } else if (resource.fileUrl.includes('supabase.co/storage')) {
+                                      // Supabase public URL - convert to server path
+                                      const urlMatch = resource.fileUrl.match(/lesson-resources\/([^\/]+)\/(.+)$/);
+                                      if (urlMatch) {
+                                        const [, resourceId, fileName] = urlMatch;
+                                        downloadUrl = `/api/lesson-resources/${resourceId}/${fileName}`;
+                                      } else {
+                                        downloadUrl = resource.fileUrl;
+                                      }
                                   } else {
-                                    // External URL - open in new tab
-                                    window.open(resource.fileUrl, '_blank');
+                                      // External URL
+                                      downloadUrl = resource.fileUrl;
+                                    }
+                                    
+                                    // Fetch the file as blob to force download
+                                    const response = await fetch(downloadUrl, {
+                                      credentials: 'include',
+                                      method: 'GET',
+                                    });
+                                    
+                                    if (!response.ok) {
+                                      const errorText = await response.text();
+                                      console.error('Download failed:', response.status, errorText);
+                                      throw new Error(`Failed to download: ${response.status} ${response.statusText}`);
+                                    }
+                                    
+                                    // Get the blob
+                                    const blob = await response.blob();
+                                    
+                                    // Create object URL from blob
+                                    const blobUrl = window.URL.createObjectURL(blob);
+                                    
+                                    // Create download link
+                                    const link = document.createElement('a');
+                                    link.href = blobUrl;
+                                    link.download = resource.fileName || resource.title || 'download';
+                                    link.style.display = 'none';
+                                    
+                                    // Add to DOM
+                                    document.body.appendChild(link);
+                                    
+                                    // Trigger download
+                                    link.click();
+                                    
+                                    // Clean up
+                                    setTimeout(() => {
+                                      if (document.body.contains(link)) {
+                                        document.body.removeChild(link);
+                                      }
+                                      window.URL.revokeObjectURL(blobUrl);
+                                    }, 100);
+                                  } catch (error: any) {
+                                    console.error('Error downloading file:', error);
+                                    alert(`Error al descargar el archivo: ${error.message || 'Error desconocido'}`);
                                   }
                                 }
                               }}

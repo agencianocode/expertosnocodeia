@@ -20,7 +20,9 @@ import {
   Eye,
   Users,
   Calendar,
-  Trash2
+  Trash2,
+  ChevronUp,
+  ChevronDown
 } from "lucide-react";
 import { useAdmin } from "@/hooks/useAdmin";
 import { useToast } from "@/hooks/use-toast";
@@ -56,6 +58,48 @@ export default function ContentManagement() {
       toast({
         title: "Error al eliminar",
         description: error.message || "No se pudo eliminar el curso",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Move course up mutation
+  const moveCourseUpMutation = useMutation({
+    mutationFn: async (courseId: string) => {
+      return await apiRequest('PUT', `/api/admin/courses/${courseId}/move-up`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/courses"] });
+      toast({
+        title: "Curso movido",
+        description: "El curso se ha movido hacia arriba",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "No se pudo mover el curso",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Move course down mutation
+  const moveCourseDownMutation = useMutation({
+    mutationFn: async (courseId: string) => {
+      return await apiRequest('PUT', `/api/admin/courses/${courseId}/move-down`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/courses"] });
+      toast({
+        title: "Curso movido",
+        description: "El curso se ha movido hacia abajo",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "No se pudo mover el curso",
         variant: "destructive",
       });
     },
@@ -178,12 +222,35 @@ export default function ContentManagement() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {coursesList.map((course: any) => (
+            {coursesList.map((course: any, index: number) => (
               <Card key={course.id} className="bg-slate-900/50 border-slate-700 hover:bg-slate-900/70 transition-colors">
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between">
                     <CardTitle className="text-white text-lg line-clamp-2">{course.title}</CardTitle>
                     <div className="flex gap-1 ml-2">
+                      {/* Reorder buttons */}
+                      <div className="flex flex-col gap-1 mr-1">
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => moveCourseUpMutation.mutate(course.id)}
+                          disabled={index === 0 || moveCourseUpMutation.isPending}
+                          className="h-6 w-6 p-0"
+                          title="Mover arriba"
+                        >
+                          <ChevronUp className="h-3 w-3" />
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => moveCourseDownMutation.mutate(course.id)}
+                          disabled={index === coursesList.length - 1 || moveCourseDownMutation.isPending}
+                          className="h-6 w-6 p-0"
+                          title="Mover abajo"
+                        >
+                          <ChevronDown className="h-3 w-3" />
+                        </Button>
+                      </div>
                       <Link href={`/admin/content/course/${course.id}/edit`}>
                         <Button variant="ghost" size="sm">
                           <Edit className="h-4 w-4" />
@@ -406,7 +473,7 @@ export default function ContentManagement() {
                 className="pl-10 bg-slate-900/50 border-slate-700"
               />
             </div>
-            <Link href="/admin/content/course/new">
+            <Link href="/admin/content/course/new?type=guide">
               <Button>
                 <Plus className="h-4 w-4 mr-2" />
                 Nueva Guía
@@ -503,7 +570,7 @@ export default function ContentManagement() {
                 <p className="text-gray-400 mb-4">
                   {searchTerm ? "No se encontraron guías que coincidan con tu búsqueda." : "Aún no hay guías creadas."}
                 </p>
-                <Link href="/admin/content/course/new">
+                <Link href="/admin/content/course/new?type=guide">
                   <Button>
                     <Plus className="h-4 w-4 mr-2" />
                     Crear Primera Guía

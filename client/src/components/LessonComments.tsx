@@ -5,9 +5,12 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent } from "@/components/ui/card";
-import { MessageCircle, Send, Reply, Heart } from "lucide-react";
+import { MessageCircle, Send, Reply, Heart, AlertCircle, Mail, Paperclip, X, File, Image as ImageIcon } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { es } from "date-fns/locale";
+import { useToast } from "@/hooks/use-toast";
+import { useSimpleAuth } from "@/hooks/use-simple-auth";
+import { useLocation } from "wouter";
 
 interface Comment {
   id: string;
@@ -21,6 +24,11 @@ interface Comment {
   replyCount: number;
   likeCount: number;
   isLikedByCurrentUser?: boolean;
+  metadata?: {
+    attachmentUrl?: string;
+    attachmentType?: 'image' | 'document';
+    fileName?: string;
+  };
   user: {
     firstName: string;
     lastName: string;
@@ -87,6 +95,36 @@ const CommentItem = ({
           <p className="text-sm mb-2 whitespace-pre-wrap" data-testid={`comment-content-${comment.id}`}>
             {comment.content}
           </p>
+
+          {/* Attachment display */}
+          {comment.metadata?.attachmentUrl && (
+            <div className="mt-2 mb-2">
+              {comment.metadata.attachmentType === 'image' ? (
+                <a 
+                  href={comment.metadata.attachmentUrl} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="block"
+                >
+                  <img 
+                    src={comment.metadata.attachmentUrl} 
+                    alt={comment.metadata.fileName || "Adjunto"} 
+                    className="max-w-full max-h-64 rounded-lg border border-border cursor-pointer hover:opacity-90 transition-opacity"
+                  />
+                </a>
+              ) : (
+                <a 
+                  href={comment.metadata.attachmentUrl} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 p-2 border border-border rounded-lg hover:bg-muted transition-colors"
+                >
+                  <File className="h-4 w-4" />
+                  <span className="text-sm">{comment.metadata.fileName || "Documento adjunto"}</span>
+                </a>
+              )}
+            </div>
+          )}
 
           <div className="flex items-center gap-2">
             <Button
@@ -183,17 +221,46 @@ export function LessonComments({ lessonId }: LessonCommentsProps) {
   const [newComment, setNewComment] = useState("");
   const [replyTo, setReplyTo] = useState<string | null>(null);
   const [replyContents, setReplyContents] = useState<Record<string, string>>({});
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [attachmentUrl, setAttachmentUrl] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const { toast } = useToast();
 
   const { data: comments = [], isLoading, refetch } = useQuery<Comment[]>({
     queryKey: ['/api/lessons', lessonId, 'comments'],
   });
 
+  const uploadAttachmentMutation = useMutation({
+    mutationFn: async (file: File) => {
+      const formData = new FormData();
+      formData.append('file', file);
+      
+      const response = await fetch('/api/comments/upload-attachment', {
+        method: 'POST',
+        body: formData,
+        headers: {
+          // Don't set Content-Type, let browser set it with boundary
+        },
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Error al subir el archivo');
+      }
+
+      return response.json();
+    },
+  });
+
   const createCommentMutation = useMutation({
-    mutationFn: async (content: string) => {
-      return apiRequest('POST', `/api/lessons/${lessonId}/comments`, { content, lessonId });
+    mutationFn: async ({ content, attachmentUrl }: { content: string; attachmentUrl?: string | null }) => {
+      return apiRequest('POST', `/api/lessons/${lessonId}/comments`, { content, lessonId, attachmentUrl });
     },
     onSuccess: async () => {
       setNewComment("");
+      setSelectedFile(null);
+      setAttachmentUrl(null);
       // Force refetch instead of invalidation
       await refetch();
     },
@@ -225,9 +292,50 @@ export function LessonComments({ lessonId }: LessonCommentsProps) {
     },
   });
 
-  const handleSubmitComment = () => {
-    if (newComment.trim()) {
-      createCommentMutation.mutate(newComment);
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file size (10MB limit)
+    if (file.size > 10 * 1024 * 1024) {
+      toast({
+        title: "Error",
+        description: "El archivo es demasiado grande. El tamaño máximo es 10MB.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setSelectedFile(file);
+    setIsUploading(true);
+
+    try {
+      const result = await uploadAttachmentMutation.mutateAsync(file);
+      setAttachmentUrl(result.attachmentUrl);
+      toast({
+        title: "Archivo adjuntado",
+        description: "El archivo se ha adjuntado correctamente.",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Error al subir el archivo",
+        variant: "destructive",
+      });
+      setSelectedFile(null);
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleRemoveAttachment = () => {
+    setSelectedFile(null);
+    setAttachmentUrl(null);
+  };
+
+  const handleSubmitComment = async () => {
+    if (newComment.trim() || attachmentUrl) {
+      createCommentMutation.mutate({ content: newComment.trim(), attachmentUrl });
     }
   };
 
@@ -247,32 +355,114 @@ export function LessonComments({ lessonId }: LessonCommentsProps) {
   };
 
   return (
-    <div className="mt-12 pt-8 border-t border-border" id="comments">
-      <div className="flex items-center gap-2 mb-6">
+    <div className="lg:mt-0 mt-12 lg:pt-0 pt-8 lg:border-t-0 border-t border-border" id="comments">
+      <div className="flex items-center gap-2 mb-4 lg:mb-6">
         <MessageCircle className="h-5 w-5" />
-        <h2 className="text-xl font-semibold">
+        <h2 className="text-lg lg:text-xl font-semibold">
           Comentarios ({comments.length})
         </h2>
       </div>
 
-      <Card className="mb-6">
-        <CardContent className="pt-6">
+      <Card className="mb-4 lg:mb-6">
+        <CardContent className="pt-4 lg:pt-6">
           <Textarea
             placeholder="Comparte tus dudas, ideas o experiencias sobre esta lección..."
             value={newComment}
             onChange={(e) => setNewComment(e.target.value)}
-            className="min-h-[120px] mb-3"
+            className="min-h-[100px] lg:min-h-[120px] mb-3 text-sm"
             data-testid="textarea-new-comment"
           />
-          <Button
-            onClick={handleSubmitComment}
-            disabled={createCommentMutation.isPending || !newComment.trim()}
-            data-testid="button-submit-comment"
-            className="bg-[#faa318] text-white hover:bg-[#faa318]/90"
-          >
-            <Send className="h-4 w-4 mr-2" />
-            {createCommentMutation.isPending ? 'Publicando...' : 'Publicar comentario'}
-          </Button>
+          
+          {/* File attachment section */}
+          <div className="mb-3">
+            <input
+              type="file"
+              id="comment-attachment"
+              accept="image/*,.pdf,.doc,.docx,.txt"
+              onChange={handleFileSelect}
+              className="hidden"
+              disabled={isUploading || createCommentMutation.isPending}
+            />
+            <div className="flex items-center gap-2">
+              <label
+                htmlFor="comment-attachment"
+                className="flex items-center gap-2 px-3 py-2 border border-border rounded-lg cursor-pointer hover:bg-muted transition-colors text-sm"
+              >
+                <Paperclip className="h-4 w-4" />
+                {isUploading ? 'Subiendo...' : 'Adjuntar archivo'}
+              </label>
+              
+              {selectedFile && (
+                <div className="flex items-center gap-2 px-3 py-2 bg-muted rounded-lg text-sm">
+                  <File className="h-4 w-4" />
+                  <span className="truncate max-w-[200px]">{selectedFile.name}</span>
+                  <button
+                    onClick={handleRemoveAttachment}
+                    className="ml-2 hover:text-destructive transition-colors"
+                    type="button"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              )}
+            </div>
+            
+            {attachmentUrl && (
+              <div className="mt-2">
+                {attachmentUrl.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? (
+                  <div className="relative inline-block">
+                    <img 
+                      src={attachmentUrl} 
+                      alt="Vista previa" 
+                      className="max-w-[200px] max-h-[150px] rounded-lg border border-border"
+                    />
+                    <button
+                      onClick={handleRemoveAttachment}
+                      className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full p-1 hover:bg-destructive/90"
+                      type="button"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2 px-3 py-2 bg-muted rounded-lg text-sm">
+                    <File className="h-4 w-4" />
+                    <span>{selectedFile?.name || 'Documento adjunto'}</span>
+                    <button
+                      onClick={handleRemoveAttachment}
+                      className="ml-2 hover:text-destructive transition-colors"
+                      type="button"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          <div className="flex gap-2">
+            <Button
+              onClick={handleSubmitComment}
+              disabled={createCommentMutation.isPending || (!newComment.trim() && !attachmentUrl) || isUploading}
+              data-testid="button-submit-comment"
+              className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90 text-sm"
+            >
+              <Send className="h-4 w-4 mr-2" />
+              {createCommentMutation.isPending ? 'Publicando...' : 'Comentar'}
+            </Button>
+            {(selectedFile || attachmentUrl) && (
+              <Button
+                onClick={handleRemoveAttachment}
+                variant="ghost"
+                size="sm"
+                className="text-sm"
+                type="button"
+              >
+                Cancelar
+              </Button>
+            )}
+          </div>
         </CardContent>
       </Card>
 

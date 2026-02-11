@@ -19,6 +19,7 @@ import {
   subscriptionPlans,
   userSubscriptions,
   userUsage,
+  userPoints,
   userOnboardingResponses,
   comments,
   commentLikes,
@@ -72,6 +73,8 @@ import {
   type InsertUserSubscription,
   type UserUsage,
   type InsertUserUsage,
+  type UserPoints,
+  type InsertUserPoints,
   type UserOnboardingResponse,
   type InsertUserOnboardingResponse,
   type Comment,
@@ -98,7 +101,7 @@ import {
   type InsertMessageReaction,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc, and, sql, not, inArray, isNull } from "drizzle-orm";
+import { eq, desc, and, sql, not, inArray, isNull, or } from "drizzle-orm";
 
 // Interface for storage operations
 export interface IStorage {
@@ -108,11 +111,23 @@ export interface IStorage {
   
   // New authentication methods
   getUserByEmail(email: string): Promise<User | undefined>;
+  getAllUsers(options?: {
+    limit?: number;
+    offset?: number;
+    search?: string;
+    subscriptionStatus?: 'active' | 'trial' | 'cancelled' | 'none';
+  }): Promise<Array<User & { 
+    subscription?: UserSubscription & { plan?: SubscriptionPlan };
+    subscriptionCount?: number;
+  }>>;
   createUser(userData: Partial<User>): Promise<User>;
   updateUserLastLogin(userId: string): Promise<void>;
   updatePasswordResetToken(userId: string, token: string, expires: Date): Promise<void>;
   getUserByPasswordResetToken(token: string): Promise<User | undefined>;
   updatePassword(userId: string, hashedPassword: string): Promise<void>;
+  setEmailVerificationToken(userId: string, token: string, expires: Date): Promise<void>;
+  getUserByEmailVerificationToken(token: string): Promise<User | undefined>;
+  verifyUserEmail(userId: string): Promise<void>;
   
   // Existing user methods
   updateUserOnboarding(userId: string, data: OnboardingData): Promise<User>;
@@ -163,6 +178,10 @@ export interface IStorage {
   deleteLesson(id: string): Promise<boolean>;
   moveLessonUp(id: string): Promise<boolean>;
   moveLessonDown(id: string): Promise<boolean>;
+  
+  // Course reordering
+  moveCourseUp(id: string): Promise<boolean>;
+  moveCourseDown(id: string): Promise<boolean>;
   
   // Lesson progress operations
   markLessonComplete(userId: string, lessonId: string): Promise<UserLessonProgress>;
@@ -225,6 +244,7 @@ export interface IStorage {
 
   // Subscription operations
   getAllSubscriptionPlans(): Promise<SubscriptionPlan[]>;
+  getSubscriptionPlan(id: string): Promise<SubscriptionPlan | undefined>;
   getSubscriptionPlanByName(name: string): Promise<SubscriptionPlan | undefined>;
   createSubscriptionPlan(data: InsertSubscriptionPlan): Promise<SubscriptionPlan>;
   updateSubscriptionPlan(id: string, data: Partial<InsertSubscriptionPlan>): Promise<SubscriptionPlan>;
@@ -263,6 +283,7 @@ export interface IStorage {
   
   // Room operations
   getPublishedRooms(): Promise<Room[]>;
+  getAllRooms(): Promise<Room[]>;
   getRoomById(id: string): Promise<Room | undefined>;
   getRoomBySlug(slug: string): Promise<Room | undefined>;
   getRoomDetailWithPhases(slug: string, userId?: string): Promise<{
@@ -271,10 +292,11 @@ export interface IStorage {
       isLocked: boolean;
       content: Array<PhaseContent & { courseData?: Course }>;
     }>;
+    promoBanners: PromoBanner[];
     userHasAccess: boolean;
   } | undefined>;
   getPhaseContent(phaseId: string): Promise<Array<PhaseContent & { courseData?: Course }>>;
-  getNextCourseInRoom(roomSlug: string, currentCourseId: string): Promise<{ courseId: string; title: string; coverImageUrl: string | null } | null>;
+  getNextCourseInRoom(roomSlug: string, currentCourseId: string): Promise<{ courseId: string; slug?: string; title: string; coverImageUrl: string | null } | null>;
   createRoom(data: InsertRoom): Promise<Room>;
   updateRoom(id: string, data: UpdateRoom): Promise<Room>;
   
@@ -283,6 +305,13 @@ export interface IStorage {
   updatePhase(id: string, data: Partial<InsertPhase>): Promise<Phase>;
   addContentToPhase(data: InsertPhaseContent): Promise<PhaseContent>;
   removeContentFromPhase(id: string): Promise<boolean>;
+  
+  // Promo Banner operations
+  getAllPromoBanners(roomId?: string): Promise<PromoBanner[]>;
+  getPromoBannerById(id: string): Promise<PromoBanner | undefined>;
+  createPromoBanner(data: InsertPromoBanner): Promise<PromoBanner>;
+  updatePromoBanner(id: string, data: Partial<InsertPromoBanner>): Promise<PromoBanner>;
+  deletePromoBanner(id: string): Promise<boolean>;
   
   // ========================================
   // ACCESS CONTROL OPERATIONS
@@ -311,8 +340,8 @@ export interface IStorage {
     replies: Array<Comment & { user: { firstName: string; lastName: string; profileImageUrl: string | null } }> 
   }>>;
   getCommentById(commentId: string): Promise<Comment | undefined>;
-  createComment(data: Omit<InsertComment, 'depth' | 'replyCount' | 'rootCommentId' | 'metadata'>): Promise<Comment>;
-  createReply(parentCommentId: string, data: Omit<InsertComment, 'parentCommentId' | 'depth' | 'replyCount' | 'rootCommentId' | 'metadata'>): Promise<Comment>;
+  createComment(data: Omit<InsertComment, 'depth' | 'replyCount' | 'rootCommentId' | 'metadata'> & { metadata?: any }): Promise<Comment>;
+  createReply(parentCommentId: string, data: Omit<InsertComment, 'parentCommentId' | 'depth' | 'replyCount' | 'rootCommentId' | 'metadata'> & { metadata?: any }): Promise<Comment>;
   markCommentReviewed(commentId: string): Promise<Comment>;
   getUnreadCommentCount(): Promise<number>;
 }
@@ -345,7 +374,116 @@ export class DatabaseStorage implements IStorage {
     return user;
   }
 
+  async getAllUsers(options?: {
+    limit?: number;
+    offset?: number;
+    search?: string;
+    subscriptionStatus?: 'active' | 'trial' | 'cancelled' | 'none';
+  }): Promise<Array<User & { 
+    subscription?: UserSubscription & { plan?: SubscriptionPlan };
+    subscriptionCount?: number;
+  }>> {
+    // Build where conditions
+    const whereConditions: any[] = [];
+
+    // Apply search filter
+    if (options?.search) {
+      const searchTerm = `%${options.search}%`;
+      whereConditions.push(or(
+        sql`${users.email} ILIKE ${searchTerm}`,
+        sql`${users.firstName} ILIKE ${searchTerm}`,
+        sql`${users.lastName} ILIKE ${searchTerm}`,
+        sql`CONCAT(${users.firstName}, ' ', ${users.lastName}) ILIKE ${searchTerm}`
+      ));
+    }
+
+    // Build base query
+    const baseQuery = db
+      .select({
+        user: users,
+        subscription: userSubscriptions,
+        plan: subscriptionPlans,
+      })
+      .from(users)
+      .leftJoin(userSubscriptions, and(
+        eq(userSubscriptions.userId, users.id),
+        eq(userSubscriptions.status, 'active')
+      ))
+      .leftJoin(subscriptionPlans, eq(userSubscriptions.planId, subscriptionPlans.id));
+
+    // Apply subscription status filter
+    if (options?.subscriptionStatus) {
+      if (options.subscriptionStatus === 'none') {
+        whereConditions.push(isNull(userSubscriptions.id));
+      } else if (options.subscriptionStatus === 'active') {
+        whereConditions.push(eq(userSubscriptions.status, 'active'));
+      } else if (options.subscriptionStatus === 'trial') {
+        whereConditions.push(eq(userSubscriptions.status, 'trial'));
+      } else if (options.subscriptionStatus === 'cancelled') {
+        whereConditions.push(eq(userSubscriptions.status, 'cancelled'));
+      }
+    }
+
+    // Build final query with all conditions
+    let finalQuery = baseQuery;
+    if (whereConditions.length > 0) {
+      finalQuery = baseQuery.where(whereConditions.length === 1 ? whereConditions[0] : and(...whereConditions)) as any;
+    }
+
+    // Apply ordering and pagination
+    finalQuery = finalQuery.orderBy(desc(users.createdAt)) as any;
+    
+    if (options?.limit) {
+      finalQuery = finalQuery.limit(options.limit) as any;
+    }
+    if (options?.offset) {
+      finalQuery = finalQuery.offset(options.offset) as any;
+    }
+
+    const results = await finalQuery;
+
+    // Get subscription count for each user
+    const userIds = results.map(r => r.user.id);
+    const subscriptionCounts = await db
+      .select({
+        userId: userSubscriptions.userId,
+        count: sql<number>`COUNT(*)::int`,
+      })
+      .from(userSubscriptions)
+      .where(inArray(userSubscriptions.userId, userIds))
+      .groupBy(userSubscriptions.userId);
+
+    const countMap = new Map(subscriptionCounts.map(sc => [sc.userId, sc.count]));
+
+    // Transform results
+    return results.map(result => ({
+      ...result.user,
+      subscription: result.subscription ? {
+        ...result.subscription,
+        plan: result.plan || undefined,
+      } : undefined,
+      subscriptionCount: countMap.get(result.user.id) || 0,
+    }));
+  }
+
   async createUser(userData: Partial<User>): Promise<User> {
+    // Auto-sync to Beehiiv if configured
+    if (userData.email && process.env.BEEHIIV_API_KEY && process.env.BEEHIIV_PUBLICATION_ID) {
+      // Run in background to not block user creation
+      import('./beehiiv').then(({ subscribeToBeehiiv }) => {
+        subscribeToBeehiiv({
+          email: userData.email!,
+          firstName: userData.firstName || null,
+          lastName: userData.lastName || null,
+          reactivate: true,
+          tags: ['new-user'],
+        }).catch((error) => {
+          console.error('⚠️ Error auto-syncing user to Beehiiv (non-blocking):', error.message);
+        });
+      }).catch(() => {
+        // Ignore import errors
+      });
+    }
     const [user] = await db
       .insert(users)
       .values(userData as any) // Cast to bypass type checking for dynamic user creation
@@ -383,12 +521,49 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updatePassword(userId: string, hashedPassword: string): Promise<void> {
-    await db
+    const result = await db
       .update(users)
       .set({
         password: hashedPassword,
         passwordResetToken: null,
         passwordResetExpires: null,
+        updatedAt: new Date(),
+      })
+      .where(eq(users.id, userId))
+      .returning();
+    
+    if (!result || result.length === 0) {
+      throw new Error(`No se pudo actualizar la contraseña. Usuario ${userId} no encontrado.`);
+    }
+    
+    console.log(`✅ Password updated in database for user ${userId}`);
+  }
+
+  async setEmailVerificationToken(userId: string, token: string, expires: Date): Promise<void> {
+    await db
+      .update(users)
+      .set({
+        emailVerificationToken: token,
+        emailVerificationExpires: expires,
+        updatedAt: new Date(),
+      })
+      .where(eq(users.id, userId));
+  }
+
+  async getUserByEmailVerificationToken(token: string): Promise<User | undefined> {
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(eq(users.emailVerificationToken, token));
+    return user;
+  }
+
+  async verifyUserEmail(userId: string): Promise<void> {
+    await db
+      .update(users)
+      .set({
+        isEmailVerified: true,
+        emailVerificationToken: null,
         updatedAt: new Date(),
       })
       .where(eq(users.id, userId));
@@ -557,14 +732,20 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getCourseById(id: string): Promise<Course | undefined> {
-    const [course] = await db.select().from(courses).where(eq(courses.id, id));
+    // Try to find by ID first, then by slug
+    const [course] = await db.select().from(courses).where(
+      or(
+        eq(courses.id, id),
+        eq(courses.slug, id)
+      )
+    ).limit(1);
     
     if (course) {
       // Get the category IDs for this course
       const courseCats = await db
         .select({ categoryId: courseCategories.categoryId })
         .from(courseCategories)
-        .where(eq(courseCategories.courseId, id));
+        .where(eq(courseCategories.courseId, course.id));
       
       // Add categoryIds to the course object for the admin form
       (course as any).categoryIds = courseCats.map(cc => cc.categoryId);
@@ -903,6 +1084,18 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateCourseProgress(userId: string, courseId: string): Promise<void> {
+    // Get existing progress to check if course was already completed
+    const existingProgress = await db
+      .select()
+      .from(userProgress)
+      .where(and(
+        eq(userProgress.userId, userId),
+        eq(userProgress.courseId, courseId)
+      ))
+      .limit(1);
+
+    const wasAlreadyCompleted = existingProgress.length > 0 && existingProgress[0].isCompleted;
+
     // Get total number of lessons in the course
     const totalLessons = await db
       .select({ count: sql<number>`cast(count(*) as integer)` })
@@ -931,6 +1124,22 @@ export class DatabaseStorage implements IStorage {
       lastAccessedAt: new Date(),
       ...(isCompleted && { completedAt: new Date() })
     });
+
+    // Record event if course was just completed
+    if (isCompleted && !wasAlreadyCompleted) {
+      try {
+        const { recordEvent } = await import('./eventSystem');
+        const course = await this.getCourseById(courseId);
+        await recordEvent(userId, 'course_completed', {
+          courseId,
+          courseTitle: course?.title,
+          completedLessons: completedCount,
+          totalLessons: totalCount,
+        });
+      } catch (error: any) {
+        console.error('Error recording course_completed event:', error.message);
+      }
+    }
   }
 
   // Certificate operations
@@ -1003,12 +1212,87 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteLesson(id: string): Promise<boolean> {
-    await db.transaction(async (tx) => {
-      await tx.delete(userRecentActivity).where(eq(userRecentActivity.lastLessonId, id));
+    try {
+      // First verify the lesson exists
+      const [lesson] = await db.select().from(lessons).where(eq(lessons.id, id));
+      if (!lesson) {
+        console.error(`❌ Lección no encontrada: ${id}`);
+        return false;
+      }
+
+      console.log(`🗑️ Eliminando lección: ${id} - "${lesson.title}"`);
       
-      await tx.delete(lessons).where(eq(lessons.id, id));
-    });
-    return true;
+      await db.transaction(async (tx) => {
+        // First, recursively delete all sub-lessons (lessons with this lesson as parent)
+        const subLessons = await tx.select().from(lessons).where(eq(lessons.parentLessonId, id));
+        console.log(`📋 Encontradas ${subLessons.length} sublecciones para eliminar`);
+        for (const subLesson of subLessons) {
+          // Recursively delete sub-lessons
+          await this.deleteLessonInTransaction(tx, subLesson.id);
+        }
+        
+        // Get all comments for this lesson to delete their likes first
+        const lessonComments = await tx.select().from(comments).where(eq(comments.lessonId, id));
+        const commentIds = lessonComments.map(c => c.id);
+        console.log(`💬 Encontrados ${commentIds.length} comentarios para eliminar`);
+        
+        // Delete comment likes first (if any)
+        if (commentIds.length > 0) {
+          await tx.delete(commentLikes).where(inArray(commentLikes.commentId, commentIds));
+          console.log(`👍 Eliminados likes de comentarios`);
+        }
+        
+        // Delete all related data in correct order
+        await tx.delete(userRecentActivity).where(eq(userRecentActivity.lastLessonId, id));
+        await tx.delete(userLessonProgress).where(eq(userLessonProgress.lessonId, id));
+        await tx.delete(lessonResources).where(eq(lessonResources.lessonId, id));
+        await tx.delete(contentBlocks).where(eq(contentBlocks.lessonId, id));
+        await tx.delete(comments).where(eq(comments.lessonId, id));
+        
+        // Finally, delete the lesson itself
+        await tx.delete(lessons).where(eq(lessons.id, id));
+        console.log(`✅ Lección eliminada exitosamente: ${id}`);
+      });
+      return true;
+    } catch (error: any) {
+      console.error('❌ Error en deleteLesson:', {
+        lessonId: id,
+        message: error.message,
+        code: error.code,
+        constraint: error.constraint,
+        detail: error.detail,
+        stack: error.stack
+      });
+      throw error;
+    }
+  }
+
+  // Helper method for recursive deletion within a transaction
+  private async deleteLessonInTransaction(tx: any, id: string): Promise<void> {
+    // Recursively delete all sub-lessons
+    const subLessons = await tx.select().from(lessons).where(eq(lessons.parentLessonId, id));
+    for (const subLesson of subLessons) {
+      await this.deleteLessonInTransaction(tx, subLesson.id);
+    }
+    
+    // Get all comments for this lesson to delete their likes first
+    const lessonComments = await tx.select().from(comments).where(eq(comments.lessonId, id));
+    const commentIds = lessonComments.map((c: any) => c.id);
+    
+    // Delete comment likes first (if any)
+    if (commentIds.length > 0) {
+      await tx.delete(commentLikes).where(inArray(commentLikes.commentId, commentIds));
+    }
+    
+    // Delete all related data for this lesson
+    await tx.delete(userRecentActivity).where(eq(userRecentActivity.lastLessonId, id));
+    await tx.delete(userLessonProgress).where(eq(userLessonProgress.lessonId, id));
+    await tx.delete(lessonResources).where(eq(lessonResources.lessonId, id));
+    await tx.delete(contentBlocks).where(eq(contentBlocks.lessonId, id));
+    await tx.delete(comments).where(eq(comments.lessonId, id));
+    
+    // Delete the lesson itself
+    await tx.delete(lessons).where(eq(lessons.id, id));
   }
 
   async moveLessonUp(id: string): Promise<boolean> {
@@ -1090,6 +1374,196 @@ export class DatabaseStorage implements IStorage {
       await tx.update(lessons)
         .set({ order: lesson.order })
         .where(eq(lessons.id, nextLesson.id));
+    });
+
+    return true;
+  }
+
+  async moveCourseUp(id: string): Promise<boolean> {
+    // Get the course to move
+    const [course] = await db.select().from(courses).where(eq(courses.id, id));
+    if (!course) return false;
+
+    const currentOrder = (course as any).order || 0;
+    
+    // Find course with order immediately before this one (same type)
+    const [previousCourse] = await db
+      .select()
+      .from(courses)
+      .where(and(
+        sql`COALESCE(${courses.order}, 0) < ${currentOrder}`,
+        eq(courses.type, course.type) // Only swap with same type
+      ))
+      .orderBy(desc(sql`COALESCE(${courses.order}, 0)`))
+      .limit(1);
+
+    if (!previousCourse) return false; // Already at top
+
+    const previousOrder = (previousCourse as any).order || 0;
+
+    // Swap orders in courses table AND phaseContent table
+    await db.transaction(async (tx) => {
+      // Swap in courses table
+      await tx.update(courses)
+        .set({ order: previousOrder })
+        .where(eq(courses.id, id));
+      
+      await tx.update(courses)
+        .set({ order: currentOrder })
+        .where(eq(courses.id, previousCourse.id));
+
+      // Also update phaseContent.order for all rooms where these courses appear
+      // Get all phaseContent entries for both courses
+      const currentCoursePhaseContent = await tx
+        .select()
+        .from(phaseContent)
+        .where(and(
+          eq(phaseContent.contentId, id),
+          or(
+            eq(phaseContent.contentType, 'course'),
+            eq(phaseContent.contentType, 'workshop'),
+            eq(phaseContent.contentType, 'guide')
+          )
+        ));
+
+      const previousCoursePhaseContent = await tx
+        .select()
+        .from(phaseContent)
+        .where(and(
+          eq(phaseContent.contentId, previousCourse.id),
+          or(
+            eq(phaseContent.contentType, 'course'),
+            eq(phaseContent.contentType, 'workshop'),
+            eq(phaseContent.contentType, 'guide')
+          )
+        ));
+
+      // Group by phaseId to swap within the same phase
+      const phaseMap = new Map<string, { current: any, previous: any }>();
+      
+      for (const item of currentCoursePhaseContent) {
+        if (!phaseMap.has(item.phaseId)) {
+          phaseMap.set(item.phaseId, { current: null, previous: null });
+        }
+        phaseMap.get(item.phaseId)!.current = item;
+      }
+
+      for (const item of previousCoursePhaseContent) {
+        if (!phaseMap.has(item.phaseId)) {
+          phaseMap.set(item.phaseId, { current: null, previous: null });
+        }
+        phaseMap.get(item.phaseId)!.previous = item;
+      }
+
+      // Swap phaseContent.order for courses in the same phase
+      for (const [phaseId, { current, previous }] of Array.from(phaseMap.entries())) {
+        if (current && previous) {
+          // Both courses are in the same phase - swap their orders
+          const tempOrder = current.order;
+          await tx.update(phaseContent)
+            .set({ order: previous.order })
+            .where(eq(phaseContent.id, current.id));
+          
+          await tx.update(phaseContent)
+            .set({ order: tempOrder })
+            .where(eq(phaseContent.id, previous.id));
+        }
+      }
+    });
+
+    return true;
+  }
+
+  async moveCourseDown(id: string): Promise<boolean> {
+    // Get the course to move
+    const [course] = await db.select().from(courses).where(eq(courses.id, id));
+    if (!course) return false;
+
+    const currentOrder = (course as any).order || 0;
+    
+    // Find course with order immediately after this one (same type)
+    const [nextCourse] = await db
+      .select()
+      .from(courses)
+      .where(and(
+        sql`COALESCE(${courses.order}, 0) > ${currentOrder}`,
+        eq(courses.type, course.type) // Only swap with same type
+      ))
+      .orderBy(sql`COALESCE(${courses.order}, 0)`)
+      .limit(1);
+
+    if (!nextCourse) return false; // Already at bottom
+
+    const nextOrder = (nextCourse as any).order || 0;
+
+    // Swap orders in courses table AND phaseContent table
+    await db.transaction(async (tx) => {
+      // Swap in courses table
+      await tx.update(courses)
+        .set({ order: nextOrder })
+        .where(eq(courses.id, id));
+      
+      await tx.update(courses)
+        .set({ order: currentOrder })
+        .where(eq(courses.id, nextCourse.id));
+
+      // Also update phaseContent.order for all rooms where these courses appear
+      // Get all phaseContent entries for both courses
+      const currentCoursePhaseContent = await tx
+        .select()
+        .from(phaseContent)
+        .where(and(
+          eq(phaseContent.contentId, id),
+          or(
+            eq(phaseContent.contentType, 'course'),
+            eq(phaseContent.contentType, 'workshop'),
+            eq(phaseContent.contentType, 'guide')
+          )
+        ));
+
+      const nextCoursePhaseContent = await tx
+        .select()
+        .from(phaseContent)
+        .where(and(
+          eq(phaseContent.contentId, nextCourse.id),
+          or(
+            eq(phaseContent.contentType, 'course'),
+            eq(phaseContent.contentType, 'workshop'),
+            eq(phaseContent.contentType, 'guide')
+          )
+        ));
+
+      // Group by phaseId to swap within the same phase
+      const phaseMap = new Map<string, { current: any, next: any }>();
+      
+      for (const item of currentCoursePhaseContent) {
+        if (!phaseMap.has(item.phaseId)) {
+          phaseMap.set(item.phaseId, { current: null, next: null });
+        }
+        phaseMap.get(item.phaseId)!.current = item;
+      }
+
+      for (const item of nextCoursePhaseContent) {
+        if (!phaseMap.has(item.phaseId)) {
+          phaseMap.set(item.phaseId, { current: null, next: null });
+        }
+        phaseMap.get(item.phaseId)!.next = item;
+      }
+
+      // Swap phaseContent.order for courses in the same phase
+      for (const [phaseId, { current, next }] of Array.from(phaseMap.entries())) {
+        if (current && next) {
+          // Both courses are in the same phase - swap their orders
+          const tempOrder = current.order;
+          await tx.update(phaseContent)
+            .set({ order: next.order })
+            .where(eq(phaseContent.id, current.id));
+          
+          await tx.update(phaseContent)
+            .set({ order: tempOrder })
+            .where(eq(phaseContent.id, next.id));
+        }
+      }
     });
 
     return true;
@@ -1216,7 +1690,10 @@ export class DatabaseStorage implements IStorage {
 
   // Admin Course operations (including unpublished)
   async getAllCoursesAdmin(): Promise<Course[]> {
-    return await db.select().from(courses).orderBy(desc(courses.createdAt));
+    return await db
+      .select()
+      .from(courses)
+      .orderBy(sql`COALESCE(${courses.order}, 0) ASC`, desc(courses.createdAt));
   }
 
   async createCourse(data: InsertCourse): Promise<Course> {
@@ -1244,6 +1721,17 @@ export class DatabaseStorage implements IStorage {
     const categoryIds = (data as any).categoryIds;
     delete (data as any).categoryIds;
     
+    if ((data as any).createdAt) {
+      const nextCreatedAt = (data as any).createdAt instanceof Date
+        ? (data as any).createdAt
+        : new Date((data as any).createdAt);
+      if (Number.isNaN(nextCreatedAt.getTime())) {
+        delete (data as any).createdAt;
+      } else {
+        (data as any).createdAt = nextCreatedAt;
+      }
+    }
+    
     const [course] = await db
       .update(courses)
       .set({ ...data, updatedAt: new Date() })
@@ -1270,6 +1758,25 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteCourse(id: string): Promise<boolean> {
+    // First, get the course to determine its type
+    const course = await this.getCourseById(id);
+    if (!course) {
+      return false;
+    }
+    
+    // Delete phase_content references (orphaned content)
+    // This removes the course from all phases/rooms where it was assigned
+    await db.delete(phaseContent).where(
+      and(
+        eq(phaseContent.contentId, id),
+        eq(phaseContent.contentType, course.type as any)
+      )
+    );
+    
+    // Delete course categories associations
+    await db.delete(courseCategories).where(eq(courseCategories.courseId, id));
+    
+    // Delete the course itself
     const result = await db.delete(courses).where(eq(courses.id, id));
     return (result.rowCount ?? 0) > 0;
   }
@@ -1363,6 +1870,7 @@ export class DatabaseStorage implements IStorage {
       .limit(1);
 
     let lessonProgress: UserLessonProgress;
+    const wasAlreadyCompleted = existingProgress.length > 0 && existingProgress[0].isCompleted;
 
     if (existingProgress.length > 0) {
       // Update existing record to mark as completed
@@ -1392,6 +1900,20 @@ export class DatabaseStorage implements IStorage {
         })
         .returning();
       lessonProgress = progress;
+    }
+
+    // Record event if this is a new completion
+    if (!wasAlreadyCompleted) {
+      try {
+        const { recordEvent } = await import('./eventSystem');
+        await recordEvent(userId, 'lesson_completed', {
+          lessonId,
+          courseId: lesson.courseId,
+          lessonTitle: lesson.title,
+        });
+      } catch (error: any) {
+        console.error('Error recording lesson_completed event:', error.message);
+      }
     }
 
     // Update overall course progress
@@ -1534,6 +2056,17 @@ export class DatabaseStorage implements IStorage {
       .orderBy(subscriptionPlans.price);
   }
 
+  async getSubscriptionPlan(id: string): Promise<SubscriptionPlan | undefined> {
+    const [plan] = await db
+      .select()
+      .from(subscriptionPlans)
+      .where(and(
+        eq(subscriptionPlans.id, id),
+        eq(subscriptionPlans.isActive, true)
+      ));
+    return plan;
+  }
+
   async getSubscriptionPlanByName(name: string): Promise<SubscriptionPlan | undefined> {
     const [plan] = await db
       .select()
@@ -1581,11 +2114,51 @@ export class DatabaseStorage implements IStorage {
     return subscription?.subscription;
   }
 
+  // Helper function to update user role based on subscription status
+  async updateUserRoleBasedOnSubscription(userId: string): Promise<void> {
+    try {
+      const activeSubscription = await this.getUserActiveSubscription(userId);
+      
+      // Update role based on subscription
+      if (activeSubscription && activeSubscription.status === 'active') {
+        // User has active subscription -> paid_user
+        await db
+          .update(users)
+          .set({ 
+            role: 'paid_user',
+            updatedAt: new Date()
+          })
+          .where(eq(users.id, userId));
+      } else {
+        // No active subscription -> user (but don't downgrade if they're admin/instructor/moderator)
+        const user = await this.getUser(userId);
+        if (user && ['user', 'paid_user'].includes(user.role || 'user')) {
+          await db
+            .update(users)
+            .set({ 
+              role: 'user',
+              updatedAt: new Date()
+            })
+            .where(eq(users.id, userId));
+        }
+      }
+    } catch (error) {
+      console.error('Error updating user role based on subscription:', error);
+      // Don't throw - this is a background update
+    }
+  }
+
   async createUserSubscription(data: InsertUserSubscription): Promise<UserSubscription> {
     const [subscription] = await db
       .insert(userSubscriptions)
       .values(data)
       .returning();
+    
+    // Update user role if subscription is active
+    if (subscription.status === 'active') {
+      await this.updateUserRoleBasedOnSubscription(subscription.userId);
+    }
+    
     return subscription;
   }
 
@@ -1595,6 +2168,12 @@ export class DatabaseStorage implements IStorage {
       .set({ ...data, updatedAt: new Date() })
       .where(eq(userSubscriptions.id, id))
       .returning();
+    
+    // Update user role if subscription status changed
+    if (data.status !== undefined) {
+      await this.updateUserRoleBasedOnSubscription(subscription.userId);
+    }
+    
     return subscription;
   }
 
@@ -1611,6 +2190,10 @@ export class DatabaseStorage implements IStorage {
         eq(userSubscriptions.status, 'active')
       ))
       .returning();
+    
+    // Update user role after cancellation
+    await this.updateUserRoleBasedOnSubscription(userId);
+    
     return subscription;
   }
 
@@ -1769,6 +2352,13 @@ export class DatabaseStorage implements IStorage {
       .orderBy(rooms.order);
   }
 
+  async getAllRooms(): Promise<Room[]> {
+    return await db
+      .select()
+      .from(rooms)
+      .orderBy(rooms.order);
+  }
+
   async getRoomsByCourseCategory(categoryId: string): Promise<Room[]> {
     // Get rooms that contain courses with the specified category
     const roomsWithCategory = await db
@@ -1801,7 +2391,10 @@ export class DatabaseStorage implements IStorage {
     const [room] = await db
       .select()
       .from(rooms)
-      .where(eq(rooms.slug, slug));
+      .where(and(
+        eq(rooms.slug, slug),
+        eq(rooms.isPublished, true)
+      ));
     return room;
   }
 
@@ -1814,57 +2407,143 @@ export class DatabaseStorage implements IStorage {
     promoBanners: PromoBanner[];
     userHasAccess: boolean;
   } | undefined> {
-    // Get room
-    const room = await this.getRoomBySlug(slug);
-    if (!room) return undefined;
-
-    // Check user access
-    let userHasAccess = false;
-    if (userId) {
-      // Check if user is admin (admins have access to all rooms)
-      const adminUser = await this.getAdminUser(userId);
-      const isAdmin = !!adminUser;
+    try {
+      // Step 1: Get room (published first, then unpublished if admin)
+      let room: Room | undefined = await this.getRoomBySlug(slug);
+      let adminUser: any = undefined;
       
-      if (isAdmin) {
-        userHasAccess = true;
-      } else {
-        // Check for plan access (highest level)
-        const hasPlanAccess = await this.checkUserAccess(userId, 'plan');
-        // Check for room access
-        const hasRoomAccess = await this.checkUserAccess(userId, 'room', room.id);
-        userHasAccess = hasPlanAccess || hasRoomAccess;
+      // If not found and user is authenticated, check if admin can see unpublished
+      if (!room && userId) {
+        [adminUser, room] = await Promise.all([
+          this.getAdminUser(userId).catch(() => undefined),
+          db.select().from(rooms).where(eq(rooms.slug, slug)).limit(1).then(r => r[0]).catch(() => undefined),
+        ]);
+        // Only use unpublished room if user is admin
+        if (!adminUser || !room) {
+          room = undefined;
+        }
       }
-    }
+      
+      if (!room) return undefined;
 
-    // Get phases for this room
-    const phasesList = await db
-      .select()
-      .from(phases)
-      .where(eq(phases.roomId, room.id))
-      .orderBy(phases.order);
+      const now = new Date();
+      
+      // Step 2: Get phases, banners, and access checks in parallel
+      const [phasesList, banners, accessChecks] = await Promise.all([
+        // Get phases
+        db
+          .select()
+          .from(phases)
+          .where(eq(phases.roomId, room.id))
+          .orderBy(phases.order),
+        // Get promo banners
+        this.getRoomPromoBanners(room.id),
+        // Check user access (only if userId exists, reuse adminUser if we already have it)
+        userId ? Promise.all([
+          adminUser !== undefined 
+            ? Promise.resolve(adminUser)
+            : this.getAdminUser(userId).catch(() => undefined),
+          this.checkUserAccess(userId, 'plan').catch(() => false),
+          this.checkUserAccess(userId, 'room', room.id).catch(() => false),
+        ]) : Promise.resolve([undefined, false, false]),
+      ]);
 
-    // For each phase, get content and check if locked
-    const now = new Date();
-    const phasesWithContent = await Promise.all(
-      phasesList.map(async (phase) => {
-        const content = await this.getPhaseContent(phase.id);
+      // Step 3: Determine user access
+      let userHasAccess = false;
+      if (userId) {
+        const [admin, hasPlanAccess, hasRoomAccess] = accessChecks;
+        userHasAccess = !!admin || (hasPlanAccess === true) || (hasRoomAccess === true);
+      }
+
+      // Step 4: Get all phase content in one query
+      const allPhaseIds = phasesList.map(p => p.id);
+      if (allPhaseIds.length === 0) {
+        return {
+          room,
+          phases: [],
+          promoBanners: banners,
+          userHasAccess,
+        };
+      }
+
+      // Get all content for all phases at once
+      const allContent = await db
+        .select()
+        .from(phaseContent)
+        .where(inArray(phaseContent.phaseId, allPhaseIds))
+        .orderBy(phaseContent.order);
+
+      // Step 5: Get all unique course IDs
+      const courseIds = Array.from(new Set(
+        allContent
+          .filter(item => item.contentType === 'course' || item.contentType === 'workshop' || item.contentType === 'guide')
+          .map(item => item.contentId)
+      ));
+
+      // Step 6: Get all courses and categories in parallel
+      const [coursesData, courseCategoriesData] = await Promise.all([
+        courseIds.length > 0
+          ? db.select().from(courses).where(inArray(courses.id, courseIds))
+          : Promise.resolve([]),
+        courseIds.length > 0
+          ? db
+              .select({ courseId: courseCategories.courseId, categoryId: courseCategories.categoryId })
+              .from(courseCategories)
+              .where(inArray(courseCategories.courseId, courseIds))
+          : Promise.resolve([]),
+      ]);
+
+      // Step 7: Create course map with categories
+      const courseMap = new Map<string, Course>();
+      for (const course of coursesData) {
+        const courseCats = courseCategoriesData
+          .filter(cc => cc.courseId === course.id)
+          .map(cc => cc.categoryId);
+        (course as any).categoryIds = courseCats;
+        courseMap.set(course.id, course);
+      }
+
+      // Step 8: Group content by phase
+      const contentByPhase = new Map<string, typeof allContent>();
+      for (const content of allContent) {
+        if (!contentByPhase.has(content.phaseId)) {
+          contentByPhase.set(content.phaseId, []);
+        }
+        contentByPhase.get(content.phaseId)!.push(content);
+      }
+
+      // Step 9: Build phases with enriched content
+      const phasesWithContent = phasesList.map((phase) => {
+        const phaseContentList = contentByPhase.get(phase.id) || [];
+        const enrichedContent = phaseContentList.map((item) => {
+          if (item.contentType === 'course' || item.contentType === 'workshop' || item.contentType === 'guide') {
+            const courseData = courseMap.get(item.contentId);
+            return { ...item, courseData };
+          }
+          return item;
+        });
+
         return {
           ...phase,
           isLocked: phase.releaseDate > now,
-          content,
+          content: enrichedContent,
         };
-      })
-    );
+      });
 
-    // Get promo banners for this room
-    const banners = await this.getRoomPromoBanners(room.id);
-
-    return {
-      room,
-      phases: phasesWithContent,
-      promoBanners: banners,
-      userHasAccess,
-    };
+      return {
+        room,
+        phases: phasesWithContent,
+        promoBanners: banners,
+        userHasAccess,
+      };
+    } catch (error) {
+      console.error(`❌ Error in getRoomDetailWithPhases for slug "${slug}":`, error);
+      if (error instanceof Error) {
+        console.error(`   Error message: ${error.message}`);
+        console.error(`   Error stack: ${error.stack?.split('\n').slice(0, 5).join('\n')}`);
+      }
+      throw error;
+    }
   }
 
   async getRoomPromoBanners(roomId: string): Promise<PromoBanner[]> {
@@ -1876,6 +2555,61 @@ export class DatabaseStorage implements IStorage {
         eq(promoBanners.isActive, true)
       ))
       .orderBy(promoBanners.order);
+  }
+
+  async getAllPromoBanners(roomId?: string): Promise<PromoBanner[]> {
+    if (roomId) {
+      return await db
+        .select()
+        .from(promoBanners)
+        .where(eq(promoBanners.roomId, roomId))
+        .orderBy(promoBanners.order);
+    }
+    return await db
+      .select()
+      .from(promoBanners)
+      .orderBy(promoBanners.order);
+  }
+
+  async getPromoBannerById(id: string): Promise<PromoBanner | undefined> {
+    const [banner] = await db
+      .select()
+      .from(promoBanners)
+      .where(eq(promoBanners.id, id));
+    return banner;
+  }
+
+  async createPromoBanner(data: InsertPromoBanner): Promise<PromoBanner> {
+    const [banner] = await db
+      .insert(promoBanners)
+      .values({
+        ...data,
+        updatedAt: new Date(),
+      })
+      .returning();
+    return banner;
+  }
+
+  async updatePromoBanner(id: string, data: Partial<InsertPromoBanner>): Promise<PromoBanner> {
+    const [banner] = await db
+      .update(promoBanners)
+      .set({
+        ...data,
+        updatedAt: new Date(),
+      })
+      .where(eq(promoBanners.id, id))
+      .returning();
+    if (!banner) {
+      throw new Error(`Banner con id ${id} no encontrado`);
+    }
+    return banner;
+  }
+
+  async deletePromoBanner(id: string): Promise<boolean> {
+    const result = await db
+      .delete(promoBanners)
+      .where(eq(promoBanners.id, id));
+    return result.rowCount ? result.rowCount > 0 : false;
   }
 
   async getPhaseContent(phaseId: string): Promise<Array<PhaseContent & { courseData?: Course }>> {
@@ -1899,7 +2633,7 @@ export class DatabaseStorage implements IStorage {
     return enrichedContent;
   }
 
-  async getNextCourseInRoom(roomSlug: string, currentCourseId: string): Promise<{ courseId: string; title: string; coverImageUrl: string | null } | null> {
+  async getNextCourseInRoom(roomSlug: string, currentCourseId: string): Promise<{ courseId: string; slug?: string; title: string; coverImageUrl: string | null } | null> {
     // Get room
     const room = await this.getRoomBySlug(roomSlug);
     if (!room) return null;
@@ -1912,7 +2646,7 @@ export class DatabaseStorage implements IStorage {
       .orderBy(phases.order);
 
     // Flatten all courses in order
-    const allCourses: Array<{ contentId: string; title: string; coverImageUrl: string | null }> = [];
+    const allCourses: Array<{ contentId: string; slug?: string; title: string; coverImageUrl: string | null }> = [];
     
     for (const phase of phasesList) {
       const content = await db
@@ -1927,6 +2661,7 @@ export class DatabaseStorage implements IStorage {
           if (courseData) {
             allCourses.push({
               contentId: item.contentId,
+              slug: courseData.slug || undefined,
               title: courseData.title,
               coverImageUrl: courseData.coverImageUrl,
             });
@@ -1944,6 +2679,7 @@ export class DatabaseStorage implements IStorage {
     const nextCourse = allCourses[currentIndex + 1];
     return {
       courseId: nextCourse.contentId,
+      slug: nextCourse.slug || undefined,
       title: nextCourse.title,
       coverImageUrl: nextCourse.coverImageUrl,
     };
@@ -2246,7 +2982,7 @@ export class DatabaseStorage implements IStorage {
     return rootComments;
   }
 
-  async createComment(data: Omit<InsertComment, 'depth' | 'replyCount' | 'rootCommentId' | 'metadata'>): Promise<Comment> {
+  async createComment(data: Omit<InsertComment, 'depth' | 'replyCount' | 'rootCommentId' | 'metadata'> & { metadata?: any }): Promise<Comment> {
     // Root comments have depth 0 and no parent
     const [created] = await db
       .insert(comments)
@@ -2255,7 +2991,7 @@ export class DatabaseStorage implements IStorage {
         depth: 0,
         replyCount: 0,
         rootCommentId: null,
-        metadata: {},
+        metadata: data.metadata || {},
       })
       .returning();
 
@@ -2269,7 +3005,7 @@ export class DatabaseStorage implements IStorage {
     return updated;
   }
 
-  async createReply(parentCommentId: string, data: Omit<InsertComment, 'parentCommentId' | 'depth' | 'replyCount' | 'rootCommentId' | 'metadata'>): Promise<Comment> {
+  async createReply(parentCommentId: string, data: Omit<InsertComment, 'parentCommentId' | 'depth' | 'replyCount' | 'rootCommentId' | 'metadata'> & { metadata?: any }): Promise<Comment> {
     // Get parent comment to determine depth and rootCommentId
     const [parentComment] = await db
       .select()
@@ -2292,7 +3028,7 @@ export class DatabaseStorage implements IStorage {
         depth,
         replyCount: 0,
         rootCommentId,
-        metadata: {},
+        metadata: data.metadata || {},
       })
       .returning();
 
@@ -2655,10 +3391,10 @@ export class DatabaseStorage implements IStorage {
     const generalChannels = [
       { slug: 'anuncios', name: 'Anuncios', description: 'Actualizaciones y noticias importantes', icon: '📢', section: 'Comunidad', order: 1, isReadOnly: false },
       { slug: 'empieza-aqui', name: 'Empieza aquí', description: 'Guías y tutoriales de cómo usar la plataforma', icon: '🏠', section: 'Comunidad', order: 2, isReadOnly: true },
-      { slug: 'presentante', name: 'Presentante', description: 'Conoce a los miembros de la comunidad', icon: '👋', section: 'Comunidad', order: 3, isReadOnly: false },
+      { slug: 'presentante', name: 'Preséntate', description: 'Conoce a los miembros de la comunidad', icon: '👋', section: 'Comunidad', order: 3, isReadOnly: false },
       { slug: 'comparte-proyecto', name: 'Comparte tu proyecto o trabajo', description: 'Muestra tus proyectos y trabajos realizados', icon: '🚀', section: 'Comunidad', order: 4, isReadOnly: false },
       { slug: 'redes-chat', name: 'Redes de Chat', description: 'Enlaces y redes de comunicación de la comunidad', icon: '📝', section: 'Comunidad', order: 5, isReadOnly: false },
-      { slug: 'general', name: 'General', description: 'Conversación libre y conexiones', icon: '💬', section: 'Comunidad', order: 6, isReadOnly: false },
+      { slug: 'leaderboard', name: 'Clasificación', description: 'Ranking de usuarios por puntos y participación', icon: '🏆', section: 'Comunidad', order: 6, isReadOnly: true },
     ];
 
     // Create general channels
@@ -2669,6 +3405,25 @@ export class DatabaseStorage implements IStorage {
       if (!existing) {
         await db.insert(communityChannels).values(channel);
       }
+    }
+
+    const questionChannel = await db.query.communityChannels.findFirst({
+      where: eq(communityChannels.slug, 'haz-tu-pregunta'),
+    });
+    if (!questionChannel) {
+      const generalChannel = await db.query.communityChannels.findFirst({
+        where: eq(communityChannels.slug, 'general'),
+      });
+      const nextOrder = (generalChannel?.order ?? 6) + 1;
+      await db.insert(communityChannels).values({
+        slug: 'haz-tu-pregunta',
+        name: 'Haz tu Pregunta',
+        description: 'Preguntas sobre las guías y el contenido',
+        icon: '❓',
+        section: 'Comunidad',
+        order: nextOrder,
+        isReadOnly: false,
+      });
     }
 
     // Create dynamic channels for each room (sala)
@@ -2686,11 +3441,12 @@ export class DatabaseStorage implements IStorage {
           icon: '❓',
           section: 'Cursos de Salas',
           order: 1,
+          isActive: true,
         });
       }
     }
   }
-
 }
 
+// Export storage instance
 export const storage = new DatabaseStorage();

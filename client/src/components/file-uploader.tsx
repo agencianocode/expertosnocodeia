@@ -76,27 +76,34 @@ export function FileUploader({
 
       const { uploadURL, resourceId, fileName: cleanFileName, resourcePath } = await response.json();
 
-      // Upload file to cloud storage
-      const uploadResponse = await fetch(uploadURL, {
-        method: 'PUT',
+      // Upload file through server endpoint
+      const formData = new FormData();
+      formData.append('file', selectedFile);
+
+      const uploadResponse = await fetch(uploadURL || '/api/lesson-resources/upload', {
+        method: 'POST',
         headers: {
-          'Content-Type': selectedFile.type || 'application/octet-stream',
+          'Authorization': token ? `Bearer ${token}` : '',
         },
-        body: selectedFile,
+        body: formData,
       });
 
       if (!uploadResponse.ok) {
-        throw new Error('Failed to upload file');
+        const errorData = await uploadResponse.json().catch(() => ({ message: 'Error desconocido' }));
+        throw new Error(errorData.message || 'Failed to upload file');
       }
+
+      const uploadResult = await uploadResponse.json();
+      console.log('Archivo subido correctamente:', uploadResult);
 
       setUploadProgress(100);
 
-      // Use the resource path provided by the server
+      // Use the resource path from server response
       const fileInfo = {
-        fileName: cleanFileName,
+        fileName: uploadResult.fileName || cleanFileName,
         fileType: selectedFile.name.split('.').pop()?.toLowerCase() || 'unknown',
-        fileSize: selectedFile.size,
-        fileUrl: resourcePath, // This will be /lesson-resources/resourceId/fileName
+        fileSize: uploadResult.fileSize || selectedFile.size,
+        fileUrl: uploadResult.resourcePath || resourcePath, // This will be /lesson-resources/resourceId/fileName
       };
 
       toast({

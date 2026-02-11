@@ -8,9 +8,11 @@ import MobileHeader from "@/components/layout/mobile-header";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Plus, Edit, Trash2, Loader2, ChevronUp, ChevronDown } from "lucide-react";
+import { Plus, Edit, Trash2, Loader2, ChevronUp, ChevronDown, Pin } from "lucide-react";
 import { useAdmin } from "@/hooks/useAdmin";
 import { useToast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
+import { RichTextEditor } from "@/components/ui/rich-text-editor";
 
 interface Post {
   post: any;
@@ -214,22 +216,41 @@ export default function AdminCommunity() {
 
     try {
       setUploadingImage(true);
+      const token = localStorage.getItem('simpleAuthToken');
       const formDataToUpload = new FormData();
       formDataToUpload.append("file", file);
+      
+      const headers: Record<string, string> = {};
+      if (token) {
+        headers["Authorization"] = `Bearer ${token}`;
+      }
+      
       const uploadRes = await fetch("/api/upload-image", {
         method: "POST",
+        headers,
         credentials: "include",
         body: formDataToUpload,
       });
+      
       if (uploadRes.ok) {
         const uploadData = await uploadRes.json();
         updateBlock(blockIndex, { url: uploadData.url });
         toast({ title: "Éxito", description: "Imagen subida correctamente" });
       } else {
-        toast({ title: "Error", description: "Error al subir la imagen", variant: "destructive" });
+        const errorData = await uploadRes.json().catch(() => ({ message: "Error al subir la imagen" }));
+        toast({ 
+          title: "Error", 
+          description: errorData.message || "Error al subir la imagen", 
+          variant: "destructive" 
+        });
       }
     } catch (error: any) {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
+      console.error("Error uploading image:", error);
+      toast({ 
+        title: "Error", 
+        description: error.message || "Error al subir la imagen", 
+        variant: "destructive" 
+      });
     } finally {
       setUploadingImage(false);
     }
@@ -388,12 +409,11 @@ export default function AdminCommunity() {
                               </div>
                             </div>
                             {block.type === "text" ? (
-                              <textarea
+                              <RichTextEditor
+                                content={block.content || ""}
+                                onChange={(content) => updateBlock(index, { content })}
                                 placeholder="Escribe tu texto aquí..."
-                                value={block.content || ""}
-                                onChange={(e) => updateBlock(index, { content: e.target.value })}
-                                className="w-full bg-[#1a1a1a] border border-[#333333] rounded p-2 text-white text-sm resize-none"
-                                rows={3}
+                                className="min-h-[200px]"
                               />
                             ) : block.type === "video" ? (
                               <Input
@@ -562,6 +582,33 @@ export default function AdminCommunity() {
                                 </Button>
                               </>
                             )}
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={async () => {
+                                try {
+                                  const res = await fetch(`/api/community/posts/${post.post.id}/toggle-pin`, {
+                                    method: "POST",
+                                    credentials: "include",
+                                  });
+                                  if (res.ok) {
+                                    queryClient.invalidateQueries({ queryKey: ["/api/admin/community/posts"] });
+                                    toast({ 
+                                      title: "Éxito", 
+                                      description: (post.post as any)?.isPinned ? "Publicación desfijada" : "Publicación fijada" 
+                                    });
+                                  } else {
+                                    toast({ title: "Error", description: "No se pudo fijar/desfijar la publicación", variant: "destructive" });
+                                  }
+                                } catch (e) {
+                                  toast({ title: "Error", description: "Error al fijar/desfijar la publicación", variant: "destructive" });
+                                }
+                              }}
+                              title={(post.post as any)?.isPinned ? "Desfijar publicación" : "Fijar publicación"}
+                            >
+                              <Pin className={cn("h-4 w-4 mr-1", (post.post as any)?.isPinned && "fill-current")} />
+                              {(post.post as any)?.isPinned ? "Desfijar" : "Fijar"}
+                            </Button>
                             <Button
                               size="sm"
                               variant="outline"

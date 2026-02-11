@@ -37,6 +37,7 @@ export const users = pgTable("users", {
   provider: varchar("provider").default("email"), // "email", "google"
   isEmailVerified: boolean("is_email_verified").default(false),
   emailVerificationToken: varchar("email_verification_token"),
+  emailVerificationExpires: timestamp("email_verification_expires"),
   passwordResetToken: varchar("password_reset_token"),
   passwordResetExpires: timestamp("password_reset_expires"),
   // Onboarding data
@@ -51,6 +52,15 @@ export const users = pgTable("users", {
   preferredSkillType: varchar("preferred_skill_type"), // "consultoria", "desarrollo", "marketing", etc.
   preferredContentTypes: jsonb("preferred_content_types").$type<string[]>().default([]), // ["cursos", "guias", "workshops"]
   lastLoginAt: timestamp("last_login_at"),
+  // Points and rewards system
+  points: integer("points").default(0),
+  level: integer("level").default(1),
+  // Profile description
+  shortDescription: text("short_description"),
+  bio: text("bio"),
+  // User role: 'user' (default), 'paid_user' (has active subscription), 'instructor', 'moderator'
+  // Admin roles are managed in adminUsers table: 'admin', 'editor', 'super_admin'
+  role: varchar("role").default("user").notNull(),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -69,6 +79,7 @@ export const categories = pgTable("categories", {
 export const courses = pgTable("courses", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   title: varchar("title").notNull(),
+  slug: varchar("slug"), // URL-friendly slug for SEO (e.g., "fundamentos-agentes-ia")
   description: text("description"),
   type: varchar("type").notNull(), // 'course', 'guide', 'workshop'
   categoryId: varchar("category_id").references(() => categories.id),
@@ -78,9 +89,13 @@ export const courses = pgTable("courses", {
   isPublished: boolean("is_published").default(true),
   coverImageUrl: varchar("cover_image_url"), // Custom course image
   metadata: jsonb("metadata").default({}), // Workshop-specific data like instructor, videoUrl, etc
+  order: integer("order").default(0), // Para ordenar cursos en la página de admin
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
-});
+}, (table) => [
+  index("idx_courses_slug").on(table.slug),
+  index("idx_courses_order").on(table.order),
+]);
 
 // Course categories mapping (many-to-many)
 export const courseCategories = pgTable("course_categories", {
@@ -300,6 +315,20 @@ export const userUsage = pgTable("user_usage", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// User Points - Track points earned from activities
+export const userPoints = pgTable("user_points", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").references(() => users.id, { onDelete: 'cascade' }).notNull(),
+  points: integer("points").notNull(),
+  activityType: varchar("activity_type").notNull(), // "message", "post", "comment", "reaction"
+  activityId: varchar("activity_id"), // ID del mensaje/post/comentario
+  description: varchar("description"),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("idx_user_points_user_created").on(table.userId, table.createdAt),
+  index("idx_user_points_activity").on(table.activityType, table.activityId),
+]);
+
 // User Onboarding Responses
 export const userOnboardingResponses = pgTable("user_onboarding_responses", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -489,6 +518,13 @@ export const userUsageRelations = relations(userUsage, ({ one }) => ({
   }),
 }));
 
+export const userPointsRelations = relations(userPoints, ({ one }) => ({
+  user: one(users, {
+    fields: [userPoints.userId],
+    references: [users.id],
+  }),
+}));
+
 export const userOnboardingResponsesRelations = relations(userOnboardingResponses, ({ one }) => ({
   user: one(users, {
     fields: [userOnboardingResponses.userId],
@@ -603,6 +639,8 @@ export type UserSubscription = typeof userSubscriptions.$inferSelect;
 export type InsertUserSubscription = typeof userSubscriptions.$inferInsert;
 export type UserUsage = typeof userUsage.$inferSelect;
 export type InsertUserUsage = typeof userUsage.$inferInsert;
+export type UserPoints = typeof userPoints.$inferSelect;
+export type InsertUserPoints = typeof userPoints.$inferInsert;
 export type UserOnboardingResponse = typeof userOnboardingResponses.$inferSelect;
 export type InsertUserOnboardingResponse = typeof userOnboardingResponses.$inferInsert;
 export type Comment = typeof comments.$inferSelect;
@@ -856,6 +894,7 @@ export const communityPosts = pgTable("community_posts", {
   contentBlocks: jsonb("content_blocks").$type<Array<{type: "text" | "video"; content?: string; url?: string}>>().default([]),
   displayOrder: integer("display_order").default(0), // For ordering posts in read-only channels like "Empieza aquí"
   isAdminPost: boolean("is_admin_post").default(false), // Whether post was created by admin
+  isPinned: boolean("is_pinned").default(false), // Whether post is pinned to the top
   likes: integer("likes").default(0),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
@@ -1122,6 +1161,124 @@ export const insertUserNotificationPreferencesSchema = createInsertSchema(userNo
   updatedAt: true,
 });
 
+// Live Events table - for scheduled live events/workshops
+export const liveEvents = pgTable("live_events", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  title: varchar("title").notNull(),
+  description: text("description"),
+  hostName: varchar("host_name").notNull(),
+  hostAvatar: varchar("host_avatar"),
+  hostRole: varchar("host_role"),
+  eventImage: varchar("event_image"), // Banner or cover image for the event
+  // Scheduling
+  startTime: timestamp("start_time").notNull(),
+  endTime: timestamp("end_time").notNull(),
+  timezone: varchar("timezone").default("America/Bogota"),
+  // Status
+  isActive: boolean("is_active").default(true),
+  isLive: boolean("is_live").default(false), // Manually set when event starts
+  // Join info
+  joinUrl: varchar("join_url"), // Custom URL or will use /live/{id}
+  roomName: varchar("room_name"), // Jitsi room name
+  // Event type
+  eventType: varchar("event_type").default("live"), // "live", "workshop", "webinar"
+  category: varchar("category"), // "Creación de contenido", "Marketing", "Diseño", etc.
+  // Tracking
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertLiveEventSchema = createInsertSchema(liveEvents).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+// Event Registrations - for users to register for events
+// User Events - Track user actions for automation triggers
+export const userEvents = pgTable("user_events", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").references(() => users.id),
+  eventType: varchar("event_type").notNull(), // 'course_completed', 'lesson_completed', 'inactive', 'milestone', etc.
+  eventData: jsonb("event_data").$type<Record<string, any>>(), // Additional event metadata
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Automations - Define automation rules
+export const automations = pgTable("automations", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: varchar("name").notNull(),
+  description: text("description"),
+  triggerType: varchar("trigger_type").notNull(), // 'event', 'schedule', 'segment'
+  triggerConfig: jsonb("trigger_config").$type<Record<string, any>>().notNull(), // Event type, schedule, segment rules
+  actionType: varchar("action_type").notNull(), // 'email', 'tag', 'webhook', etc.
+  actionConfig: jsonb("action_config").$type<Record<string, any>>().notNull(), // Email template, tag name, webhook URL, etc.
+  isActive: boolean("is_active").default(true),
+  segmentRules: jsonb("segment_rules").$type<Record<string, any>>(), // User segment filters
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Automation Logs - Track automation executions
+export const automationLogs = pgTable("automation_logs", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  automationId: varchar("automation_id").references(() => automations.id),
+  userId: varchar("user_id").references(() => users.id),
+  eventId: varchar("event_id").references(() => userEvents.id),
+  status: varchar("status").notNull(), // 'success', 'failed', 'skipped'
+  result: jsonb("result").$type<Record<string, any>>(), // Execution result/details
+  errorMessage: text("error_message"),
+  executedAt: timestamp("executed_at").defaultNow(),
+});
+
+// User Segments - Dynamic user segments for targeting
+export const userSegments = pgTable("user_segments", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: varchar("name").notNull(),
+  description: text("description"),
+  rules: jsonb("rules").$type<Record<string, any>>().notNull(), // Segment criteria
+  userCount: integer("user_count").default(0), // Cached count
+  lastCalculatedAt: timestamp("last_calculated_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Marketing Analytics - Track marketing metrics
+export const marketingAnalytics = pgTable("marketing_analytics", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  date: timestamp("date").notNull(),
+  metricType: varchar("metric_type").notNull(), // 'conversion', 'engagement', 'churn', 'revenue', etc.
+  metricValue: integer("metric_value").notNull(),
+  metadata: jsonb("metadata").$type<Record<string, any>>(), // Additional context
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const eventRegistrations = pgTable("event_registrations", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  eventId: varchar("event_id").notNull().references(() => liveEvents.id, { onDelete: "cascade" }),
+  userId: varchar("user_id").references(() => users.id, { onDelete: "cascade" }),
+  email: varchar("email").notNull(),
+  firstName: varchar("first_name"),
+  lastName: varchar("last_name"),
+  phone: varchar("phone"), // For WhatsApp notifications
+  // Status
+  status: varchar("status").default("registered"), // "registered", "cancelled", "attended"
+  // Reminders
+  reminderSent24h: boolean("reminder_sent_24h").default(false),
+  reminderSent1h: boolean("reminder_sent_1h").default(false),
+  // Tracking
+  registeredAt: timestamp("registered_at").defaultNow(),
+  cancelledAt: timestamp("cancelled_at"),
+  attendedAt: timestamp("attended_at"),
+});
+
+export const insertEventRegistrationSchema = createInsertSchema(eventRegistrations).omit({
+  id: true,
+  registeredAt: true,
+  cancelledAt: true,
+  attendedAt: true,
+});
+
 // Update Schemas (for PATCH operations)
 export const updateRoomSchema = insertRoomSchema.partial().refine(
   (data) => Object.keys(data).length > 0,
@@ -1142,6 +1299,7 @@ export type CommunityPost = typeof communityPosts.$inferSelect;
 export type CommunityPostComment = typeof communityPostComments.$inferSelect;
 export type CommunityPostCommentReaction = typeof communityPostCommentReactions.$inferSelect;
 export type UserNotificationPreference = typeof userNotificationPreferences.$inferSelect;
+export type LiveEvent = typeof liveEvents.$inferSelect;
 
 // Insert Types
 export type InsertRoom = z.infer<typeof insertRoomSchema>;
@@ -1157,6 +1315,7 @@ export type InsertCommunityPost = z.infer<typeof insertCommunityPostSchema>;
 export type InsertCommunityPostComment = z.infer<typeof insertCommunityPostCommentSchema>;
 export type InsertCommunityPostCommentReaction = z.infer<typeof insertCommunityPostCommentReactionSchema>;
 export type InsertUserNotificationPreference = z.infer<typeof insertUserNotificationPreferencesSchema>;
+export type InsertLiveEvent = z.infer<typeof insertLiveEventSchema>;
 
 // Update Types
 export type UpdateRoom = z.infer<typeof updateRoomSchema>;

@@ -27,7 +27,7 @@ export default function Dashboard() {
   const { data: dashboardData, isLoading: dashboardLoading } = useQuery({
     queryKey: ["/api/dashboard"],
     enabled: isAuthenticated,
-    refetchOnWindowFocus: true,
+    refetchOnWindowFocus: false,
   });
 
   // For non-authenticated users, fetch public data
@@ -67,14 +67,14 @@ export default function Dashboard() {
   }
 
   // Use different data sources based on authentication
-  const continueCourses = isAuthenticated ? ((dashboardData as any)?.continueCourses || []) : [];
+  const continueCourses: any[] = isAuthenticated ? ((dashboardData as any)?.continueCourses || []) : [];
   
   // For non-authenticated users, combine courses, guides and workshops for recommendations
-  const publicCourses = !isAuthenticated ? ((coursesData as any) || []).map((course: any) => ({ course, category: null, progress: null })) : [];
-  const publicGuides = !isAuthenticated ? ((guidesData as any) || []).map((guide: any) => ({ course: guide, category: null, progress: null })) : [];
-  const publicWorkshops = !isAuthenticated ? ((workshopsData as any) || []).map((workshop: any) => ({ course: workshop, category: null, progress: null })) : [];
+  const publicCourses: any[] = !isAuthenticated ? ((coursesData as any) || []).map((course: any) => ({ course, category: null, progress: null })) : [];
+  const publicGuides: any[] = !isAuthenticated ? ((guidesData as any) || []).map((guide: any) => ({ course: guide, category: null, progress: null })) : [];
+  const publicWorkshops: any[] = !isAuthenticated ? ((workshopsData as any) || []).map((workshop: any) => ({ course: workshop, category: null, progress: null })) : [];
   
-  const recommendedCourses = isAuthenticated 
+  const recommendedCourses: any[] = isAuthenticated 
     ? ((dashboardData as any)?.recommendedCourses || []) 
     : [...publicCourses, ...publicGuides, ...publicWorkshops];
     
@@ -118,14 +118,14 @@ export default function Dashboard() {
         
         {/* Main Content */}
         <main className="flex-1 overflow-auto pb-20 lg:pb-0 lg:ml-[250px]">
-        <div className="p-6 space-y-8">
+        <div className="p-4 lg:p-6 space-y-6 lg:space-y-8" key="main-content">
           {/* Continue Learning Section OR Premium Features Section */}
           <section>
             {isAuthenticated ? (
               <>
-                <div className="flex items-center justify-between mb-6">
-                  <h2 className="font-semibold text-foreground text-[24px]">Continúa donde lo dejaste</h2>
-                  <div className="flex space-x-2">
+                <div className="flex items-center justify-between mb-4 lg:mb-6">
+                  <h2 className="font-semibold text-foreground text-lg lg:text-[24px]">Continúa donde lo dejaste</h2>
+                  <div className="hidden md:flex space-x-2">
                     <Button
                       variant="ghost"
                       size="icon"
@@ -146,19 +146,17 @@ export default function Dashboard() {
                     </Button>
                   </div>
                 </div>
-                <div className="overflow-hidden">
+                <div className="overflow-x-auto -mx-4 px-4 lg:mx-0 lg:px-0 lg:overflow-hidden scrollbar-hide">
                   <div 
-                    className="flex transition-transform duration-500 ease-in-out"
+                    className="flex transition-transform duration-500 ease-in-out gap-4 lg:gap-6"
                     style={{ 
-                      transform: `translateX(-${currentSlide * (100/4)}%)`,
-                      gap: '1.5rem'
+                      transform: `translateX(-${currentSlide * (100/4)}%)`
                     }}
                   >
                     {continueCourses.slice(0, 8).map((item: any, index: number) => (
                       <div 
                         key={item.course?.id} 
-                        className="flex-shrink-0"
-                        style={{ width: 'calc(25% - 1.125rem)' }}
+                        className="flex-shrink-0 w-[calc(85vw-1rem)] lg:w-[calc(25%-1.5rem)]"
                       >
                         <CourseCard
                           course={item.course}
@@ -180,25 +178,25 @@ export default function Dashboard() {
                 )}
               </>
             ) : (
-              <div className="bg-gradient-to-br from-gray-900 via-black to-gray-900 rounded-xl p-12">
+              <div className="bg-gradient-to-br from-gray-900 via-black to-gray-900 rounded-xl p-6 lg:p-12">
                 {/* Single row with two columns */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
                   {/* Left Column: Header + Features (longer column) */}
                   <div>
                     {/* Header */}
-                    <div className="mb-6">
-                      <h2 className="font-bold text-white mb-2 text-[28px]">
-                        Capacitar a mil millones de personas para el futuro<br />
-                        Un mundo donde la IA es lo primero
+                    <div className="mb-4 lg:mb-6">
+                      <h2 className="font-bold text-white mb-2 text-xl lg:text-[28px] leading-tight">
+                        Capacitar a mil millones de personas para el futuro<br className="hidden lg:block" />
+                        <span className="lg:hidden"> </span>Un mundo donde la IA es lo primero
                       </h2>
-                      <p className="text-gray-400 text-base">
+                      <p className="text-gray-400 text-sm lg:text-base">
                         Obten formación en IA personalizada, adaptada a tu estilo de aprendizaje, objetivos profesionales y 
                         necesidades del sector. Únete a más de 10,000 profesionales que ya están transformando sus carreras.
                       </p>
                     </div>
 
                     {/* Features Grid 2x2 */}
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="flex items-start space-x-3">
                       <div className="flex-shrink-0 w-6 h-6 rounded-full bg-gray-600 flex items-center justify-center mt-1">
                         <Lightbulb className="w-3 h-3 text-gray-300" />
@@ -270,12 +268,11 @@ export default function Dashboard() {
               </div>
             )}
           </section>
-
-          {/* Guide Recommendations */}
-          <section>
+          
+          <section aria-label="Guide Recommendations">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="font-semibold text-foreground text-[24px]">Recomendaciones de Guías</h2>
-              <div className="flex space-x-2">
+              <h2 className="font-semibold text-foreground text-lg lg:text-[24px]">Recomendaciones de la guía</h2>
+              <div className="hidden md:flex space-x-2">
                 <Button
                   variant="ghost"
                   size="icon"
@@ -292,65 +289,73 @@ export default function Dashboard() {
                 </Button>
               </div>
             </div>
-            <p className="text-muted-foreground mb-6 text-[16px]">Basándonos en tus respuestas a la encuesta y tu historial en la plataforma, hemos seleccionado las mejores guías de IA para consultores . Siempre puedes cambiar tu enfoque en tu perfil.</p>
+            <p className="text-muted-foreground mb-4 lg:mb-6 text-sm lg:text-[16px]">Basándonos en tus respuestas a la encuesta y tu historial en la plataforma, hemos seleccionado las mejores guías de IA para consultores . Siempre puedes cambiar tu enfoque en tu perfil.</p>
 
-            {recommendedCourses.filter((item: any) => item.course?.type === 'guide').slice(0, 1).map((item: any) => (
-              <div key={item.course.id} className="bg-card rounded-xl border border-border overflow-hidden hover:shadow-lg transition-shadow cursor-pointer mb-6">
-                <div className="p-6">
-                  <div className="flex items-start space-x-4">
-                    <CourseCard
-                      course={item.course}
-                      category={item.category}
-                      progress={item.progress}
-                      variant="horizontal"
-                      isAuthenticated={isAuthenticated}
-                    />
+            {(() => {
+              const guideItems = recommendedCourses.filter((item: any) => item.course?.type === 'guide').slice(0, 1);
+              return guideItems.map((item: any) => (
+                <div key={item.course?.id} className="bg-card rounded-xl border border-border overflow-hidden hover:shadow-lg transition-shadow cursor-pointer mb-6">
+                  <div className="p-6">
+                    <div className="flex items-start space-x-4">
+                      <CourseCard
+                        course={item.course}
+                        category={item.category}
+                        progress={item.progress}
+                        variant="horizontal"
+                        isAuthenticated={isAuthenticated}
+                      />
+                    </div>
                   </div>
                 </div>
+              ));
+            })()}
+            {recommendedCourses.filter((item: any) => item.course?.type === 'guide').length === 0 && (
+              <div className="text-center py-8 text-muted-foreground">
+                <p>No hay guías recomendadas disponibles en este momento.</p>
               </div>
-            ))}
+            )}
           </section>
 
           {/* Rooms Section */}
           {roomsData && (roomsData as any).length > 0 && (
             <section>
-              <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center justify-between mb-4 lg:mb-6">
                 <div>
-                  <h2 className="font-semibold text-foreground text-[24px]">Salas de Aprendizaje</h2>
-                  <p className="text-muted-foreground text-[16px] mt-1">Rutas de aprendizaje completas con contenido que se desbloquea semanalmente</p>
+                  <h2 className="font-semibold text-foreground text-lg lg:text-[24px]">Salas de Aprendizaje</h2>
+                  <p className="text-muted-foreground text-sm lg:text-[16px] mt-1">Rutas de aprendizaje completas con contenido que se desbloquea semanalmente</p>
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6 mb-8">
                 {(roomsData as any).map((room: any) => (
                   <Link key={room.id} href={`/sala/${room.slug}`}>
-                    <div className="group relative bg-card rounded-xl border border-border overflow-hidden hover:shadow-xl transition-all duration-300 cursor-pointer h-full">
+                    <div className="group relative bg-card rounded-xl border border-border overflow-hidden hover:shadow-xl transition-all duration-300 cursor-pointer h-full min-h-[280px] lg:min-h-[320px]">
                       {/* Background Image/Gradient */}
                       <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-primary/10 to-background opacity-50 group-hover:opacity-70 transition-opacity" />
                       
                       {room.coverImageUrl && (
                         <div 
-                          className="absolute inset-0 bg-cover bg-center opacity-20 group-hover:opacity-30 transition-opacity"
+                          className="absolute inset-0 bg-cover bg-center opacity-30 lg:opacity-20 group-hover:opacity-40 lg:group-hover:opacity-30 transition-opacity"
                           style={{ backgroundImage: `url(${room.coverImageUrl})` }}
                         />
                       )}
                       
                       {/* Content */}
-                      <div className="relative p-6 h-full flex flex-col">
+                      <div className="relative p-4 lg:p-6 h-full flex flex-col">
                         <div className="flex-1">
-                          <h3 className="text-xl font-bold mb-3 group-hover:text-primary transition-colors">
+                          <h3 className="text-lg lg:text-xl font-bold mb-2 lg:mb-3 group-hover:text-primary transition-colors">
                             {room.title}
                           </h3>
                           
-                          <p className="text-muted-foreground text-sm mb-4 line-clamp-2">
+                          <p className="text-muted-foreground text-xs lg:text-sm mb-3 lg:mb-4 line-clamp-2">
                             {room.shortDescription || room.description}
                           </p>
                           
                           {room.metadata?.features && room.metadata.features.length > 0 && (
-                            <div className="space-y-2 mb-4">
+                            <div className="space-y-1.5 lg:space-y-2 mb-3 lg:mb-4">
                               {room.metadata.features.slice(0, 2).map((feature: string, idx: number) => (
-                                <div key={idx} className="flex items-center gap-2 text-sm text-muted-foreground">
-                                  <CheckCircle className="h-4 w-4 text-primary flex-shrink-0" />
+                                <div key={idx} className="flex items-center gap-2 text-xs lg:text-sm text-muted-foreground">
+                                  <CheckCircle className="h-3.5 w-3.5 lg:h-4 lg:w-4 text-primary flex-shrink-0" />
                                   <span className="line-clamp-1">{feature}</span>
                                 </div>
                               ))}
@@ -358,8 +363,8 @@ export default function Dashboard() {
                           )}
                         </div>
                         
-                        <div className="flex items-center justify-between pt-4 border-t border-border/50">
-                          <div className="text-sm font-medium">
+                        <div className="flex items-center justify-between pt-3 lg:pt-4 border-t border-border/50">
+                          <div className="text-xs lg:text-sm font-medium">
                             {room.price ? (
                               <span className="text-primary">
                                 ${(room.price / 100).toFixed(0)} USD
@@ -368,7 +373,7 @@ export default function Dashboard() {
                               <span className="text-muted-foreground">Gratis</span>
                             )}
                           </div>
-                          <Button variant="ghost" size="sm" className="group-hover:bg-primary group-hover:text-primary-foreground">
+                          <Button variant="ghost" size="sm" className="text-xs lg:text-sm h-8 lg:h-9 px-3 lg:px-4 group-hover:bg-primary group-hover:text-primary-foreground">
                             Ver sala →
                           </Button>
                         </div>
@@ -382,9 +387,9 @@ export default function Dashboard() {
 
           {/* Course Recommendations */}
           <section>
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="font-semibold text-foreground text-[24px]">Recomendaciones de Cursos</h2>
-              <div className="flex space-x-2">
+            <div className="flex items-center justify-between mb-4 lg:mb-6">
+              <h2 className="font-semibold text-foreground text-lg lg:text-[24px]">Recomendaciones de Cursos</h2>
+              <div className="hidden md:flex space-x-2">
                 <Button
                   variant="ghost"
                   size="icon"
@@ -417,9 +422,9 @@ export default function Dashboard() {
 
           {/* Workshop Recommendations */}
           <section>
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="font-semibold text-foreground text-[24px]">Recomendaciones del Talleres</h2>
-              <div className="flex space-x-2">
+            <div className="flex items-center justify-between mb-4 lg:mb-6">
+              <h2 className="font-semibold text-foreground text-lg lg:text-[24px]">Recomendaciones del Talleres</h2>
+              <div className="hidden md:flex space-x-2">
                 <Button
                   variant="ghost"
                   size="icon"
@@ -452,7 +457,7 @@ export default function Dashboard() {
 
           {/* All Topics */}
           <section>
-            <h2 className="font-semibold mb-6 text-foreground text-[24px]">Todos los temas</h2>
+            <h2 className="font-semibold mb-4 lg:mb-6 text-foreground text-lg lg:text-[24px]">Todos los temas</h2>
             
             {/* Main Topics Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">

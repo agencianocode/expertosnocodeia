@@ -6,8 +6,9 @@ import { setupSupabaseAuthRoutes } from "./supabaseAuthRoutes";
 import { isAdmin } from "./adminMiddleware";
 import { insertCommentSchema } from "@shared/schema";
 import { sendNewCommentNotification, getAdminNotificationEmails } from "./emailNotifications";
-import { db } from "./db";
-import { communityChannels, communityMessages } from "@shared/schema";
+import { db, pool } from "./db";
+import { communityChannels, communityMessages, liveEvents } from "@shared/schema";
+import { eq, and, gte, lte, desc } from "drizzle-orm";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Setup Supabase authentication routes
@@ -113,7 +114,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
       };
 
       const response = await storage.saveOnboardingResponse(onboardingData);
-      res.json(response);
+      
+      // Record onboarding_completed event
+      try {
+        const { recordEvent } = await import('./eventSystem');
+        await recordEvent(userId, 'onboarding_completed', {
+          experienceLevel,
+          mainGoal,
+        });
+      } catch (error: any) {
+        console.error('Error recording onboarding_completed event:', error.message);
+      }
+
+      // Get personalized recommendations
+      let recommendations = null;
+      try {
+        const { getPersonalizedRecommendations } = await import('./onboardingPersonalization');
+        recommendations = await getPersonalizedRecommendations(userId);
+      } catch (error: any) {
+        console.error('Error getting personalized recommendations:', error.message);
+      }
+      
+      res.json({ 
+        ...response, 
+        recommendations 
+      });
     } catch (error) {
       console.error("Error saving onboarding response:", error);
       res.status(500).json({ message: "Failed to save onboarding response" });
@@ -132,10 +157,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Admin onboarding analytics (authenticated admin only - check simple-routes.ts for proper admin auth)
-  app.get("/api/admin/onboarding/analytics", supabaseAuth, async (req: AuthenticatedRequest, res) => {
+  // Admin onboarding analytics (authenticated admin only)
+  app.get("/api/admin/onboarding/analytics", supabaseAuth, isAdmin, async (req: AuthenticatedRequest, res) => {
     try {
-      // TODO: Add proper admin check when integrating with admin middleware
       const analytics = await storage.getOnboardingAnalytics();
       res.json(analytics);
     } catch (error) {
@@ -145,9 +169,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Admin get all onboarding responses (authenticated admin only)
-  app.get("/api/admin/onboarding/responses", supabaseAuth, async (req: AuthenticatedRequest, res) => {
+  app.get("/api/admin/onboarding/responses", supabaseAuth, isAdmin, async (req: AuthenticatedRequest, res) => {
     try {
-      // TODO: Add proper admin check when integrating with admin middleware
       const limit = parseInt(req.query.limit as string) || 50;
       const offset = parseInt(req.query.offset as string) || 0;
       
@@ -478,6 +501,287 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error creating message:", error);
       res.status(500).json({ message: "Failed to create message" });
+    }
+  });
+
+  // ============================================
+  // LIVE EVENTS ROUTES
+  // ============================================
+  
+  // Initialize live_events table if it doesn't exist
+  const initLiveEventsTable = async () => {
+    try {
+      await pool.query(`
+        CREATE TABLE IF NOT EXISTS live_events (
+          id VARCHAR PRIMARY KEY DEFAULT gen_random_uuid(),
+          title VARCHAR NOT NULL,
+          description TEXT,
+          host_name VARCHAR NOT NULL,
+          host_avatar VARCHAR,
+          host_role VARCHAR,
+          start_time TIMESTAMP NOT NULL,
+          end_time TIMESTAMP NOT NULL,
+          timezone VARCHAR DEFAULT 'America/Bogota',
+          is_active BOOLEAN DEFAULT true,
+          is_live BOOLEAN DEFAULT false,
+          join_url VARCHAR,
+          room_name VARCHAR,
+          event_type VARCHAR DEFAULT 'live',
+          created_at TIMESTAMP DEFAULT NOW(),
+          updated_at TIMESTAMP DEFAULT NOW()
+        )
+      `);
+      console.log("✅ live_events table initialized");
+    } catch (error: any) {
+      // Table might already exist, that's fine
+      if (!error.message?.includes('already exists')) {
+        console.error("❌ Error creating live_events table:", error.message);
+        console.error("Error details:", error);
+      } else {
+        console.log("✅ live_events table already exists");
+      }
+    }
+  };
+  
+  // Initialize table on startup
+  initLiveEventsTable();
+  
+  // Get all events (for calendar)
+  app.get("/api/events", async (req, res) => {
+    try {
+      const events = await db.select().from(liveEvents)
+        .where(eq(liveEvents.isActive, true))
+        .orderBy(desc(liveEvents.startTime));
+      
+      // Transform to calendar format
+      const calendarEvents = events.map(event => ({
+        id: event.id,
+        title: event.title,
+        date: event.startTime?.toISOString().split('T')[0],
+        type: event.eventType,
+        startTime: event.startTime,
+        endTime: event.endTime,
+        hostName: event.hostName,
+        isLive: event.isLive,
+      }));
+      
+      res.json(calendarEvents);
+    } catch (error: any) {
+      console.error("Error fetching events:", error);
+      res.status(500).json({ message: "Failed to fetch events", error: error.message });
+    }
+  });
+
+  // Get current live event (for community sidebar widget)
+  app.get("/api/community/live-event", async (req, res) => {
+    try {
+      const now = new Date();
+      
+      // Find event that is either:
+      // 1. Manually marked as live (isLive = true)
+      // 2. Currently within the scheduled time window
+      const events = await db.select().from(liveEvents)
+        .where(eq(liveEvents.isActive, true))
+        .orderBy(desc(liveEvents.startTime));
+      
+      // First check for manually live events
+      let liveEvent = events.find(e => e.isLive === true);
+      
+      // If no manual live, check for events within time window
+      if (!liveEvent) {
+        liveEvent = events.find(e => {
+          if (!e.startTime || !e.endTime) return false;
+          const start = new Date(e.startTime);
+          const end = new Date(e.endTime);
+          return now >= start && now <= end;
+        });
+      }
+      
+      if (liveEvent) {
+        res.json({
+          id: liveEvent.id,
+          title: liveEvent.title,
+          hostName: liveEvent.hostName,
+          hostAvatar: liveEvent.hostAvatar,
+          hostRole: liveEvent.hostRole,
+          joinUrl: liveEvent.joinUrl || `/live/${liveEvent.id}`,
+          isLive: true,
+          startTime: liveEvent.startTime,
+          endTime: liveEvent.endTime,
+        });
+      } else {
+        res.json({ isLive: false });
+      }
+    } catch (error: any) {
+      console.error("Error fetching live event:", error);
+      res.status(500).json({ message: "Failed to fetch live event", error: error.message });
+    }
+  });
+
+  // Get specific live event details
+  app.get("/api/community/live-event/:eventId", async (req, res) => {
+    try {
+      const { eventId } = req.params;
+      
+      const [event] = await db.select().from(liveEvents)
+        .where(eq(liveEvents.id, eventId));
+      
+      if (!event) {
+        return res.status(404).json({ message: "Event not found" });
+      }
+      
+      res.json({
+        id: event.id,
+        title: event.title,
+        description: event.description,
+        hostName: event.hostName,
+        hostAvatar: event.hostAvatar,
+        hostRole: event.hostRole,
+        joinUrl: event.joinUrl || `/live/${event.id}`,
+        roomName: event.roomName || `ExpertosNoCodeIA-${event.id}`,
+        isLive: event.isLive,
+        startTime: event.startTime,
+        endTime: event.endTime,
+        eventType: event.eventType,
+        participants: [], // Will be populated by Jitsi
+      });
+    } catch (error: any) {
+      console.error("Error fetching event details:", error);
+      res.status(500).json({ message: "Failed to fetch event", error: error.message });
+    }
+  });
+
+  // Admin routes for managing live events
+  app.get("/api/admin/live-events", supabaseAuth, isAdmin, async (req: AuthenticatedRequest, res) => {
+    try {
+      const events = await db.select().from(liveEvents)
+        .orderBy(desc(liveEvents.startTime));
+      res.json(events);
+    } catch (error: any) {
+      console.error("Error fetching admin events:", error);
+      res.status(500).json({ message: "Failed to fetch events", error: error.message });
+    }
+  });
+
+  app.post("/api/admin/live-events", supabaseAuth, isAdmin, async (req: AuthenticatedRequest, res, next) => {
+    try {
+      // Ensure we always return JSON
+      res.setHeader('Content-Type', 'application/json');
+      
+      const { title, description, hostName, hostAvatar, hostRole, startTime, endTime, eventType, joinUrl } = req.body;
+      
+      console.log("📝 Creating event with data:", { title, hostName, startTime, endTime, eventType });
+      
+      if (!title || !hostName || !startTime || !endTime) {
+        console.log("❌ Missing required fields");
+        return res.status(400).json({ message: "Title, hostName, startTime and endTime are required" });
+      }
+      
+      // Validate dates
+      const startDate = new Date(startTime);
+      const endDate = new Date(endTime);
+      
+      if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+        return res.status(400).json({ message: "Invalid date format" });
+      }
+      
+      if (endDate <= startDate) {
+        return res.status(400).json({ message: "End time must be after start time" });
+      }
+      
+      console.log("💾 Inserting event into database...");
+      const [newEvent] = await db.insert(liveEvents).values({
+        title,
+        description,
+        hostName,
+        hostAvatar,
+        hostRole,
+        startTime: startDate,
+        endTime: endDate,
+        eventType: eventType || 'live',
+        joinUrl,
+        isActive: true,
+        isLive: false,
+      }).returning();
+      
+      console.log("✅ Event created successfully:", newEvent);
+      res.status(201).json(newEvent);
+    } catch (error: any) {
+      console.error("❌ Error creating event:", error);
+      console.error("❌ Error message:", error.message);
+      console.error("❌ Error stack:", error.stack);
+      // Ensure we return JSON even on error
+      if (!res.headersSent) {
+        res.status(500).json({ message: "Failed to create event", error: error.message || "Unknown error" });
+      } else {
+        next(error);
+      }
+    }
+  });
+
+  app.patch("/api/admin/live-events/:eventId", supabaseAuth, isAdmin, async (req: AuthenticatedRequest, res) => {
+    try {
+      const { eventId } = req.params;
+      const updates = req.body;
+      
+      // Convert date strings to Date objects if present
+      if (updates.startTime) updates.startTime = new Date(updates.startTime);
+      if (updates.endTime) updates.endTime = new Date(updates.endTime);
+      updates.updatedAt = new Date();
+      
+      const [updated] = await db.update(liveEvents)
+        .set(updates)
+        .where(eq(liveEvents.id, eventId))
+        .returning();
+      
+      res.json(updated);
+    } catch (error: any) {
+      console.error("Error updating event:", error);
+      res.status(500).json({ message: "Failed to update event", error: error.message });
+    }
+  });
+
+  // Toggle live status
+  app.post("/api/admin/live-events/:eventId/toggle-live", supabaseAuth, isAdmin, async (req: AuthenticatedRequest, res) => {
+    try {
+      const { eventId } = req.params;
+      
+      const [event] = await db.select().from(liveEvents)
+        .where(eq(liveEvents.id, eventId));
+      
+      if (!event) {
+        return res.status(404).json({ message: "Event not found" });
+      }
+      
+      // If we're setting this event to live, turn off other live events first
+      if (!event.isLive) {
+        await db.update(liveEvents)
+          .set({ isLive: false })
+          .where(eq(liveEvents.isLive, true));
+      }
+      
+      const [updated] = await db.update(liveEvents)
+        .set({ isLive: !event.isLive, updatedAt: new Date() })
+        .where(eq(liveEvents.id, eventId))
+        .returning();
+      
+      res.json(updated);
+    } catch (error: any) {
+      console.error("Error toggling live status:", error);
+      res.status(500).json({ message: "Failed to toggle live status", error: error.message });
+    }
+  });
+
+  app.delete("/api/admin/live-events/:eventId", supabaseAuth, isAdmin, async (req: AuthenticatedRequest, res) => {
+    try {
+      const { eventId } = req.params;
+      
+      await db.delete(liveEvents).where(eq(liveEvents.id, eventId));
+      
+      res.json({ message: "Event deleted" });
+    } catch (error: any) {
+      console.error("Error deleting event:", error);
+      res.status(500).json({ message: "Failed to delete event", error: error.message });
     }
   });
 

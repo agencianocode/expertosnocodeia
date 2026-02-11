@@ -1,106 +1,201 @@
 import { useEffect, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { useAuth } from "@/hooks/useAuth";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { useSimpleAuth } from "@/hooks/use-simple-auth";
 import { useToast } from "@/hooks/use-toast";
 import Sidebar from "@/components/layout/sidebar";
 import MobileNav from "@/components/layout/mobile-nav";
 import MobileHeader from "@/components/layout/mobile-header";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { CalendarDays, Clock, MapPin, Users, ExternalLink, ChevronLeft, ChevronRight, Calendar as CalendarIcon } from "lucide-react";
-import { format, addMonths, subMonths, startOfMonth, endOfMonth, eachDayOfInterval, getDay, isSameMonth, isSameDay, isToday } from "date-fns";
+import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Check } from "lucide-react";
+import { format, addMonths, subMonths, startOfMonth, endOfMonth, eachDayOfInterval, getDay, isSameMonth, isSameDay, isToday, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
+import { Link, useRoute, useLocation } from "wouter";
+import { queryClient } from "@/lib/queryClient";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+
+interface CalendarEvent {
+  id: string;
+  title: string;
+  date: string;
+  type?: string;
+  category?: string;
+  startTime?: string;
+  endTime?: string;
+  hostName?: string;
+  hostAvatar?: string;
+  hostRole?: string;
+  isLive?: boolean;
+  joinUrl?: string;
+  description?: string;
+  registrationsCount?: number;
+  eventImage?: string;
+}
 
 export default function Events() {
   const { toast } = useToast();
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, user } = useSimpleAuth();
+  const [, setLocation] = useLocation();
   const [currentMonth, setCurrentMonth] = useState<Date>(new Date());
+  const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
+  const [showRegisterDialog, setShowRegisterDialog] = useState(false);
+  const [registerEmail, setRegisterEmail] = useState("");
+  const [registerFirstName, setRegisterFirstName] = useState("");
+  const [registerLastName, setRegisterLastName] = useState("");
+  const [registerPhone, setRegisterPhone] = useState("");
 
-  // Redirect to login if not authenticated
-  useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
+  // Fetch events from API
+  const { data: events = [] } = useQuery<CalendarEvent[]>({
+    queryKey: ["/api/events"],
+    queryFn: async () => {
+      try {
+        const res = await fetch("/api/events", { credentials: "include" });
+        if (!res.ok) return [];
+        return res.json();
+      } catch {
+        return [];
+      }
+    },
+  });
+
+  // Check registration status for selected event
+  const { data: registrationStatus } = useQuery({
+    queryKey: ["/api/events", selectedEvent?.id, "registration-status", user?.id],
+    queryFn: async () => {
+      if (!selectedEvent?.id) return { registered: false };
+      try {
+        const params = new URLSearchParams();
+        if (user?.email) params.append("email", user.email);
+        const res = await fetch(`/api/events/${selectedEvent.id}/registration-status?${params}`, {
+          credentials: "include",
+        });
+        if (!res.ok) return { registered: false };
+        return res.json();
+      } catch {
+        return { registered: false };
+      }
+    },
+    enabled: !!selectedEvent?.id,
+  });
+
+  // Register mutation
+  const registerMutation = useMutation({
+    mutationFn: async (data: { email: string; firstName?: string; lastName?: string; phone?: string }) => {
+      const res = await fetch(`/api/events/${selectedEvent?.id}/register`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.message || "Failed to register");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/events", selectedEvent?.id, "registration-status"] });
+      setShowRegisterDialog(false);
+      setRegisterEmail("");
+      setRegisterFirstName("");
+      setRegisterLastName("");
+      setRegisterPhone("");
       toast({
-        title: "Unauthorized",
-        description: "You are logged out. Logging in again...",
+        title: "¡Registro exitoso!",
+        description: "Te hemos enviado un email de confirmación. Revisa tu bandeja de entrada.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "No se pudo completar el registro",
         variant: "destructive",
       });
-      setTimeout(() => {
-        window.location.href = "/api/login";
-      }, 500);
-      return;
-    }
-  }, [isAuthenticated, isLoading, toast]);
-
-  // Mock data for upcoming workshops
-  const upcomingWorkshops = [
-    {
-      id: "workshop-1",
-      title: "Consejos esenciales de ChatGPT: últimas funciones y casos prácticos",
-      instructor: "Juan García",
-      date: new Date("2025-08-29T15:00:00"),
-      imageUrl: "https://images.unsplash.com/photo-1677442136019-21780ecad995?w=400&h=300&fit=crop",
-      type: "General",
-      registrationUrl: "#"
     },
-    {
-      id: "workshop-2", 
-      title: "Introducción al desarrollo agente con Warp",
-      instructor: "Ana Martínez",
-      date: new Date("2025-09-05T15:00:00"),
-      imageUrl: "https://images.unsplash.com/photo-1555949963-aa79dcee981c?w=400&h=300&fit=crop",
-      type: "Codificación",
-      registrationUrl: "#"
-    },
-    {
-      id: "workshop-3",
-      title: "Crea tu propio agente de IA: automatiza las tareas diarias con flujos de trabajo personalizados",
-      instructor: "Carlos Rodríguez",
-      date: new Date("2025-09-20T15:00:00"),
-      imageUrl: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=300&fit=crop",
-      type: "Agentes de IA",
-      registrationUrl: "#"
-    }
-  ];
+  });
 
-  // Calendar events data
-  const calendarEvents = [
-    { date: 1, title: "Dominando la iniciación: Técnicas avanzadas..." },
-    { date: 8, title: "Cómo ejecutar los modelos de próxima generación..." },
-    { date: 13, title: "Dominando los agentes de IA para automatización..." },
-    { date: 22, title: "Taller de la Fundación de IA: nueva temática para principiantes..." },
-    { date: 28, title: "Consejos esenciales de ChatGPT..." }
-  ];
+  // Use events from API, fallback to empty array (no mock data)
+  const calendarEvents: CalendarEvent[] = events;
 
-  // Generate calendar days
+  // Generate calendar days including days from previous/next month to fill the grid
   const generateCalendarDays = () => {
     const startDate = startOfMonth(currentMonth);
     const endDate = endOfMonth(currentMonth);
     const days = eachDayOfInterval({ start: startDate, end: endDate });
     
-    // Add empty cells for days before the first day of the month
+    // Add days from previous month to fill the first week
     const startDay = getDay(startDate);
-    const emptyDays = Array(startDay).fill(null);
+    const prevMonthDays: Date[] = [];
+    if (startDay > 0) {
+      const prevMonth = subMonths(startDate, 1);
+      const prevMonthEnd = endOfMonth(prevMonth);
+      for (let i = startDay - 1; i >= 0; i--) {
+        const day = new Date(prevMonthEnd);
+        day.setDate(prevMonthEnd.getDate() - i);
+        prevMonthDays.push(day);
+      }
+    }
     
-    return [...emptyDays, ...days];
+    // Add days from next month to complete the grid (6 rows = 42 cells)
+    const allDays = [...prevMonthDays, ...days];
+    const remainingDays = 42 - allDays.length;
+    const nextMonthDays: Date[] = [];
+    if (remainingDays > 0) {
+      const nextMonth = addMonths(startDate, 1);
+      for (let i = 1; i <= remainingDays; i++) {
+        const day = new Date(nextMonth);
+        day.setDate(i);
+        nextMonthDays.push(day);
+      }
+    }
+    
+    return [...allDays, ...nextMonthDays];
   };
 
   const calendarDays = generateCalendarDays();
 
+  // Get event for a specific day
+  const getEventForDay = (day: Date) => {
+    return calendarEvents.find(event => {
+      const eventDate = parseISO(event.date);
+      return isSameDay(eventDate, day);
+    });
+  };
+
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated) {
+      toast({
+        title: "Acceso requerido",
+        description: "Debes iniciar sesión para ver los eventos",
+        variant: "destructive",
+      });
+      setTimeout(() => {
+        window.location.href = "/simple-login";
+      }, 500);
+    }
+  }, [isAuthenticated, isLoading, toast]);
+
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-dark-bg flex">
-        <div className="w-[250px] bg-dark-card border-r border-dark-border"></div>
+      <div className="min-h-screen bg-[#0d0d0d] flex">
+        <div className="w-[250px] bg-[#171717] border-r border-[#262626]"></div>
         <div className="flex-1 flex items-center justify-center">
-          <div className="text-white">Loading...</div>
+          <div className="text-white">Cargando...</div>
         </div>
       </div>
     );
   }
 
-
   return (
-    <div className="min-h-screen bg-[#171717] text-white">
+    <div className="min-h-screen bg-[#0d0d0d] text-white">
       {/* Mobile Header */}
       <MobileHeader />
       
@@ -109,108 +204,53 @@ export default function Events() {
         <Sidebar />
         
         {/* Main Content */}
-        <main className="flex-1 overflow-auto pb-20 lg:pb-0 md:ml-16 lg:ml-[250px]">
-          <div className="p-6 space-y-6">
-            {/* Próximos talleres section */}
-            <section>
-              <div className="flex items-center justify-between mb-4">
+        <main className="flex-1 overflow-auto pb-20 lg:pb-0 md:ml-16 lg:ml-[250px] min-h-screen">
+          <div className="p-4 sm:p-6 lg:p-8 space-y-6 lg:space-y-8 h-full">
+            {/* Header Section */}
                 <div>
-                  <h1 className="text-2xl font-bold text-white">Próximos talleres</h1>
-                  <p className="text-gray-400 text-sm">
-                    Ve nuestro calendario de eventos en vivo y regístrate para participar en sesiones de talleres en tiempo real.
-                  </p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Button variant="ghost" size="sm" className="text-gray-400 hover:text-white">
-                    <ChevronLeft className="h-4 w-4" />
-                  </Button>
-                  <Button variant="ghost" size="sm" className="text-gray-400 hover:text-white">
-                    <ChevronRight className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {upcomingWorkshops.map((workshop) => (
-                  <Card key={workshop.id} className="bg-[#262626] border-[#333] overflow-hidden hover:border-[#444] transition-colors">
-                    <div className="relative">
-                      <img 
-                        src={workshop.imageUrl} 
-                        alt={workshop.title}
-                        className="w-full h-32 object-cover"
-                      />
-                      <div className="absolute top-2 left-2">
-                        <Badge className="bg-gray-800/80 text-white text-xs">
-                          {workshop.type}
-                        </Badge>
-                      </div>
-                      <div className="absolute top-2 right-2">
-                        <div className="flex gap-1">
-                          <div className="w-6 h-6 bg-gray-800/80 rounded flex items-center justify-center">
-                            <CalendarIcon className="h-3 w-3 text-white" />
-                          </div>
-                          <div className="w-6 h-6 bg-gray-800/80 rounded flex items-center justify-center">
-                            <Users className="h-3 w-3 text-white" />
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    <CardContent className="p-4">
-                      <h3 className="font-semibold text-white text-sm mb-2 line-clamp-2">
-                        {workshop.title}
-                      </h3>
-                      <p className="text-xs text-gray-400 mb-3">
-                        Presentado por {workshop.instructor}
-                      </p>
-                      <p className="text-xs text-gray-400 mb-3">
-                        {format(workshop.date, "d 'de' MMMM 'formato a las' HH:mm", { locale: es })}
-                      </p>
-                      <Button className="w-full bg-gray-700 hover:bg-gray-600 text-white text-xs h-8">
-                        Detalles del evento y confirmación de asistencia
-                      </Button>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </section>
-
-            {/* A continuación section */}
-            <section className="bg-[#1a1a1a] rounded-lg p-4">
-              <div className="flex items-center gap-2 mb-4">
-                <CalendarIcon className="h-5 w-5 text-white" />
-                <h2 className="text-lg font-semibold text-white">A continuación</h2>
-              </div>
-              <p className="text-gray-400 text-sm">
-                ¡Mantente atento! Más contenido próximamente.
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-2">Próximos talleres</h1>
+              <p className="text-gray-400 text-sm sm:text-base">
+                Consulta nuestro calendario de eventos en vivo y regístrate para participar en sesiones de talleres en tiempo real
               </p>
-            </section>
+              </div>
 
             {/* Todos los eventos section */}
-            <section>
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-bold text-white">Todos los eventos</h2>
-                <p className="text-sm text-gray-400">Ver todos los talleres a demanda</p>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <CalendarIcon className="h-5 w-5 text-white" />
+                <h2 className="text-base sm:text-lg font-semibold text-white">Todos los eventos</h2>
+              </div>
+              <Link href="/workshops">
+                <Button 
+                  variant="outline" 
+                  className="border-[#333] bg-transparent text-white hover:bg-[#262626] hover:text-white text-sm w-full sm:w-auto"
+                >
+                  Ver todos los eventos
+                </Button>
+              </Link>
               </div>
 
-              {/* Month navigation */}
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-2">
+            {/* Calendar - Full width */}
+            <div className="bg-[#171717] rounded-xl border border-[#262626] overflow-hidden flex-1">
+              {/* Month navigation header */}
+              <div className="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4">
+                <h3 className="text-base sm:text-lg font-semibold text-white capitalize">
+                  {format(currentMonth, "MMMM 'de' yyyy", { locale: es })}
+                </h3>
+                <div className="flex items-center gap-1">
                   <Button
                     variant="ghost"
-                    size="sm"
+                    size="icon"
                     onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}
-                    className="text-gray-400 hover:text-white"
+                    className="h-8 w-8 text-gray-400 hover:text-white hover:bg-[#262626]"
                   >
                     <ChevronLeft className="h-4 w-4" />
                   </Button>
-                  <h3 className="text-lg font-semibold text-white">
-                    {format(currentMonth, "MMMM 'de' yyyy", { locale: es })}
-                  </h3>
                   <Button
                     variant="ghost"
-                    size="sm"
+                    size="icon"
                     onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}
-                    className="text-gray-400 hover:text-white"
+                    className="h-8 w-8 text-gray-400 hover:text-white hover:bg-[#262626]"
                   >
                     <ChevronRight className="h-4 w-4" />
                   </Button>
@@ -218,42 +258,67 @@ export default function Events() {
               </div>
 
               {/* Calendar grid */}
-              <div className="bg-[#262626] rounded-lg p-4">
+              <div className="border-t border-[#262626]">
                 {/* Days of week header */}
-                <div className="grid grid-cols-7 gap-2 mb-2">
-                  {['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'].map((day) => (
-                    <div key={day} className="text-center text-xs font-medium text-gray-400 p-2">
-                      {day}
+                <div className="grid grid-cols-7 border-b border-[#262626]">
+                  {['Domingo', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'].map((day, idx) => (
+                    <div 
+                      key={day} 
+                      className={`text-center text-xs sm:text-sm font-medium text-gray-400 py-2 sm:py-3 ${
+                        idx < 6 ? 'border-r border-[#262626]' : ''
+                      }`}
+                    >
+                      <span className="hidden sm:inline">{day}</span>
+                      <span className="sm:hidden">{day.slice(0, 3)}</span>
                     </div>
                   ))}
                 </div>
 
-                {/* Calendar days */}
-                <div className="grid grid-cols-7 gap-2">
+                {/* Calendar days - 6 rows */}
+                <div className="grid grid-cols-7">
                   {calendarDays.map((day, index) => {
-                    if (!day) {
-                      return <div key={index} className="aspect-square" />;
-                    }
-                    
-                    const dayNumber = day.getDate();
                     const isCurrentMonth = isSameMonth(day, currentMonth);
                     const isCurrentDay = isToday(day);
-                    const hasEvent = calendarEvents.find(event => event.date === dayNumber);
+                    const event = getEventForDay(day);
+                    const dayNumber = day.getDate();
+                    
+                    // Calculate border classes
+                    const isLastColumn = (index + 1) % 7 === 0;
+                    const isLastRow = index >= 35;
                     
                     return (
                       <div
                         key={index}
-                        className={`aspect-square border border-[#333] rounded p-2 relative ${
-                          isCurrentDay ? 'bg-[#333]' : 'bg-[#1a1a1a]'
-                        } ${!isCurrentMonth ? 'opacity-30' : ''}`}
+                        className={`min-h-[60px] sm:min-h-[80px] md:min-h-[100px] lg:min-h-[110px] xl:min-h-[120px] p-1 sm:p-2 relative ${
+                          !isLastColumn ? 'border-r border-[#262626]' : ''
+                        } ${!isLastRow ? 'border-b border-[#262626]' : ''}`}
                       >
-                        <span className={`text-sm ${isCurrentDay ? 'text-white font-bold' : 'text-gray-300'}`}>
+                        {/* Day number */}
+                        <div className="flex items-start justify-start">
+                          {isCurrentDay ? (
+                            <span className="flex items-center justify-center w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-white text-black text-xs sm:text-sm font-medium">
+                              {dayNumber}
+                            </span>
+                          ) : (
+                            <span className={`text-xs sm:text-sm ${
+                              isCurrentMonth 
+                                ? 'text-white' 
+                                : 'text-yellow-500'
+                            }`}>
                           {dayNumber}
                         </span>
-                        {hasEvent && (
-                          <div className="absolute bottom-1 left-1 right-1">
-                            <div className="text-xs text-gray-300 truncate">
-                              {hasEvent.title}
+                          )}
+                        </div>
+                        
+                        {/* Event */}
+                        {event && (
+                          <div className="mt-1 sm:mt-2">
+                            <div 
+                              onClick={() => setSelectedEvent(event)}
+                              className="bg-[#262626] border border-[#333] rounded px-1 sm:px-2 py-1 sm:py-1.5 text-[10px] sm:text-xs text-gray-300 line-clamp-2 sm:line-clamp-3 hover:bg-[#333] hover:border-cyan-500 cursor-pointer transition-colors"
+                            >
+                              <span className="hidden sm:inline">{event.title}</span>
+                              <span className="sm:hidden">{event.title.slice(0, 20)}...</span>
                             </div>
                           </div>
                         )}
@@ -262,13 +327,182 @@ export default function Events() {
                   })}
                 </div>
               </div>
-            </section>
+            </div>
           </div>
         </main>
       </div>
       
       {/* Mobile Navigation */}
       <MobileNav />
+
+      {/* Registration Form Dialog */}
+      <Dialog open={showRegisterDialog} onOpenChange={setShowRegisterDialog}>
+        <DialogContent className="bg-background border-border text-foreground max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold text-foreground">
+              Registrarse en el evento
+            </DialogTitle>
+            <DialogDescription className="text-muted-foreground">
+              {selectedEvent?.title}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 mt-4">
+            <div>
+              <Label htmlFor="register-email" className="text-foreground">Email *</Label>
+              <Input
+                id="register-email"
+                type="email"
+                value={registerEmail || user?.email || ""}
+                onChange={(e) => setRegisterEmail(e.target.value)}
+                placeholder="tu@email.com"
+                className="bg-card border-border text-foreground mt-1"
+                disabled={!!user?.email}
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label htmlFor="register-firstname" className="text-foreground">Nombre</Label>
+                <Input
+                  id="register-firstname"
+                  value={registerFirstName || user?.firstName || ""}
+                  onChange={(e) => setRegisterFirstName(e.target.value)}
+                  placeholder="Tu nombre"
+                  className="bg-card border-border text-foreground mt-1"
+                  disabled={!!user?.firstName}
+                />
+              </div>
+              <div>
+                <Label htmlFor="register-lastname" className="text-foreground">Apellido</Label>
+                <Input
+                  id="register-lastname"
+                  value={registerLastName || user?.lastName || ""}
+                  onChange={(e) => setRegisterLastName(e.target.value)}
+                  placeholder="Tu apellido"
+                  className="bg-card border-border text-foreground mt-1"
+                  disabled={!!user?.lastName}
+                />
+              </div>
+            </div>
+            <div>
+              <Label htmlFor="register-phone" className="text-foreground">Teléfono (opcional)</Label>
+              <Input
+                id="register-phone"
+                type="tel"
+                value={registerPhone}
+                onChange={(e) => setRegisterPhone(e.target.value)}
+                placeholder="+57 300 123 4567"
+                className="bg-card border-border text-foreground mt-1"
+              />
+            </div>
+            <Button
+              onClick={() => {
+                if (!registerEmail && !user?.email) {
+                  toast({
+                    title: "Error",
+                    description: "El email es requerido",
+                    variant: "destructive",
+                  });
+                  return;
+                }
+                registerMutation.mutate({
+                  email: registerEmail || user?.email || "",
+                  firstName: registerFirstName || user?.firstName || undefined,
+                  lastName: registerLastName || user?.lastName || undefined,
+                  phone: registerPhone || undefined,
+                });
+              }}
+              disabled={registerMutation.isPending}
+              className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
+            >
+              {registerMutation.isPending ? "Registrando..." : "Confirmar Registro"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Event Details Dialog - Rediseñado como imagen 1 */}
+      <Dialog open={!!selectedEvent && !showRegisterDialog} onOpenChange={(open) => !open && setSelectedEvent(null)}>
+        <DialogContent className="bg-[#1a1a1a] border-[#333] text-foreground max-w-3xl p-0 gap-0 overflow-hidden">
+          {selectedEvent && (
+            <div className="bg-[#262626] rounded-lg border border-[#333]">
+              {/* Main Content Card */}
+              <div className="flex flex-col md:flex-row">
+                {/* Left Section - Text Content */}
+                <div className="flex-1 p-6 md:p-8 space-y-4">
+                  {/* Category Badge and Logo */}
+                  <div className="flex items-center gap-2 mb-2">
+                    {selectedEvent.category && (
+                      <div className="inline-flex items-center px-3 py-1.5 bg-white text-black rounded-md text-xs font-medium border border-red-500">
+                        {selectedEvent.category}
+                      </div>
+                    )}
+                    {/* Logo - NoCode IA */}
+                    <div className="text-[20px] font-bold text-white">
+                      NoCode IA
+                    </div>
+                  </div>
+
+                  {/* Title */}
+                  <DialogTitle className="text-2xl md:text-3xl font-bold text-white leading-tight">
+                    {selectedEvent.title}
+                  </DialogTitle>
+
+                  {/* Host Info */}
+                  {selectedEvent.hostName && (
+                    <div className="flex items-center gap-2 text-gray-400">
+                      <div className="w-4 h-4 rounded-full bg-gray-600 flex items-center justify-center">
+                        <div className="w-2 h-2 rounded-full bg-gray-400"></div>
+                      </div>
+                      <span className="text-sm">Presentado por {selectedEvent.hostName}</span>
+                    </div>
+                  )}
+
+                  {/* Date and Time */}
+                  {selectedEvent.startTime && (
+                    <div className="text-sm text-gray-400 pt-2">
+                      {format(new Date(selectedEvent.startTime), "EEEE, d 'de' MMMM 'de' yyyy", { locale: es }).replace(/^\w/, c => c.toUpperCase())} • {format(new Date(selectedEvent.startTime), "hh:mm a", { locale: es }).toUpperCase()} - {selectedEvent.endTime && format(new Date(selectedEvent.endTime), "hh:mm a", { locale: es }).toUpperCase()}
+                    </div>
+                  )}
+
+                  {/* Description - Preview only (plain text, truncated) */}
+                  {selectedEvent.description && (
+                    <div className="text-sm text-gray-300 leading-relaxed pt-2 line-clamp-4">
+                      {/* Strip HTML tags for preview */}
+                      {selectedEvent.description.replace(/<[^>]*>/g, '').substring(0, 200)}
+                      {selectedEvent.description.replace(/<[^>]*>/g, '').length > 200 && '...'}
+                    </div>
+                  )}
+
+                  {/* Action Button */}
+                  <div className="pt-4">
+                    <Button
+                      onClick={() => {
+                        setLocation(`/calendar-events/${selectedEvent.id}`);
+                      }}
+                      className="w-full md:w-auto bg-primary text-primary-foreground hover:bg-primary/90"
+                      size="lg"
+                    >
+                      Ver detalles del evento
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Right Section - Host Avatar (Cuadrado y Grande) */}
+                {selectedEvent.hostAvatar && (
+                  <div className="md:w-64 md:flex-shrink-0 p-6 md:p-8 flex items-center justify-center md:items-start md:justify-end">
+                    <img
+                      src={selectedEvent.hostAvatar}
+                      alt={selectedEvent.hostName || "Host"}
+                      className="w-48 h-48 md:w-56 md:h-56 rounded-lg object-cover border border-[#444] shadow-xl"
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

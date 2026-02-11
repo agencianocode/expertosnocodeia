@@ -23,9 +23,10 @@ interface CourseCardProps {
   showContinueText?: boolean; // Show "Continuar" text instead of normal navigation
   isAuthenticated?: boolean; // Whether user is authenticated - shows padlock if false
   roomSlug?: string | null; // Optional room context for navigation
+  imageFit?: "cover" | "contain"; // Image fit for cover artwork
 }
 
-export default function CourseCard({ course, category, progress, variant = "default", lastLessonId, showContinueText = false, isAuthenticated = true, roomSlug }: CourseCardProps) {
+export default function CourseCard({ course, category, progress, variant = "default", lastLessonId, showContinueText = false, isAuthenticated = true, roomSlug, imageFit = "cover" }: CourseCardProps) {
   if (!course) return null;
   
   const [, setLocation] = useLocation();
@@ -159,15 +160,15 @@ export default function CourseCard({ course, category, progress, variant = "defa
         )}
       >
         {/* Course Image */}
-        <div className="w-20 h-14 bg-muted rounded-lg overflow-hidden flex-shrink-0 relative">
+        <div className="w-20 h-14 bg-muted/60 rounded-lg overflow-hidden flex-shrink-0 relative">
           {course.coverImageUrl ? (
             <img 
               src={course.coverImageUrl} 
               alt={course.title}
-              className="w-full h-full object-cover"
-              style={{ 
-                filter: 'brightness(1.2) contrast(1.1)'
-              } as React.CSSProperties}
+              className={cn(
+                "w-full h-full",
+                imageFit === "contain" ? "object-contain" : "object-cover"
+              )}
               onError={(e) => {
                 e.currentTarget.style.display = 'none';
               }}
@@ -278,13 +279,16 @@ export default function CourseCard({ course, category, progress, variant = "defa
         // Non-authenticated users will see blocked content in the course page
         let courseUrl;
         
+        // Use slug if available, fallback to ID for backwards compatibility
+        const courseIdentifier = (course as any).slug || course.id;
+        
         if (course.type === 'workshop') {
           courseUrl = roomSlug ? `/sala/${roomSlug}/taller/${course.id}` : `/taller/${course.id}`;
         } else if (course.type === 'guide') {
           courseUrl = roomSlug ? `/sala/${roomSlug}/guia/${course.id}` : `/guia/${course.id}`;
         } else {
           // Navigate to course - useLessonPosition will restore last viewed lesson
-          courseUrl = roomSlug ? `/sala/${roomSlug}/curso/${course.id}` : `/curso/${course.id}`;
+          courseUrl = roomSlug ? `/sala/${roomSlug}/curso/${courseIdentifier}` : `/curso/${courseIdentifier}`;
         }
         setLocation(courseUrl);
       }}
@@ -312,16 +316,14 @@ export default function CourseCard({ course, category, progress, variant = "defa
         
         {/* Custom course image */}
         {course.coverImageUrl && (
-          <div className="absolute inset-0">
+          <div className="absolute inset-0 flex items-center justify-center bg-black/10">
             <img 
               src={course.coverImageUrl} 
               alt={course.title}
-              className="w-full h-full object-cover"
-              style={{ 
-                imageRendering: 'crisp-edges',
-                objectPosition: '50% 25%',
-                filter: 'brightness(1.2) contrast(1.1)'
-              } as React.CSSProperties}
+              className={cn(
+                "w-full h-full",
+                imageFit === "contain" ? "object-contain" : "object-cover"
+              )}
               onError={(e) => {
                 console.error('Image load error - URL:', course.coverImageUrl);
                 console.error('Image load error - Element:', e.currentTarget);

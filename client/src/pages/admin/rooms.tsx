@@ -13,7 +13,8 @@ import {
   Search, 
   Edit,
   Eye,
-  DoorOpen
+  DoorOpen,
+  Image as ImageIcon
 } from "lucide-react";
 import { useAdmin } from "@/hooks/useAdmin";
 
@@ -137,6 +138,12 @@ export default function RoomsManagement() {
                           <Button size="sm" variant="outline" className="w-full" data-testid={`button-edit-room-${room.id}`}>
                             <Edit className="h-4 w-4 mr-1" />
                             Editar
+                          </Button>
+                        </Link>
+                        <Link href={`/admin/promo-banners?roomId=${room.id}`} className="flex-1">
+                          <Button size="sm" variant="ghost" className="w-full">
+                            <ImageIcon className="h-4 w-4 mr-1" />
+                            Banners
                           </Button>
                         </Link>
                         <Link href={`/sala/${room.slug}`} className="flex-1">

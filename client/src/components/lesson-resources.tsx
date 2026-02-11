@@ -29,48 +29,72 @@ export function LessonResources({ lessonId, className = "" }: LessonResourcesPro
     return null;
   }
 
-  const handleDownload = (resource: LessonResource) => {
-    // List of file extensions that should be downloaded directly instead of opened
-    const downloadableExtensions = ['.json', '.zip', '.rar', '.7z', '.csv', '.xlsx', '.xls', '.docx', '.doc', '.txt', '.xml', '.sql'];
-    
-    // Check if the file should be downloaded based on extension
-    const shouldDownload = downloadableExtensions.some(ext => 
-      resource.fileName.toLowerCase().endsWith(ext)
-    );
-    
-    // Check if it's a cloud storage file (internal path) or external URL
-    if (resource.fileUrl.startsWith('/lesson-resources/')) {
-      // Internal cloud storage file - construct the correct API URL
-      const cleanPath = resource.fileUrl.substring(1); // Remove leading '/'
-      const downloadUrl = `/api/${cleanPath}`;
+  const handleDownload = async (resource: LessonResource) => {
+    try {
+      // Construct the download URL
+      let downloadUrl: string;
       
-      if (shouldDownload) {
-        // Force download using anchor element
-        const link = document.createElement('a');
-        link.href = downloadUrl;
-        link.download = resource.fileName;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+      // Check if it's a server-relative path or Supabase URL
+      if (resource.fileUrl.startsWith('/lesson-resources/')) {
+        // Server-relative path - construct the correct API URL
+        const cleanPath = resource.fileUrl.substring(1); // Remove leading '/'
+        downloadUrl = `/api/${cleanPath}`;
+      } else if (resource.fileUrl.includes('supabase.co/storage')) {
+        // Supabase public URL - convert to server path
+        // Extract resourceId and fileName from Supabase URL
+        const urlMatch = resource.fileUrl.match(/lesson-resources\/([^\/]+)\/(.+)$/);
+        if (urlMatch) {
+          const [, resourceId, fileName] = urlMatch;
+          downloadUrl = `/api/lesson-resources/${resourceId}/${fileName}`;
+        } else {
+          // Fallback: try to use the URL directly (will fail with CORS, but we'll catch it)
+          downloadUrl = resource.fileUrl;
+        }
       } else {
-        // Open in new window for viewable files (images, PDFs, etc.)
-        window.open(downloadUrl, '_blank');
+        // External URL - for external URLs, we need to use a proxy or fetch as blob
+        downloadUrl = resource.fileUrl;
       }
-    } else {
-      // External URL
-      if (shouldDownload) {
-        // Try to force download for external URLs
-        const link = document.createElement('a');
-        link.href = resource.fileUrl;
-        link.download = resource.fileName;
-        link.target = '_blank';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-      } else {
-        // Open in new tab
-        window.open(resource.fileUrl, '_blank');
+      
+      // Fetch the file as blob to force download (this bypasses browser's default behavior)
+      const response = await fetch(downloadUrl, {
+        credentials: 'include',
+        method: 'GET',
+      });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Download failed:', response.status, errorText);
+        throw new Error(`Failed to download: ${response.status} ${response.statusText}`);
       }
+      
+      // Get the blob
+      const blob = await response.blob();
+      
+      // Create object URL from blob
+      const blobUrl = window.URL.createObjectURL(blob);
+      
+      // Create download link
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.download = resource.fileName || 'download';
+      link.style.display = 'none';
+      
+      // Add to DOM
+      document.body.appendChild(link);
+      
+      // Trigger download
+      link.click();
+      
+      // Clean up
+      setTimeout(() => {
+        if (document.body.contains(link)) {
+          document.body.removeChild(link);
+        }
+        window.URL.revokeObjectURL(blobUrl);
+      }, 100);
+    } catch (error: any) {
+      console.error('Error downloading file:', error);
+      alert(`Error al descargar el archivo: ${error.message || 'Error desconocido'}`);
     }
   };
 
@@ -106,7 +130,7 @@ export function LessonResources({ lessonId, className = "" }: LessonResourcesPro
                 <FileText className="h-4 w-4 text-gray-400" />
               </div>
               <div className="flex-1 min-w-0">
-                <h3 className="text-white text-sm font-medium leading-5 mb-1">
+               <h3 className="text-white text-sm font-medium leading-5 mb-1 truncate" title={resource.title}>
                   {resource.title}
                 </h3>
                 <div className="flex items-center space-x-2 text-xs text-gray-400">

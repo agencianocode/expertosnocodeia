@@ -1,6 +1,6 @@
 import { useAdmin } from "@/hooks/useAdmin";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, BookOpen, FolderOpen, Image, ClipboardList, MessageSquare, DoorOpen } from "lucide-react";
+import { Users, BookOpen, FolderOpen, Image, ClipboardList, MessageSquare, DoorOpen, Mail, Newspaper, Zap } from "lucide-react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import Sidebar from "@/components/layout/sidebar";
@@ -31,6 +31,13 @@ export default function AdminDashboard() {
   }
 
   const stats = [
+    {
+      title: "Usuarios",
+      value: (adminStats as any)?.totalUsers || 0,
+      description: "Usuarios registrados",
+      icon: Users,
+      href: "/admin/users",
+    },
     {
       title: "Total de Cursos",
       value: (adminStats as any)?.totalCourses || 0,
@@ -65,6 +72,27 @@ export default function AdminDashboard() {
       description: "Imágenes, videos y documentos",
       icon: Image,
       href: "/admin/media",
+    },
+    {
+      title: "Email Marketing",
+      value: "—",
+      description: "Gestiona emails y secuencias",
+      icon: Mail,
+      href: "/admin/emails",
+    },
+    {
+      title: "Beehiiv",
+      value: "—",
+      description: "Integración con newsletter",
+      icon: Newspaper,
+      href: "/admin/beehiiv",
+    },
+    {
+      title: "Automatizaciones",
+      value: "—",
+      description: "Automatizaciones avanzadas",
+      icon: Zap,
+      href: "/admin/automations",
     },
   ];
 
@@ -159,6 +187,12 @@ export default function AdminDashboard() {
               <Button variant="outline" className="w-full justify-start">
                 <Image className="mr-2 h-4 w-4" />
                 Subir Archivos Multimedia
+              </Button>
+            </Link>
+            <Link href="/admin/segments">
+              <Button variant="outline" className="w-full justify-start">
+                <Users className="mr-2 h-4 w-4" />
+                Gestionar Segmentos
               </Button>
             </Link>
           </CardContent>

@@ -1,10 +1,11 @@
 import { useState, useEffect, useRef } from "react";
+import { useLocation } from "wouter";
 import { useSimpleAuth } from "@/hooks/use-simple-auth";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Send, Loader2, Menu, Heart, MessageCircle, X, Smile, ChevronDown, MoreVertical, Bell, Plus, Trash2, Pin, Paperclip, Music, AtSign } from "lucide-react";
+import { Send, Loader2, Menu, Heart, MessageCircle, X, Smile, ChevronDown, MoreVertical, Bell, Plus, Trash2, Pin, Paperclip, Music, AtSign, Trophy, Medal, Award, HelpCircle, Lock, Radio } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Sidebar from "@/components/layout/sidebar";
 import MobileNav from "@/components/layout/mobile-nav";
@@ -26,6 +27,7 @@ import {
 } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
+import { Card, CardContent } from "@/components/ui/card";
 
 interface Channel {
   id: string;
@@ -35,6 +37,15 @@ interface Channel {
   icon: string;
   section: string;
   isReadOnly?: boolean;
+}
+
+interface LiveEvent {
+  id: string;
+  title: string;
+  hostName: string;
+  hostAvatar?: string;
+  joinUrl: string;
+  isLive: boolean;
 }
 
 interface Post {
@@ -99,10 +110,47 @@ interface Message {
   } | null;
 }
 
+// Global storage for drafts - using a data attribute on document.body
+const DRAFT_ATTR = 'data-community-drafts';
+
+function getDraftsFromBody(): Record<string, string> {
+  try {
+    const data = document.body.getAttribute(DRAFT_ATTR);
+    return data ? JSON.parse(data) : {};
+  } catch {
+    return {};
+  }
+}
+
+function saveDraftsToBody(drafts: Record<string, string>) {
+  document.body.setAttribute(DRAFT_ATTR, JSON.stringify(drafts));
+}
+
+function setDraft(channelId: string, value: string) {
+  const drafts = getDraftsFromBody();
+  drafts[channelId] = value;
+  saveDraftsToBody(drafts);
+}
+
+function getDraft(channelId: string): string {
+  const drafts = getDraftsFromBody();
+  return drafts[channelId] || "";
+}
+
+function deleteDraft(channelId: string) {
+  const drafts = getDraftsFromBody();
+  if (drafts[channelId]) {
+    delete drafts[channelId];
+    saveDraftsToBody(drafts);
+  }
+}
+
+
 export default function Community() {
   const { isAuthenticated, user } = useSimpleAuth();
   const { toast } = useToast();
-  const [activeChannel, setActiveChannel] = useState<Channel | null>(null);
+  const [, setLocation] = useLocation();
+  const [activeChannel, setActiveChannelState] = useState<Channel | null>(null);
   const [channels, setChannels] = useState<Channel[]>([]);
   const [posts, setPosts] = useState<Post[]>([]);
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
@@ -129,19 +177,235 @@ export default function Community() {
   const [newPostContent, setNewPostContent] = useState("");
   const [creatingPost, setCreatingPost] = useState(false);
   const [isPresentanteChannel, setIsPresentanteChannel] = useState(false);
+  const [isDudasChannel, setIsDudasChannel] = useState(false);
+  const [pinnedPosts, setPinnedPosts] = useState<Post[]>([]);
   const [commentReactions, setCommentReactions] = useState<{ [commentId: string]: { emoji: string; count: number; users: string[] }[] }>({});
   const [openReactionCommentId, setOpenReactionCommentId] = useState<string | null>(null);
   const [userCommentEmojis, setUserCommentEmojis] = useState<{ [commentId: string]: string[] }>({});
   const [messages, setMessages] = useState<Message[]>([]);
   const [messageInput, setMessageInput] = useState("");
+  const messageInputRef = useRef("");
+  const activeChannelRef = useRef<Channel | null>(null);
+  
+  // Keep activeChannelRef in sync
+  useEffect(() => {
+    activeChannelRef.current = activeChannel;
+  }, [activeChannel]);
+  
+  // Custom handler for changing channel
+  const setActiveChannel = (channel: Channel | null) => {
+    setActiveChannelState(channel);
+  };
+  const lastChannelIdRef = useRef<string | null>(null);
   const [sendingMessage, setSendingMessage] = useState(false);
   const [isRedesChatChannel, setIsRedesChatChannel] = useState(false);
+  const [isLeaderboardChannel, setIsLeaderboardChannel] = useState(false);
+  const [leaderboardPeriod, setLeaderboardPeriod] = useState<"7_days" | "30_days" | "all_time">("7_days");
+  const [pointsInfoOpen, setPointsInfoOpen] = useState(false);
   const [onlineMembers, setOnlineMembers] = useState<any[]>([]);
+  const [allUsers, setAllUsers] = useState<any[]>([]);
+  const [liveEvent, setLiveEvent] = useState<LiveEvent | null>(null);
+
+  // Query for live events
+  const { data: liveEventData } = useQuery({
+    queryKey: ['/api/community/live-event'],
+    queryFn: async () => {
+      try {
+        const res = await fetch('/api/community/live-event', { credentials: 'include' });
+        if (!res.ok) return null;
+        return res.json();
+      } catch {
+        return null;
+      }
+    },
+    refetchInterval: 30000, // Refetch every 30 seconds to check for live events
+  });
+
+  // Update live event state when data changes
+  useEffect(() => {
+    if (liveEventData && liveEventData.isLive) {
+      // Real live event from API
+      setLiveEvent({
+        id: liveEventData.id,
+        title: liveEventData.title,
+        hostName: liveEventData.hostName,
+        hostAvatar: liveEventData.hostAvatar,
+        joinUrl: liveEventData.joinUrl || `/live/${liveEventData.id}`,
+        isLive: true,
+      });
+    } else {
+      // No live event currently
+      setLiveEvent(null);
+    }
+  }, [liveEventData]);
+
+  // Leaderboard constants
+  const LEVELS = [
+    { level: 1, points: 0 },
+    { level: 2, points: 100 },
+    { level: 3, points: 200 },
+    { level: 4, points: 400 },
+    { level: 5, points: 1200 },
+    { level: 6, points: 2400 },
+    { level: 7, points: 4800 },
+    { level: 8, points: 7200 },
+    { level: 9, points: 10400 },
+  ];
+
+  const getPointsForNextLevel = (currentLevel: number, currentPoints: number): number => {
+    const nextLevel = LEVELS.find(l => l.level === currentLevel + 1);
+    if (!nextLevel) return 0;
+    return Math.max(0, nextLevel.points - currentPoints);
+  };
+
+  // Leaderboard queries
+  const { data: leaderboard, isLoading: leaderboardLoading } = useQuery({
+    queryKey: ['/api/community/leaderboard', leaderboardPeriod],
+    enabled: isLeaderboardChannel,
+    queryFn: async () => {
+      const response = await fetch(`/api/community/leaderboard?period=${leaderboardPeriod}`);
+      if (!response.ok) throw new Error('Failed to fetch leaderboard');
+      return response.json();
+    },
+  });
+
+  const { data: userStats } = useQuery({
+    queryKey: ['/api/community/users/stats', user?.id],
+    enabled: !!user?.id && isLeaderboardChannel,
+    queryFn: async () => {
+      const response = await fetch(`/api/community/users/${user?.id}/stats`);
+      if (!response.ok) throw new Error('Failed to fetch user stats');
+      return response.json();
+    },
+  });
   const [messageReactions, setMessageReactions] = useState<{ [messageId: string]: { emoji: string; count: number; users: string[] }[] }>({});
   const [userMessageEmojis, setUserMessageEmojis] = useState<{ [messageId: string]: string[] }>({});
   const [openReactionMessageId, setOpenReactionMessageId] = useState<string | null>(null);
   const [showMessageEmojiToolbar, setShowMessageEmojiToolbar] = useState(false);
+  const [selectedProfileUser, setSelectedProfileUser] = useState<any | null>(null);
+  const [profileDialogOpen, setProfileDialogOpen] = useState(false);
+  const [activeProfileTab, setActiveProfileTab] = useState("about");
+  const [profileUserStats, setProfileUserStats] = useState<any | null>(null);
+  const [loadingUserStats, setLoadingUserStats] = useState(false);
   const isAccordionChannel = activeChannel?.slug === 'empieza-aqui';
+
+  // Fetch user posts and comments
+  const { data: userPosts, isLoading: loadingUserPosts } = useQuery({
+    queryKey: ['/api/community/users/posts', selectedProfileUser?.id],
+    enabled: !!selectedProfileUser?.id && activeProfileTab === "posts",
+    queryFn: async () => {
+      const response = await fetch(`/api/community/users/${selectedProfileUser.id}/posts`);
+      if (!response.ok) throw new Error('Failed to fetch user posts');
+      return response.json();
+    },
+  });
+
+  const { data: userComments, isLoading: loadingUserComments } = useQuery({
+    queryKey: ['/api/community/users/comments', selectedProfileUser?.id],
+    enabled: !!selectedProfileUser?.id && activeProfileTab === "comments",
+    queryFn: async () => {
+      const response = await fetch(`/api/community/users/${selectedProfileUser.id}/comments`);
+      if (!response.ok) throw new Error('Failed to fetch user comments');
+      return response.json();
+    },
+  });
+
+  const { data: userRewards, isLoading: loadingUserRewards } = useQuery({
+    queryKey: ['/api/community/users/rewards', selectedProfileUser?.id],
+    enabled: !!selectedProfileUser?.id && activeProfileTab === "rewards",
+    queryFn: async () => {
+      const response = await fetch(`/api/community/users/${selectedProfileUser.id}/rewards`);
+      if (!response.ok) throw new Error('Failed to fetch user rewards');
+      return response.json();
+    },
+  });
+
+  // Function to open user profile
+  const handleOpenProfile = async (user: any) => {
+    setSelectedProfileUser(user);
+    setProfileDialogOpen(true);
+    setActiveProfileTab("about");
+    setProfileUserStats(null);
+    setLoadingUserStats(true);
+    
+    // Fetch user statistics
+    try {
+      const response = await fetch(`/api/community/users/${user.id}/stats`);
+      if (response.ok) {
+        const stats = await response.json();
+        setProfileUserStats(stats);
+        // Merge stats with user data
+        setSelectedProfileUser((prev: any) => ({ ...prev, ...stats }));
+      }
+    } catch (error) {
+      console.error("Error fetching user stats:", error);
+    } finally {
+      setLoadingUserStats(false);
+    }
+  };
+
+  // Store post ID to navigate to after channel loads
+  const postToNavigateRef = useRef<string | null>(null);
+
+  // Function to navigate to post from comment
+  const handleNavigateToPost = async (commentItem: any) => {
+    if (!commentItem.post || !commentItem.channel) return;
+    
+    // Close profile dialog
+    setProfileDialogOpen(false);
+    
+    // Find the channel
+    const targetChannel = channels.find(c => c.id === commentItem.channel.id || c.slug === commentItem.channel.slug);
+    if (!targetChannel) {
+      toast({ title: "Error", description: "No se pudo encontrar el canal", variant: "destructive" });
+      return;
+    }
+    
+    // Store the post ID to navigate to
+    postToNavigateRef.current = commentItem.post.id;
+    
+    // Switch to the channel (this will trigger the useEffect that loads posts)
+    setActiveChannel(targetChannel);
+  };
+
+  // Effect to navigate to post after channel and posts are loaded
+  useEffect(() => {
+    if (!postToNavigateRef.current || !activeChannel || posts.length === 0) return;
+    
+    const targetPostId = postToNavigateRef.current;
+    const targetPost = posts.find((p: Post) => p.post.id === targetPostId);
+    
+    if (targetPost) {
+      setSelectedPost(targetPost);
+      postToNavigateRef.current = null; // Clear the ref
+      
+      // Scroll to the post after a short delay
+      setTimeout(() => {
+        const postElement = document.querySelector(`[data-testid="post-${targetPost.post.id}"]`);
+        if (postElement) {
+          postElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 300);
+    }
+  }, [activeChannel, posts]);
+
+  // Function to calculate time since last seen
+  const getTimeSinceLastSeen = (lastLoginAt: string | null | undefined): string => {
+    if (!lastLoginAt) return "Nunca";
+    const now = Date.now();
+    const lastSeen = new Date(lastLoginAt).getTime();
+    const diffMinutes = Math.floor((now - lastSeen) / 60000);
+    
+    if (diffMinutes < 1) return "Hace menos de un minuto";
+    if (diffMinutes < 60) return `Hace ${diffMinutes} minutos`;
+    const diffHours = Math.floor(diffMinutes / 60);
+    if (diffHours < 24) return `Hace ${diffHours} horas`;
+    const diffDays = Math.floor(diffHours / 24);
+    if (diffDays < 30) return `Hace ${diffDays} días`;
+    const diffMonths = Math.floor(diffDays / 30);
+    return `Hace ${diffMonths} meses`;
+  };
+
 
   // Group comments by date (oldest to newest)
   const groupCommentsByDate = (comments: Comment[]) => {
@@ -206,14 +470,21 @@ export default function Community() {
   // Mutation for adding/removing reactions
   const addReactionMutation = useMutation({
     mutationFn: async ({ postId, emoji }: { postId: string; emoji: string }) => {
+      const token = localStorage.getItem('simpleAuthToken');
+      const headers: Record<string, string> = { "Content-Type": "application/json" };
+      if (token) {
+        headers["Authorization"] = `Bearer ${token}`;
+      }
+      
       const res = await fetch(`/api/community/posts/${postId}/reactions`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers,
         credentials: "include",
         body: JSON.stringify({ emoji }),
       });
       if (!res.ok) {
-        throw new Error("Failed to add reaction");
+        const errorText = await res.text();
+        throw new Error(`Failed to add reaction: ${res.status} ${errorText}`);
       }
       return res.json();
     },
@@ -286,29 +557,85 @@ export default function Community() {
     }
   }, [user]);
 
+  
+  // Restore draft when channel changes
+  useEffect(() => {
+    if (!activeChannel) return;
+    
+    const savedDraft = getDraft(activeChannel.id);
+    setMessageInput(savedDraft);
+    messageInputRef.current = savedDraft;
+  }, [activeChannel?.id]);
+
   // Fetch content when channel changes
   useEffect(() => {
     if (!activeChannel) return;
 
-    // Check if this channel should show posts (all "Comunidad" section channels show posts EXCEPT redes-chat)
+    // Check if this channel should show posts (all "Comunidad" section channels show posts EXCEPT redes-chat and leaderboard)
+    // Also include "Cursos de Salas" section channels (like "Dudas - Vibe Coding")
     const isChatChannel = activeChannel.slug === "redes-chat";
-    const hasPostsFeed = !isChatChannel && activeChannel.section === "Comunidad";
+    const isLeaderboard = activeChannel.slug === "leaderboard" || activeChannel.slug === "clasificacion";
+    const hasPostsFeed = !isChatChannel && !isLeaderboard && (activeChannel.section === "Comunidad" || activeChannel.section === "Cursos de Salas");
     const isAnuncios = activeChannel.slug === "anuncios";
     const isPresentante = activeChannel.slug === "presentante" || activeChannel.slug === "comparte-proyecto";
+    const isDudas = activeChannel?.slug?.startsWith('dudas-') || activeChannel?.section === 'Cursos de Salas';
     setIsAnunciosChannel(isAnuncios);
     setIsPresentanteChannel(isPresentante);
+    setIsDudasChannel(isDudas);
+    setIsLeaderboardChannel(isLeaderboard);
     setIsRedesChatChannel(isChatChannel);
-
-    // Reset message input when channel changes (drafts not persisted for now)
-    setMessageInput("");
 
     const fetchContent = async () => {
       try {
         if (isChatChannel) {
+          // Fetch all users FIRST - this is needed for the sidebar
+          try {
+            console.log("Fetching all users for sidebar...");
+            const usersRes = await fetch("/api/community/users", {
+              headers: {
+                'Content-Type': 'application/json',
+              },
+            });
+            
+            if (!usersRes.ok) {
+              const errorText = await usersRes.text();
+              console.error("Failed to fetch users:", usersRes.status, usersRes.statusText, errorText);
+              setAllUsers([]);
+            } else {
+              const contentType = usersRes.headers.get("content-type");
+              if (!contentType || !contentType.includes("application/json")) {
+                const text = await usersRes.text();
+                console.error("Response is not JSON, got:", text.substring(0, 200));
+                setAllUsers([]);
+              } else {
+                const allUsersData = await usersRes.json();
+                const usersArray = Array.isArray(allUsersData) ? allUsersData : [];
+                // Remove duplicates by ID
+                const uniqueUsers = usersArray.filter((u: any, index: number, self: any[]) => 
+                  index === self.findIndex((user: any) => user.id === u.id)
+                );
+                console.log("Fetched users:", usersArray.length, "unique:", uniqueUsers.length);
+                // Set users immediately, we'll sort them after getting online status
+                setAllUsers(uniqueUsers);
+              }
+            }
+          } catch (error) {
+            console.error("Error fetching all users:", error);
+            if (error instanceof Error) {
+              console.error("Error details:", error.message, error.stack);
+            }
+            setAllUsers([]);
+          }
+          
           // Fetch messages for chat channels
           const res = await fetch(`/api/community/channels/${activeChannel.id}/messages?limit=100`);
           const data = await res.json();
-          const messagesData = Array.isArray(data) ? data : [];
+          const rawMessages = Array.isArray(data) ? data : [];
+          // Transform messages from { message: {...}, user: {...} } to flat structure
+          const messagesData = rawMessages.map((item: any) => ({
+            ...item.message,
+            user: item.user
+          }));
           setMessages(messagesData);
           // Get unique users from messages and include current user
           const uniqueUsers = messagesData.map((msg: any) => msg.user).filter((u: any, i: number, arr: any[]) => u && arr.findIndex(x => x?.id === u.id) === i);
@@ -317,6 +644,29 @@ export default function Community() {
             ? [user as any, ...uniqueUsers] 
             : uniqueUsers.length > 0 ? uniqueUsers : (user ? [user as any] : []);
           setOnlineMembers(onlineUsers);
+          
+          // Now update allUsers with online status and sort
+          setAllUsers(prevUsers => {
+            if (prevUsers.length === 0) return prevUsers;
+            // Remove duplicates again (just in case)
+            const uniqueUsers = prevUsers.filter((u, index, self) => 
+              index === self.findIndex(user => user.id === u.id)
+            );
+            const onlineUserIds = new Set(onlineUsers.map(u => u?.id));
+            const sortedUsers = [...uniqueUsers].sort((a, b) => {
+              const aIsOnline = onlineUserIds.has(a.id);
+              const bIsOnline = onlineUserIds.has(b.id);
+              if (aIsOnline !== bIsOnline) {
+                return aIsOnline ? -1 : 1; // Online users first
+              }
+              // Then sort alphabetically by name
+              const aName = `${a.firstName || ''} ${a.lastName || ''}`.trim();
+              const bName = `${b.firstName || ''} ${b.lastName || ''}`.trim();
+              return aName.localeCompare(bName);
+            });
+            console.log("Updated allUsers with online status:", sortedUsers.length, "online:", onlineUsers.length);
+            return sortedUsers;
+          });
         } else if (hasPostsFeed) {
           // Fetch posts for all channels with sorting
           const res = await fetch(`/api/community/channels/${activeChannel.id}/posts?limit=50&sort=${sortBy}`);
@@ -325,6 +675,24 @@ export default function Community() {
           setPosts(postsData);
           setSelectedPost(null);
           setComments([]);
+          
+          // Fetch pinned posts for Dudas channels
+          if (isDudas) {
+            try {
+              const pinnedRes = await fetch(`/api/community/channels/${activeChannel.id}/pinned-posts`);
+              if (pinnedRes.ok) {
+                const pinnedData = await pinnedRes.json();
+                setPinnedPosts(Array.isArray(pinnedData) ? pinnedData : []);
+              } else {
+                setPinnedPosts([]);
+              }
+            } catch (error) {
+              console.error("Error fetching pinned posts:", error);
+              setPinnedPosts([]);
+            }
+          } else {
+            setPinnedPosts([]);
+          }
           
           // Load comment counts, all comments, and reactions for all posts
           const counts: { [postId: string]: number } = {};
@@ -393,18 +761,46 @@ export default function Community() {
 
     const fetchComments = async () => {
       try {
+        // First, fetch community post comments
         const res = await fetch(`/api/community/posts/${selectedPost.post.id}/comments`);
         const data = await res.json();
-        const comments = Array.isArray(data) ? data : [];
+        let comments = Array.isArray(data) ? data : [];
+        
+        // Check if post has lesson metadata - if so, add the original question as first comment
+        const contentBlocks = selectedPost.post.contentBlocks || [];
+        const metadataBlock = contentBlocks.find((block: any) => block.type === "metadata" && block.lessonId);
+        
+        if (metadataBlock && metadataBlock.lessonId) {
+          // Add the original post content as the first "comment" in the thread
+          // This represents the question asked from the lesson
+          const originalQuestion = {
+            comment: {
+              id: `post-${selectedPost.post.id}`, // Use a unique ID for the post
+              content: selectedPost.post.content,
+              createdAt: selectedPost.post.createdAt,
+              userId: selectedPost.post.userId,
+              postId: selectedPost.post.id,
+              isOriginalPost: true, // Mark as original post
+            },
+            user: selectedPost.user || null,
+          };
+          
+          // Put the original question first, then the replies
+          comments = [originalQuestion, ...comments];
+        }
+        
         setComments(comments);
         
         // Load reactions for each comment
         const reactionsMap: { [commentId: string]: { emoji: string; count: number; users: string[] }[] } = {};
         for (const comment of comments) {
           try {
-            const reactionsRes = await fetch(`/api/community/comments/${comment.comment.id}/reactions`);
-            const reactions = await reactionsRes.json();
-            reactionsMap[comment.comment.id] = Array.isArray(reactions) ? reactions : [];
+            // Only fetch reactions for community comments (not lesson comments)
+            if (!comment.comment.lessonId) {
+              const reactionsRes = await fetch(`/api/community/comments/${comment.comment.id}/reactions`);
+              const reactions = await reactionsRes.json();
+              reactionsMap[comment.comment.id] = Array.isArray(reactions) ? reactions : [];
+            }
           } catch (error) {
             console.error("Error fetching reactions:", error);
             reactionsMap[comment.comment.id] = [];
@@ -450,6 +846,21 @@ export default function Community() {
         }));
         toast({ title: "Éxito", description: "Comentario enviado" });
       } else {
+        const errorData = await res.json();
+        if (errorData.requiresEmailVerification || errorData.message?.includes('verificar tu email')) {
+          toast({
+            title: "Email no verificado",
+            description: "Debes verificar tu email para comentar. Revisa tu bandeja de entrada o ve a tu perfil.",
+            variant: "destructive",
+          });
+          setLocation('/profile');
+        } else {
+          toast({
+            title: "Error",
+            description: errorData.message || "No se pudo publicar el comentario",
+            variant: "destructive",
+          });
+        }
         const error = await res.json();
         toast({ title: "Error", description: error.message || "No se pudo enviar el comentario", variant: "destructive" });
       }
@@ -529,6 +940,47 @@ export default function Community() {
             ))}
           </div>
 
+          {/* Live Event Section */}
+          {liveEvent && liveEvent.isLive && (
+            <div className="p-3 bg-[#1a1a1a] border-t border-[#333333]">
+              <div className="bg-gradient-to-br from-[#2a2a4a] to-[#1a1a2e] rounded-lg p-3 border border-[#3a3a5a]">
+                {/* Host info with LIVE badge */}
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="relative">
+                    <Avatar className="h-8 w-8">
+                      <AvatarImage src={liveEvent.hostAvatar} />
+                      <AvatarFallback className="bg-[#4a4a6a] text-white text-xs">
+                        {liveEvent.hostName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-gray-300 truncate">{liveEvent.hostName}</span>
+                      <span className="flex items-center gap-1 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded">
+                        <Radio className="h-2.5 w-2.5 animate-pulse" />
+                        LIVE
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Event title */}
+                <h4 className="text-sm font-medium text-white mb-3 line-clamp-2">
+                  {liveEvent.title}
+                </h4>
+                
+                {/* Join button */}
+                <a 
+                  href={liveEvent.joinUrl}
+                  className="block w-full bg-cyan-500 hover:bg-cyan-600 text-black text-sm font-semibold py-2 px-4 rounded-lg text-center transition-colors"
+                >
+                  Join
+                </a>
+              </div>
+            </div>
+          )}
+
           </div>
 
         {/* Center Content - Posts Feed */}
@@ -555,11 +1007,11 @@ export default function Community() {
               </div>
             </div>
 
-            {/* Sorting and Menu - for Anuncios and Presentante channels */}
-            {(isAnunciosChannel || isPresentanteChannel) && (
+            {/* Sorting and Menu - for Anuncios, Presentante and Dudas channels */}
+            {(isAnunciosChannel || isPresentanteChannel || isDudasChannel) && (
               <div className="flex items-center gap-2">
-                {/* Sort Dropdown - only for Anuncios */}
-                {isAnunciosChannel && (
+                {/* Sort Dropdown - for Anuncios and Dudas */}
+                {(isAnunciosChannel || isDudasChannel) && (
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button variant="ghost" size="sm" className="text-xs gap-1">
@@ -590,15 +1042,15 @@ export default function Community() {
                   </DropdownMenu>
                 )}
 
-                {/* New post button - only for Presentante */}
-                {isPresentanteChannel && (
+                {/* New post button - for Presentante and Dudas */}
+                {(isPresentanteChannel || isDudasChannel) && (
                   <Button
                     onClick={() => {
                       // Focus on the input if it exists
                       const input = document.querySelector('[data-testid="new-post-input"]') as HTMLInputElement;
                       if (input) input.focus();
                     }}
-                    className="bg-cyan-500 hover:bg-cyan-600 text-black font-semibold px-4 py-1 h-8 text-sm"
+                    className="bg-green-500 hover:bg-green-600 text-white font-semibold px-4 py-1 h-8 text-sm"
                     data-testid="header-new-post-button"
                   >
                     Nueva publicación
@@ -695,8 +1147,204 @@ export default function Community() {
             )}
           </div>
 
-          {/* Content Feed - Posts OR Chat depending on channel type */}
-          {isRedesChatChannel ? (
+          {/* Content Feed - Posts OR Chat OR Leaderboard depending on channel type */}
+          {isLeaderboardChannel ? (
+            <div className="flex-1 overflow-y-auto px-6 py-6">
+              <div className="max-w-6xl mx-auto">
+                {/* User's Personal Progress Card */}
+                {user && (
+                  <Card className="bg-[#1a1a1a] border-[#333333] mb-6">
+                    <CardContent className="p-6">
+                      <div className="flex flex-col sm:flex-row items-start gap-6">
+                        {/* Left side: Avatar with name and points below */}
+                        <div className="flex flex-col items-center sm:items-start">
+                          <div className="relative mb-3">
+                            <Avatar className="h-20 w-20">
+                              <AvatarImage src={(user as any)?.profileImageUrl || undefined} />
+                              <AvatarFallback className="bg-[#333333] text-white text-2xl">
+                                {(user?.firstName?.charAt(0) || "U").toUpperCase()}
+                              </AvatarFallback>
+                            </Avatar>
+                            {/* Badge de nivel en el avatar */}
+                            <div className="absolute -bottom-1 -right-1 bg-yellow-500 text-white text-xs font-bold rounded-full h-7 w-7 flex items-center justify-center border-2 border-[#1a1a1a]">
+                              {userStats?.level || 1}
+                            </div>
+                          </div>
+                          <h3 className="text-lg font-bold text-white text-center sm:text-left mb-1">
+                            {user.firstName} {user.lastName}
+                          </h3>
+                          <p className="text-sm text-muted-foreground text-center sm:text-left">
+                            {userStats?.points || 0} puntos
+                          </p>
+                        </div>
+
+                        {/* Right side: Level info and levels grid */}
+                        <div className="flex-1 w-full">
+                          <div className="flex items-center gap-3 mb-4">
+                            <div className="flex items-center gap-2">
+                              <Trophy className="h-6 w-6 text-yellow-500" />
+                              <span className="text-white font-semibold text-lg">Nivel {userStats?.level || 1}</span>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2 mb-6">
+                            <span className="text-sm text-muted-foreground">
+                              {userStats ? getPointsForNextLevel(userStats.level || 1, userStats.points || 0) : 0} puntos para subir de nivel
+                            </span>
+                            <HelpCircle 
+                              className="h-4 w-4 text-muted-foreground cursor-pointer hover:text-cyan-500 transition-colors" 
+                              onClick={() => setPointsInfoOpen(true)}
+                            />
+                          </div>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                            {LEVELS.map((level) => {
+                              const currentLevel = userStats?.level || 1;
+                              const isUnlocked = currentLevel >= level.level;
+                              const isCurrent = currentLevel === level.level;
+                              return (
+                                <div
+                                  key={level.level}
+                                  className={cn(
+                                    "flex items-center gap-2 text-sm",
+                                    isUnlocked ? "text-white" : "text-muted-foreground"
+                                  )}
+                                >
+                                  {isCurrent ? (
+                                    <div className="bg-yellow-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center flex-shrink-0">
+                                      {level.level}
+                                    </div>
+                                  ) : isUnlocked ? (
+                                    <Award className="h-4 w-4 text-green-500 flex-shrink-0" />
+                                  ) : (
+                                    <Lock className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                                  )}
+                                  <span className="flex-1">Nivel {level.level}: {level.points} puntos</span>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Period Filters */}
+                <div className="flex items-center gap-4 mb-6 flex-wrap">
+                  <Button
+                    variant={leaderboardPeriod === "7_days" ? "default" : "outline"}
+                    onClick={() => setLeaderboardPeriod("7_days")}
+                    className={cn(
+                      leaderboardPeriod === "7_days"
+                        ? "bg-cyan-500 hover:bg-cyan-600 text-white border-cyan-500"
+                        : "border-[#333333] text-white hover:bg-[#232323] bg-transparent"
+                    )}
+                  >
+                    7 días
+                  </Button>
+                  <Button
+                    variant={leaderboardPeriod === "30_days" ? "default" : "outline"}
+                    onClick={() => setLeaderboardPeriod("30_days")}
+                    className={cn(
+                      leaderboardPeriod === "30_days"
+                        ? "bg-cyan-500 hover:bg-cyan-600 text-white border-cyan-500"
+                        : "border-[#333333] text-white hover:bg-[#232323] bg-transparent"
+                    )}
+                  >
+                    30 días
+                  </Button>
+                  <Button
+                    variant={leaderboardPeriod === "all_time" ? "default" : "outline"}
+                    onClick={() => setLeaderboardPeriod("all_time")}
+                    className={cn(
+                      leaderboardPeriod === "all_time"
+                        ? "bg-cyan-500 hover:bg-cyan-600 text-white border-cyan-500"
+                        : "border-[#333333] text-white hover:bg-[#232323] bg-transparent"
+                    )}
+                  >
+                    Todo el tiempo
+                  </Button>
+                  <a
+                    href="#"
+                    className="text-sm text-cyan-500 hover:text-cyan-400 ml-auto cursor-pointer"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setPointsInfoOpen(true);
+                    }}
+                  >
+                    ¿Cómo funcionan los puntos?
+                  </a>
+                </div>
+
+                {/* Leaderboard List */}
+                {leaderboardLoading ? (
+                  <div className="text-center py-12 text-muted-foreground">
+                    <p>Cargando clasificación...</p>
+                  </div>
+                ) : leaderboard && leaderboard.length > 0 ? (
+                  <div className="space-y-3">
+                    {leaderboard.map((member: any, index: number) => {
+                      const rank = index + 1;
+                      const isCurrentUser = member.userId === user?.id;
+                      const getRankBadge = (rank: number) => {
+                        if (rank === 1) {
+                          return <div className="bg-yellow-500 text-white text-sm font-bold rounded-full h-8 w-8 flex items-center justify-center border-2 border-yellow-600">1</div>;
+                        } else if (rank === 2) {
+                          return <div className="bg-gray-400 text-white text-sm font-bold rounded-full h-8 w-8 flex items-center justify-center border-2 border-gray-500">2</div>;
+                        } else if (rank === 3) {
+                          return <div className="bg-amber-700 text-white text-sm font-bold rounded-full h-8 w-8 flex items-center justify-center border-2 border-amber-800">3</div>;
+                        } else {
+                          return <div className="bg-[#404040] text-gray-400 text-sm font-bold rounded-full h-8 w-8 flex items-center justify-center">{rank}</div>;
+                        }
+                      };
+                      return (
+                        <Card
+                          key={member.userId}
+                          className={cn(
+                            "bg-[#1a1a1a] border-[#333333] hover:bg-[#232323] transition-colors",
+                            isCurrentUser && "border-cyan-500 border-2"
+                          )}
+                        >
+                          <CardContent className="p-4">
+                            <div className="flex items-center gap-4">
+                              <div className="flex-shrink-0">
+                                {getRankBadge(rank)}
+                              </div>
+                              <Avatar className="h-12 w-12">
+                                <AvatarImage src={member.profileImageUrl || undefined} />
+                                <AvatarFallback className="bg-[#333333] text-white">
+                                  {(member.firstName?.charAt(0) || "U").toUpperCase()}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div className="flex-1 min-w-0">
+                                <h3 className="text-white font-semibold truncate">
+                                  {member.firstName} {member.lastName}
+                                </h3>
+                                {member.shortDescription && (
+                                  <p className="text-sm text-muted-foreground truncate">
+                                    {member.shortDescription}
+                                  </p>
+                                )}
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <div className="text-right">
+                                  <p className="text-white font-semibold">+ {member.points || 0}</p>
+                                  <p className="text-xs text-muted-foreground">Nivel {member.level || 1}</p>
+                                </div>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="text-center py-12 text-muted-foreground">
+                    <p>No hay usuarios en la clasificación aún.</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          ) : isRedesChatChannel ? (
             <div className="flex-1 w-full flex flex-col">
               {/* Messages Feed - Always centered */}
               {messages.length === 0 ? (
@@ -802,13 +1450,19 @@ export default function Community() {
                         {dateMessages.map((message) => (
                           <div key={message.id} className="rounded-lg border border-[#333333] bg-[#1a1a1a] p-4 group">
                             <div className="flex items-start gap-3 mb-2">
-                              <Avatar className="h-8 w-8 flex-shrink-0">
+                              <Avatar 
+                                className="h-8 w-8 flex-shrink-0 cursor-pointer hover:opacity-80 transition-opacity"
+                                onClick={() => message.user && handleOpenProfile(message.user)}
+                              >
                                 <AvatarImage src={message.user?.profileImageUrl || undefined} />
                                 <AvatarFallback>{(message.user?.firstName?.charAt(0) || "U").toUpperCase()}</AvatarFallback>
                               </Avatar>
                               <div className="flex-1">
                                 <div className="flex items-center gap-2">
-                                  <p className="font-semibold text-white">
+                                  <p 
+                                    className="font-semibold text-white cursor-pointer hover:underline"
+                                    onClick={() => message.user && handleOpenProfile(message.user)}
+                                  >
                                     {message.user?.firstName} {message.user?.lastName}
                                   </p>
                                   <p className="text-xs text-muted-foreground">
@@ -934,8 +1588,9 @@ export default function Community() {
                       onChange={(e) => {
                         const newValue = e.target.value;
                         setMessageInput(newValue);
+                        messageInputRef.current = newValue;
                         if (activeChannel) {
-                          localStorage.setItem(`draft-${activeChannel.id}`, newValue);
+                          setDraft(activeChannel.id, newValue);
                         }
                         // Auto-expand textarea
                         setTimeout(() => {
@@ -961,8 +1616,9 @@ export default function Community() {
                                 const newMessage = await res.json();
                                 setMessages([...messages, newMessage]);
                                 setMessageInput("");
+                                messageInputRef.current = "";
                                 if (activeChannel) {
-                                  localStorage.removeItem(`draft-${activeChannel.id}`);
+                                  deleteDraft(activeChannel.id);
                                 }
                                 toast({ title: "Éxito", description: "Mensaje enviado" });
                               } else {
@@ -1002,7 +1658,9 @@ export default function Community() {
                                 <button
                                   key={emoji}
                                   onClick={() => {
-                                    setMessageInput(messageInput + emoji);
+                                    const newValue = messageInput + emoji;
+                                    setMessageInput(newValue);
+                                    messageInputRef.current = newValue;
                                     setShowMessageEmojiToolbar(false);
                                   }}
                                   className="text-lg hover:scale-125 transition-transform cursor-pointer"
@@ -1064,8 +1722,9 @@ export default function Community() {
                               const newMessage = await res.json();
                               setMessages([...messages, newMessage]);
                               setMessageInput("");
+                              messageInputRef.current = "";
                               if (activeChannel) {
-                                localStorage.removeItem(`draft-${activeChannel.id}`);
+                                deleteDraft(activeChannel.id);
                               }
                               toast({ title: "Éxito", description: "Mensaje enviado" });
                             }
@@ -1088,8 +1747,9 @@ export default function Community() {
             </div>
           ) : posts.length > 0 || activeChannel?.section === "Comunidad" ? (
             <div className="flex-1 overflow-y-auto px-6 py-6 space-y-4 max-w-4xl mx-auto w-full">
-              {/* Inicia una publicación - solo para Presentante */}
-              {isPresentanteChannel && (
+
+              {/* Inicia una publicación - para Presentante y Dudas */}
+              {(isPresentanteChannel || isDudasChannel) && (
                 <div className="border border-[#333333] rounded-lg p-3 bg-[#1a1a1a] flex items-center gap-3 w-full">
                   <Avatar className="h-8 w-8 flex-shrink-0">
                     <AvatarImage src={(user as any)?.profileImageUrl || undefined} />
@@ -1186,36 +1846,40 @@ export default function Community() {
                           <ChevronDown className={cn("h-5 w-5 transition-transform", isExpanded && "rotate-180")} />
                         </button>
                       )}
-                      {/* Header para Presentante - arriba del contenido */}
-                      {!isAccordionChannel && isPresentanteChannel && (
-                        <div className="bg-[#232323] rounded-lg p-4 mb-4 relative">
-                          <div className="flex items-center gap-3 mb-2">
-                            <Avatar className="h-10 w-10">
+                      {/* Header para Presentante y Dudas - estilo chat */}
+                      {!isAccordionChannel && (isPresentanteChannel || isDudasChannel) && !(post.post as any)?.isAdminPost && (
+                        <div className="bg-[#232323] rounded-lg p-3 mb-3 relative">
+                          <div className="flex items-start gap-3">
+                            <Avatar className="h-10 w-10 flex-shrink-0">
                               <AvatarImage src={(post.user as any)?.profileImageUrl || undefined} />
                               <AvatarFallback>{(post.user?.firstName?.charAt(0) || "U").toUpperCase()}</AvatarFallback>
                             </Avatar>
-                            <div className="flex-1">
-                              <p className="font-semibold text-white">
-                                {post.user?.firstName} {post.user?.lastName}
-                              </p>
-                              <p className="text-xs text-muted-foreground">
-                                {(post.user as any)?.createdAt ? (
-                                  <>
-                                    Miembro desde el {new Date((post.user as any).createdAt).toLocaleDateString("es-ES", { year: "numeric", month: "long", day: "numeric" })}
-                                  </>
-                                ) : (
-                                  "Miembro"
-                                )}
-                              </p>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 mb-1">
+                                <p className="font-semibold text-white">
+                                  {post.user?.firstName} {post.user?.lastName}
+                                </p>
+                                {/* Show "Pregunta" badge if post has lesson metadata */}
+                                {(() => {
+                                  const contentBlocks = post.post.contentBlocks || [];
+                                  const metadataBlock = contentBlocks.find((block: any) => block.type === "metadata" && block.lessonId);
+                                  return metadataBlock ? (
+                                    <span className="text-xs bg-cyan-500/20 text-cyan-400 px-2 py-0.5 rounded">Pregunta</span>
+                                  ) : null;
+                                })()}
+                                <span className="text-xs text-muted-foreground">
+                                  {new Date(post.post.createdAt).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })}
+                                </span>
+                              </div>
                             </div>
                             {(user as any)?.isAdmin && (
-                              <button
-                                onClick={async (e) => {
-                                  e.stopPropagation();
-                                  if (confirm("¿Eliminar esta publicación?")) {
+                              <div className="flex gap-2 flex-shrink-0">
+                                <button
+                                  onClick={async (e) => {
+                                    e.stopPropagation();
                                     try {
-                                      const res = await fetch(`/api/admin/community/posts/${post.post.id}`, {
-                                        method: "DELETE",
+                                      const res = await fetch(`/api/community/posts/${post.post.id}/toggle-pin`, {
+                                        method: "POST",
                                         credentials: "include",
                                       });
                                       if (res.ok) {
@@ -1223,35 +1887,58 @@ export default function Community() {
                                         const postsRes = await fetch(`/api/community/channels/${activeChannel?.id}/posts?limit=50&sort=${sortBy}`);
                                         const postsData = await postsRes.json();
                                         setPosts(Array.isArray(postsData) ? postsData : []);
-                                        toast({ title: "Éxito", description: "Publicación eliminada" });
+                                        toast({ title: "Éxito", description: (post.post as any)?.isPinned ? "Publicación desfijada" : "Publicación fijada" });
                                       } else {
-                                        toast({ title: "Error", description: "No se pudo eliminar la publicación", variant: "destructive" });
+                                        toast({ title: "Error", description: "No se pudo fijar/desfijar la publicación", variant: "destructive" });
                                       }
                                     } catch (error) {
-                                      toast({ title: "Error", description: "Error al eliminar la publicación", variant: "destructive" });
+                                      toast({ title: "Error", description: "Error al fijar/desfijar la publicación", variant: "destructive" });
                                     }
-                                  }
-                                }}
-                                className="p-1 hover:bg-[#333333] rounded transition-colors flex-shrink-0"
-                                data-testid={`delete-post-${post.post.id}`}
-                              >
-                                <Trash2 className="h-4 w-4 text-muted-foreground hover:text-red-500" />
-                              </button>
+                                  }}
+                                  className="p-1 hover:bg-[#333333] rounded transition-colors"
+                                  title={(post.post as any)?.isPinned ? "Desfijar publicación" : "Fijar publicación"}
+                                >
+                                  <Pin className={cn("h-4 w-4", (post.post as any)?.isPinned ? "text-cyan-500 fill-cyan-500" : "text-muted-foreground")} />
+                                </button>
+                                <button
+                                  onClick={async (e) => {
+                                    e.stopPropagation();
+                                    if (confirm("¿Eliminar esta publicación?")) {
+                                      try {
+                                        const res = await fetch(`/api/admin/community/posts/${post.post.id}`, {
+                                          method: "DELETE",
+                                          credentials: "include",
+                                        });
+                                        if (res.ok) {
+                                          // Refetch posts
+                                          const postsRes = await fetch(`/api/community/channels/${activeChannel?.id}/posts?limit=50&sort=${sortBy}`);
+                                          const postsData = await postsRes.json();
+                                          setPosts(Array.isArray(postsData) ? postsData : []);
+                                          toast({ title: "Éxito", description: "Publicación eliminada" });
+                                        } else {
+                                          toast({ title: "Error", description: "No se pudo eliminar la publicación", variant: "destructive" });
+                                        }
+                                      } catch (error) {
+                                        toast({ title: "Error", description: "Error al eliminar la publicación", variant: "destructive" });
+                                      }
+                                    }
+                                  }}
+                                  className="p-1 hover:bg-[#333333] rounded transition-colors"
+                                  data-testid={`delete-post-${post.post.id}`}
+                                >
+                                  <Trash2 className="h-4 w-4 text-muted-foreground hover:text-red-500" />
+                                </button>
+                              </div>
                             )}
                           </div>
-                          {(post.user as any)?.lastLoginAt && (
-                            <p className="text-xs text-muted-foreground px-13">
-                              Última conexión: {new Date((post.user as any).lastLoginAt).toLocaleDateString("es-ES", { year: "numeric", month: "long", day: "numeric" })}
-                            </p>
-                          )}
                         </div>
                       )}
                       {/* Contenido - mostrar si no es accordion O si está expandido */}
                       {!isAccordionChannel || isExpanded ? (
                         <>
-                          {!isAccordionChannel && !isPresentanteChannel && (
+                          {!isAccordionChannel && !isPresentanteChannel && !isDudasChannel && (
                             <>
-                              {/* Fecha - solo para no Presentante */}
+                              {/* Fecha - solo para no Presentante ni Dudas */}
                               <p className="text-xs text-muted-foreground mb-3">
                                 {new Date(post.post.createdAt).toLocaleDateString("es-ES", { year: "numeric", month: "long", day: "numeric" })}
                               </p>
@@ -1260,20 +1947,129 @@ export default function Community() {
                               <h3 className="font-bold text-white mb-3">{post.post.title}</h3>
                             </>
                           )}
-                          {isPresentanteChannel && (
+                          {(isPresentanteChannel || isDudasChannel) && (
                             <>
-                              {/* Título - solo para Presentante */}
-                              <h3 className="font-bold text-white mb-3">{post.post.title}</h3>
+                              {/* Título - para Presentante y Dudas */}
+                              <div className="flex items-center justify-between mb-3">
+                                <h3 className="font-bold text-white">{post.post.title}</h3>
+                                {(user as any)?.isAdmin && (post.post as any)?.isAdminPost && (
+                                  <div className="flex gap-2">
+                                    <button
+                                      onClick={async (e) => {
+                                        e.stopPropagation();
+                                        try {
+                                          const res = await fetch(`/api/community/posts/${post.post.id}/toggle-pin`, {
+                                            method: "POST",
+                                            credentials: "include",
+                                          });
+                                          if (res.ok) {
+                                            const postsRes = await fetch(`/api/community/channels/${activeChannel?.id}/posts?limit=50&sort=${sortBy}`);
+                                            const postsData = await postsRes.json();
+                                            setPosts(Array.isArray(postsData) ? postsData : []);
+                                            toast({ title: "Éxito", description: (post.post as any)?.isPinned ? "Publicación desfijada" : "Publicación fijada" });
+                                          } else {
+                                            toast({ title: "Error", description: "No se pudo fijar/desfijar la publicación", variant: "destructive" });
+                                          }
+                                        } catch (error) {
+                                          toast({ title: "Error", description: "Error al fijar/desfijar la publicación", variant: "destructive" });
+                                        }
+                                      }}
+                                      className="p-1 hover:bg-[#333333] rounded transition-colors flex-shrink-0"
+                                      title={(post.post as any)?.isPinned ? "Desfijar publicación" : "Fijar publicación"}
+                                    >
+                                      <Pin className={cn("h-4 w-4", (post.post as any)?.isPinned ? "text-cyan-500 fill-cyan-500" : "text-muted-foreground")} />
+                                    </button>
+                                    <button
+                                      onClick={async (e) => {
+                                        e.stopPropagation();
+                                        if (confirm("¿Eliminar esta publicación?")) {
+                                          try {
+                                            const res = await fetch(`/api/admin/community/posts/${post.post.id}`, {
+                                              method: "DELETE",
+                                              credentials: "include",
+                                            });
+                                            if (res.ok) {
+                                              const postsRes = await fetch(`/api/community/channels/${activeChannel?.id}/posts?limit=50&sort=${sortBy}`);
+                                              const postsData = await postsRes.json();
+                                              setPosts(Array.isArray(postsData) ? postsData : []);
+                                              toast({ title: "Éxito", description: "Publicación eliminada" });
+                                            } else {
+                                              toast({ title: "Error", description: "No se pudo eliminar la publicación", variant: "destructive" });
+                                            }
+                                          } catch (error) {
+                                            toast({ title: "Error", description: "Error al eliminar la publicación", variant: "destructive" });
+                                          }
+                                        }
+                                      }}
+                                      className="p-1 hover:bg-[#333333] rounded transition-colors flex-shrink-0"
+                                      title="Eliminar publicación"
+                                    >
+                                      <Trash2 className="h-4 w-4 text-muted-foreground hover:text-red-500" />
+                                    </button>
+                                  </div>
+                                )}
+                              </div>
                             </>
                           )}
 
                           {isAccordionChannel && <div className="border-t border-[#333333] px-4 py-3" />}
 
+
                           {/* Renderizar bloques si existen */}
                           {post.post.contentBlocks && post.post.contentBlocks.length > 0 ? (
                             <div className={cn("space-y-3 mb-3", isAccordionChannel && "px-4")}>
-                              {post.post.contentBlocks.map((block: any, idx: number) => {
+                              {(() => {
+                                const nonMetadataBlocks = post.post.contentBlocks.filter((block: any) => block.type !== "metadata");
+                                const hasTextBlocks = nonMetadataBlocks.some((block: any) => block.type === "text" && block.content);
+                                
+                                // If no text blocks but there's post content, show it
+                                if (!hasTextBlocks && post.post.content) {
+                                  const isHtml = /<[^>]+>/.test(post.post.content);
+                                  return isHtml ? (
+                                    <div 
+                                      className="prose prose-invert prose-sm max-w-none text-muted-foreground [&_a]:text-cyan-500 [&_a]:hover:text-cyan-400 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_li]:mb-1 [&_p]:mb-2 [&_strong]:text-white [&_h1]:text-white [&_h2]:text-white [&_h3]:text-white"
+                                      dangerouslySetInnerHTML={{ __html: post.post.content }}
+                                    />
+                                  ) : (
+                                    <div className="text-sm text-white whitespace-pre-wrap break-words">
+                                      {post.post.content.split(/(\bhttps?:\/\/[^\s]+)/g).map((part: string, i: number) => {
+                                        if (part.match(/^\bhttps?:\/\//)) {
+                                          return (
+                                            <a
+                                              key={i}
+                                              href={part}
+                                              target="_blank"
+                                              rel="noopener noreferrer"
+                                              className="text-cyan-500 hover:text-cyan-400 underline break-all"
+                                            >
+                                              {part}
+                                            </a>
+                                          );
+                                        }
+                                        return part;
+                                      })}
+                                    </div>
+                                  );
+                                }
+                                
+                                // Otherwise render the content blocks (excluding metadata)
+                                return post.post.contentBlocks
+                                  .filter((block: any) => block.type !== "metadata")
+                                  .map((block: any, idx: number) => {
                                 if (block.type === "text") {
+                                  // Check if content is HTML (contains HTML tags)
+                                  const isHtml = block.content && /<[^>]+>/.test(block.content);
+                                  
+                                  if (isHtml) {
+                                    return (
+                                      <div 
+                                        key={idx} 
+                                        className="prose prose-invert prose-sm max-w-none text-muted-foreground [&_a]:text-cyan-500 [&_a]:hover:text-cyan-400 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_li]:mb-1 [&_p]:mb-2 [&_strong]:text-white [&_h1]:text-white [&_h2]:text-white [&_h3]:text-white"
+                                        dangerouslySetInnerHTML={{ __html: block.content }}
+                                      />
+                                    );
+                                  }
+                                  
                                   return (
                                     <div key={idx} className="text-sm text-muted-foreground whitespace-pre-wrap break-words">
                                       {block.content && block.content.split(/(\bhttps?:\/\/[^\s]+)/g).map((part: string, i: number) => {
@@ -1325,7 +2121,8 @@ export default function Community() {
                                   );
                                 }
                                 return null;
-                              })}
+                                  });
+                              })()}
                             </div>
                           ) : (
                             <>
@@ -1368,32 +2165,42 @@ export default function Community() {
                               )}
 
                               {/* Contenido legacy - solo si no hay contentBlocks */}
-                              {(!post.post.contentBlocks || post.post.contentBlocks.length === 0) && (
-                                <div className={cn("text-sm text-muted-foreground mb-3 whitespace-pre-line break-words leading-relaxed", isAccordionChannel && "px-4")}>
-                                  {post.post.content.split(/(\bhttps?:\/\/[^\s]+)/g).map((part, idx) => {
-                                    if (part.match(/^\bhttps?:\/\//)) {
-                                      return (
-                                        <a
-                                          key={idx}
-                                          href={part}
-                                          target="_blank"
-                                          rel="noopener noreferrer"
-                                          className="text-cyan-500 hover:text-cyan-400 underline break-all"
-                                        >
-                                          {part}
-                                        </a>
-                                      );
-                                    }
-                                    return part;
-                                  })}
-                                </div>
-                              )}
+                              {(!post.post.contentBlocks || post.post.contentBlocks.length === 0 || post.post.contentBlocks.every((block: any) => block.type === "metadata")) && (() => {
+                                // Check if content is HTML (contains HTML tags)
+                                const isHtml = post.post.content && /<[^>]+>/.test(post.post.content);
+                                
+                                return isHtml ? (
+                                  <div 
+                                    className={cn("prose prose-invert prose-sm max-w-none text-muted-foreground mb-3 [&_a]:text-cyan-500 [&_a]:hover:text-cyan-400 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_li]:mb-1 [&_p]:mb-2 [&_strong]:text-white [&_h1]:text-white [&_h2]:text-white [&_h3]:text-white", isAccordionChannel && "px-4")}
+                                    dangerouslySetInnerHTML={{ __html: post.post.content }}
+                                  />
+                                ) : (
+                                  <div className={cn("text-sm text-muted-foreground mb-3 whitespace-pre-line break-words leading-relaxed", isAccordionChannel && "px-4")}>
+                                    {post.post.content.split(/(\bhttps?:\/\/[^\s]+)/g).map((part, idx) => {
+                                      if (part.match(/^\bhttps?:\/\//)) {
+                                        return (
+                                          <a
+                                            key={idx}
+                                            href={part}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="text-cyan-500 hover:text-cyan-400 underline break-all"
+                                          >
+                                            {part}
+                                          </a>
+                                        );
+                                      }
+                                      return part;
+                                    })}
+                                  </div>
+                                );
+                              })()}
                             </>
                           )}
                         </>
                       ) : null}
-                      {/* Header con nombre y fecha - solo para canales que no son accordion (no Presentante) */}
-                      {!isAccordionChannel && !isPresentanteChannel && (
+                      {/* Header con nombre y fecha - solo para canales que no son accordion (no Presentante ni Dudas) */}
+                      {!isAccordionChannel && !isPresentanteChannel && !isDudasChannel && (
                         <div className="flex flex-col gap-2 mb-3">
                           <div className="flex items-center gap-2">
                             <Avatar className="h-8 w-8">
@@ -1409,23 +2216,23 @@ export default function Community() {
                           </p>
                         </div>
                       )}
-                      {/* Acciones - solo para canales que no son accordion */}
-                      {/* Hide reactions and comments for admin posts in Presentante/Comparte-proyecto channels */}
-                      {!isAccordionChannel && !(isPresentanteChannel && post.post.isAdminPost) && (
-                        <div className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
-                          <div className="relative">
-                            <button 
-                              onClick={() => setOpenReactionPostId(openReactionPostId === post.post.id ? null : post.post.id)}
-                              disabled={(userEmojis[post.post.id] || []).length >= 3}
-                              className={cn(
-                                "flex items-center gap-1 transition-colors",
-                                (userEmojis[post.post.id] || []).length >= 3 
-                                  ? "text-muted-foreground cursor-not-allowed opacity-50" 
-                                  : "hover:text-cyan-500"
-                              )}
-                            >
-                              <Smile className="h-4 w-4" />
-                              Reaccionar
+                      {/* Acciones - solo para canales que no son accordion y no son posts de admin */}
+                      {!isAccordionChannel && !(post.post as any)?.isAdminPost && (
+                        <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground flex-wrap">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <div className="relative">
+                              <button 
+                                onClick={() => setOpenReactionPostId(openReactionPostId === post.post.id ? null : post.post.id)}
+                                disabled={(userEmojis[post.post.id] || []).length >= 3}
+                                className={cn(
+                                  "flex items-center gap-1 transition-colors",
+                                  (userEmojis[post.post.id] || []).length >= 3 
+                                    ? "text-muted-foreground cursor-not-allowed opacity-50" 
+                                    : "hover:text-cyan-500"
+                                )}
+                              >
+                                <Smile className="h-4 w-4" />
+                                Reaccionar
                             </button>
                           {/* Emoji selector popup - visible when open */}
                           {openReactionPostId === post.post.id && (
@@ -1512,6 +2319,84 @@ export default function Community() {
                           )}
                           <span>{postCommentCount} respuesta{postCommentCount !== 1 ? "s" : ""}</span>
                         </button>
+                        <button
+                          onClick={() => {
+                            if (selectedPost?.post.id !== post.post.id) {
+                              setSelectedPost(post);
+                            }
+                          }}
+                          className={cn(
+                            "flex items-center gap-1 transition-colors",
+                            selectedPost?.post.id === post.post.id ? "text-cyan-500" : "text-muted-foreground hover:text-cyan-500"
+                          )}
+                        >
+                          <MessageCircle className="h-4 w-4" />
+                          Responder
+                        </button>
+                        {(user as any)?.isAdmin && (
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={async (e) => {
+                                e.stopPropagation();
+                                try {
+                                  const res = await fetch(`/api/community/posts/${post.post.id}/toggle-pin`, {
+                                    method: "POST",
+                                    credentials: "include",
+                                  });
+                                  if (res.ok) {
+                                    // Refetch posts
+                                    const postsRes = await fetch(`/api/community/channels/${activeChannel?.id}/posts?limit=50&sort=${sortBy}`);
+                                    const postsData = await postsRes.json();
+                                    setPosts(Array.isArray(postsData) ? postsData : []);
+                                    toast({ title: "Éxito", description: (post.post as any)?.isPinned ? "Publicación desfijada" : "Publicación fijada" });
+                                  } else {
+                                    toast({ title: "Error", description: "No se pudo fijar/desfijar la publicación", variant: "destructive" });
+                                  }
+                                } catch (error) {
+                                  toast({ title: "Error", description: "Error al fijar/desfijar la publicación", variant: "destructive" });
+                                }
+                              }}
+                              className={cn(
+                                "flex items-center gap-1 transition-colors",
+                                (post.post as any)?.isPinned ? "text-cyan-500" : "text-muted-foreground hover:text-cyan-500"
+                              )}
+                              title={(post.post as any)?.isPinned ? "Desfijar publicación" : "Fijar publicación"}
+                            >
+                              <Pin className={cn("h-4 w-4", (post.post as any)?.isPinned && "fill-current")} />
+                              {(post.post as any)?.isPinned ? "Fijado" : "Fijar"}
+                            </button>
+                            <button
+                              onClick={async (e) => {
+                                e.stopPropagation();
+                                if (confirm("¿Eliminar esta publicación?")) {
+                                  try {
+                                    const res = await fetch(`/api/admin/community/posts/${post.post.id}`, {
+                                      method: "DELETE",
+                                      credentials: "include",
+                                    });
+                                    if (res.ok) {
+                                      // Refetch posts
+                                      const postsRes = await fetch(`/api/community/channels/${activeChannel?.id}/posts?limit=50&sort=${sortBy}`);
+                                      const postsData = await postsRes.json();
+                                      setPosts(Array.isArray(postsData) ? postsData : []);
+                                      toast({ title: "Éxito", description: "Publicación eliminada" });
+                                    } else {
+                                      toast({ title: "Error", description: "No se pudo eliminar la publicación", variant: "destructive" });
+                                    }
+                                  } catch (error) {
+                                    toast({ title: "Error", description: "Error al eliminar la publicación", variant: "destructive" });
+                                  }
+                                }
+                              }}
+                              className="flex items-center gap-1 text-muted-foreground hover:text-red-500 transition-colors"
+                              title="Eliminar publicación"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                              Eliminar
+                            </button>
+                          </div>
+                        )}
+                          </div>
                         </div>
                       )}
                     </div>
@@ -1526,14 +2411,19 @@ export default function Community() {
           )}
         </div>
 
-        {/* Right Sidebar - Comments (for all channels except empieza-aqui when post selected) */}
-        {!isAccordionChannel && selectedPost && (
+        {/* Right Sidebar - Comments/Thread (for all channels except empieza-aqui when post selected) */}
+        {!isAccordionChannel && selectedPost && (() => {
+          const contentBlocks = selectedPost.post.contentBlocks || [];
+          const metadataBlock = contentBlocks.find((block: any) => block.type === "metadata" && block.lessonId);
+          const isQuestionThread = !!metadataBlock;
+          
+          return (
           <div className="hidden lg:fixed right-0 top-0 h-screen w-[420px] lg:flex flex-col bg-[#1a1a1a] overflow-hidden z-40">
-            {/* Comments Header */}
+            {/* Comments/Thread Header */}
             <div className="flex-shrink-0 px-6 py-4 flex items-center justify-between bg-[#232323]">
               <div>
-                <h2 className="text-lg font-bold text-white">Comentarios</h2>
-                <p className="text-xs text-muted-foreground mt-1">{comments.length} comentarios</p>
+                <h2 className="text-lg font-bold text-white">{isQuestionThread ? "Hilo" : "Comentarios"}</h2>
+                <p className="text-xs text-muted-foreground mt-1">{comments.length} {isQuestionThread ? "mensajes" : "comentarios"}</p>
               </div>
               <Button
                 variant="ghost"
@@ -1563,8 +2453,15 @@ export default function Community() {
                         </span>
                       </div>
                       {/* Comments in this date group */}
-                      {groupedComments.map((comment) => (
-                        <div key={comment.comment.id} className="bg-[#1f1f1f] rounded-lg p-3 border border-[#333333]">
+                      {groupedComments.map((comment) => {
+                        const isOriginalPost = (comment.comment as any).isOriginalPost;
+                        return (
+                        <div key={comment.comment.id} className={cn(
+                          "rounded-lg p-3 border",
+                          isOriginalPost 
+                            ? "bg-[#1a2a2a] border-cyan-500/30" 
+                            : "bg-[#1f1f1f] border-[#333333]"
+                        )}>
                           <div className="flex gap-2">
                             <Avatar className="h-8 w-8 flex-shrink-0">
                               <AvatarImage src={comment.user?.profileImageUrl || undefined} />
@@ -1575,13 +2472,20 @@ export default function Community() {
                                 <p className="text-sm font-semibold text-white">
                                   {comment.user?.firstName} {comment.user?.lastName}
                                 </p>
+                                {isOriginalPost && (
+                                  <span className="text-xs bg-cyan-500/20 text-cyan-400 px-2 py-0.5 rounded">Pregunta</span>
+                                )}
                                 <span className="text-xs text-muted-foreground">
                                   {new Date(comment.comment.createdAt).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })}
                                 </span>
                               </div>
-                              <p className="text-sm text-muted-foreground break-words">{comment.comment.content}</p>
+                              <p className={cn(
+                                "text-sm break-words",
+                                isOriginalPost ? "text-white" : "text-muted-foreground"
+                              )}>{comment.comment.content}</p>
                               
-                              {/* Emoji reactions */}
+                              {/* Emoji reactions - Only show for actual comments, not original post */}
+                              {!isOriginalPost && (
                               <div className="flex items-center gap-2 mt-2 flex-wrap">
                                 <div className="relative">
                                   <button 
@@ -1609,9 +2513,15 @@ export default function Community() {
                                             key={emoji}
                                             onClick={async () => {
                                               try {
+                                                const token = localStorage.getItem('simpleAuthToken');
+                                                const headers: Record<string, string> = { "Content-Type": "application/json" };
+                                                if (token) {
+                                                  headers["Authorization"] = `Bearer ${token}`;
+                                                }
+                                                
                                                 await fetch(`/api/community/comments/${comment.comment.id}/reactions`, {
                                                   method: "POST",
-                                                  headers: { "Content-Type": "application/json" },
+                                                  headers,
                                                   credentials: "include",
                                                   body: JSON.stringify({ emoji }),
                                                 });
@@ -1654,17 +2564,23 @@ export default function Community() {
                                   )}
                                 </div>
                                 
-                                {/* Show all reactions */}
-                                {(commentReactions[comment.comment.id] || []).length > 0 && (
+                                {/* Show all reactions - Only for actual comments, not original post */}
+                                {!isOriginalPost && (commentReactions[comment.comment.id] || []).length > 0 && (
                                   <div className="flex items-center gap-1 flex-wrap">
                                     {(commentReactions[comment.comment.id] || []).map((reaction, idx) => (
                                       <button
                                         key={idx}
                                         onClick={async () => {
                                           try {
+                                            const token = localStorage.getItem('simpleAuthToken');
+                                            const headers: Record<string, string> = { "Content-Type": "application/json" };
+                                            if (token) {
+                                              headers["Authorization"] = `Bearer ${token}`;
+                                            }
+                                            
                                             await fetch(`/api/community/comments/${comment.comment.id}/reactions`, {
                                               method: "POST",
-                                              headers: { "Content-Type": "application/json" },
+                                              headers,
                                               credentials: "include",
                                               body: JSON.stringify({ emoji: reaction.emoji }),
                                             });
@@ -1705,10 +2621,12 @@ export default function Community() {
                                   </div>
                                 )}
                               </div>
+                              )}
                             </div>
                           </div>
                         </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   ))}
                 </div>
@@ -1738,51 +2656,531 @@ export default function Community() {
               </div>
             </div>
           </div>
-        )}
+          );
+        })()}
+
 
         {/* Right Sidebar - Members (for Redes de Chat) */}
-        {isRedesChatChannel && (
+        {isRedesChatChannel && (() => {
+          // Remove duplicates from allUsers first
+          const uniqueAllUsers = allUsers.filter((u, index, self) => 
+            index === self.findIndex(user => user.id === u.id)
+          );
+          
+          // Separate users into online and offline
+          const onlineUserIds = new Set(onlineMembers.map(m => m?.id).filter(Boolean));
+          const onlineUsersList = uniqueAllUsers.filter(u => u.id && onlineUserIds.has(u.id));
+          const offlineUsersList = uniqueAllUsers.filter(u => u.id && !onlineUserIds.has(u.id));
+          
+          console.log("Sidebar render:", {
+            allUsersCount: allUsers.length,
+            onlineMembersCount: onlineMembers.length,
+            onlineUsersListCount: onlineUsersList.length,
+            offlineUsersListCount: offlineUsersList.length
+          });
+          
+          return (
           <div className="hidden lg:fixed right-0 top-0 h-screen w-[420px] lg:flex flex-col bg-[#1a1a1a] overflow-hidden z-40 border-l border-[#333333]">
-            {/* Members Header */}
+              {/* Header */}
             <div className="flex-shrink-0 px-6 py-4 bg-[#232323] border-b border-[#333333]">
-              <div>
                 <h2 className="text-lg font-bold text-white">Detalles</h2>
-                <p className="text-xs text-muted-foreground mt-1">{activeChannel?.name}</p>
-              </div>
             </div>
 
             {/* Channel Description */}
             <div className="flex-shrink-0 px-6 py-4 border-b border-[#333333]">
-              <p className="text-sm text-muted-foreground">{activeChannel?.description}</p>
+                <p className="text-sm text-muted-foreground">
+                  Canal para debates sobre el universo NoCode e Inteligencia Artificial.
+                </p>
+                <p className="text-sm text-yellow-500 flex items-center gap-1 mt-2">
+                  <span>⚠️</span>
+                  <span>Este no es un canal de soporte</span>
+                </p>
             </div>
 
             {/* Members List - scrollable */}
-            <div className="flex-1 overflow-y-auto px-6 py-4 space-y-2 scrollbar-thin">
-              <h3 className="text-sm font-semibold text-white mb-3">EN LÍNEA ({onlineMembers.length})</h3>
-              {onlineMembers.length === 0 ? (
+              <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4 scrollbar-thin">
+                {/* Debug info - remove after fixing */}
+                {allUsers.length === 0 && (
+                  <div className="text-xs text-yellow-500 mb-4">
+                    Cargando usuarios... (Total: {allUsers.length}, Online: {onlineMembers.length})
+                  </div>
+                )}
+                
+                {/* Online Users */}
+                <div>
+                  <h3 className="text-sm font-semibold text-white mb-3">EN LÍNEA ({onlineUsersList.length})</h3>
+                  {onlineUsersList.length === 0 ? (
                 <p className="text-xs text-muted-foreground">No hay miembros en línea</p>
               ) : (
-                onlineMembers.map((member) => (
-                  <div key={member?.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-[#232323] transition-colors cursor-pointer">
+                    <div className="space-y-1">
+                      {onlineUsersList.map((member) => (
+                        <div 
+                          key={member?.id} 
+                          className="flex items-center gap-3 p-2 rounded-lg hover:bg-[#232323] transition-colors cursor-pointer"
+                          onClick={() => handleOpenProfile(member)}
+                        >
+                          <div className="relative">
                     <Avatar className="h-8 w-8 flex-shrink-0">
                       <AvatarImage src={member?.profileImageUrl || undefined} />
                       <AvatarFallback>{(member?.firstName?.charAt(0) || "U").toUpperCase()}</AvatarFallback>
                     </Avatar>
+                            <div className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-green-500 border-2 border-[#1a1a1a]"></div>
+                          </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm text-white truncate">
                         {member?.firstName} {member?.lastName}
                       </p>
-                      <p className="text-xs text-muted-foreground">En línea</p>
                     </div>
-                    <div className="h-2 w-2 rounded-full bg-green-500 flex-shrink-0"></div>
+                          {member?.isAdmin && (
+                            <span className="text-xs bg-[#404040] text-muted-foreground px-2 py-0.5 rounded flex items-center gap-1">
+                              <span>👤</span>
+                              <span>ADMINISTRADOR</span>
+                            </span>
+                          )}
                   </div>
-                ))
+                      ))}
+                    </div>
               )}
             </div>
+
+                {/* Offline Users */}
+                <div>
+                  <h3 className="text-sm font-semibold text-white mb-3">FUERA DE LÍNEA ({offlineUsersList.length})</h3>
+                  {offlineUsersList.length === 0 ? (
+                    <p className="text-xs text-muted-foreground">No hay miembros fuera de línea</p>
+                  ) : (
+                    <div className="space-y-1">
+                      {offlineUsersList.map((member) => (
+                        <div 
+                          key={member?.id} 
+                          className="flex items-center gap-3 p-2 rounded-lg hover:bg-[#232323] transition-colors cursor-pointer"
+                          onClick={() => handleOpenProfile(member)}
+                        >
+                          <div className="relative">
+                            <Avatar className="h-8 w-8 flex-shrink-0">
+                              <AvatarImage src={member?.profileImageUrl || undefined} />
+                              <AvatarFallback>{(member?.firstName?.charAt(0) || "U").toUpperCase()}</AvatarFallback>
+                            </Avatar>
+                            <div className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-gray-500 border-2 border-[#1a1a1a]"></div>
           </div>
-        )}
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm text-white truncate">
+                              {member?.firstName} {member?.lastName}
+                            </p>
+                          </div>
+                          {member?.isAdmin && (
+                            <span className="text-xs bg-[#404040] text-muted-foreground px-2 py-0.5 rounded flex items-center gap-1">
+                              <span>👤</span>
+                              <span>ADMINISTRADOR</span>
+                            </span>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          );
+        })()}
       </div>
       <MobileNav />
+
+      {/* Profile Dialog */}
+      <Dialog open={profileDialogOpen} onOpenChange={setProfileDialogOpen}>
+        <DialogContent className="w-[95vw] sm:w-[90vw] max-w-4xl h-[90vh] max-h-[90vh] overflow-hidden flex flex-col bg-[#1a1a1a] border-[#333333] text-white p-0 sm:p-6 m-0 translate-x-[-50%] translate-y-[-50%] left-[50%] top-[50%]">
+          {selectedProfileUser && (
+            <div className="flex flex-col h-full overflow-hidden">
+              <DialogHeader className="pb-4 px-4 sm:px-0 flex-shrink-0">
+                <div className="flex flex-col sm:flex-row items-start gap-4">
+                  <div className="relative flex-shrink-0">
+                    <Avatar className="h-24 w-24 sm:h-28 sm:w-28">
+                      <AvatarImage src={selectedProfileUser.profileImageUrl || undefined} />
+                      <AvatarFallback className="bg-[#333333] text-white text-3xl sm:text-4xl">
+                        {(selectedProfileUser.firstName?.charAt(0) || "U").toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    {/* Badge de nivel */}
+                    <div className="absolute -bottom-1 -right-1 bg-blue-500 text-white text-xs sm:text-sm font-bold rounded-full h-7 w-7 sm:h-8 sm:w-8 flex items-center justify-center border-2 border-[#1a1a1a]">
+                      {selectedProfileUser.level || 1}
+                    </div>
+                  </div>
+                  <div className="flex-1 w-full min-w-0">
+                    <DialogTitle className="text-xl sm:text-2xl lg:text-3xl font-bold text-white mb-2 break-words">
+                      {selectedProfileUser.firstName} {selectedProfileUser.lastName}
+                    </DialogTitle>
+                    <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 text-xs sm:text-sm text-muted-foreground">
+                      <p className="whitespace-nowrap">
+                        Visto por última vez {getTimeSinceLastSeen(selectedProfileUser.lastLoginAt)}
+                      </p>
+                      <span className="hidden sm:inline">•</span>
+                      <p>
+                        Miembro desde el {selectedProfileUser.createdAt ? 
+                          new Date(selectedProfileUser.createdAt).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })
+                          : 'N/A'}
+                      </p>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2 mt-3">
+                      {selectedProfileUser.isAdmin && (
+                        <span className="bg-blue-500 text-white text-xs px-2 py-1 rounded flex items-center gap-1">
+                          ⭐ PRO
+                        </span>
+                      )}
+                      <span className="bg-green-500 text-white text-xs px-2 py-1 rounded flex items-center gap-1">
+                        ⭐ Promotor
+                      </span>
+                      <Button className="bg-green-500 hover:bg-green-600 text-white text-xs px-2 py-1 h-auto">
+                        Mensaje
+                      </Button>
+                      <Button variant="outline" size="icon" className="border-[#333333] hover:bg-[#232323] h-auto w-auto p-1">
+                        <MoreVertical className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </DialogHeader>
+
+              {/* Tabs */}
+              <div className="border-b border-[#333333] mb-4 px-4 sm:px-0 flex-shrink-0 overflow-x-auto">
+                <div className="flex gap-2 sm:gap-4 min-w-max">
+                  <button 
+                    className={cn(
+                      "pb-2 px-2 sm:px-1 text-xs sm:text-sm font-medium transition-colors whitespace-nowrap",
+                      activeProfileTab === "about" 
+                        ? "border-b-2 border-white text-white" 
+                        : "text-muted-foreground hover:text-white"
+                    )}
+                    onClick={() => setActiveProfileTab("about")}
+                  >
+                    Acerca de
+                  </button>
+                  <button 
+                    className={cn(
+                      "pb-2 px-2 sm:px-1 text-xs sm:text-sm font-medium transition-colors whitespace-nowrap",
+                      activeProfileTab === "posts" 
+                        ? "border-b-2 border-white text-white" 
+                        : "text-muted-foreground hover:text-white"
+                    )}
+                    onClick={() => setActiveProfileTab("posts")}
+                  >
+                    Publicaciones <span className="hidden sm:inline">{selectedProfileUser.postsCount || 0}</span>
+                  </button>
+                  <button 
+                    className={cn(
+                      "pb-2 px-2 sm:px-1 text-xs sm:text-sm font-medium transition-colors whitespace-nowrap",
+                      activeProfileTab === "comments" 
+                        ? "border-b-2 border-white text-white" 
+                        : "text-muted-foreground hover:text-white"
+                    )}
+                    onClick={() => setActiveProfileTab("comments")}
+                  >
+                    Comentarios <span className="hidden sm:inline">{selectedProfileUser.commentsCount || 0}</span>
+                  </button>
+                  <button 
+                    className={cn(
+                      "pb-2 px-2 sm:px-1 text-xs sm:text-sm font-medium transition-colors whitespace-nowrap",
+                      activeProfileTab === "spaces" 
+                        ? "border-b-2 border-white text-white" 
+                        : "text-muted-foreground hover:text-white"
+                    )}
+                    onClick={() => setActiveProfileTab("spaces")}
+                  >
+                    Espacios <span className="hidden sm:inline">18</span>
+                  </button>
+                  <button 
+                    className={cn(
+                      "pb-2 px-2 sm:px-1 text-xs sm:text-sm font-medium transition-colors whitespace-nowrap",
+                      activeProfileTab === "rewards" 
+                        ? "border-b-2 border-white text-white" 
+                        : "text-muted-foreground hover:text-white"
+                    )}
+                    onClick={() => setActiveProfileTab("rewards")}
+                  >
+                    Recompensas
+                  </button>
+                </div>
+              </div>
+
+              {/* Contenido del tab activo - Scrollable */}
+              <div className="flex-1 overflow-y-auto px-4 sm:px-0">
+                {activeProfileTab === "about" && (
+                  <div className="space-y-4 pb-4">
+                    {/* Nivel y puntos */}
+                    {loadingUserStats ? (
+                      <div className="text-center py-4 text-muted-foreground">
+                        <p>Cargando estadísticas...</p>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-3">
+                        <div className="bg-blue-500 text-white text-sm sm:text-base font-bold rounded-full h-10 w-10 sm:h-12 sm:w-12 flex items-center justify-center flex-shrink-0">
+                          {selectedProfileUser.level || 1}
+                        </div>
+                        <div>
+                          <p className="text-white font-medium text-sm sm:text-base">Nivel {selectedProfileUser.level || 1}</p>
+                          <p className="text-xs sm:text-sm text-muted-foreground">
+                            {selectedProfileUser.points || 0} puntos • {getPointsForNextLevel(selectedProfileUser.level || 1, selectedProfileUser.points || 0)} para subir de nivel
+                          </p>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Etiquetas */}
+                    <div className="flex flex-wrap gap-2">
+                      {selectedProfileUser.isAdmin && (
+                        <span className="bg-blue-500 text-white text-xs px-2 py-1 rounded">⭐ PRO</span>
+                      )}
+                      <span className="bg-green-500 text-white text-xs px-2 py-1 rounded">⭐ Promotor</span>
+                    </div>
+
+                    {/* Descripción corta */}
+                    <div>
+                      <h3 className="text-white font-medium mb-2 text-sm sm:text-base">Descripción corta</h3>
+                      <p className="text-xs sm:text-sm text-muted-foreground break-words">
+                        {selectedProfileUser.shortDescription || 'No hay descripción disponible'}
+                      </p>
+                    </div>
+
+                    {/* Bio */}
+                    <div>
+                      <h3 className="text-white font-medium mb-2 text-sm sm:text-base">Bio</h3>
+                      <p className="text-xs sm:text-sm text-muted-foreground break-words whitespace-pre-wrap">
+                        {selectedProfileUser.bio || 'No hay biografía disponible'}
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {activeProfileTab === "posts" && (
+                  <div className="space-y-4 pb-4">
+                    {loadingUserPosts ? (
+                      <div className="text-center py-8 text-muted-foreground">
+                        <p className="text-sm sm:text-base">Cargando publicaciones...</p>
+                      </div>
+                    ) : userPosts && userPosts.length > 0 ? (
+                      userPosts.map((item: any) => (
+                        <div
+                          key={item.post.id}
+                          className="rounded-lg border border-[#333333] bg-[#1a1a1a] p-4 hover:border-[#555555] transition-colors"
+                        >
+                          <div className="flex items-start gap-3 mb-3">
+                            <div className="flex-1">
+                              <h3 className="font-bold text-white text-sm sm:text-base mb-2">{item.post.title}</h3>
+                              <p className="text-xs sm:text-sm text-muted-foreground line-clamp-3 mb-2">
+                                {item.post.content}
+                              </p>
+                              <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
+                                {item.channel && (
+                                  <span>📢 {item.channel.name}</span>
+                                )}
+                                <span>📅 {new Date(item.post.createdAt).toLocaleDateString("es-ES", { year: "numeric", month: "long", day: "numeric" })}</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="text-center py-8 text-muted-foreground">
+                        <p className="text-sm sm:text-base">No hay publicaciones aún</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {activeProfileTab === "comments" && (
+                  <div className="space-y-4 pb-4">
+                    {loadingUserComments ? (
+                      <div className="text-center py-8 text-muted-foreground">
+                        <p className="text-sm sm:text-base">Cargando comentarios...</p>
+                      </div>
+                    ) : userComments && userComments.length > 0 ? (
+                      userComments.map((item: any) => (
+                        <div
+                          key={item.comment.id}
+                          onClick={() => handleNavigateToPost(item)}
+                          className="rounded-lg border border-[#333333] bg-[#1a1a1a] p-4 hover:border-cyan-500 hover:bg-[#1a2a2a] transition-colors cursor-pointer"
+                        >
+                          <div className="flex items-start gap-3 mb-2">
+                            <div className="flex-1">
+                              <p className="text-xs sm:text-sm text-white mb-2 break-words">
+                                {item.comment.content}
+                              </p>
+                              <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
+                                {item.post && (
+                                  <span className="font-medium">📝 {item.post.title}</span>
+                                )}
+                                {item.channel && (
+                                  <span>📢 {item.channel.name}</span>
+                                )}
+                                <span>📅 {new Date(item.comment.createdAt).toLocaleDateString("es-ES", { year: "numeric", month: "long", day: "numeric" })}</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="text-center py-8 text-muted-foreground">
+                        <p className="text-sm sm:text-base">No hay comentarios aún</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {activeProfileTab === "spaces" && (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <p className="text-sm sm:text-base">Los espacios se mostrarán aquí</p>
+                  </div>
+                )}
+
+                {activeProfileTab === "rewards" && (
+                  <div className="space-y-3 pb-4">
+                    {loadingUserRewards ? (
+                      <div className="text-center py-8 text-muted-foreground">
+                        <p className="text-sm sm:text-base">Cargando recompensas...</p>
+                      </div>
+                    ) : userRewards && userRewards.length > 0 ? (
+                      <div className="space-y-2">
+                        {userRewards.map((reward: any) => {
+                          const isPositive = reward.points > 0;
+                          const date = new Date(reward.createdAt);
+                          const formattedDate = date.toLocaleDateString("es-ES", { 
+                            year: "numeric", 
+                            month: "long", 
+                            day: "numeric" 
+                          });
+                          const actionText = isPositive ? "Recompensado" : "Revocado";
+                          
+                          // Map activity types to Spanish descriptions
+                          const activityDescriptions: { [key: string]: string } = {
+                            message: "Mensaje en chat",
+                            post: "Publicación creada",
+                            comment: "Comentario en publicación",
+                            reaction: "Curtiu uma publicação", // Mantener el texto original como en la imagen
+                          };
+                          
+                          // Preferir la descripción del backend, si no existe usar el mapeo
+                          const description = reward.description || activityDescriptions[reward.activityType] || `Actividad: ${reward.activityType}`;
+                          
+                          return (
+                            <div
+                              key={reward.id}
+                              className="flex items-start gap-3 p-3 rounded-lg border border-[#333333] bg-[#1a1a1a] hover:border-[#555555] transition-colors"
+                            >
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <span className={cn(
+                                    "text-sm sm:text-base font-semibold",
+                                    isPositive ? "text-green-500" : "text-red-500"
+                                  )}>
+                                    {isPositive ? "+" : ""}{reward.points} puntos
+                                  </span>
+                                </div>
+                                <p className="text-xs sm:text-sm text-muted-foreground mb-1">
+                                  {actionText} el {formattedDate}
+                                </p>
+                                {description && (
+                                  <p className="text-xs sm:text-sm text-muted-foreground">
+                                    • {description}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <div className="text-center py-8 text-muted-foreground">
+                        <p className="text-sm sm:text-base">No hay recompensas aún</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Points Info Dialog */}
+      <Dialog open={pointsInfoOpen} onOpenChange={setPointsInfoOpen}>
+        <DialogContent className="max-w-lg bg-[#1a1a1a] border-[#333333] text-white max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-bold text-white">
+              ¿Cómo funcionan los puntos?
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-6 mt-4">
+            {/* 1 me gusta = 1 punto */}
+            <div className="space-y-2">
+              <h3 className="text-lg font-semibold text-white">1 me gusta = 1 punto</h3>
+              <p className="text-sm text-muted-foreground">
+                Recibir un "me gusta" en una publicación o comentario te otorga 1 punto. 
+                Esto fomenta que los miembros hagan contribuciones valiosas y recompensa a otros 
+                por dar "me gusta" a las publicaciones.
+              </p>
+            </div>
+
+            {/* Recompensas */}
+            <div className="space-y-2">
+              <h3 className="text-lg font-semibold text-white">Recompensas</h3>
+              <p className="text-sm text-muted-foreground">
+                Los administradores de la comunidad pueden otorgar puntos ocasionalmente. 
+                Estas recompensas son visibles en tu perfil.
+              </p>
+            </div>
+
+            {/* Niveles */}
+            <div className="space-y-2">
+              <h3 className="text-lg font-semibold text-white">Niveles</h3>
+              <p className="text-sm text-muted-foreground">
+                A medida que acumulas puntos, avanzarás por los niveles del 1 al 9. 
+                Tu nivel actual se muestra en tu avatar y los puntos necesarios para el siguiente 
+                nivel se muestran en tu página de perfil.
+              </p>
+            </div>
+
+            {/* Tabla de niveles */}
+            <div className="space-y-3">
+              <h3 className="text-lg font-semibold text-white">Progresión de Niveles</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                {LEVELS.map((level) => {
+                  const currentLevel = userStats?.level || 1;
+                  const isUnlocked = currentLevel >= level.level;
+                  const isCurrent = currentLevel === level.level;
+                  
+                  return (
+                    <div
+                      key={level.level}
+                      className={cn(
+                        "p-3 rounded border",
+                        isCurrent
+                          ? "bg-yellow-500/20 border-yellow-500 text-white"
+                          : isUnlocked
+                          ? "bg-green-500/10 border-green-500/50 text-white"
+                          : "bg-[#2a2a2a] border-[#333333] text-muted-foreground"
+                      )}
+                    >
+                      <div className="flex items-center gap-2">
+                        {isCurrent ? (
+                          <Trophy className="h-5 w-5 text-yellow-500" />
+                        ) : isUnlocked ? (
+                          <Award className="h-5 w-5 text-green-500" />
+                        ) : (
+                          <Lock className="h-5 w-5 text-muted-foreground" />
+                        )}
+                        <div>
+                          <p className="font-semibold">Nivel {level.level}</p>
+                          <p className="text-xs">{level.points} puntos</p>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

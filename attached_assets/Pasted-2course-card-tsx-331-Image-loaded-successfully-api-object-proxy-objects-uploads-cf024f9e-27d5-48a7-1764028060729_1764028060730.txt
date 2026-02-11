@@ -1,0 +1,19 @@
+2course-card.tsx:331 Image loaded successfully: /api/object-proxy/objects/uploads/cf024f9e-27d5-48a7-ad06-637c25ff2f53
+course-card.tsx:331 Image loaded successfully: /api/object-proxy/objects/uploads/c270e696-4b33-4c77-a186-fd9344fa6246
+course-card.tsx:331 Image loaded successfully: /api/object-proxy/objects/uploads/65682cae-8ec0-495e-aa7a-8dcb8e0f1beb
+course-card.tsx:331 Image loaded successfully: /api/object-proxy/objects/uploads/8abcc756-49a6-452c-8525-83566b93ca39
+course-card.tsx:331 Image loaded successfully: /api/object-proxy/objects/uploads/59d8b21d-420b-4af3-ae1a-b81d80855b85
+course-card.tsx:331 Image loaded successfully: /api/object-proxy/objects/uploads/6889370d-0a20-4e3d-8cfe-3deb68fb8a4f
+course-card.tsx:331 Image loaded successfully: /api/object-proxy/objects/uploads/6854e54a-6a88-4f13-82f9-514037654e7c
+course-card.tsx:331 Image loaded successfully: /api/object-proxy/objects/uploads/a253d12f-747e-42e5-8ea0-9bdbe91e8424
+course-card.tsx:331 Image loaded successfully: /api/lesson-resources/c7e44edf-ceea-4577-b263-015c8d22581f/media-upload.jpg
+course-card.tsx:331 Image loaded successfully: /api/lesson-resources/59a90f44-7086-4850-b9a7-2e3cac73eec1/media-upload.jpg
+community.tsx:296 [DRAFT LOAD] Channel: anuncios (340b77dc-671c-4eba-9ee9-b05e750e14be), Saved: ""
+community.tsx:296 [DRAFT LOAD] Channel: anuncios (340b77dc-671c-4eba-9ee9-b05e750e14be), Saved: ""
+community.tsx:296 [DRAFT LOAD] Channel: redes-chat (140f3d60-75a8-4d89-b5ce-3387ed78ee13), Saved: ""
+community.tsx:944 [DRAFT SAVE] Channel: redes-chat, Key: draft-140f3d60-75a8-4d89-b5ce-3387ed78ee13, Value: "H"
+community.tsx:944 [DRAFT SAVE] Channel: redes-chat, Key: draft-140f3d60-75a8-4d89-b5ce-3387ed78ee13, Value: "Ho"
+community.tsx:944 [DRAFT SAVE] Channel: redes-chat, Key: draft-140f3d60-75a8-4d89-b5ce-3387ed78ee13, Value: "Hol"
+community.tsx:944 [DRAFT SAVE] Channel: redes-chat, Key: draft-140f3d60-75a8-4d89-b5ce-3387ed78ee13, Value: "Hola"
+community.tsx:296 [DRAFT LOAD] Channel: comparte-proyecto (67957418-d4d6-4e4e-a2c1-58eb9c892b99), Saved: ""
+community.tsx:296 [DRAFT LOAD] Channel: redes-chat (140f3d60-75a8-4d89-b5ce-3387ed78ee13), Saved: ""

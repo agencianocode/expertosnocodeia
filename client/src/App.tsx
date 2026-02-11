@@ -8,10 +8,14 @@ import { SimpleAuthProvider } from "@/hooks/use-simple-auth";
 import NotFound from "@/pages/not-found";
 import PublicLanding from "@/pages/public-landing";
 import UniversidadNoCodeIA from "@/pages/universidad-nocode-ia";
+import LandingMarketing from "@/pages/landing-marketing";
+import LandingPricing from "@/pages/landing-pricing";
 import Onboarding from "@/pages/onboarding";
+import PersonalizedRecommendations from "@/pages/personalized-recommendations";
 import Dashboard from "@/pages/dashboard";
 import Courses from "@/pages/courses";
 import Guides from "@/pages/guides";
+import Programas from "@/pages/programas";
 import Workshops from "@/pages/workshops";
 import Workshop from "@/pages/workshop";
 import Course from "@/pages/course";
@@ -20,6 +24,11 @@ import Room from "@/pages/room";
 import CategoryPage from "@/pages/category";
 import AdminDashboard from "@/pages/admin/dashboard";
 import ContentManagement from "@/pages/admin/content";
+import AdminUsers from "@/pages/admin/users";
+import AdminEmails from "@/pages/admin/emails";
+import AdminBeehiiv from "@/pages/admin/beehiiv";
+import AdminAutomations from "@/pages/admin/automations";
+import AdminSegments from "@/pages/admin/segments";
 import CourseForm from "@/pages/admin/course-form";
 import CourseLessons from "@/pages/admin/course-lessons";
 import LessonForm from "@/pages/admin/lesson-form";
@@ -30,23 +39,37 @@ import WorkshopEditor from "@/pages/admin/workshop-editor";
 import OnboardingAnalytics from "@/pages/admin/onboarding-analytics";
 import AdminComments from "@/pages/admin/comments";
 import AdminCommunity from "@/pages/admin/community";
+import AdminLiveEvents from "@/pages/admin/live-events";
 import RoomsManagement from "@/pages/admin/rooms";
 import RoomForm from "@/pages/admin/room-form";
+import PromoBannersManagement from "@/pages/admin/promo-banners";
+import PromoBannerForm from "@/pages/admin/promo-banner-form";
 import Setup from "@/pages/setup";
 import Lesson from "@/pages/lesson";
 import Events from "@/pages/events";
+import EventDetails from "@/pages/event-details";
+import WorkshopsEvents from "@/pages/workshops-events";
 import Community from "@/pages/community";
+import LiveRoom from "@/pages/live-room";
 import Perks from "@/pages/perks";
 import Profile from "@/pages/profile";
+import Leaderboard from "@/pages/leaderboard";
 import MyProgress from "@/pages/my-progress";
 import Saved from "@/pages/saved";
 import Planes from "@/pages/planes";
 import Support from "@/pages/support";
 import Login from "@/pages/login";
+import ForgotPassword from "@/pages/forgot-password";
+import ResetPassword from "@/pages/reset-password";
+import VerifyEmail from "@/pages/verify-email";
 import DebugPage from "@/pages/debug";
 import SimpleDashboard from "@/pages/simple-dashboard";
 import SimpleLogin from "@/pages/simple-login";
 import RealDashboard from "@/pages/real-dashboard";
+import ClearCache from "@/pages/clear-cache";
+import Checkout from "@/pages/checkout";
+import CheckoutReturn from "@/pages/checkout-return";
+import CalendarEventDetails from "@/pages/calendar-event-details";
 
 function Router() {
   const { isAuthenticated, isLoading, user } = useSimpleAuth();
@@ -75,34 +98,42 @@ function Router() {
     return hostname.startsWith('app.');
   };
 
-  // Si estamos en el dominio principal, mostrar páginas públicas
-  if (!isAppDomain()) {
-    return (
-      <Switch>
-        <Route path="/" component={PublicLanding} />
-        <Route path="/universidad-nocode-ia" component={UniversidadNoCodeIA} />
-        <Route component={NotFound} />
-      </Switch>
-    );
-  }
-
-  // Si estamos en app.dominio.com, mostrar la aplicación LMS
+  // Preview routes and public landing pages - ALWAYS available regardless of domain
   return (
     <Switch>
-      {/* Rutas de preview disponibles sin autenticación */}
+      {/* Preview routes - always available (no auth required) */}
       <Route path="/preview-landing" component={PublicLanding} />
       <Route path="/preview-universidad" component={UniversidadNoCodeIA} />
       <Route path="/preview-admin" component={Setup} />
       
-      {isLoading ? (
+      {/* Clear cache route - always available */}
+      <Route path="/clear-cache" component={ClearCache} />
+      
+      {/* Public landing pages - always available */}
+      <Route path="/universidad-nocode-ia" component={UniversidadNoCodeIA} />
+      
+      {/* Domain-based routing */}
+      {!isAppDomain() ? (
+        <>
+          <Route path="/" component={PublicLanding} />
+          <Route component={NotFound} />
+        </>
+      ) : isLoading ? (
         <Route path="/" component={() => <div className="min-h-screen bg-background flex items-center justify-center">
           <div className="text-foreground">Cargando...</div>
         </div>} />
       ) : !isAuthenticated ? (
         <>
+          {/* Public Landing Pages - Specific routes first */}
+          <Route path="/pricing" component={LandingPricing} />
+          <Route path="/planes" component={LandingPricing} />
+          <Route path="/landing" component={PublicLanding} />
+          
           {/* Public access to main content pages with locked content */}
           <Route path="/" component={Dashboard} />
+          <Route path="/dashboard" component={Dashboard} />
           <Route path="/courses" component={Courses} />
+          <Route path="/programas" component={Programas} />
           <Route path="/guides" component={Guides} />
           <Route path="/talleres" component={Workshops} />
           <Route path="/categoria/:categorySlug" component={CategoryPage} />
@@ -121,8 +152,12 @@ function Router() {
           </Route>
           
           {/* Authentication and support pages */}
-          <Route path="/login" component={SimpleLogin} />
-          <Route path="/planes" component={Planes} />
+          <Route path="/login" component={Login} />
+          <Route path="/register" component={Login} />
+          <Route path="/inscribirse" component={Login} />
+          <Route path="/forgot-password" component={ForgotPassword} />
+          <Route path="/reset-password" component={ResetPassword} />
+          <Route path="/verify-email" component={VerifyEmail} />
           <Route path="/apoyo" component={Support} />
           <Route path="/support" component={Support} />
           <Route path="/community" component={Community} />
@@ -130,22 +165,40 @@ function Router() {
         </>
       ) : (
         <>
+          {/* Public landing pages - available for authenticated users too */}
+          <Route path="/pricing" component={LandingPricing} />
+          <Route path="/planes" component={LandingPricing} />
+          
+          {/* Authenticated routes */}
           <Route path="/" component={Dashboard} />
+          <Route path="/login" component={Login} />
+          <Route path="/forgot-password" component={ForgotPassword} />
+          <Route path="/reset-password" component={ResetPassword} />
+          <Route path="/verify-email" component={VerifyEmail} />
+          <Route path="/checkout/:planId" component={Checkout} />
+          <Route path="/checkout-return" component={CheckoutReturn} />
           <Route path="/onboarding" component={Onboarding} />
+          <Route path="/recommendations" component={PersonalizedRecommendations} />
           <Route path="/courses" component={Courses} />
+          <Route path="/programas" component={Programas} />
           <Route path="/guides" component={Guides} />
           <Route path="/talleres" component={Workshops} />
           <Route path="/taller/:id" component={Workshop} />
           <Route path="/events" component={Events} />
+          <Route path="/events/:eventId" component={EventDetails} />
+          <Route path="/calendar-events/:eventId" component={CalendarEventDetails} />
+          <Route path="/workshops" component={WorkshopsEvents} />
           <Route path="/community" component={Community} />
+          <Route path="/live/:eventId" component={LiveRoom} />
           <Route path="/perks" component={Perks} />
           <Route path="/profile" component={Profile} />
+          <Route path="/leaderboard" component={Leaderboard} />
+          <Route path="/clasificacion" component={Leaderboard} />
           <Route path="/progreso" component={MyProgress} />
           <Route path="/progress" component={MyProgress} />
           <Route path="/mi-progreso" component={MyProgress} />
           <Route path="/saved" component={Saved} />
           <Route path="/guardado" component={Saved} />
-          <Route path="/planes" component={Planes} />
           <Route path="/support" component={Support} />
           <Route path="/apoyo" component={Support} />
           <Route path="/categoria/:categorySlug" component={CategoryPage} />
@@ -159,6 +212,11 @@ function Router() {
           <Route path="/admin/dashboard" component={AdminDashboard} />
           <Route path="/admin/onboarding" component={OnboardingAnalytics} />
           <Route path="/admin/content" component={ContentManagement} />
+          <Route path="/admin/users" component={AdminUsers} />
+          <Route path="/admin/emails" component={AdminEmails} />
+          <Route path="/admin/beehiiv" component={AdminBeehiiv} />
+          <Route path="/admin/automations" component={AdminAutomations} />
+          <Route path="/admin/segments" component={AdminSegments} />
           <Route path="/admin/content/course/new" component={CourseForm} />
           <Route path="/admin/content/course/:id/lessons" component={CourseLessons} />
           <Route path="/admin/content/course/:id/edit" component={CourseForm} />
@@ -170,8 +228,12 @@ function Router() {
           <Route path="/admin/media/upload" component={MediaUpload} />
           <Route path="/admin/comentarios" component={AdminComments} />
           <Route path="/admin/community" component={AdminCommunity} />
+          <Route path="/admin/live-events" component={AdminLiveEvents} />
           <Route path="/admin/rooms" component={RoomsManagement} />
           <Route path="/admin/rooms/:id/edit" component={RoomForm} />
+          <Route path="/admin/promo-banners" component={PromoBannersManagement} />
+          <Route path="/admin/promo-banners/new" component={PromoBannerForm} />
+          <Route path="/admin/promo-banners/:id/edit" component={PromoBannerForm} />
           <Route path="/setup" component={Setup} />
           <Route path="/debug" component={DebugPage} />
           <Route component={NotFound} />

@@ -125,18 +125,20 @@ export const supabaseAuth = async (
       });
     }
 
-    // Get or create user in our database
+    // Get or create user in our database BY EMAIL
     let dbUser = await storage.getUserByEmail(user.email!);
     
     if (!dbUser) {
-      // Create user if doesn't exist (for first-time Supabase users)
+      // Create user if doesn't exist - USE SUPABASE ID
       dbUser = await storage.createUser({
+        id: user.id, // ✅ Use Supabase Auth ID to keep them in sync
         email: user.email!,
         firstName: user.user_metadata?.first_name || '',
         lastName: user.user_metadata?.last_name || '',
         profileImageUrl: user.user_metadata?.avatar_url || '',
         provider: 'supabase',
         isEmailVerified: true, // Supabase handles email verification
+        role: 'user', // Default role for new users
       });
     }
 
@@ -234,18 +236,20 @@ export const supabaseAdminAuth = async (
       });
     }
 
-    // Get or create user in our database
+    // Get or create user in our database BY EMAIL
     let dbUser = await storage.getUserByEmail(user.email!);
     
     if (!dbUser) {
-      // Create user if doesn't exist (for first-time Supabase users)
+      // Create user if doesn't exist - USE SUPABASE ID
       dbUser = await storage.createUser({
+        id: user.id, // ✅ Use Supabase Auth ID to keep them in sync
         email: user.email!,
         firstName: user.user_metadata?.first_name || '',
         lastName: user.user_metadata?.last_name || '',
         profileImageUrl: user.user_metadata?.avatar_url || '',
         provider: 'supabase',
         isEmailVerified: true, // Supabase handles email verification
+        role: 'user', // Default role for new users
       });
     }
 

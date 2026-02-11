@@ -83,11 +83,12 @@ export default function Saved() {
     );
   }
 
-  const hasSavedItems = Array.isArray(savedCourses) && savedCourses.length > 0;
+  const savedCoursesArray = Array.isArray(savedCourses) ? savedCourses : [];
+  const hasSavedItems = savedCoursesArray.length > 0;
 
   // Separate courses and guides
-  const savedCoursesFiltered = savedCourses?.filter((item: any) => item.course?.type === 'course') || [];
-  const savedGuides = savedCourses?.filter((item: any) => item.course?.type === 'guide') || [];
+  const savedCoursesFiltered = savedCoursesArray.filter((item: any) => item.course?.type === 'course');
+  const savedGuides = savedCoursesArray.filter((item: any) => item.course?.type === 'guide');
 
   return (
     <div className="min-h-screen bg-background text-foreground">
