@@ -7,6 +7,7 @@ import { useSimpleAuth } from "@/hooks/use-simple-auth";
 import { SimpleAuthProvider } from "@/hooks/use-simple-auth";
 import NotFound from "@/pages/not-found";
 import PublicLanding from "@/pages/public-landing";
+import MarketingLanding from "@/pages/marketing-landing";
 import UniversidadNoCodeIA from "@/pages/universidad-nocode-ia";
 import LandingMarketing from "@/pages/landing-marketing";
 import LandingPricing from "@/pages/landing-pricing";
@@ -115,7 +116,7 @@ function Router() {
       {/* Domain-based routing */}
       {!isAppDomain() ? (
         <>
-          <Route path="/" component={PublicLanding} />
+          <Route path="/" component={MarketingLanding} />
           <Route component={NotFound} />
         </>
       ) : isLoading ? (
