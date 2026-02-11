@@ -39,21 +39,36 @@ En Railway, ve a tu proyecto → **Variables** y agrega todas estas variables:
 
 ```env
 # Base de Datos PostgreSQL
-DATABASE_URL=postgresql://usuario:password@host:5432/database
+# OPCIÓN A: Si usas Railway PostgreSQL (creada automáticamente)
+# Railway crea DATABASE_URL automáticamente, pero puedes sobrescribirla
+# Si la creas manualmente, usa el formato:
+DATABASE_URL=postgresql://postgres:TU_PASSWORD@TU_HOST:5432/railway
+
+# OPCIÓN B: Si usas Supabase PostgreSQL (RECOMENDADO)
+# IMPORTANTE: Usa el POOLER, no la conexión directa
+# Formato correcto:
+DATABASE_URL=postgresql://postgres.TU_PROJECT_REF:[PASSWORD]@aws-1-us-east-2.pooler.supabase.com:5432/postgres
+# Obtén esta URL en: Supabase Dashboard > Settings > Database > Connection Pooling > Session mode
 
 # Supabase
 SUPABASE_URL=https://tu-proyecto.supabase.co
 SUPABASE_SERVICE_ROLE_KEY=tu_service_role_key_aqui
 
-# Frontend URL (será tu dominio de Railway)
+# Frontend URL (será tu dominio de Railway - ACTUALIZA ESTO después del primer deploy)
 FRONTEND_URL=https://tu-proyecto.railway.app
 
 # Entorno
 NODE_ENV=production
 
-# Puerto (Railway lo proporciona automáticamente, pero puedes forzarlo)
-PORT=5000
+# Puerto (Railway lo proporciona automáticamente via PORT, no necesitas configurarlo)
+# PORT se asigna automáticamente por Railway
 ```
+
+**⚠️ IMPORTANTE sobre DATABASE_URL:**
+- Si tu contraseña tiene caracteres especiales (`@`, `:`, `/`, `#`, etc.), debes codificarlos con URL encoding
+- Ejemplo: Si tu password es `p@ss#word`, debe ser `p%40ss%23word` en la URL
+- Railway PostgreSQL: Si creaste una DB en Railway, usa la `DATABASE_URL` que Railway te proporciona automáticamente
+- Supabase: **SIEMPRE usa el pooler** (`pooler.supabase.com`), nunca la conexión directa (`db.supabase.co`)
 
 ### 🟡 **RECOMENDADAS (para funcionalidad completa):**
 
