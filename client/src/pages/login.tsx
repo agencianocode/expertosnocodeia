@@ -93,10 +93,13 @@ export default function Login() {
   });
 
   const handleLogin = async (data: LoginData) => {
+    console.log('🔐 handleLogin called with:', { email: data.email, hasPassword: !!data.password });
     try {
+      console.log('🔐 Calling login function...');
       await login(data.email, data.password);
+      console.log('🔐 Login function completed');
     } catch (error) {
-      console.error('Login failed:', error);
+      console.error('❌ Login failed:', error);
     }
   };
 

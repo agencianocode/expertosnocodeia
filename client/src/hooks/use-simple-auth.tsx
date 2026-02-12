@@ -85,9 +85,10 @@ export function SimpleAuthProvider({ children }: { children: ReactNode }) {
   const login = async (email: string, password: string) => {
     try {
       setIsLoading(true);
-      console.log('Attempting login with:', { email, password });
+      console.log('🔐 Attempting login with:', { email, password: password ? '***' : 'empty' });
       
       // Try Supabase login first
+      console.log('🔐 Sending request to /api/auth/login...');
       const response = await fetch('/api/auth/login', {
         method: 'POST',
         headers: {
@@ -96,8 +97,8 @@ export function SimpleAuthProvider({ children }: { children: ReactNode }) {
         body: JSON.stringify({ email, password }),
       });
 
-      console.log('Login response status:', response.status);
-      console.log('Login response ok:', response.ok);
+      console.log('🔐 Login response status:', response.status);
+      console.log('🔐 Login response ok:', response.ok);
       
       if (response.ok) {
         const data = await response.json();
@@ -125,6 +126,7 @@ export function SimpleAuthProvider({ children }: { children: ReactNode }) {
           window.location.href = "/";
         }, 500);
       } else {
+        console.log('⚠️ Supabase login failed, trying fallback to /api/login...');
         // Fallback to simple login if Supabase fails
         const simpleResponse = await fetch('/api/login', {
           method: 'POST',
@@ -161,6 +163,7 @@ export function SimpleAuthProvider({ children }: { children: ReactNode }) {
         }
       }
     } catch (error) {
+      console.error('❌ Login error caught:', error);
       toast({
         title: "Error de conexión",
         description: "No se pudo conectar al servidor",
