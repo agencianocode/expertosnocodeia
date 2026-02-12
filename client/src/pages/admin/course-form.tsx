@@ -220,7 +220,11 @@ export default function CourseForm() {
         slug: (course as any).slug || "",
         description: course.description,
         categoryId: course.categoryId,
-        selectedCategoryIds: course.categories || [course.categoryId], // Use multiple categories if available, fallback to single
+        selectedCategoryIds: Array.isArray(course.categories) && course.categories.length > 0
+          ? course.categories.map((cat: any) => typeof cat === 'string' ? cat : cat.id)
+          : course.categoryId 
+            ? [course.categoryId].filter(Boolean)
+            : [], // Use multiple categories if available, fallback to single
         type: course.type,
         difficulty: course.difficulty,
         estimatedHours: course.estimatedHours || 1,
@@ -635,26 +639,40 @@ export default function CourseForm() {
                       render={({ field }) => (
                         <div className="space-y-3 mt-2 max-h-48 overflow-y-auto bg-slate-800/50 rounded-lg p-3 border border-slate-600" data-testid="select-categorias-multiple">
                           {(categories as any)?.map((category: any) => {
-                            const isChecked = field.value?.includes(category.id) || false;
+                            const currentValues = Array.isArray(field.value) ? field.value : [];
+                            const isChecked = currentValues.includes(category.id);
                             return (
                               <div key={category.id} className="flex items-center space-x-2">
                                 <Checkbox
                                   id={`category-${category.id}`}
                                   checked={isChecked}
                                   onCheckedChange={(checked) => {
-                                    const currentValues = Array.isArray(field.value) ? field.value : [];
+                                    // Get fresh value from form to avoid stale closures
+                                    const freshValues = Array.isArray(form.getValues('selectedCategoryIds')) 
+                                      ? form.getValues('selectedCategoryIds') 
+                                      : [];
+                                    
                                     if (checked) {
-                                      field.onChange([...currentValues, category.id]);
-                                      // Also set primary category for compatibility
-                                      if (currentValues.length === 0) {
-                                        form.setValue('categoryId', category.id);
+                                      // Only add if not already in the array
+                                      if (!freshValues.includes(category.id)) {
+                                        const newValues = [...freshValues, category.id];
+                                        field.onChange(newValues);
+                                        form.setValue('selectedCategoryIds', newValues, { shouldValidate: true });
+                                        // Also set primary category for compatibility
+                                        if (freshValues.length === 0) {
+                                          form.setValue('categoryId', category.id);
+                                        }
                                       }
                                     } else {
-                                      const newValues = currentValues.filter((id: string) => id !== category.id);
+                                      // Remove from array
+                                      const newValues = freshValues.filter((id: string) => id !== category.id);
                                       field.onChange(newValues);
+                                      form.setValue('selectedCategoryIds', newValues, { shouldValidate: true });
                                       // Update primary category if this was the primary one
                                       if (form.getValues('categoryId') === category.id && newValues.length > 0) {
                                         form.setValue('categoryId', newValues[0]);
+                                      } else if (newValues.length === 0) {
+                                        form.setValue('categoryId', '');
                                       }
                                     }
                                   }}
