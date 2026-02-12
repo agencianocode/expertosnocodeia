@@ -125,6 +125,19 @@ export default function Guides() {
     return "Nivel";
   };
 
+  const getDifficultyColors = (difficulty?: string) => {
+    if (difficulty === "beginner") {
+      return "bg-green-500/15 text-green-400 border-green-500/30";
+    }
+    if (difficulty === "intermediate") {
+      return "bg-yellow-500/15 text-yellow-400 border-yellow-500/30";
+    }
+    if (difficulty === "advanced") {
+      return "bg-red-500/15 text-red-400 border-red-500/30";
+    }
+    return "bg-gray-500/15 text-gray-400 border-gray-500/30";
+  };
+
   const getInstructorInfo = (guide: any) => {
     const metadata = guide?.metadata
       ? typeof guide.metadata === "string"
@@ -155,7 +168,7 @@ export default function Guides() {
         <div className="flex items-center justify-between gap-4">
           <div className="space-y-3">
             <h3 className="text-[18px] font-bold text-foreground">{guide.title}</h3>
-            <div className="inline-flex items-center rounded-full bg-emerald-500/15 text-emerald-300 px-3 py-1 text-xs font-medium uppercase tracking-wide">
+            <div className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-medium uppercase tracking-wide border ${getDifficultyColors(guide.difficulty)}`}>
               {getDifficultyLabel(guide.difficulty)}
             </div>
             <div className="flex items-center gap-2 text-muted-foreground">
@@ -209,7 +222,7 @@ export default function Guides() {
               {guide.title}
             </h3>
 
-            <div className="inline-flex items-center rounded-full bg-emerald-500/15 text-emerald-300 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide">
+            <div className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide border ${getDifficultyColors(guide.difficulty)}`}>
               {getDifficultyLabel(guide.difficulty)}
             </div>
 

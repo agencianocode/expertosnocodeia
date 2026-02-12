@@ -41,6 +41,26 @@ export default function Guide() {
     queryKey: ['/api/categories'],
   });
 
+  const getDifficultyLabel = (difficulty?: string) => {
+    if (difficulty === "beginner") return "Principiante";
+    if (difficulty === "intermediate") return "Intermedio";
+    if (difficulty === "advanced") return "Avanzado";
+    return difficulty || "Nivel";
+  };
+
+  const getDifficultyColors = (difficulty?: string) => {
+    if (difficulty === "beginner") {
+      return "bg-green-500/15 text-green-400 border-green-500/30";
+    }
+    if (difficulty === "intermediate") {
+      return "bg-yellow-500/15 text-yellow-400 border-yellow-500/30";
+    }
+    if (difficulty === "advanced") {
+      return "bg-red-500/15 text-red-400 border-red-500/30";
+    }
+    return "bg-gray-500/15 text-gray-400 border-gray-500/30";
+  };
+
   const { data: savedCourses } = useQuery({
     queryKey: ['/api/users/saved-courses'],
     enabled: isAuthenticated,
@@ -206,8 +226,8 @@ export default function Guide() {
                   Guía
                 </Badge>
                 {guide?.difficulty && (
-                  <Badge className="bg-[#20132d] text-[#c0467f] border border-[#2c1d3e] text-[14px] uppercase">
-                    {guide.difficulty === "beginner" ? "Principiante" : guide.difficulty}
+                  <Badge className={`${getDifficultyColors(guide.difficulty)} text-[14px] uppercase`}>
+                    {getDifficultyLabel(guide.difficulty)}
                   </Badge>
                 )}
               </div>
