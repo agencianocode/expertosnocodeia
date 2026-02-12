@@ -51,15 +51,21 @@ export function SimpleAuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const fetchUser = async (authToken: string) => {
+    console.log('🔍 fetchUser called with token:', authToken ? 'Token exists' : 'NO TOKEN');
     try {
+      console.log('🔍 Fetching /api/auth/me...');
       const response = await fetch('/api/auth/me', {
         headers: {
           'Authorization': `Bearer ${authToken}`,
         },
       });
 
+      console.log('🔍 /api/auth/me response status:', response.status);
+      console.log('🔍 /api/auth/me response ok:', response.ok);
+
       if (response.ok) {
         const userData = await response.json();
+        console.log('✅ User data received:', { email: userData.email, id: userData.id });
         setUser(userData);
         // Save email if user is loaded
         if (userData.email) {
@@ -69,12 +75,14 @@ export function SimpleAuthProvider({ children }: { children: ReactNode }) {
           saveEmail(userData.email, provider, name || undefined);
         }
       } else {
+        const errorText = await response.text();
+        console.error('❌ /api/auth/me failed:', response.status, errorText);
         // Token is invalid
         localStorage.removeItem('simpleAuthToken');
         setToken(null);
       }
     } catch (error) {
-      console.error('Error fetching user:', error);
+      console.error('❌ Error fetching user:', error);
       localStorage.removeItem('simpleAuthToken');
       setToken(null);
     } finally {
@@ -102,16 +110,25 @@ export function SimpleAuthProvider({ children }: { children: ReactNode }) {
       
       if (response.ok) {
         const data = await response.json();
+        console.log('✅ Login response data:', { 
+          hasUser: !!data.user, 
+          hasToken: !!data.token, 
+          hasSupabaseToken: !!data.supabaseToken,
+          userId: data.user?.id 
+        });
         
         // If Supabase login succeeded, we need to get the token from Supabase client
         // For now, create a simple token for session management
         // Use btoa for base64 encoding in browser (instead of Buffer)
         const token = data.supabaseToken || data.token || btoa(`${data.user.id}:${Date.now()}`);
+        console.log('🔑 Token to store:', token ? 'Token exists' : 'NO TOKEN');
         
         // Store token and user
         localStorage.setItem('simpleAuthToken', token);
+        console.log('💾 Token stored in localStorage');
         setToken(token);
         setUser(data.user);
+        console.log('👤 User set in state:', data.user?.email);
         
         // Save email to localStorage
         saveEmail(data.user.email, 'email');
@@ -122,7 +139,9 @@ export function SimpleAuthProvider({ children }: { children: ReactNode }) {
         });
 
         // Redirect to dashboard
+        console.log('🔄 Redirecting to / in 500ms...');
         setTimeout(() => {
+          console.log('🔄 Executing redirect now...');
           window.location.href = "/";
         }, 500);
       } else {
