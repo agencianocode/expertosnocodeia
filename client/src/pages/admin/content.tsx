@@ -130,8 +130,10 @@ export default function ContentManagement() {
     course.description?.toLowerCase().includes(searchTerm.toLowerCase())
   ) || [];
 
-  // Filter by content type
-  const coursesList = filteredCourses.filter((item: any) => item.type === 'course');
+  // Filter by content type and separate courses by room context
+  const allCourses = filteredCourses.filter((item: any) => item.type === 'course');
+  const coursesList = allCourses.filter((item: any) => !item.roomContext || item.roomContext.length === 0); // Cursos de /courses
+  const roomCoursesList = allCourses.filter((item: any) => item.roomContext && item.roomContext.length > 0); // Cursos de salas
   const workshopsList = filteredCourses.filter((item: any) => item.type === 'workshop');
   const guidesList = filteredCourses.filter((item: any) => item.type === 'guide');
 
@@ -182,10 +184,14 @@ export default function ContentManagement() {
         </div>
       </div>
       <Tabs defaultValue="courses" className="w-full">
-        <TabsList className="grid w-full grid-cols-4 bg-slate-900/50 border-slate-700">
+        <TabsList className="grid w-full grid-cols-5 bg-slate-900/50 border-slate-700">
           <TabsTrigger value="courses" className="data-[state=active]:bg-purple-600">
             <BookOpen className="h-4 w-4 mr-2" />
             Cursos ({coursesList.length})
+          </TabsTrigger>
+          <TabsTrigger value="room-courses" className="data-[state=active]:bg-purple-600">
+            <BookOpen className="h-4 w-4 mr-2" />
+            Cursos de Salas ({roomCoursesList.length})
           </TabsTrigger>
           <TabsTrigger value="workshops" className="data-[state=active]:bg-purple-600">
             <Users className="h-4 w-4 mr-2" />
@@ -332,6 +338,160 @@ export default function ContentManagement() {
                 <h3 className="text-white font-medium mb-2">No hay cursos</h3>
                 <p className="text-gray-400 mb-4">
                   {searchTerm ? "No se encontraron cursos que coincidan con tu búsqueda." : "Aún no hay cursos creados."}
+                </p>
+                <Link href="/admin/content/course/new">
+                  <Button>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Crear Primer Curso
+                  </Button>
+                </Link>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
+
+        {/* Room Courses Tab */}
+        <TabsContent value="room-courses" className="space-y-6">
+          <div className="flex gap-4 items-center">
+            <div className="relative flex-1 max-w-sm">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+              <Input
+                placeholder="Buscar cursos de salas..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10 bg-slate-900/50 border-slate-700"
+              />
+            </div>
+            <Link href="/admin/content/course/new">
+              <Button>
+                <Plus className="h-4 w-4 mr-2" />
+                Nuevo Curso
+              </Button>
+            </Link>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {roomCoursesList.map((course: any, index: number) => (
+              <Card key={course.id} className="bg-slate-900/50 border-slate-700 hover:bg-slate-900/70 transition-colors">
+                <CardHeader className="pb-3">
+                  <div className="flex items-start justify-between">
+                    <CardTitle className="text-white text-lg line-clamp-2">{course.title}</CardTitle>
+                    <div className="flex gap-1 ml-2">
+                      {/* Reorder buttons */}
+                      <div className="flex flex-col gap-1 mr-1">
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => moveCourseUpMutation.mutate(course.id)}
+                          disabled={index === 0 || moveCourseUpMutation.isPending}
+                          className="h-6 w-6 p-0"
+                          title="Mover arriba"
+                        >
+                          <ChevronUp className="h-3 w-3" />
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => moveCourseDownMutation.mutate(course.id)}
+                          disabled={index === roomCoursesList.length - 1 || moveCourseDownMutation.isPending}
+                          className="h-6 w-6 p-0"
+                          title="Mover abajo"
+                        >
+                          <ChevronDown className="h-3 w-3" />
+                        </Button>
+                      </div>
+                      <Link href={`/admin/content/course/${course.id}/edit`}>
+                        <Button variant="ghost" size="sm">
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                      </Link>
+                      <Link href={`/course/${course.id}`}>
+                        <Button variant="ghost" size="sm">
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                      </Link>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button variant="ghost" size="sm" className="text-red-400 hover:text-red-300 hover:bg-red-900/20">
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent className="bg-slate-900 border-slate-700">
+                          <AlertDialogHeader>
+                            <AlertDialogTitle className="text-white">¿Eliminar curso?</AlertDialogTitle>
+                            <AlertDialogDescription className="text-gray-400">
+                              Esta acción no se puede deshacer. Se eliminará permanentemente el curso "{course.title}" y todas sus lecciones.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel className="bg-slate-800 text-white border-slate-600 hover:bg-slate-700">
+                              Cancelar
+                            </AlertDialogCancel>
+                            <AlertDialogAction 
+                              onClick={() => deleteMutation.mutate(course.id)}
+                              disabled={deleteMutation.isPending}
+                              className="bg-red-600 text-white hover:bg-red-700"
+                            >
+                              {deleteMutation.isPending ? "Eliminando..." : "Eliminar"}
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <p className="text-gray-400 text-sm line-clamp-2">{course.description}</p>
+                  
+                  {/* Room information */}
+                  {course.roomContext && course.roomContext.length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                      {course.roomContext.map((room: any, idx: number) => (
+                        <Badge key={idx} className="bg-blue-500/20 text-blue-400">
+                          Sala: {room.roomTitle || room.roomSlug}
+                        </Badge>
+                      ))}
+                    </div>
+                  )}
+                  
+                  <div className="flex flex-wrap gap-2">
+                    <Badge className={getTypeColor(course.type)}>
+                      {course.type}
+                    </Badge>
+                    <Badge className={getDifficultyColor(course.difficulty)}>
+                      {course.difficulty}
+                    </Badge>
+                    {course.isPublished ? (
+                      <Badge className="bg-green-500/20 text-green-400">Publicado</Badge>
+                    ) : (
+                      <Badge className="bg-gray-500/20 text-gray-400">Borrador</Badge>
+                    )}
+                  </div>
+
+                  <div className="flex items-center justify-between text-xs text-gray-500 pt-2">
+                    <div className="flex items-center gap-1">
+                      <Calendar className="h-3 w-3" />
+                      {course.estimatedHours}h
+                    </div>
+                    <Link href={`/admin/content/course/${course.id}/lessons`}>
+                      <Button variant="outline" size="sm">
+                        <FileText className="h-4 w-4 mr-1" />
+                        Lecciones
+                      </Button>
+                    </Link>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          {roomCoursesList.length === 0 && (
+            <Card className="bg-slate-900/50 border-slate-700">
+              <CardContent className="text-center py-12">
+                <BookOpen className="h-12 w-12 text-gray-500 mx-auto mb-4" />
+                <h3 className="text-white font-medium mb-2">No hay cursos de salas</h3>
+                <p className="text-gray-400 mb-4">
+                  {searchTerm ? "No se encontraron cursos de salas que coincidan con tu búsqueda." : "Aún no hay cursos de salas creados."}
                 </p>
                 <Link href="/admin/content/course/new">
                   <Button>

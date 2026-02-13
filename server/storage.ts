@@ -101,7 +101,7 @@ import {
   type InsertMessageReaction,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc, and, sql, not, inArray, isNull, or } from "drizzle-orm";
+import { eq, desc, and, sql, not, inArray, isNull, isNotNull, or } from "drizzle-orm";
 
 // Interface for storage operations
 export interface IStorage {
@@ -220,7 +220,7 @@ export interface IStorage {
   getLessonResources(lessonId: string): Promise<LessonResource[]>;
   
   // Admin Course operations (including unpublished)
-  getAllCoursesAdmin(): Promise<Course[]>;
+  getAllCoursesAdmin(): Promise<any[]>;
   createCourse(data: InsertCourse): Promise<Course>;
   updateCourse(id: string, data: Partial<InsertCourse>): Promise<Course>;
   deleteCourse(id: string): Promise<boolean>;
@@ -1689,11 +1689,58 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Admin Course operations (including unpublished)
-  async getAllCoursesAdmin(): Promise<Course[]> {
-    return await db
-      .select()
+  async getAllCoursesAdmin(): Promise<any[]> {
+    // Get all courses with room information
+    // Use a more explicit join structure to ensure we get room information correctly
+    const result = await db
+      .select({
+        course: courses,
+        phaseContent: phaseContent,
+        phase: phases,
+        room: rooms,
+      })
       .from(courses)
+      .leftJoin(
+        phaseContent,
+        and(
+          eq(phaseContent.contentType, 'course'),
+          eq(phaseContent.contentId, courses.id)
+        )
+      )
+      .leftJoin(phases, eq(phases.id, phaseContent.phaseId))
+      .leftJoin(rooms, eq(rooms.id, phases.roomId))
       .orderBy(sql`COALESCE(${courses.order}, 0) ASC`, desc(courses.createdAt));
+
+    // Group by course and aggregate room info
+    const coursesMap = new Map<string, any>();
+    
+    for (const row of result) {
+      if (!coursesMap.has(row.course.id)) {
+        coursesMap.set(row.course.id, {
+          ...row.course,
+          roomContext: []
+        });
+      }
+      
+      // Add room info if exists and is not null
+      // Check that we have all the necessary data: phaseContent, phase, and room
+      // Simplified check: just verify room exists (which implies phaseContent and phase exist)
+      if (row.room && row.room.id) {
+        const courseData = coursesMap.get(row.course.id);
+        const roomData = row.room;
+        // Avoid adding duplicate room contexts
+        const existingRoom = courseData.roomContext.find((r: any) => r.roomId === roomData.id);
+        if (!existingRoom) {
+          courseData.roomContext.push({
+            roomId: roomData.id,
+            roomSlug: roomData.slug,
+            roomTitle: roomData.title,
+          });
+        }
+      }
+    }
+    
+    return Array.from(coursesMap.values());
   }
 
   async createCourse(data: InsertCourse): Promise<Course> {
