@@ -8,6 +8,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import rehypeHighlight from 'rehype-highlight';
+import rehypeRaw from 'rehype-raw';
 import { 
   MoreHorizontal, 
   Plus, 
@@ -328,12 +332,56 @@ export default function CourseLessons() {
       {/* Course Info Card */}
       <Card className="bg-slate-900/50 border-slate-700 mb-6">
         <CardContent className="p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-white font-medium">{course.title}</h3>
-              <p className="text-gray-400 text-sm mt-1">{course.description}</p>
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex-1">
+              <h3 className="text-white font-medium mb-2">{course.title}</h3>
+              {course.description && (
+                <div className="text-gray-400 text-sm mt-1">
+                  {(() => {
+                    const description = course.description || '';
+                    // Detectar si el contenido tiene HTML
+                    const isHtml = /<[^>]+>/.test(description);
+                    
+                    if (isHtml) {
+                      // Si es HTML, renderizar con dangerouslySetInnerHTML pero con estilos
+                      return (
+                        <div 
+                          className="prose prose-invert prose-sm max-w-none text-gray-400 [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:space-y-2 [&_ol]:list-decimal [&_ol]:pl-5 [&_ol]:space-y-2 [&_li]:mb-1.5 [&_p]:mb-3 [&_p]:leading-relaxed [&_strong]:text-white [&_strong]:font-semibold [&_h1]:text-white [&_h1]:text-lg [&_h1]:mb-3 [&_h2]:text-white [&_h2]:text-base [&_h2]:mb-2 [&_h3]:text-white [&_h3]:text-sm [&_h3]:mb-2 [&_h4]:text-white [&_h4]:text-sm [&_h4]:mb-2"
+                          dangerouslySetInnerHTML={{ __html: description }}
+                        />
+                      );
+                    }
+                    
+                    // Si es Markdown o texto plano, usar ReactMarkdown
+                    return (
+                      <div className="markdown-content">
+                        <ReactMarkdown 
+                          remarkPlugins={[remarkGfm]}
+                          rehypePlugins={[rehypeHighlight, rehypeRaw]}
+                          components={{
+                            p: ({ children }) => <p className="mb-3 text-gray-400 leading-relaxed">{children}</p>,
+                            ul: ({ children }) => <ul className="list-disc list-inside mb-3 space-y-2 text-gray-400 pl-5">{children}</ul>,
+                            ol: ({ children }) => <ol className="list-decimal list-inside mb-3 space-y-2 text-gray-400 pl-5">{children}</ol>,
+                            li: ({ children }) => <li className="mb-1.5 text-gray-400">{children}</li>,
+                            strong: ({ children }) => <strong className="font-semibold text-white">{children}</strong>,
+                            em: ({ children }) => <em className="italic text-gray-300">{children}</em>,
+                            h1: ({ children }) => <h1 className="text-lg font-bold text-white mb-3 mt-4 first:mt-0">{children}</h1>,
+                            h2: ({ children }) => <h2 className="text-base font-bold text-white mb-2 mt-3 first:mt-0">{children}</h2>,
+                            h3: ({ children }) => <h3 className="text-sm font-semibold text-white mb-2 mt-2 first:mt-0">{children}</h3>,
+                            h4: ({ children }) => <h4 className="text-sm font-semibold text-white mb-2 mt-2 first:mt-0">{children}</h4>,
+                            code: ({ children }) => <code className="bg-slate-800 px-1.5 py-0.5 rounded text-xs font-mono text-purple-300">{children}</code>,
+                            blockquote: ({ children }) => <blockquote className="border-l-2 border-slate-600 pl-3 italic my-3 text-gray-500">{children}</blockquote>,
+                          }}
+                        >
+                          {description}
+                        </ReactMarkdown>
+                      </div>
+                    );
+                  })()}
+                </div>
+              )}
             </div>
-            <div className="flex items-center gap-4 text-sm text-gray-400">
+            <div className="flex items-center gap-4 text-sm text-gray-400 flex-shrink-0">
               <div>Tipo: {course.type}</div>
               <div>Dificultad: {course.difficulty}</div>
               <div>Lecciones: {filteredLessons.length}</div>

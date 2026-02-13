@@ -23,7 +23,7 @@ import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ObjectUploader } from "@/components/ObjectUploader";
 import { RichTextEditor } from "@/components/ui/rich-text-editor";
-import { ArrowLeft, Save, Eye, FileText } from "lucide-react";
+import { ArrowLeft, Save, Eye, FileText, Plus, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAdmin } from "@/hooks/useAdmin";
 import { apiRequest } from "@/lib/queryClient";
@@ -84,6 +84,11 @@ const courseSchema = z.object({
     size: z.number().optional(),
     type: z.string().optional(),
   })).optional(), // Solo para guías
+  faqs: z.array(z.object({
+    question: z.string().min(1, "La pregunta es requerida"),
+    answer: z.string().min(1, "La respuesta es requerida"),
+  })).optional(), // Preguntas frecuentes para cursos
+  presentationVideoUrl: z.string().optional(), // Video de presentación para cursos
 }).superRefine((data, ctx) => {
   // Conditional validation based on type
   if (data.type === 'guide') {
@@ -192,6 +197,8 @@ export default function CourseForm() {
       guideTools: "",
       guideUpdatedAt: "",
       guideFiles: [],
+      faqs: [],
+      presentationVideoUrl: "",
     },
   });
 
@@ -247,6 +254,8 @@ export default function CourseForm() {
         guideTools: metadata.tools || "",
         guideUpdatedAt: formatDateInput(metadata.updatedAt),
         guideFiles: metadata.files || [],
+        faqs: metadata.faqs || [],
+        presentationVideoUrl: metadata.presentationVideoUrl || "",
       });
     }
   }, [course, isEditing, form]);
@@ -360,6 +369,23 @@ export default function CourseForm() {
       // For non-guides, clear categoryIds and keep only categoryId
       delete (submitData as any).selectedCategoryIds;
       (submitData as any).categoryIds = []; // Signal to clear multiple categories
+      
+      // Save FAQs and presentation video in metadata for courses and workshops
+      const existingMetadata = parseMetadata((course as any)?.metadata);
+      const faqs = submitData.faqs || [];
+      const presentationVideoUrl = submitData.presentationVideoUrl?.trim();
+      const nextMetadata = { ...existingMetadata };
+      if (faqs && faqs.length > 0) {
+        nextMetadata.faqs = faqs;
+      } else {
+        delete (nextMetadata as any).faqs;
+      }
+      if (presentationVideoUrl) {
+        nextMetadata.presentationVideoUrl = presentationVideoUrl;
+      } else {
+        delete (nextMetadata as any).presentationVideoUrl;
+      }
+      (submitData as any).metadata = nextMetadata;
     }
 
     delete (submitData as any).publishedAt;
@@ -368,6 +394,8 @@ export default function CourseForm() {
     delete (submitData as any).guideTools;
     delete (submitData as any).guideUpdatedAt;
     delete (submitData as any).guideFiles;
+    delete (submitData as any).faqs; // Remove from submitData, already saved in metadata
+    delete (submitData as any).presentationVideoUrl; // Remove from submitData, already saved in metadata
     
     saveMutation.mutate(submitData);
   };
@@ -478,6 +506,96 @@ export default function CourseForm() {
                     <p className="text-red-400 text-sm mt-1">{form.formState.errors.description.message}</p>
                   )}
                 </div>
+
+                {/* Presentation Video - For courses and workshops */}
+                {(currentType === 'course' || currentType === 'workshop') && (
+                  <div>
+                    <Label htmlFor="presentationVideoUrl" className="text-white">Video de presentación</Label>
+                    <Input
+                      id="presentationVideoUrl"
+                      {...form.register("presentationVideoUrl")}
+                      className="bg-slate-800 border-slate-600 text-white mt-2"
+                      placeholder="https://www.youtube.com/watch?v=... o https://youtu.be/..."
+                    />
+                    <p className="text-xs text-gray-400 mt-1">
+                      URL del video de presentación del curso. Se mostrará arriba de la descripción.
+                    </p>
+                  </div>
+                )}
+
+                {/* FAQs Section - For courses and workshops */}
+                {(currentType === 'course' || currentType === 'workshop') && (
+                  <div>
+                    <Label className="text-white">Preguntas frecuentes (FAQ)</Label>
+                    <p className="text-xs text-gray-400 mb-3">
+                      Agrega preguntas frecuentes que se mostrarán en formato de acordeón en la página del curso
+                    </p>
+                    <div className="space-y-3">
+                      {form.watch('faqs')?.map((faq, index) => (
+                        <div
+                          key={index}
+                          className="bg-slate-800 border border-slate-600 rounded-lg p-4 space-y-3"
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm text-gray-400">Pregunta {index + 1}</span>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                const currentFaqs = form.getValues('faqs') || [];
+                                form.setValue('faqs', currentFaqs.filter((_, i) => i !== index));
+                              }}
+                              className="h-6 w-6 p-0 text-red-400 hover:text-red-300 hover:bg-red-500/10"
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
+                          <div>
+                            <Label className="text-white text-sm">Pregunta</Label>
+                            <Input
+                              value={faq.question}
+                              onChange={(e) => {
+                                const currentFaqs = form.getValues('faqs') || [];
+                                const updatedFaqs = [...currentFaqs];
+                                updatedFaqs[index] = { ...updatedFaqs[index], question: e.target.value };
+                                form.setValue('faqs', updatedFaqs);
+                              }}
+                              className="bg-slate-700 border-slate-600 text-white mt-1"
+                              placeholder="¿Necesito saber codificar para realizar este curso?"
+                            />
+                          </div>
+                          <div>
+                            <Label className="text-white text-sm">Respuesta</Label>
+                            <Textarea
+                              value={faq.answer}
+                              onChange={(e) => {
+                                const currentFaqs = form.getValues('faqs') || [];
+                                const updatedFaqs = [...currentFaqs];
+                                updatedFaqs[index] = { ...updatedFaqs[index], answer: e.target.value };
+                                form.setValue('faqs', updatedFaqs);
+                              }}
+                              className="bg-slate-700 border-slate-600 text-white mt-1 min-h-[80px]"
+                              placeholder="No. Este curso está diseñado para principiantes..."
+                            />
+                          </div>
+                        </div>
+                      ))}
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => {
+                          const currentFaqs = form.getValues('faqs') || [];
+                          form.setValue('faqs', [...currentFaqs, { question: '', answer: '' }]);
+                        }}
+                        className="w-full border-slate-600 text-gray-300 hover:bg-slate-800 hover:text-white"
+                      >
+                        <Plus className="h-4 w-4 mr-2" />
+                        Agregar pregunta frecuente
+                      </Button>
+                    </div>
+                  </div>
+                )}
 
                 {currentType === 'guide' && (
                   <div>

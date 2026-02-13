@@ -19,10 +19,21 @@ const dbUrl = process.env.DATABASE_URL;
 const isNeon = dbUrl?.includes('neon.tech') || dbUrl?.includes('neon.tech');
 const isSupabase = dbUrl?.includes('supabase');
 
+// Verificar si está usando el pooler correcto de Supabase
+const isUsingPooler = dbUrl?.includes('pooler.supabase.com') || dbUrl?.includes(':6543');
+const isUsingDirectConnection = dbUrl?.includes('supabase') && (dbUrl?.includes(':5432') || !dbUrl?.includes('pooler'));
+
 console.log('🔍 Configuración de Base de Datos:');
 console.log('   - URL (primeros 60 caracteres):', dbUrl?.substring(0, 60) + '...');
 console.log('   - ¿Es Neon?', isNeon);
 console.log('   - ¿Es Supabase?', isSupabase);
+if (isSupabase) {
+  console.log('   - ¿Usa pooler (recomendado)?', isUsingPooler);
+  if (isUsingDirectConnection) {
+    console.warn('   ⚠️  ADVERTENCIA: Estás usando conexión directa (puerto 5432). Para mejor rendimiento y estabilidad, usa el pooler de sesión (puerto 6543)');
+    console.warn('   📝 Formato correcto: postgresql://postgres.[PROJECT_REF]:[PASSWORD]@aws-0-[REGION].pooler.supabase.com:6543/postgres');
+  }
+}
 
 if (isNeon) {
   console.warn('⚠️  ADVERTENCIA: Estás usando Neon. Si migraste a Supabase, verifica tu archivo .env');
@@ -52,7 +63,7 @@ export const pool = new Pool({
   max: 30, // Connection pool size (increased for better concurrency)
   min: 5, // Minimum connections to keep alive
   idleTimeoutMillis: 30000, // Close idle connections after 30 seconds
-  connectionTimeoutMillis: 30000, // Increased to 30 seconds for Supabase pooler
+  connectionTimeoutMillis: 60000, // Increased to 60 seconds for Supabase (especially for direct connections)
   statement_timeout: 30000, // Query timeout: 30 seconds
   query_timeout: 30000, // Alternative query timeout
   keepAlive: true,

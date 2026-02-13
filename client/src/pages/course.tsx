@@ -29,7 +29,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeHighlight from 'rehype-highlight';
 import rehypeRaw from 'rehype-raw';
-import { generateCertificate, generateCertificateId, formatCertificateDate } from "@/lib/certificateGenerator";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 
 // Helper function to convert YouTube URLs to embed format
 const getYouTubeEmbedUrl = (url: string) => {
@@ -66,6 +66,7 @@ export default function Course() {
   const backUrl = isRoomContext && roomSlug ? `/sala/${roomSlug}` : '/courses';
   const [currentLessonIndex, setCurrentLessonIndex] = useState(0);
   const [hasCheckedSavedPosition, setHasCheckedSavedPosition] = useState(false);
+  const [showCourseInfo, setShowCourseInfo] = useState(true); // Show course info first if no saved position
   const [sidebarOpen, setSidebarOpen] = useState(true);
   // Right sidebar state - starts expanded on large screens, collapsed on smaller
   const [rightSidebarOpen, setRightSidebarOpen] = useState(true);
@@ -176,204 +177,12 @@ export default function Course() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Final Exam Modal State
-  const [isExamModalOpen, setIsExamModalOpen] = useState(false);
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [selectedAnswers, setSelectedAnswers] = useState<{ [key: number]: number }>({});
-  const [isExamCompleted, setIsExamCompleted] = useState(false);
-  const [examScore, setExamScore] = useState(0);
-  const [isExamFailed, setIsExamFailed] = useState(false);
-  
   // Mobile Lessons Modal State
   const [isMobileLessonsOpen, setIsMobileLessonsOpen] = useState(false);
   
   // Collapsed modules state (stores module IDs that are collapsed)
   // Initialize with all modules collapsed except the first one
   const [collapsedModules, setCollapsedModules] = useState<Set<number>>(new Set());
-
-  // Sample exam questions
-  const examQuestions = [
-    {
-      question: "¿Qué es la Inteligencia Artificial (IA)?",
-      options: [
-        "Un lenguaje de programación",
-        "Un tipo de hardware de computadora",
-        "Sistemas informáticos que realizan tareas que requieren inteligencia humana",
-        "Una técnica de almacenamiento de datos"
-      ],
-      correctAnswer: 2
-    },
-    {
-      question: "¿Qué permite hacer el aprendizaje automático (ML) a los sistemas informáticos?",
-      options: [
-        "Operar sin electricidad",
-        "Mejorar y aprender sin programación explícita",
-        "Función sin ningún dato",
-        "Execute únicamente cálculos simples"
-      ],
-      correctAnswer: 1
-    },
-    {
-      question: "¿Cuál es la principal diferencia entre la IA de código abierto y la de código cerrado?",
-      options: [
-        "La IA de código abierto siempre es gratuita; la IA de código cerrado, no.",
-        "La IA de código abierto utiliza Internet; la de código cerrado, no.",
-        "La IA de código abierto permite el acceso público al código fuente; el código cerrado lo mantiene privado.",
-        "La IA de código abierto es menos avanzada que la IA de código cerrado."
-      ],
-      correctAnswer: 2
-    },
-    {
-      question: "¿En qué año se lanzó ChatGPT?",
-      options: [
-        "2020",
-        "2021",
-        "2022",
-        "2023"
-      ],
-      correctAnswer: 2
-    },
-    {
-      question: "¿Cuál es una limitación conocida de las herramientas de IA?",
-      options: [
-        "Pueden operar sin ningún tipo de control o supervisión.",
-        "Requieren inteligencia humana para funcionar.",
-        "Son menos precisos que los procesos manuales.",
-        "Pueden amplificar y perpetuar inadvertidamente los sesgos existentes."
-      ],
-      correctAnswer: 3
-    },
-    {
-      question: "¿Cuál es la función principal de un chatbot de IA?",
-      options: [
-        "Procesar y analizar datos numéricos exclusivamente",
-        "Simular conversaciones similares a las humanas utilizando inteligencia artificial",
-        "Para mejorar las funciones físicas del robot",
-        "Para monitorear y proteger redes informáticas"
-      ],
-      correctAnswer: 1
-    },
-    {
-      question: "¿Para qué se utiliza principalmente ChatGPT?",
-      options: [
-        "Generar respuestas de texto similares a las humanas",
-        "Cálculos numéricos",
-        "Mejora de los gráficos de video",
-        "Gestión de bases de datos"
-      ],
-      correctAnswer: 0
-    },
-    {
-      question: "¿Qué características ofrece Fireflies AI para mejorar la productividad?",
-      options: [
-        "Edición de video",
-        "Automatización del correo electrónico",
-        "Gestión de redes sociales",
-        "Transcripción y resumen de reuniones en tiempo real"
-      ],
-      correctAnswer: 3
-    },
-    {
-      question: "¿Qué herramienta se destacó específicamente por su capacidad para crear presentaciones visualmente atractivas sin habilidades de diseño?",
-      options: [
-        "Notion",
-        "Gamma",
-        "Firefiles AI",
-        "Rewind AI"
-      ],
-      correctAnswer: 1
-    },
-    {
-      question: "¿Cuál es la función principal de una herramienta de automatización de IA como Zapier?",
-      options: [
-        "Proporcionar soluciones de ciberseguridad",
-        "Para gestionar los horarios de los empleados",
-        "Para mejorar las tareas de diseño gráfico",
-        "Para conectar aplicaciones y automatizar flujos de trabajo"
-      ],
-      correctAnswer: 3
-    },
-    {
-      question: "¿Cuál es un ejemplo de caso de uso de lo que las herramientas de automatización de IA pueden hacer en la gestión de proyectos?",
-      options: [
-        "Disminuir la colaboración en equipo",
-        "Aumentar los costos del proyecto",
-        "Crea tareas automáticamente a partir de correos electrónicos o eventos del calendario",
-        "Eliminar la necesidad de gerentes de proyectos"
-      ],
-      correctAnswer: 2
-    },
-    {
-      question: "¿Qué es un \"Zap\" en Zapier?",
-      options: [
-        "Un script de codificación",
-        "Un término de marketing para promociones.",
-        "Un plan para una tarea que desea automatizar",
-        "Un tipo de moneda digital"
-      ],
-      correctAnswer: 2
-    },
-    {
-      question: "¿Cuál es un caso de uso común de las herramientas de video de IA en entornos corporativos?",
-      options: [
-        "Cálculo de presupuestos financieros",
-        "Creación de videos de formación personalizados",
-        "Realización de reuniones virtuales",
-        "Redacción de documentos legales"
-      ],
-      correctAnswer: 1
-    },
-    {
-      question: "¿Qué herramienta de video de IA es conocida por generar avatares de IA realistas?",
-      options: [
-        "HeyGen",
-        "Luma Dream Machine",
-        "ChatGPT",
-        "PikaLabs"
-      ],
-      correctAnswer: 0
-    },
-    {
-      question: "Los sistemas de Inteligencia Artificial (IA) requieren una programación explícita para cada escenario que enfrentan.",
-      options: [
-        "Verdadero",
-        "Falso"
-      ],
-      correctAnswer: 1
-    },
-    {
-      question: "Los sistemas de IA de código abierto son aquellos cuyo código fuente se mantiene en secreto y no está disponible para el público.",
-      options: [
-        "Verdadero",
-        "Falso"
-      ],
-      correctAnswer: 1
-    },
-    {
-      question: "La IA generativa solo puede generar contenido de texto, no imágenes ni música.",
-      options: [
-        "Verdadero",
-        "Falso"
-      ],
-      correctAnswer: 1
-    },
-    {
-      question: "Las redes neuronales están diseñadas basándose en las redes neuronales biológicas que se encuentran en los cerebros humanos.",
-      options: [
-        "Verdadero",
-        "Falso"
-      ],
-      correctAnswer: 0
-    },
-    {
-      question: "Los AI Wrappers se pueden utilizar para especializar las capacidades de los modelos de IA para casos de uso específicos.",
-      options: [
-        "Verdadero",
-        "Falso"
-      ],
-      correctAnswer: 0
-    }
-  ];
 
   // Allow non-authenticated users to view course content but locked
   // No automatic redirect - show locked content instead
@@ -628,57 +437,64 @@ export default function Course() {
 
   // Verificar si hay una lección guardada y redirigir automáticamente
   useEffect(() => {
+    // Wait for course to be loaded to get the correct courseId
+    if (!course || !courseId || lessonsArray.length === 0 || hasCheckedSavedPosition) {
+      return;
+    }
+    
     // console.log('🔍 Checking saved position...', { 
-    //   courseId: id, 
+    //   courseId, 
     //   lessonsCount: lessonsArray.length, 
-    //   hasCheckedSavedPosition 
+    //   hasCheckedSavedPosition,
+    //   isRoomContext
     // });
     
-    if (id && lessonsArray.length > 0 && !hasCheckedSavedPosition) {
-      const savedLessonId = getSavedLessonPosition(id);
-      // console.log('📋 Got saved lesson ID:', savedLessonId);
+    const savedLessonId = getSavedLessonPosition(courseId);
+    // console.log('📋 Got saved lesson ID:', savedLessonId);
+    
+    if (savedLessonId) {
+      // Verificar que la lección guardada aún existe en este curso
+      const savedLessonIndex = lessonsArray.findIndex((lesson: any) => lesson.id === savedLessonId);
+      // console.log('🔍 Found lesson index:', savedLessonIndex);
       
-      if (savedLessonId) {
-        // Verificar que la lección guardada aún existe en este curso
-        const savedLessonIndex = lessonsArray.findIndex((lesson: any) => lesson.id === savedLessonId);
-        // console.log('🔍 Found lesson index:', savedLessonIndex);
-        
-        if (savedLessonIndex !== -1) {
-          // console.log('🚀 Setting current lesson index to:', savedLessonIndex);
-          // Establecer el índice de la lección guardada
-          setCurrentLessonIndex(savedLessonIndex);
-          setHasCheckedSavedPosition(true);
-          return;
-        } else {
-          // console.log('❌ Saved lesson not found in current course lessons');
-        }
-      }
-      
-      // No saved lesson found - find first playable lesson (first sub-lesson or first module without children)
-      // For non-authenticated users, always use the first navigable lesson
-      if (!isAuthenticated && firstNavigableLessonIndex !== -1) {
-        setCurrentLessonIndex(firstNavigableLessonIndex);
+      if (savedLessonIndex !== -1) {
+        // console.log('🚀 Setting current lesson index to:', savedLessonIndex);
+        // Establecer el índice de la lección guardada
+        setCurrentLessonIndex(savedLessonIndex);
+        setShowCourseInfo(false); // Si hay posición guardada, mostrar lecciones directamente
         setHasCheckedSavedPosition(true);
         return;
+      } else {
+        // console.log('❌ Saved lesson not found in current course lessons');
       }
-      
-      const firstModule = modules[0];
-      if (firstModule) {
-        const firstModuleSubLessons = subLessonsByParent[firstModule.id];
-        if (firstModuleSubLessons && firstModuleSubLessons.length > 0) {
-          // If first module has sub-lessons, select the first sub-lesson
-          const firstSubLessonIndex = lessonsArray.findIndex((l: any) => l.id === firstModuleSubLessons[0].id);
-          if (firstSubLessonIndex !== -1) {
-            setCurrentLessonIndex(firstSubLessonIndex);
+    }
+    
+    // No saved lesson found
+    // Si estamos en una sala, mostrar directamente las lecciones (comportamiento anterior)
+    // Si estamos en /courses, mostrar la información del curso primero
+    if (isRoomContext) {
+      // Para cursos en salas, comportamiento anterior: encontrar primera lección navegable
+      if (!isAuthenticated && firstNavigableLessonIndex !== -1) {
+        setCurrentLessonIndex(firstNavigableLessonIndex);
+      } else {
+        const firstModule = modules[0];
+        if (firstModule) {
+          const firstModuleSubLessons = subLessonsByParent[firstModule.id];
+          if (firstModuleSubLessons && firstModuleSubLessons.length > 0) {
+            const firstSubLessonIndex = lessonsArray.findIndex((l: any) => l.id === firstModuleSubLessons[0].id);
+            if (firstSubLessonIndex !== -1) {
+              setCurrentLessonIndex(firstSubLessonIndex);
+            }
           }
         }
-        // If first module has no sub-lessons, default behavior (index 0) is already correct
       }
-      
-      // console.log('✅ Setting hasCheckedSavedPosition to true');
-      setHasCheckedSavedPosition(true);
+      setShowCourseInfo(false);
+    } else {
+      // Para cursos desde /courses, mostrar información del curso primero
+      setShowCourseInfo(true);
     }
-  }, [id, lessonsArray, hasCheckedSavedPosition, getSavedLessonPosition, setLocation, modules, subLessonsByParent, isAuthenticated, firstNavigableLessonIndex]);
+    setHasCheckedSavedPosition(true);
+  }, [course, courseId, lessonsArray, hasCheckedSavedPosition, getSavedLessonPosition, isAuthenticated, isRoomContext, firstNavigableLessonIndex, modules, subLessonsByParent]);
 
   const markLessonCompleteMutation = useMutation({
     mutationFn: async (lessonId: string) => {
@@ -865,6 +681,23 @@ export default function Course() {
 
   const Icon = getIcon(course);
   const typeColor = getTypeColor(course);
+
+  // Parse metadata to get FAQs
+  const parseMetadata = (raw: any): Record<string, any> => {
+    if (!raw) return {};
+    if (typeof raw === "string") {
+      try {
+        return JSON.parse(raw);
+      } catch {
+        return {};
+      }
+    }
+    return raw;
+  };
+
+  const courseMetadata = parseMetadata((course as any)?.metadata);
+  const courseFaqs = courseMetadata?.faqs || [];
+  const presentationVideoUrl = courseMetadata?.presentationVideoUrl || "";
 
   const courseData = {
     introduction: (course as any)?.description || "Descripción del curso no disponible.",
@@ -1075,8 +908,131 @@ export default function Course() {
           </div>
 
           <div className="px-4 lg:px-8 pb-24 lg:pb-8 lg:pl-[45px] lg:pr-[15px]">
+            {/* Course Info View - Show before lessons if no saved position */}
+            {showCourseInfo && (
+              <section className="space-y-6 lg:space-y-8">
+                {/* Presentation Video */}
+                {presentationVideoUrl && (
+                  <div className="relative rounded-lg overflow-hidden" style={{ paddingBottom: '56.25%' }}>
+                    <iframe
+                      className="absolute top-0 left-0 w-full h-full"
+                      src={getYouTubeEmbedUrl(presentationVideoUrl)}
+                      title="Video de presentación del curso"
+                      frameBorder="0"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                    />
+                  </div>
+                )}
+
+                {/* Course Description */}
+                {courseData.introduction && (
+                  <div className="bg-card rounded-xl px-4 lg:px-8 py-4 lg:py-6">
+                    <div className="prose prose-sm lg:prose-base max-w-none">
+                      {(() => {
+                        const description = courseData.introduction;
+                        const isHtml = /<[^>]+>/.test(description);
+                        
+                        if (isHtml) {
+                          return (
+                            <div 
+                              className="prose prose-invert prose-sm max-w-none text-foreground/80 [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:space-y-2 [&_ol]:list-decimal [&_ol]:pl-5 [&_ol]:space-y-2 [&_li]:mb-1.5 [&_p]:mb-3 [&_p]:leading-relaxed [&_strong]:text-foreground [&_strong]:font-semibold [&_h1]:text-foreground [&_h1]:text-lg [&_h1]:mb-3 [&_h2]:text-foreground [&_h2]:text-base [&_h2]:mb-2 [&_h3]:text-foreground [&_h3]:text-sm [&_h3]:mb-2"
+                              dangerouslySetInnerHTML={{ __html: description }}
+                            />
+                          );
+                        }
+                        
+                        return (
+                          <div className="markdown-content">
+                            <ReactMarkdown 
+                              remarkPlugins={[remarkGfm]}
+                              rehypePlugins={[rehypeHighlight, rehypeRaw]}
+                              components={{
+                                p: ({ children }) => <p className="mb-3 text-foreground/80 leading-relaxed">{children}</p>,
+                                ul: ({ children }) => <ul className="list-disc list-inside mb-3 space-y-2 text-foreground/80 pl-5">{children}</ul>,
+                                ol: ({ children }) => <ol className="list-decimal list-inside mb-3 space-y-2 text-foreground/80 pl-5">{children}</ol>,
+                                li: ({ children }) => <li className="mb-1.5 text-foreground/80">{children}</li>,
+                                strong: ({ children }) => <strong className="font-semibold text-foreground">{children}</strong>,
+                                em: ({ children }) => <em className="italic text-foreground/90">{children}</em>,
+                                h1: ({ children }) => <h1 className="text-lg font-bold text-foreground mb-3 mt-4 first:mt-0">{children}</h1>,
+                                h2: ({ children }) => <h2 className="text-base font-bold text-foreground mb-2 mt-3 first:mt-0">{children}</h2>,
+                                h3: ({ children }) => <h3 className="text-sm font-semibold text-foreground mb-2 mt-2 first:mt-0">{children}</h3>,
+                                code: ({ children }) => <code className="bg-muted px-1.5 py-0.5 rounded text-xs font-mono text-primary">{children}</code>,
+                                blockquote: ({ children }) => <blockquote className="border-l-2 border-border pl-3 italic my-3 text-muted-foreground">{children}</blockquote>,
+                              }}
+                            >
+                              {description}
+                            </ReactMarkdown>
+                          </div>
+                        );
+                      })()}
+                    </div>
+                  </div>
+                )}
+
+                {/* FAQs Section */}
+                {courseFaqs && courseFaqs.length > 0 && (
+                  <div className="bg-card rounded-xl px-4 lg:px-8 py-4 lg:py-6">
+                    <h3 className="text-lg lg:text-xl font-bold text-foreground mb-4 font-satoshi">
+                      Preguntas frecuentes
+                    </h3>
+                    <Accordion type="single" collapsible className="w-full">
+                      {courseFaqs.map((faq: any, index: number) => (
+                        <AccordionItem key={index} value={`item-${index}`} className="border-b border-border">
+                          <AccordionTrigger className="text-left text-foreground hover:no-underline py-4">
+                            <span className="font-medium">{faq.question}</span>
+                          </AccordionTrigger>
+                          <AccordionContent className="text-muted-foreground leading-relaxed pb-4">
+                            {faq.answer}
+                          </AccordionContent>
+                        </AccordionItem>
+                      ))}
+                    </Accordion>
+                  </div>
+                )}
+
+                {/* Start Course Button */}
+                <div className="flex justify-center">
+                  <Button
+                    onClick={() => {
+                      // Find first navigable lesson
+                      let firstLessonIndex = 0;
+                      if (!isAuthenticated && firstNavigableLessonIndex !== -1) {
+                        firstLessonIndex = firstNavigableLessonIndex;
+                      } else {
+                        const firstModule = modules[0];
+                        if (firstModule) {
+                          const firstModuleSubLessons = subLessonsByParent[firstModule.id];
+                          if (firstModuleSubLessons && firstModuleSubLessons.length > 0) {
+                            const firstSubLessonIndex = lessonsArray.findIndex((l: any) => l.id === firstModuleSubLessons[0].id);
+                            if (firstSubLessonIndex !== -1) {
+                              firstLessonIndex = firstSubLessonIndex;
+                            }
+                          }
+                        }
+                      }
+                      setCurrentLessonIndex(firstLessonIndex);
+                      setShowCourseInfo(false);
+                      // Save position
+                      if (lessonsArray[firstLessonIndex] && courseId) {
+                        saveLessonPosition(courseId, lessonsArray[firstLessonIndex].id, (course as any)?.type, roomSlug);
+                      }
+                    }}
+                    size="lg"
+                    className={cn(
+                      "text-white font-medium py-6 px-8 text-lg",
+                      isAgentesIARoom ? "bg-[#faa318] hover:bg-[#faa318]/90" : "bg-primary hover:bg-primary/90"
+                    )}
+                  >
+                    Comenzar curso
+                    <ChevronRight className="ml-2 h-5 w-5" />
+                  </Button>
+                </div>
+              </section>
+            )}
+
             {/* Current Lesson Content */}
-            {currentLesson && (
+            {!showCourseInfo && currentLesson && (
               <section>
                 {!isAuthenticated && !isFirstNavigableLesson(currentLessonIndex) ? (
                   // Blocked video/media for lessons after the first when not authenticated
@@ -1430,14 +1386,14 @@ export default function Course() {
 
                       return (
                         <div key={`lesson-${lesson.id}-${currentLessonCompleted}`} className="relative flex items-start gap-4 pb-6">
-                          {/* Vertical line connector - solid and colored if current lesson is completed */}
+                          {/* Vertical line connector - solid gray if current lesson is completed */}
                           {!isLast && (
                             <div 
                               key={`line-${lesson.id}-${currentLessonCompleted ? 'solid' : 'dashed'}`}
                               className="absolute left-[15px] top-8 bottom-0 w-[2px] transition-all duration-300 z-0"
                               style={currentLessonCompleted ? {
-                                // Solid colored line when current lesson is completed
-                                backgroundColor: isAgentesIARoom ? '#faa318' : '#6366f1',
+                                // Solid gray line when current lesson is completed
+                                backgroundColor: '#6b7280',
                                 backgroundImage: 'none',
                                 opacity: 1
                               } : {
@@ -1462,15 +1418,11 @@ export default function Course() {
                               className={cn(
                                 "w-8 h-8 rounded-full border-2 flex items-center justify-center transition-all",
                                 isCompleted
-                                  ? isAgentesIARoom 
-                                    ? "bg-[#faa318] border-[#faa318]" 
-                                    : "bg-primary border-primary"
-                                  : isCurrentLesson && isAgentesIARoom
-                                    ? "bg-transparent border-[#faa318]"
-                                    : isCurrentLesson
-                                    ? "bg-transparent border-primary"
+                                  ? "bg-muted-foreground border-muted-foreground"
+                                  : isCurrentLesson
+                                    ? "bg-transparent border-muted-foreground"
                                     : "bg-transparent border-border/60",
-                                isCurrentLesson && (isAgentesIARoom ? "ring-2 ring-[#faa318]/40" : "ring-2 ring-primary/40"),
+                                isCurrentLesson && "ring-2 ring-muted-foreground/40",
                                 isLessonAccessible(lessonIndex) && "cursor-pointer hover:scale-110"
                               )}
                               onClick={(e) => {
@@ -1481,12 +1433,12 @@ export default function Course() {
                               }}
                             >
                               {isCompleted ? (
-                                <Check size={16} className="text-white" />
+                                <Check size={16} className="text-background" />
                               ) : (
                                 <span className={cn(
                                   "text-sm font-semibold leading-none",
                                   isCurrentLesson 
-                                    ? isAgentesIARoom ? "text-[#faa318]" : "text-primary"
+                                    ? "text-muted-foreground"
                                     : "text-muted-foreground"
                                 )}>
                                   {lessonNumber}
@@ -1506,8 +1458,8 @@ export default function Course() {
                             <div className={cn(
                               "font-satoshi text-sm xl:text-[15px] min-[1920px]:text-base transition-colors",
                               isCurrentLesson
-                                ? isAgentesIARoom ? "text-[#faa318] font-semibold" : "text-primary font-semibold"
-                                : "text-foreground hover:text-primary"
+                                ? "text-foreground font-semibold"
+                                : "text-foreground hover:text-muted-foreground"
                             )}>
                               {lesson.title}
                             </div>
@@ -1651,30 +1603,24 @@ export default function Course() {
                     );
                   }))
                 ) : (
-                  /* Original Design for Regular Courses */
+                  /* New Design for Regular Courses - Based on Image */
                   (modules.map((module: any, moduleIdx: number) => {
                   const moduleIndex = lessonsArray.findIndex((l: any) => l.id === module.id);
                   const subLessons = subLessonsByParent[module.id] || [];
                   const isCollapsed = collapsedModules.has(module.id);
                   const hasSubLessons = subLessons.length > 0;
                   const moduleNumber = moduleIdx + 1;
+                  const progress = moduleProgress[module.id] || { total: 0, completed: 0, percentage: 0 };
 
                   return (
-                    <div key={module.id} className="space-y-1">
-                      {/* Module Header */}
-                      <div
+                    <div key={module.id} className="mb-3 border border-border/40 rounded-lg overflow-hidden bg-card">
+                      {/* Module Header with Progress */}
+                      <div 
                         className={cn(
-                          "group py-4 px-4 rounded-lg transition-colors cursor-pointer",
-                          hasSubLessons 
-                            ? "text-muted-foreground hover:bg-muted/30" 
-                            : isAuthenticated 
-                              ? cn(
-                                  "text-muted-foreground",
-                                  moduleIndex === currentLessonIndex 
-                                    ? "bg-muted border border-border" 
-                                    : "hover:bg-muted/50 hover:border hover:border-border"
-                                )
-                              : "hover:bg-muted/30 text-muted-foreground"
+                          "flex items-center justify-between p-4 transition-colors cursor-pointer",
+                          isCollapsed 
+                            ? "bg-transparent hover:bg-muted/10" 
+                            : "bg-[#191919] border-b border-border/40"
                         )}
                         onClick={() => {
                           if (!hasSubLessons) {
@@ -1686,127 +1632,109 @@ export default function Course() {
                           }
                         }}
                       >
-                        <div className="flex items-start justify-between">
-                          <div 
-                            className="flex items-start space-x-3 flex-1"
-                          >
-                            <div className="w-6 h-6 rounded border flex items-center justify-center font-medium flex-shrink-0 bg-muted text-foreground border-border text-[14px]">
-                              {!hasSubLessons && !isLessonAccessible(moduleIndex) ? (
-                                <Lock size={10} className="text-muted-foreground" />
-                              ) : !hasSubLessons && isLessonCompleted(module.id) ? (
-                                <Check size={12} />
-                              ) : (
-                                moduleNumber
-                              )}
-                            </div>
-                            <div className="flex-1">
-                              <div className={cn(
-                                "font-satoshi font-medium text-[15px]",
-                                !hasSubLessons && moduleIndex === currentLessonIndex ? "text-foreground" : "text-foreground"
-                              )}>
-                                {module.title}
-                              </div>
-                            </div>
-                          </div>
-                          
-                          <div className="flex items-center gap-2">
-                            {!hasSubLessons && !isLessonAccessible(moduleIndex) && (
-                              <Lock size={14} className="text-muted-foreground mt-1" />
-                            )}
-                            
-                            {hasSubLessons && (
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  toggleModuleCollapse(module.id);
-                                }}
-                                className="p-1 hover:bg-muted/30 rounded transition-colors"
-                              >
-                                <ChevronRight 
-                                  size={16} 
-                                  className={cn(
-                                    "text-muted-foreground transition-transform",
-                                    !isCollapsed && "rotate-90"
-                                  )}
-                                />
-                              </button>
-                            )}
-                          </div>
+                        <div className="flex items-center gap-3 flex-1 min-w-0">
+                          <h4 className="font-satoshi font-medium text-foreground text-sm xl:text-[15px] min-[1920px]:text-base">
+                            {moduleNumber}- {module.title}
+                          </h4>
+                        </div>
+                        <div className="flex items-center gap-3 flex-shrink-0">
+                          <span className="font-semibold text-sm min-[1920px]:text-[15px] text-muted-foreground">
+                            {progress.percentage}%
+                          </span>
+                          {hasSubLessons && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                toggleModuleCollapse(module.id);
+                              }}
+                              className="p-1 hover:bg-muted/30 rounded transition-colors"
+                            >
+                              <ChevronRight 
+                                size={16} 
+                                className={cn(
+                                  "text-muted-foreground transition-transform",
+                                  !isCollapsed && "rotate-90"
+                                )}
+                              />
+                            </button>
+                          )}
                         </div>
                       </div>
-
-                      {/* Sub-lessons */}
-                      {hasSubLessons && !isCollapsed && subLessons.map((subLesson: any, subIdx: number) => {
-                        const subIndex = lessonsArray.findIndex((l: any) => l.id === subLesson.id);
-                        const subLessonNumber = `${moduleNumber}.${subIdx + 1}`;
-                        const isCurrentLesson = subIndex === currentLessonIndex;
-                        const isAccessible = isLessonAccessible(subIndex);
-                        
-                        return (
-                          <div
-                            key={subLesson.id}
-                            onClick={() => isAccessible && handleLessonClick(subIndex)}
-                            className={cn(
-                              "group py-3 px-4 ml-6 rounded-lg transition-colors",
-                              isAccessible 
-                                ? cn(
-                                    "cursor-pointer text-muted-foreground",
-                                    isCurrentLesson 
-                                      ? "bg-muted border border-border" 
-                                      : "hover:bg-muted/50 hover:border hover:border-border"
-                                  )
-                                : "cursor-not-allowed hover:bg-muted/30 text-muted-foreground"
-                            )}
-                          >
-                            <div className="flex items-start justify-between">
-                              <div className="flex items-start space-x-3">
-                                <div className="w-auto min-w-[28px] h-5 px-1.5 rounded border flex items-center justify-center font-medium flex-shrink-0 bg-muted text-foreground border-border text-[12px]">
-                                  {!isAccessible ? (
-                                    <Lock size={8} className="text-muted-foreground" />
-                                  ) : isLessonCompleted(subLesson.id) ? (
-                                    <Check size={8} />
-                                  ) : (
-                                    subLessonNumber
+                      
+                      {/* Sub-lessons List */}
+                      {hasSubLessons && !isCollapsed && (
+                        <div className="px-4 py-3 space-y-2 bg-[#191919]">
+                          {subLessons.map((subLesson: any, subIdx: number) => {
+                            const subIndex = lessonsArray.findIndex((l: any) => l.id === subLesson.id);
+                            const subLessonNumber = `${moduleNumber}.${subIdx + 1}`;
+                            const isCurrentLesson = subIndex === currentLessonIndex;
+                            const isAccessible = isLessonAccessible(subIndex);
+                            const isCompleted = isLessonCompleted(subLesson.id);
+                            
+                            return (
+                              <div
+                                key={subLesson.id}
+                                className={cn(
+                                  "flex items-start gap-3 p-3 rounded-lg border transition-all",
+                                  isCurrentLesson
+                                    ? "bg-muted/20 border-border"
+                                    : "bg-transparent border-border/30 hover:bg-muted/10 hover:border-border/50"
+                                )}
+                              >
+                                {/* Circle for completion - Clickable */}
+                                <div 
+                                  className={cn(
+                                    "h-4 w-4 rounded-full border-2 flex-shrink-0 mt-0.5 transition-all relative z-10",
+                                    isCompleted 
+                                      ? "bg-muted-foreground border-muted-foreground" 
+                                      : "bg-transparent border-border",
+                                    isCurrentLesson && "ring-2 ring-muted-foreground/40",
+                                    isAccessible && "cursor-pointer hover:scale-110"
+                                  )}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    if (isAccessible) {
+                                      handleToggleComplete(subLesson.id);
+                                    }
+                                  }}
+                                >
+                                  {isCompleted && (
+                                    <Check size={10} className="text-background absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2" />
                                   )}
                                 </div>
-                                <div className="flex-1">
+                                
+                                {/* Lesson Text - Clickable to navigate */}
+                                <div 
+                                  className={cn(
+                                    "flex-1 min-w-0",
+                                    isAccessible && "cursor-pointer"
+                                  )}
+                                  onClick={() => isAccessible && handleLessonClick(subIndex)}
+                                >
                                   <div className={cn(
-                                    "font-satoshi font-normal text-[14px]",
-                                    subIndex === currentLessonIndex ? "text-foreground" : "text-muted-foreground"
+                                    "font-satoshi text-sm xl:text-[15px] transition-colors",
+                                    isCurrentLesson 
+                                      ? "text-foreground font-medium" 
+                                      : "text-muted-foreground hover:text-foreground"
                                   )}>
-                                    {subLesson.title}
+                                    {subLessonNumber} - {subLesson.title}
                                   </div>
                                 </div>
+                                
+                                {/* Lock Icon for non-accessible lessons */}
+                                {!isAccessible && (
+                                  <Lock size={12} className="text-muted-foreground flex-shrink-0 mt-1" />
+                                )}
                               </div>
-                              {!isAccessible && (
-                                <Lock size={12} className="text-muted-foreground mt-1" />
-                              )}
-                            </div>
-                          </div>
-                        );
-                      })}
+                            );
+                          })}
+                        </div>
+                      )}
                     </div>
                   );
                 }))
                 )}
               </div>
-
-              {/* Final Exam Button - Only show when currently on last lesson (Desktop) */}
-              {!isRoomContext && lessonsArray.length > 0 && currentLessonIndex >= lessonsArray.length - 1 && (
-                <div className="mt-4">
-                  <button 
-                    className="w-full bg-white hover:bg-gray-100 text-black font-satoshi font-medium py-4 px-6 rounded-lg transition-colors flex items-center justify-center text-[15px]"
-                    data-testid="button-final-exam-desktop"
-                    onClick={() => {
-                      setIsExamModalOpen(true);
-                      setCurrentQuestionIndex(0);
-                      setSelectedAnswers({});
-                    }}
-                  >
-                    🎓 Tomar el examen final
-                  </button>
-                </div>
-              )}
 
               {/* Next Course Card - Desktop - Only show in room context when there is a next course */}
               {isRoomContext && nextCourse && (
@@ -1840,283 +1768,6 @@ export default function Course() {
       </div>
       {/* Mobile Navigation */}
       <MobileNav />
-      {/* Celebration Confetti */}
-      {!isRoomContext && isExamCompleted && (
-        <div className="fixed inset-0 pointer-events-none z-[60]">
-          {/* Left side confetti */}
-          <div className="absolute left-4 top-1/2 -translate-y-1/2">
-            {[...Array(8)].map((_, i) => (
-              <div
-                key={`left-${i}`}
-                className="absolute w-2 h-2 bg-yellow-400 animate-bounce"
-                style={{
-                  animationDelay: `${i * 0.1}s`,
-                  left: `${i * 10}px`,
-                  top: `${Math.random() * 200 - 100}px`,
-                  transform: `rotate(${Math.random() * 360}deg)`
-                }}
-              />
-            ))}
-            {[...Array(8)].map((_, i) => (
-              <div
-                key={`left-blue-${i}`}
-                className="absolute w-2 h-2 bg-blue-400 animate-bounce"
-                style={{
-                  animationDelay: `${i * 0.15}s`,
-                  left: `${i * 12}px`,
-                  top: `${Math.random() * 200 - 100}px`,
-                  transform: `rotate(${Math.random() * 360}deg)`
-                }}
-              />
-            ))}
-          </div>
-          
-          {/* Right side confetti */}
-          <div className="absolute right-4 top-1/2 -translate-y-1/2">
-            {[...Array(8)].map((_, i) => (
-              <div
-                key={`right-${i}`}
-                className="absolute w-2 h-2 bg-purple-400 animate-bounce"
-                style={{
-                  animationDelay: `${i * 0.1}s`,
-                  right: `${i * 10}px`,
-                  top: `${Math.random() * 200 - 100}px`,
-                  transform: `rotate(${Math.random() * 360}deg)`
-                }}
-              />
-            ))}
-            {[...Array(8)].map((_, i) => (
-              <div
-                key={`right-green-${i}`}
-                className="absolute w-2 h-2 bg-green-400 animate-bounce"
-                style={{
-                  animationDelay: `${i * 0.15}s`,
-                  right: `${i * 12}px`,
-                  top: `${Math.random() * 200 - 100}px`,
-                  transform: `rotate(${Math.random() * 360}deg)`
-                }}
-              />
-            ))}
-          </div>
-        </div>
-      )}
-      {/* Exam Failed Modal */}
-      {!isRoomContext && isExamFailed && (
-        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50">
-          <div className="bg-[#1e1e1e] rounded-lg p-8 max-w-md w-full mx-4 text-center relative">
-            {/* Close Button */}
-            <button 
-              onClick={() => setIsExamFailed(false)}
-              className="absolute top-4 right-4 text-gray-400 hover:text-white text-xl"
-            >
-              ×
-            </button>
-
-            {/* Trophy Icon */}
-            <div className="mb-6 flex justify-center">
-              <div className="w-16 h-16 bg-gray-600 rounded-full flex items-center justify-center">
-                <div className="text-2xl">🏆</div>
-              </div>
-            </div>
-
-            {/* Title */}
-            <h2 className="text-white font-satoshi font-bold text-xl mb-4">
-              Examen final
-            </h2>
-
-            {/* Failure Message */}
-            <p className="text-red-400 font-satoshi mb-6">
-              Obtuviste un {Math.round((examScore / examQuestions.length) * 100)} %. Necesitas al menos un 80 % para aprobar. Inténtalo de nuevo.
-            </p>
-
-            {/* Retry Button */}
-            <button 
-              onClick={() => {
-                setIsExamFailed(false);
-                setCurrentQuestionIndex(0);
-                setSelectedAnswers({});
-                setIsExamModalOpen(true);
-              }}
-              className="w-full bg-white text-black py-3 px-6 rounded-lg font-satoshi font-medium hover:bg-gray-100 transition-colors"
-            >
-              Intentar otra vez
-            </button>
-          </div>
-        </div>
-      )}
-      {/* Course Completion Modal */}
-      {!isRoomContext && isExamCompleted && (
-        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50">
-          <div className="bg-[#1e1e1e] rounded-lg p-8 max-w-md w-full mx-4 text-center relative">
-            {/* Close Button */}
-            <button 
-              onClick={() => setIsExamCompleted(false)}
-              className="absolute top-4 right-4 text-gray-400 hover:text-white text-xl"
-            >
-              ×
-            </button>
-
-            {/* Graduation Cap Icon */}
-            <div className="mb-6 flex justify-center">
-              <div className="w-16 h-16 bg-gray-600 rounded-full flex items-center justify-center">
-                <div className="text-2xl">🎓</div>
-              </div>
-            </div>
-
-            {/* Title */}
-            <h2 className="text-white font-satoshi font-bold text-2xl mb-4">
-              ¡Curso completado!
-            </h2>
-
-            {/* Score Message */}
-            <p className="text-gray-300 font-satoshi mb-6">
-              ¡Excelente trabajo! Obtuviste un {Math.round((examScore / examQuestions.length) * 100)}%.<br />
-              Descarga tu certificado a continuación.
-            </p>
-
-            {/* Download Certificate Button */}
-            <button 
-              onClick={() => {
-                if (!user || !course) return;
-                
-                const issueDate = new Date();
-                const expiryDate = new Date();
-                expiryDate.setFullYear(expiryDate.getFullYear() + 1); // Expires in 1 year
-                
-                const certificateData = {
-                  studentName: `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email || 'Estudiante',
-                  courseName: (course as any)?.title || 'Curso de IA',
-                  issueDate: formatCertificateDate(issueDate),
-                  expiryDate: formatCertificateDate(expiryDate),
-                  certificateId: generateCertificateId(),
-                  score: Math.round((examScore / examQuestions.length) * 100)
-                };
-                
-                generateCertificate(certificateData);
-                
-                toast({
-                  title: "Certificado descargado",
-                  description: "Tu certificado se ha generado correctamente",
-                });
-              }}
-              className="w-full bg-white text-black py-3 px-6 rounded-lg font-satoshi font-medium hover:bg-gray-100 transition-colors flex items-center justify-center gap-2"
-            >
-              Descargar certificado
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
-            </button>
-          </div>
-        </div>
-      )}
-      {/* Final Exam Modal */}
-      {!isRoomContext && isExamModalOpen && (
-        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50">
-          <div className="bg-[#1e1e1e] rounded-lg p-8 max-w-2xl w-full mx-4 relative">
-            {/* Close Button */}
-            <button 
-              onClick={() => setIsExamModalOpen(false)}
-              className="absolute top-4 right-4 text-gray-400 hover:text-white text-xl"
-            >
-              ×
-            </button>
-
-            {/* Header */}
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-white font-satoshi font-bold text-xl flex items-center">
-                🎓 Examen final
-              </h2>
-              <div className="text-gray-400 font-satoshi text-sm">
-                {currentQuestionIndex + 1} / 20
-              </div>
-            </div>
-
-            {/* Progress Bar */}
-            <div className="mb-8">
-              <div className="text-gray-400 font-satoshi text-sm mb-2">Pregunta {currentQuestionIndex + 1}</div>
-              <div className="w-full bg-gray-700 rounded-full h-1">
-                <div 
-                  className="bg-white h-1 rounded-full transition-all duration-300"
-                  style={{ width: `${((currentQuestionIndex + 1) / examQuestions.length) * 100}%` }}
-                ></div>
-              </div>
-            </div>
-
-            {/* Question */}
-            <div className="mb-8">
-              <h3 className="text-white font-satoshi font-medium text-lg mb-6">
-                {examQuestions[currentQuestionIndex]?.question}
-              </h3>
-              
-              {/* Answer Options */}
-              <div className="space-y-3">
-                {examQuestions[currentQuestionIndex]?.options.map((option, optionIndex) => (
-                  <button
-                    key={optionIndex}
-                    onClick={() => {
-                      setSelectedAnswers(prev => ({
-                        ...prev,
-                        [currentQuestionIndex]: optionIndex
-                      }));
-                      
-                      // Auto-advance to next question after a short delay
-                      setTimeout(() => {
-                        if (currentQuestionIndex < examQuestions.length - 1) {
-                          setCurrentQuestionIndex(prev => prev + 1);
-                        } else {
-                          // Finish exam automatically on last question
-                          const score = Object.entries({
-                            ...selectedAnswers,
-                            [currentQuestionIndex]: optionIndex
-                          }).reduce((acc, [questionIndex, answerIndex]) => {
-                            return acc + (examQuestions[parseInt(questionIndex)]?.correctAnswer === answerIndex ? 1 : 0);
-                          }, 0);
-                          setTimeout(() => {
-                            setExamScore(score);
-                            const percentage = Math.round((score / examQuestions.length) * 100);
-                            
-                            if (percentage >= 80) {
-                              setIsExamCompleted(true);
-                            } else {
-                              setIsExamFailed(true);
-                            }
-                            setIsExamModalOpen(false);
-                          }, 300);
-                        }
-                      }, 300);
-                    }}
-                    className={cn(
-                      "w-full text-left p-4 rounded-lg border transition-all font-satoshi",
-                      selectedAnswers[currentQuestionIndex] === optionIndex
-                        ? "bg-white/10 border-white text-white"
-                        : "bg-transparent border-gray-600 text-gray-300 hover:border-gray-500 hover:bg-gray-800/50"
-                    )}
-                  >
-                    {option}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Navigation Buttons - Only show "Atrás" */}
-            <div className="flex justify-between">
-              <button
-                onClick={() => setCurrentQuestionIndex(prev => Math.max(0, prev - 1))}
-                disabled={currentQuestionIndex === 0}
-                className="px-6 py-3 bg-gray-600 text-white rounded-lg font-satoshi font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-700 transition-colors"
-              >
-                Atrás
-              </button>
-              <button
-                disabled
-                className="px-6 py-3 bg-gray-600 text-gray-400 rounded-lg font-satoshi font-medium cursor-not-allowed"
-              >
-                Próximo
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
       {/* Mobile Lessons Sidebar */}
       {isMobileLessonsOpen && (
         <div className="fixed inset-0 z-50 lg:hidden">
@@ -2431,24 +2082,6 @@ export default function Course() {
                     </div>
                   );
                 }))
-                )}
-
-                {/* Final Exam Button - Only show when currently on last lesson (Mobile) */}
-                {!isRoomContext && lessonsArray.length > 0 && currentLessonIndex >= lessonsArray.length - 1 && (
-                  <div className="p-4">
-                    <button 
-                      className="w-full bg-white hover:bg-gray-100 text-black font-satoshi font-medium py-4 px-6 rounded-lg transition-colors flex items-center justify-center text-[15px]"
-                      data-testid="button-final-exam-mobile"
-                      onClick={() => {
-                        setIsExamModalOpen(true);
-                        setCurrentQuestionIndex(0);
-                        setSelectedAnswers({});
-                        setIsMobileLessonsOpen(false);
-                      }}
-                    >
-                      🎓 Tomar el examen final
-                    </button>
-                  </div>
                 )}
 
                 {/* Next Course Card - Only show in room context when there is a next course */}
