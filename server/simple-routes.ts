@@ -320,6 +320,22 @@ export function registerSimpleRoutes(app: Express): Server {
         console.error("   - Error code:", dbError.code);
         console.error("   - DATABASE_URL actual:", process.env.DATABASE_URL?.substring(0, 60) + '...');
         
+        // Check if it's a timeout error (ETIMEDOUT)
+        if (dbError.code === 'ETIMEDOUT' || dbError.message?.includes('ETIMEDOUT')) {
+          const dbUrl = process.env.DATABASE_URL || '';
+          const isUsingDirectConnection = dbUrl.includes('supabase') && (dbUrl.includes(':5432') || !dbUrl.includes('pooler'));
+          
+          if (isUsingDirectConnection) {
+            return res.status(503).json({
+              message: "Error de conexión a la base de datos (timeout). Estás usando conexión directa (puerto 5432). Para solucionarlo:\n\n1. Ve a tu proyecto de Supabase\n2. Settings > Database\n3. Copia la Connection String del 'Session pooler' (puerto 6543)\n4. Actualiza DATABASE_URL en tu .env con esa URL\n5. Reinicia el servidor\n\nFormato: postgresql://postgres.[PROJECT_REF]:[PASSWORD]@aws-0-[REGION].pooler.supabase.com:6543/postgres"
+            });
+          }
+          
+          return res.status(503).json({
+            message: "Error de conexión a la base de datos (timeout). Verifica que:\n1. Tu DATABASE_URL esté correctamente configurada\n2. El proyecto de Supabase esté activo\n3. Estés usando el pooler de sesión (puerto 6543)\n4. Tu contraseña esté correctamente codificada (URL encoded)"
+          });
+        }
+        
         // Check if it's a Neon-specific error
         if (dbError.message?.includes('Neon') || dbError.message?.includes('endpoint') || dbError.message?.includes('disabled') || dbError.code === 'ECONNREFUSED') {
           return res.status(503).json({
@@ -1909,6 +1925,8 @@ export function registerSimpleRoutes(app: Express): Server {
         bucketName = 'lesson-resources';
       } else if (objectPath.startsWith('profile')) {
         bucketName = 'profile-images';
+      } else if (objectPath.startsWith('attached-assets/')) {
+        bucketName = 'attached-assets';
       }
       
       // Intentar servir desde Supabase Storage
@@ -4997,9 +5015,13 @@ export function registerSimpleRoutes(app: Express): Server {
     }
   };
   
-  // Initialize tables on startup
-  initLiveEventsTable();
-  initEventRegistrationsTable();
+  // Initialize tables on startup (non-blocking, don't fail server if DB is temporarily unavailable)
+  initLiveEventsTable().catch(err => {
+    console.warn("⚠️ Could not initialize live_events table (non-critical):", err.message);
+  });
+  initEventRegistrationsTable().catch(err => {
+    console.warn("⚠️ Could not initialize event_registrations table (non-critical):", err.message);
+  });
   
   // Get all events (for calendar)
   app.get("/api/events", async (req, res) => {

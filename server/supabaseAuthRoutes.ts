@@ -197,13 +197,25 @@ export function setupSupabaseAuthRoutes(app: Express) {
         authData = result.data;
         authError = result.error;
       } catch (err: any) {
+        // Check if error is due to HTML response (malformed URL or network issue)
+        const errorMessage = err?.message || String(err);
+        if (errorMessage.includes('<!DOCTYPE') || errorMessage.includes('Unexpected token')) {
+          console.log("⚠️ Supabase returned HTML instead of JSON - likely URL misconfiguration or network issue");
+          console.log("   Falling back to simple auth...");
+        } else {
+          console.log("⚠️ Supabase login error:", errorMessage);
+        }
         authError = err;
         authData = null;
       }
 
       // If Supabase login fails, fallback to simple auth
       if (authError || !authData?.user) {
-        console.log("⚠️ Supabase login failed, falling back to simple auth:", authError?.message || "Unknown error");
+        const errorMsg = authError?.message || "Unknown error";
+        // Only log if it's not a JSON parsing error (which we already handled)
+        if (!errorMsg.includes('<!DOCTYPE') && !errorMsg.includes('Unexpected token')) {
+          console.log("⚠️ Supabase login failed, falling back to simple auth:", errorMsg);
+        }
         // Call simple auth handler directly
         return handleSimpleAuthLogin(req, res);
       }

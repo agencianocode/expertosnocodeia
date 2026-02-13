@@ -23,7 +23,7 @@ import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ObjectUploader } from "@/components/ObjectUploader";
 import { RichTextEditor } from "@/components/ui/rich-text-editor";
-import { ArrowLeft, Save, Eye } from "lucide-react";
+import { ArrowLeft, Save, Eye, FileText } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAdmin } from "@/hooks/useAdmin";
 import { apiRequest } from "@/lib/queryClient";
@@ -78,6 +78,12 @@ const courseSchema = z.object({
   guideSummary: z.string().optional(), // Solo para guías
   guideTools: z.string().optional(), // Solo para guías
   guideUpdatedAt: z.string().optional(), // Solo para guías
+  guideFiles: z.array(z.object({
+    name: z.string(),
+    url: z.string(),
+    size: z.number().optional(),
+    type: z.string().optional(),
+  })).optional(), // Solo para guías
 }).superRefine((data, ctx) => {
   // Conditional validation based on type
   if (data.type === 'guide') {
@@ -185,6 +191,7 @@ export default function CourseForm() {
       guideSummary: "",
       guideTools: "",
       guideUpdatedAt: "",
+      guideFiles: [],
     },
   });
 
@@ -239,6 +246,7 @@ export default function CourseForm() {
         guideSummary: metadata.summary || "",
         guideTools: metadata.tools || "",
         guideUpdatedAt: formatDateInput(metadata.updatedAt),
+        guideFiles: metadata.files || [],
       });
     }
   }, [course, isEditing, form]);
@@ -320,6 +328,7 @@ export default function CourseForm() {
       const summary = submitData.guideSummary?.trim();
       const tools = submitData.guideTools?.trim();
       const updatedAt = submitData.guideUpdatedAt ? new Date(submitData.guideUpdatedAt).toISOString() : "";
+      const files = submitData.guideFiles || [];
       const nextMetadata = { ...existingMetadata };
       if (videoUrl) {
         nextMetadata.videoUrl = videoUrl;
@@ -341,6 +350,11 @@ export default function CourseForm() {
       } else {
         delete (nextMetadata as any).updatedAt;
       }
+      if (files && files.length > 0) {
+        nextMetadata.files = files;
+      } else {
+        delete (nextMetadata as any).files;
+      }
       (submitData as any).metadata = nextMetadata;
     } else if (data.type !== 'guide') {
       // For non-guides, clear categoryIds and keep only categoryId
@@ -353,6 +367,7 @@ export default function CourseForm() {
     delete (submitData as any).guideSummary;
     delete (submitData as any).guideTools;
     delete (submitData as any).guideUpdatedAt;
+    delete (submitData as any).guideFiles;
     
     saveMutation.mutate(submitData);
   };
@@ -530,6 +545,103 @@ export default function CourseForm() {
                   </div>
                 )}
 
+                {currentType === 'guide' && (
+                  <div>
+                    <Label className="text-white">Archivos descargables</Label>
+                    <p className="text-xs text-gray-400 mb-3">
+                      Sube PDFs, documentos u otros archivos que los usuarios puedan descargar
+                    </p>
+                    <div className="space-y-3">
+                      <ObjectUploader
+                        maxNumberOfFiles={10}
+                        maxFileSize={50 * 1024 * 1024} // 50MB
+                        accept=".pdf,.doc,.docx,.xlsx,.xls,.ppt,.pptx,.txt,.zip,.rar,.csv"
+                        onGetUploadParameters={async () => {
+                          const response = await apiRequest('POST', '/api/admin/media/upload-url', { 
+                            fileType: 'application/pdf' 
+                          });
+                          const { uploadURL } = await response.json();
+                          return { method: 'PUT' as const, url: uploadURL };
+                        }}
+                        onComplete={async (results) => {
+                          if (results && results.length > 0) {
+                            const currentFiles = form.getValues('guideFiles') || [];
+                            const newFiles = await Promise.all(
+                              results.map(async (result) => {
+                                const fileName = result.name;
+                                const fileUrl = result.uploadURL?.split('?')[0] || result.uploadURL;
+                                
+                                // Normalizar la URL a través del backend
+                                try {
+                                  const normalizeResponse = await apiRequest('POST', '/api/admin/media/normalize-path', { 
+                                    url: fileUrl 
+                                  });
+                                  const { normalizedPath } = await normalizeResponse.json();
+                                  return {
+                                    name: fileName,
+                                    url: normalizedPath || fileUrl,
+                                    size: 0,
+                                    type: fileName.split('.').pop()?.toLowerCase() || 'unknown',
+                                  };
+                                } catch (error) {
+                                  console.error('Error normalizing path:', error);
+                                  return {
+                                    name: fileName,
+                                    url: fileUrl,
+                                    size: 0,
+                                    type: fileName.split('.').pop()?.toLowerCase() || 'unknown',
+                                  };
+                                }
+                              })
+                            );
+                            
+                            form.setValue('guideFiles', [...currentFiles, ...newFiles]);
+                            toast({
+                              title: "¡Éxito!",
+                              description: `${results.length} archivo(s) agregado(s) correctamente`,
+                            });
+                          }
+                        }}
+                        buttonClassName="bg-blue-600 hover:bg-blue-700 text-white text-sm px-3 py-2"
+                      >
+                        📎 Subir Archivos
+                      </ObjectUploader>
+                      
+                      {form.watch('guideFiles') && form.watch('guideFiles')!.length > 0 && (
+                        <div className="space-y-2 mt-4">
+                          <p className="text-sm text-gray-400">Archivos subidos:</p>
+                          <div className="space-y-2">
+                            {form.watch('guideFiles')!.map((file, index) => (
+                              <div
+                                key={index}
+                                className="flex items-center justify-between bg-slate-800 border border-slate-600 rounded-lg p-3"
+                              >
+                                <div className="flex items-center gap-2 flex-1 min-w-0">
+                                  <FileText className="h-4 w-4 text-blue-400 flex-shrink-0" />
+                                  <span className="text-white text-sm truncate">{file.name}</span>
+                                </div>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => {
+                                    const currentFiles = form.getValues('guideFiles') || [];
+                                    const updatedFiles = currentFiles.filter((_, i) => i !== index);
+                                    form.setValue('guideFiles', updatedFiles);
+                                  }}
+                                  className="text-red-400 hover:text-red-300 hover:bg-red-900/20 ml-2"
+                                >
+                                  ❌
+                                </Button>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
                 <div>
                   <Label htmlFor="prerequisites" className="text-white">Prerrequisitos</Label>
                   <Textarea
@@ -648,8 +760,9 @@ export default function CourseForm() {
                                   checked={isChecked}
                                   onCheckedChange={(checked) => {
                                     // Get fresh value from form to avoid stale closures
-                                    const freshValues = Array.isArray(form.getValues('selectedCategoryIds')) 
-                                      ? form.getValues('selectedCategoryIds') 
+                                    const currentValues = form.getValues('selectedCategoryIds');
+                                    const freshValues: string[] = Array.isArray(currentValues) 
+                                      ? currentValues 
                                       : [];
                                     
                                     if (checked) {

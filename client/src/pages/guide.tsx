@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useParams, useLocation } from "wouter";
 import { useAuth } from "@/hooks/useAuth";
@@ -8,7 +8,7 @@ import MobileHeader from "@/components/layout/mobile-header";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { ArrowLeft, BookOpen, FileText, User, Calendar, Clock, Download, Bookmark, BookmarkCheck } from "lucide-react";
+import { ArrowLeft, BookOpen, FileText, User, Calendar, Clock, Download, Bookmark, BookmarkCheck, ChevronLeft, ChevronRight } from "lucide-react";
 import { useSimpleAuth } from "@/hooks/use-simple-auth";
 import { cn } from "@/lib/utils";
 import { VideoPlayer } from "@/components/ui/video-player";
@@ -41,6 +41,15 @@ export default function Guide() {
     queryKey: ['/api/categories'],
   });
 
+  // Obtener todas las guías para mostrar relacionadas
+  const { data: allGuides = [] } = useQuery<any[]>({
+    queryKey: ['/api/guides/all'],
+    enabled: !!guideId,
+  });
+
+  // Estado para el carrusel de guías relacionadas
+  const [relatedGuidesStartIndex, setRelatedGuidesStartIndex] = useState(0);
+
   const getDifficultyLabel = (difficulty?: string) => {
     if (difficulty === "beginner") return "Principiante";
     if (difficulty === "intermediate") return "Intermedio";
@@ -59,6 +68,19 @@ export default function Guide() {
       return "bg-red-500/15 text-red-400 border-red-500/30";
     }
     return "bg-gray-500/15 text-gray-400 border-gray-500/30";
+  };
+
+  // Función para obtener información del instructor de una guía
+  const getInstructorInfo = (guideItem: any) => {
+    const metadata = guideItem?.metadata ? (typeof guideItem.metadata === 'string' ? JSON.parse(guideItem.metadata) : guideItem.metadata) : {};
+    const instructor = metadata?.instructor || {};
+    const fallbackName = user?.firstName || user?.lastName
+      ? `${user?.firstName || ""} ${user?.lastName || ""}`.trim()
+      : "";
+    const name = instructor?.name || guideItem?.instructorName || fallbackName || "Instructor";
+    const avatar = instructor?.avatar || guideItem?.instructorAvatar || 
+      `data:image/svg+xml;base64,${btoa(`<svg width="40" height="40" xmlns="http://www.w3.org/2000/svg"><circle cx="20" cy="20" r="20" fill="#6366f1"/><text x="20" y="28" font-size="20" fill="white" text-anchor="middle" font-weight="bold">${name.charAt(0).toUpperCase()}</text></svg>`)}`;
+    return { name, avatar };
   };
 
   const { data: savedCourses } = useQuery({
@@ -183,6 +205,7 @@ export default function Guide() {
   const guideSummary = metadata?.summary || guide?.shortDescription || "";
   const guideTools = metadata?.tools || "No se requiere ninguno";
   const guideUpdatedAt = metadata?.updatedAt || guide?.createdAt;
+  const guideFiles = metadata?.files || [];
   
   // Formatear fecha
   const formatDate = (dateString: string) => {
@@ -269,7 +292,7 @@ export default function Guide() {
             <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_320px] gap-6 mb-6">
               <div>
                 {guideVideoUrl ? (
-                  <div className="rounded-xl overflow-hidden bg-muted/30 aspect-video">
+                  <div className="rounded-xl overflow-hidden bg-muted/30 aspect-video mb-6">
                     <VideoPlayer
                       src={guideVideoUrl}
                       poster={guide?.coverImageUrl || undefined}
@@ -277,7 +300,7 @@ export default function Guide() {
                     />
                   </div>
                 ) : guide?.coverImageUrl ? (
-                  <div className="rounded-xl overflow-hidden bg-muted/30 aspect-video">
+                  <div className="rounded-xl overflow-hidden bg-muted/30 aspect-video mb-6">
                     <div className="h-full w-full flex items-center justify-center">
                       <img
                         src={guide.coverImageUrl}
@@ -287,9 +310,113 @@ export default function Guide() {
                     </div>
                   </div>
                 ) : (
-                  <div className="rounded-xl overflow-hidden bg-muted/30 aspect-video">
+                  <div className="rounded-xl overflow-hidden bg-muted/30 aspect-video mb-6">
                     <div className="h-full w-full flex items-center justify-center">
                       <FileText className="h-12 w-12 text-muted-foreground" />
+                    </div>
+                  </div>
+                )}
+
+                {/* Sección RECURSO - Debajo del video */}
+                {guideFiles && guideFiles.length > 0 && (
+                  <div className="border border-border rounded-xl p-5 lg:p-6 bg-card mb-6">
+                    <h3 className="text-lg font-bold text-foreground mb-2 uppercase">RECURSO</h3>
+                    <p className="text-sm text-muted-foreground mb-4">Esta guía tiene recursos.</p>
+                    <div className="space-y-3">
+                      {guideFiles.map((file: any, index: number) => {
+                        // Construir URL de descarga
+                        let downloadUrl = file.url;
+                        
+                        // Si es una ruta relativa del servidor, convertir a URL de API
+                        if (file.url && file.url.startsWith('/')) {
+                          downloadUrl = `/api/object-proxy/objects${file.url}`;
+                        } else if (file.url && file.url.includes('supabase.co/storage')) {
+                          // Si es una URL de Supabase, extraer la ruta
+                          const urlMatch = file.url.match(/attached-assets\/(.+)$/);
+                          if (urlMatch) {
+                            downloadUrl = `/api/object-proxy/objects/attached-assets/${urlMatch[1]}`;
+                          } else {
+                            // Intentar extraer cualquier ruta después del dominio
+                            const pathMatch = file.url.match(/supabase\.co\/storage\/v1\/object\/[^\/]+\/([^?]+)/);
+                            if (pathMatch) {
+                              downloadUrl = `/api/object-proxy/objects/${pathMatch[1]}`;
+                            }
+                          }
+                        } else if (file.url && !file.url.startsWith('http')) {
+                          // Si es una ruta sin protocolo, asumir que es relativa
+                          downloadUrl = `/api/object-proxy/objects/attached-assets/${file.url}`;
+                        }
+                        
+                        // Determinar tipo de archivo
+                        const getFileType = (fileName: string, fileType?: string) => {
+                          const ext = fileName.split('.').pop()?.toLowerCase() || fileType?.toLowerCase() || '';
+                          if (ext === 'pdf' || fileType === 'pdf') return 'Recurso PDF';
+                          if (['doc', 'docx'].includes(ext)) return 'Recurso DOC';
+                          if (['xls', 'xlsx'].includes(ext)) return 'Recurso XLS';
+                          if (['ppt', 'pptx'].includes(ext)) return 'Recurso PPT';
+                          if (ext === 'zip' || ext === 'rar') return 'Recurso ZIP';
+                          return `Recurso ${ext.toUpperCase()}`;
+                        };
+                        
+                        const handleDownload = async () => {
+                          try {
+                            const response = await fetch(downloadUrl, {
+                              credentials: 'include',
+                              method: 'GET',
+                            });
+                            
+                            if (!response.ok) {
+                              throw new Error(`Error al descargar: ${response.status}`);
+                            }
+                            
+                            const blob = await response.blob();
+                            const blobUrl = window.URL.createObjectURL(blob);
+                            const link = document.createElement('a');
+                            link.href = blobUrl;
+                            link.download = file.name || 'archivo';
+                            link.style.display = 'none';
+                            document.body.appendChild(link);
+                            link.click();
+                            document.body.removeChild(link);
+                            window.URL.revokeObjectURL(blobUrl);
+                            
+                            toast({
+                              title: "Descarga iniciada",
+                              description: `Descargando ${file.name}...`,
+                            });
+                          } catch (error: any) {
+                            console.error('Error descargando archivo:', error);
+                            toast({
+                              title: "Error",
+                              description: `No se pudo descargar ${file.name}`,
+                              variant: "destructive",
+                            });
+                          }
+                        };
+                        
+                        return (
+                          <div
+                            key={index}
+                            className="flex items-center justify-between bg-muted/20 border border-border rounded-lg p-4 hover:bg-muted/40 transition-colors cursor-pointer"
+                            onClick={handleDownload}
+                          >
+                            <div className="flex items-center gap-3 flex-1 min-w-0">
+                              <div className="bg-purple-500/20 p-3 rounded-lg flex-shrink-0 border border-purple-500/30">
+                                <FileText className="h-6 w-6 text-purple-400" />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-medium text-foreground truncate mb-1">
+                                  {file.name}
+                                </p>
+                                <p className="text-xs text-muted-foreground">
+                                  {getFileType(file.name, file.type)}
+                                </p>
+                              </div>
+                            </div>
+                            <Download className="h-5 w-5 text-muted-foreground hover:text-foreground flex-shrink-0 ml-3 transition-colors" />
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
                 )}
@@ -389,6 +516,34 @@ export default function Guide() {
                       <ReactMarkdown 
                         remarkPlugins={[remarkGfm]}
                         rehypePlugins={[rehypeHighlight, rehypeRaw]}
+                        components={{
+                          img: ({ src, alt }) => {
+                            // Si la URL es relativa, convertirla a absoluta
+                            let imageUrl = src || '';
+                            if (imageUrl && !imageUrl.startsWith('http') && !imageUrl.startsWith('//') && !imageUrl.startsWith('data:')) {
+                              // Si es una URL relativa, intentar construir la URL completa
+                              if (imageUrl.startsWith('/')) {
+                                imageUrl = `${window.location.origin}${imageUrl}`;
+                              } else {
+                                // Si no empieza con /, asumir que es relativa a la raíz
+                                imageUrl = `${window.location.origin}/${imageUrl}`;
+                              }
+                            }
+                            return (
+                              <img 
+                                src={imageUrl} 
+                                alt={alt || ''} 
+                                className="max-w-full h-auto rounded-lg my-4"
+                                onError={(e) => {
+                                  // Si falla, intentar con la URL original
+                                  if (src && src !== imageUrl) {
+                                    (e.target as HTMLImageElement).src = src;
+                                  }
+                                }}
+                              />
+                            );
+                          }
+                        }}
                       >
                         {guide.description}
                       </ReactMarkdown>
@@ -422,6 +577,34 @@ export default function Guide() {
                       <ReactMarkdown 
                         remarkPlugins={[remarkGfm]}
                         rehypePlugins={[rehypeHighlight, rehypeRaw]}
+                        components={{
+                          img: ({ src, alt }) => {
+                            // Si la URL es relativa, convertirla a absoluta
+                            let imageUrl = src || '';
+                            if (imageUrl && !imageUrl.startsWith('http') && !imageUrl.startsWith('//') && !imageUrl.startsWith('data:')) {
+                              // Si es una URL relativa, intentar construir la URL completa
+                              if (imageUrl.startsWith('/')) {
+                                imageUrl = `${window.location.origin}${imageUrl}`;
+                              } else {
+                                // Si no empieza con /, asumir que es relativa a la raíz
+                                imageUrl = `${window.location.origin}/${imageUrl}`;
+                              }
+                            }
+                            return (
+                              <img 
+                                src={imageUrl} 
+                                alt={alt || ''} 
+                                className="max-w-full h-auto rounded-lg my-4"
+                                onError={(e) => {
+                                  // Si falla, intentar con la URL original
+                                  if (src && src !== imageUrl) {
+                                    (e.target as HTMLImageElement).src = src;
+                                  }
+                                }}
+                              />
+                            );
+                          }
+                        }}
                       >
                         {guide.description}
                       </ReactMarkdown>
@@ -432,6 +615,152 @@ export default function Guide() {
                 </div>
               )}
             </div>
+
+            {/* Guías Relacionadas */}
+            {guide && (() => {
+              // Calcular las guías relacionadas filtradas
+              const filteredRelatedGuides = allGuides.filter((g: any) => 
+                g.id !== guideId && 
+                g.type === 'guide' && 
+                g.isPublished &&
+                (guide.categories?.some((catId: string) => 
+                  (Array.isArray(g.categories) ? g.categories : (g.categoryId ? [g.categoryId] : [])).includes(catId)
+                ) || guide.categoryId === g.categoryId)
+              );
+              
+              const totalGuides = filteredRelatedGuides.length;
+              const guidesToShow = filteredRelatedGuides.slice(relatedGuidesStartIndex, relatedGuidesStartIndex + 3);
+              const hasMoreGuides = relatedGuidesStartIndex + 3 < totalGuides;
+              const hasPreviousGuides = relatedGuidesStartIndex > 0;
+              
+              if (totalGuides === 0) return null;
+              
+              return (
+                <div className="mt-12 mb-8">
+                  <div className="flex items-center justify-between mb-6">
+                    <h2 className="text-2xl font-bold text-foreground">Guías relacionadas</h2>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => {
+                          setRelatedGuidesStartIndex(prev => Math.max(0, prev - 1));
+                        }}
+                        disabled={!hasPreviousGuides}
+                        className="h-8 w-8"
+                      >
+                        <ChevronLeft className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => {
+                          setRelatedGuidesStartIndex(prev => prev + 1);
+                        }}
+                        disabled={!hasMoreGuides}
+                        className="h-8 w-8"
+                      >
+                        <ChevronRight className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {guidesToShow.map((relatedGuide: any) => {
+                        const instructor = getInstructorInfo(relatedGuide);
+                        const isSaved = Array.isArray(savedCourses) && savedCourses.some(
+                          (savedCourse: any) => savedCourse.courseId === relatedGuide.id
+                        );
+
+                        return (
+                          <div
+                            key={relatedGuide.id}
+                            className="bg-card border border-border rounded-2xl overflow-hidden hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 cursor-pointer"
+                            onClick={() => setLocation(`/guia/${relatedGuide.id}`)}
+                          >
+                            <div className="relative aspect-[16/10] bg-muted/40 rounded-t-2xl overflow-hidden">
+                              {relatedGuide.coverImageUrl ? (
+                                <div className="w-full h-full p-4 flex items-center justify-center">
+                                  <img
+                                    src={relatedGuide.coverImageUrl}
+                                    alt={relatedGuide.title}
+                                    className="w-full h-full object-contain rounded-xl"
+                                  />
+                                </div>
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center text-muted-foreground text-sm">
+                                  Sin imagen
+                                </div>
+                              )}
+                            </div>
+
+                            <div className="p-3 space-y-2">
+                              <h3 className="text-[18px] font-bold text-foreground line-clamp-2 leading-tight">
+                                {relatedGuide.title}
+                              </h3>
+
+                              <div className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide border ${getDifficultyColors(relatedGuide.difficulty)}`}>
+                                {getDifficultyLabel(relatedGuide.difficulty)}
+                              </div>
+
+                              <div className="flex items-center justify-between gap-2">
+                                <div className="flex items-center gap-1.5 text-muted-foreground">
+                                  <Avatar className="h-5 w-5">
+                                    <AvatarImage src={instructor.avatar} alt={instructor.name} />
+                                    <AvatarFallback className="text-[10px]">{instructor.name.charAt(0).toUpperCase()}</AvatarFallback>
+                                  </Avatar>
+                                  <span className="line-clamp-1 text-sm">Impartido por {instructor.name}</span>
+                                </div>
+
+                                {isAuthenticated && (
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    className="h-6 w-6 p-0 hover:bg-muted/50 flex-shrink-0"
+                                    onClick={async (e) => {
+                                      e.stopPropagation();
+                                      const method = isSaved ? 'DELETE' : 'POST';
+                                      const url = isSaved
+                                        ? `/api/users/saved-courses/${relatedGuide.id}`
+                                        : '/api/users/saved-courses';
+                                      try {
+                                        if (method === 'POST') {
+                                          await apiRequest('POST', url, { courseId: relatedGuide.id });
+                                        } else {
+                                          await apiRequest('DELETE', url);
+                                        }
+                                        queryClient.invalidateQueries({ queryKey: ['/api/users/saved-courses'] });
+                                        toast({
+                                          title: isSaved ? "Guía removida" : "Guía guardada",
+                                          description: isSaved 
+                                            ? "La guía fue removida de tus favoritos" 
+                                            : "La guía fue guardada en tus favoritos",
+                                        });
+                                      } catch (error) {
+                                        toast({
+                                          title: "Error",
+                                          description: "No se pudo guardar la guía",
+                                          variant: "destructive",
+                                        });
+                                      }
+                                    }}
+                                  >
+                                    {isSaved ? (
+                                      <BookmarkCheck className="h-4 w-4 text-primary" />
+                                    ) : (
+                                      <Bookmark className="h-4 w-4" />
+                                    )}
+                                  </Button>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                  </div>
+                </div>
+              );
+            })()}
           </div>
         </div>
       </div>
