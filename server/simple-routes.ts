@@ -1096,11 +1096,42 @@ export function registerSimpleRoutes(app: Express): Server {
     }
   });
 
-  // Admin: get all rooms (published and unpublished)
+  // Admin: get all rooms (published and unpublished) with phases info
   app.get("/api/admin/rooms", simpleAdminAuth, isAdmin, async (req: Request, res: Response) => {
     try {
       const rooms = await storage.getAllRooms();
-      res.json(rooms);
+      
+      // Get phases for each room with course counts
+      const roomsWithPhases = await Promise.all(
+        rooms.map(async (room) => {
+          const phases = await storage.getPhasesByRoom(room.id);
+          
+          // Get course count for each phase
+          const phasesWithCounts = await Promise.all(
+            phases.map(async (phase) => {
+              const phaseContent = await storage.getPhaseContent(phase.id);
+              const courseCount = phaseContent.filter(
+                (content) => content.contentType === 'course'
+              ).length;
+              
+              return {
+                ...phase,
+                courseCount,
+                totalContent: phaseContent.length
+              };
+            })
+          );
+          
+          return {
+            ...room,
+            phases: phasesWithCounts,
+            totalPhases: phasesWithCounts.length,
+            totalCourses: phasesWithCounts.reduce((sum, p) => sum + p.courseCount, 0)
+          };
+        })
+      );
+      
+      res.json(roomsWithPhases);
     } catch (error) {
       console.error("Error fetching admin rooms:", error);
       res.status(500).json({ message: "Failed to fetch rooms" });
@@ -1119,12 +1150,47 @@ export function registerSimpleRoutes(app: Express): Server {
     }
   });
 
-  // Get phases for a specific room
+  // Get phases for a specific room with course information
   app.get("/api/rooms/:roomId/phases", async (req: Request, res: Response) => {
     try {
       const { roomId } = req.params;
       const phases = await storage.getPhasesByRoom(roomId);
-      res.json(phases);
+      
+      // Get course count and info for each phase
+      const phasesWithInfo = await Promise.all(
+        phases.map(async (phase) => {
+          const phaseContent = await storage.getPhaseContent(phase.id);
+          const courses = phaseContent.filter(
+            (content) => content.contentType === 'course'
+          );
+          
+          // Get course details for better organization
+          const coursesWithDetails = await Promise.all(
+            courses.map(async (c) => {
+              const course = await storage.getCourseById(c.contentId);
+              return {
+                id: c.contentId,
+                order: c.order,
+                title: course?.title || 'Curso no encontrado',
+                isPublished: course?.isPublished || false,
+                difficulty: course?.difficulty || null
+              };
+            })
+          );
+          
+          // Sort courses by order
+          coursesWithDetails.sort((a, b) => a.order - b.order);
+          
+          return {
+            ...phase,
+            courseCount: courses.length,
+            totalContent: phaseContent.length,
+            courses: coursesWithDetails
+          };
+        })
+      );
+      
+      res.json(phasesWithInfo);
     } catch (error) {
       console.error("Error fetching phases:", error);
       res.status(500).json({ message: "Failed to fetch phases" });

@@ -847,6 +847,53 @@ export function RichTextEditor({ content, onChange, placeholder = "Escribe tu co
           <option value="2.5">Altura: 2.5</option>
         </select>
 
+        {/* Text Color Picker */}
+        <div className="relative inline-block">
+          <input
+            type="color"
+            value={editor.getAttributes('textStyle').color || '#ffffff'}
+            onChange={(e) => {
+              const color = e.target.value;
+              if (color === '#ffffff' || color === '#000000') {
+                editor.chain().focus().unsetColor().run();
+              } else {
+                editor.chain().focus().setColor(color).run();
+              }
+              setTimeout(() => {
+                const html = editor.getHTML();
+                onChange(html);
+              }, 100);
+            }}
+            className="h-7 w-7 rounded border border-slate-600 cursor-pointer bg-slate-700"
+            title="Color del texto"
+            style={{
+              WebkitAppearance: 'none',
+              MozAppearance: 'none',
+              appearance: 'none',
+              border: '1px solid rgb(71 85 105)',
+              borderRadius: '4px',
+              cursor: 'pointer',
+            }}
+          />
+        </div>
+
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={() => {
+            editor.chain().focus().unsetColor().run();
+            setTimeout(() => {
+              const html = editor.getHTML();
+              onChange(html);
+            }, 100);
+          }}
+          title="Quitar color del texto"
+          className="h-7 px-2"
+        >
+          <Type className="h-3 w-3" />
+        </Button>
+
         <Separator orientation="vertical" className="h-6" />
 
         {/* Alignment */}

@@ -21,6 +21,24 @@ import remarkGfm from 'remark-gfm';
 import rehypeHighlight from 'rehype-highlight';
 import rehypeRaw from 'rehype-raw';
 
+// Helper function to convert YouTube URLs to embed format
+const getYouTubeEmbedUrl = (url: string) => {
+  if (!url) return '';
+  
+  // Handle different YouTube URL formats
+  let videoId = '';
+  
+  if (url.includes('youtube.com/watch?v=')) {
+    videoId = url.split('v=')[1]?.split('&')[0];
+  } else if (url.includes('youtu.be/')) {
+    videoId = url.split('youtu.be/')[1]?.split('?')[0];
+  } else if (url.includes('youtube.com/embed/')) {
+    return url; // Already in embed format
+  }
+  
+  return videoId ? `https://www.youtube.com/embed/${videoId}` : url;
+};
+
 export default function Guide() {
   const params = useParams();
   const guideId = params?.id;
@@ -202,6 +220,7 @@ export default function Guide() {
     (user as any)?.profileImageUrl ||
     "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='96' height='96' viewBox='0 0 96 96'><rect width='96' height='96' fill='%2320132d'/><circle cx='48' cy='36' r='16' fill='%23c0467f'/><rect x='20' y='58' width='56' height='26' rx='13' fill='%23c0467f'/></svg>";
   const guideVideoUrl = typeof metadata?.videoUrl === "string" ? metadata.videoUrl.trim() : "";
+  const presentationVideoUrl = metadata?.presentationVideoUrl || "";
   const guideSummary = metadata?.summary || guide?.shortDescription || "";
   const guideTools = metadata?.tools || "No se requiere ninguno";
   const guideUpdatedAt = metadata?.updatedAt || guide?.createdAt;
@@ -291,6 +310,20 @@ export default function Guide() {
 
             <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_320px] gap-6 mb-6">
               <div>
+                {/* Presentation Video */}
+                {presentationVideoUrl && (
+                  <div className="relative rounded-lg overflow-hidden mb-6" style={{ paddingBottom: '56.25%' }}>
+                    <iframe
+                      className="absolute top-0 left-0 w-full h-full"
+                      src={getYouTubeEmbedUrl(presentationVideoUrl)}
+                      title="Video de presentación de la guía"
+                      frameBorder="0"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                    />
+                  </div>
+                )}
+
                 {guideVideoUrl ? (
                   <div className="rounded-xl overflow-hidden bg-muted/30 aspect-video mb-6">
                     <VideoPlayer

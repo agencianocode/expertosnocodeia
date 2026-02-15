@@ -120,6 +120,7 @@ function Router() {
     <Switch>
       {/* Preview routes - always available (no auth required) */}
       <Route path="/preview-landing" component={PublicLanding} />
+      <Route path="/preview-marketing" component={MarketingLanding} />
       <Route path="/preview-universidad" component={UniversidadNoCodeIA} />
       <Route path="/preview-admin" component={Setup} />
       

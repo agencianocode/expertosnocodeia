@@ -334,6 +334,7 @@ export default function CourseForm() {
       }
       const existingMetadata = parseMetadata((course as any)?.metadata);
       const videoUrl = submitData.guideVideoUrl?.trim();
+      const presentationVideoUrl = submitData.presentationVideoUrl?.trim();
       const summary = submitData.guideSummary?.trim();
       const tools = submitData.guideTools?.trim();
       const updatedAt = submitData.guideUpdatedAt ? new Date(submitData.guideUpdatedAt).toISOString() : "";
@@ -343,6 +344,11 @@ export default function CourseForm() {
         nextMetadata.videoUrl = videoUrl;
       } else {
         delete (nextMetadata as any).videoUrl;
+      }
+      if (presentationVideoUrl) {
+        nextMetadata.presentationVideoUrl = presentationVideoUrl;
+      } else {
+        delete (nextMetadata as any).presentationVideoUrl;
       }
       if (summary) {
         nextMetadata.summary = summary;
@@ -507,8 +513,8 @@ export default function CourseForm() {
                   )}
                 </div>
 
-                {/* Presentation Video - For courses and workshops */}
-                {(currentType === 'course' || currentType === 'workshop') && (
+                {/* Presentation Video - For courses, workshops and guides */}
+                {(currentType === 'course' || currentType === 'workshop' || currentType === 'guide') && (
                   <div>
                     <Label htmlFor="presentationVideoUrl" className="text-white">Video de presentación</Label>
                     <Input
@@ -518,7 +524,7 @@ export default function CourseForm() {
                       placeholder="https://www.youtube.com/watch?v=... o https://youtu.be/..."
                     />
                     <p className="text-xs text-gray-400 mt-1">
-                      URL del video de presentación del curso. Se mostrará arriba de la descripción.
+                      URL del video de presentación. Se mostrará arriba de la descripción.
                     </p>
                   </div>
                 )}

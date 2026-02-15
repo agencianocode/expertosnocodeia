@@ -22,7 +22,12 @@ import {
   Calendar,
   Trash2,
   ChevronUp,
-  ChevronDown
+  ChevronDown,
+  Clock,
+  User,
+  MoreVertical,
+  Share2,
+  Heart
 } from "lucide-react";
 import { useAdmin } from "@/hooks/useAdmin";
 import { useToast } from "@/hooks/use-toast";
@@ -31,6 +36,7 @@ import { apiRequest } from "@/lib/queryClient";
 export default function ContentManagement() {
   const { isAdmin, isLoading: adminLoading } = useAdmin();
   const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState<'all' | 'published' | 'draft'>('all');
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -125,10 +131,18 @@ export default function ContentManagement() {
     );
   }
 
-  const filteredCourses = (courses as any)?.filter((course: any) =>
-    course.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    course.description?.toLowerCase().includes(searchTerm.toLowerCase())
-  ) || [];
+  const filteredCourses = (courses as any)?.filter((course: any) => {
+    // Search filter
+    const matchesSearch = course.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      course.description?.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    // Status filter
+    const matchesStatus = statusFilter === 'all' || 
+      (statusFilter === 'published' && course.isPublished) ||
+      (statusFilter === 'draft' && !course.isPublished);
+    
+    return matchesSearch && matchesStatus;
+  }) || [];
 
   // Filter by content type and separate courses by room context
   const allCourses = filteredCourses.filter((item: any) => item.type === 'course');
@@ -136,6 +150,36 @@ export default function ContentManagement() {
   const roomCoursesList = allCourses.filter((item: any) => item.roomContext && item.roomContext.length > 0); // Cursos de salas
   const workshopsList = filteredCourses.filter((item: any) => item.type === 'workshop');
   const guidesList = filteredCourses.filter((item: any) => item.type === 'guide');
+
+  // Group room courses by room
+  const roomCoursesGrouped = roomCoursesList.reduce((acc: any, course: any) => {
+    if (course.roomContext && course.roomContext.length > 0) {
+      course.roomContext.forEach((roomContext: any) => {
+        const roomId = roomContext.roomId;
+        if (!acc[roomId]) {
+          acc[roomId] = {
+            roomId: roomId,
+            roomTitle: roomContext.roomTitle,
+            roomSlug: roomContext.roomSlug,
+            courses: []
+          };
+        }
+        // Only add course if not already added (a course can be in multiple phases of same room)
+        if (!acc[roomId].courses.find((c: any) => c.id === course.id)) {
+          acc[roomId].courses.push({
+            ...course,
+            phaseInfo: course.roomContext.filter((rc: any) => rc.roomId === roomId)
+          });
+        }
+      });
+    }
+    return acc;
+  }, {});
+
+  // Convert to array and sort by room title
+  const roomCoursesGroupedArray = Object.values(roomCoursesGrouped).sort((a: any, b: any) => 
+    a.roomTitle.localeCompare(b.roomTitle)
+  );
 
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {
@@ -163,6 +207,172 @@ export default function ContentManagement() {
     }
   };
 
+  // Helper function to strip HTML tags from text
+  const stripHtmlTags = (html: string): string => {
+    if (!html) return '';
+    // Remove HTML tags
+    const text = html.replace(/<[^>]*>/g, '');
+    // Decode HTML entities
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = text;
+    return tempDiv.textContent || tempDiv.innerText || '';
+  };
+
+  // Helper function to render content card
+  const renderContentCard = (item: any, type: 'course' | 'workshop' | 'guide' = 'course', showRoomInfo = false) => {
+    const createdDate = item.createdAt ? new Date(item.createdAt) : null;
+    const formattedDate = createdDate ? createdDate.toLocaleDateString("es-ES", {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    }) : '';
+    const formattedTime = createdDate ? createdDate.toLocaleTimeString("es-ES", {
+      hour: '2-digit',
+      minute: '2-digit'
+    }) : '';
+
+    const editUrl = type === 'workshop' 
+      ? `/admin/workshops/edit/${item.id}`
+      : `/admin/content/course/${item.id}/edit`;
+    
+    const viewUrl = type === 'workshop'
+      ? `/taller/${item.id}`
+      : type === 'guide'
+      ? `/curso/${item.id}`
+      : `/course/${item.id}`;
+
+    return (
+      <Card key={item.id} className="bg-slate-800/50 border-slate-700 hover:bg-slate-800/70 transition-all hover:shadow-lg">
+        <CardHeader className="pb-3">
+          <div className="flex items-start justify-between gap-2">
+            <CardTitle className="text-white text-base font-semibold line-clamp-2 flex-1">
+              {item.title}
+            </CardTitle>
+            <div className="flex gap-1 flex-shrink-0">
+              <Link href={viewUrl}>
+                <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-slate-700">
+                  <Eye className="h-4 w-4 text-gray-400" />
+                </Button>
+              </Link>
+              <Link href={editUrl}>
+                <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-slate-700">
+                  <Edit className="h-4 w-4 text-gray-400" />
+                </Button>
+              </Link>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-red-900/20">
+                    <Trash2 className="h-4 w-4 text-red-400" />
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent className="bg-slate-900 border-slate-700">
+                  <AlertDialogHeader>
+                    <AlertDialogTitle className="text-white">
+                      ¿Eliminar {type === 'workshop' ? 'taller' : type === 'guide' ? 'guía' : 'curso'}?
+                    </AlertDialogTitle>
+                    <AlertDialogDescription className="text-gray-400">
+                      Esta acción no se puede deshacer. Se eliminará permanentemente el {type === 'workshop' ? 'taller' : type === 'guide' ? 'guía' : 'curso'} "{item.title}"{type !== 'workshop' ? ' y todas sus lecciones' : ''}.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel className="bg-slate-800 text-white border-slate-600 hover:bg-slate-700">
+                      Cancelar
+                    </AlertDialogCancel>
+                    <AlertDialogAction 
+                      onClick={() => deleteMutation.mutate(item.id)}
+                      disabled={deleteMutation.isPending}
+                      className="bg-red-600 text-white hover:bg-red-700"
+                    >
+                      {deleteMutation.isPending ? "Eliminando..." : "Eliminar"}
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+              <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-slate-700">
+                <MoreVertical className="h-4 w-4 text-gray-400" />
+              </Button>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <p className="text-gray-400 text-sm line-clamp-3 leading-relaxed">
+            {item.description ? stripHtmlTags(item.description) : 'Sin descripción'}
+          </p>
+          
+          {/* Room information for room courses */}
+          {showRoomInfo && item.roomContext && item.roomContext.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {item.roomContext.map((room: any, idx: number) => (
+                <Badge key={idx} className="bg-blue-500/20 text-blue-400 text-xs">
+                  Sala: {room.roomTitle || room.roomSlug}
+                </Badge>
+              ))}
+            </div>
+          )}
+          
+          <div className="flex flex-wrap gap-2">
+            <Badge className={`${getTypeColor(item.type)} text-xs`}>
+              {item.type === 'course' ? 'Curso' : item.type === 'workshop' ? 'Taller' : 'Guía'}
+            </Badge>
+            {item.difficulty && (
+              <Badge className={`${getDifficultyColor(item.difficulty)} text-xs`}>
+                {item.difficulty === 'beginner' ? 'Principiante' : 
+                 item.difficulty === 'intermediate' ? 'Intermedio' : 
+                 item.difficulty === 'advanced' ? 'Avanzado' : item.difficulty}
+              </Badge>
+            )}
+            {item.isPublished ? (
+              <Badge className="bg-green-500/20 text-green-400 text-xs">Publicado</Badge>
+            ) : (
+              <Badge className="bg-red-500/20 text-red-400 text-xs">Borrador</Badge>
+            )}
+            {type === 'workshop' && (
+              <Badge className="bg-orange-500/20 text-orange-400 text-xs">
+                Sesión en vivo
+              </Badge>
+            )}
+          </div>
+
+          <div className="flex items-center justify-between text-xs text-gray-500 pt-2 border-t border-slate-700">
+            <div className="flex items-center gap-3">
+              {formattedDate && (
+                <span className="flex items-center gap-1">
+                  <Calendar className="h-3 w-3" />
+                  {formattedDate}
+                </span>
+              )}
+              {formattedTime && (
+                <span className="flex items-center gap-1">
+                  <Clock className="h-3 w-3" />
+                  {formattedTime}
+                </span>
+              )}
+              <span className="flex items-center gap-1">
+                <User className="h-3 w-3" />
+                Admin
+              </span>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between pt-2">
+            <div className="flex items-center gap-1 text-xs text-gray-500">
+              <Clock className="h-3 w-3" />
+              {item.estimatedHours || 0}h
+            </div>
+            {type !== 'workshop' && (
+              <Link href={`/admin/content/course/${item.id}/lessons`}>
+                <Button variant="outline" size="sm" className="bg-slate-700 hover:bg-slate-600 border-slate-600 text-white text-xs">
+                  <FileText className="h-4 w-4 mr-1" />
+                  Lecciones
+                </Button>
+              </Link>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+    );
+  };
+
   return (
     <div className="min-h-screen bg-dark-bg text-white">
       {/* Mobile Header */}
@@ -177,10 +387,46 @@ export default function ContentManagement() {
         {/* Main Content */}
         <main className="flex-1 overflow-auto pb-20 lg:pb-0 lg:ml-[250px]">
           <div className="container mx-auto px-4 py-8">
-      <div className="flex items-center gap-4 mb-8">
-        <div className="flex-1">
-          <h1 className="text-3xl font-bold text-white">Gestión de Contenido</h1>
-          <p className="text-gray-400 mt-1">Crea y administra cursos, lecciones y categorías</p>
+      <div className="mb-8">
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h1 className="text-3xl font-bold text-white mb-2">Gestión de Contenido</h1>
+            <p className="text-gray-400">Crear y editar el contenido de tu aplicación</p>
+          </div>
+        </div>
+        
+        {/* Status Filters */}
+        <div className="flex items-center gap-2 mb-6">
+          <button
+            onClick={() => setStatusFilter('all')}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              statusFilter === 'all'
+                ? 'bg-purple-600 text-white'
+                : 'bg-slate-800 text-gray-300 hover:bg-slate-700'
+            }`}
+          >
+            Todos
+          </button>
+          <button
+            onClick={() => setStatusFilter('draft')}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              statusFilter === 'draft'
+                ? 'bg-purple-600 text-white'
+                : 'bg-slate-800 text-gray-300 hover:bg-slate-700'
+            }`}
+          >
+            Borrador
+          </button>
+          <button
+            onClick={() => setStatusFilter('published')}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              statusFilter === 'published'
+                ? 'bg-purple-600 text-white'
+                : 'bg-slate-800 text-gray-300 hover:bg-slate-700'
+            }`}
+          >
+            Publicado
+          </button>
         </div>
       </div>
       <Tabs defaultValue="courses" className="w-full">
@@ -209,126 +455,28 @@ export default function ContentManagement() {
 
         {/* Courses Tab */}
         <TabsContent value="courses" className="space-y-6">
-          <div className="flex gap-4 items-center">
-            <div className="relative flex-1 max-w-sm">
+          <div className="flex gap-4 items-center justify-between">
+            <div className="relative flex-1 max-w-md">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
               <Input
                 placeholder="Buscar cursos..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 bg-slate-900/50 border-slate-700"
+                className="pl-10 bg-slate-900/50 border-slate-700 text-white"
               />
             </div>
-            <Link href="/admin/content/course/new">
-              <Button>
-                <Plus className="h-4 w-4 mr-2" />
-                Nuevo Curso
-              </Button>
-            </Link>
+            <div className="flex gap-2">
+              <Link href="/admin/content/course/new">
+                <Button className="bg-purple-600 hover:bg-purple-700">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Crear nuevo contenido
+                </Button>
+              </Link>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {coursesList.map((course: any, index: number) => (
-              <Card key={course.id} className="bg-slate-900/50 border-slate-700 hover:bg-slate-900/70 transition-colors">
-                <CardHeader className="pb-3">
-                  <div className="flex items-start justify-between">
-                    <CardTitle className="text-white text-lg line-clamp-2">{course.title}</CardTitle>
-                    <div className="flex gap-1 ml-2">
-                      {/* Reorder buttons */}
-                      <div className="flex flex-col gap-1 mr-1">
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
-                          onClick={() => moveCourseUpMutation.mutate(course.id)}
-                          disabled={index === 0 || moveCourseUpMutation.isPending}
-                          className="h-6 w-6 p-0"
-                          title="Mover arriba"
-                        >
-                          <ChevronUp className="h-3 w-3" />
-                        </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
-                          onClick={() => moveCourseDownMutation.mutate(course.id)}
-                          disabled={index === coursesList.length - 1 || moveCourseDownMutation.isPending}
-                          className="h-6 w-6 p-0"
-                          title="Mover abajo"
-                        >
-                          <ChevronDown className="h-3 w-3" />
-                        </Button>
-                      </div>
-                      <Link href={`/admin/content/course/${course.id}/edit`}>
-                        <Button variant="ghost" size="sm">
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                      </Link>
-                      <Link href={`/course/${course.id}`}>
-                        <Button variant="ghost" size="sm">
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                      </Link>
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button variant="ghost" size="sm" className="text-red-400 hover:text-red-300 hover:bg-red-900/20">
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent className="bg-slate-900 border-slate-700">
-                          <AlertDialogHeader>
-                            <AlertDialogTitle className="text-white">¿Eliminar curso?</AlertDialogTitle>
-                            <AlertDialogDescription className="text-gray-400">
-                              Esta acción no se puede deshacer. Se eliminará permanentemente el curso "{course.title}" y todas sus lecciones.
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel className="bg-slate-800 text-white border-slate-600 hover:bg-slate-700">
-                              Cancelar
-                            </AlertDialogCancel>
-                            <AlertDialogAction 
-                              onClick={() => deleteMutation.mutate(course.id)}
-                              disabled={deleteMutation.isPending}
-                              className="bg-red-600 text-white hover:bg-red-700"
-                            >
-                              {deleteMutation.isPending ? "Eliminando..." : "Eliminar"}
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <p className="text-gray-400 text-sm line-clamp-2">{course.description}</p>
-                  
-                  <div className="flex flex-wrap gap-2">
-                    <Badge className={getTypeColor(course.type)}>
-                      {course.type}
-                    </Badge>
-                    <Badge className={getDifficultyColor(course.difficulty)}>
-                      {course.difficulty}
-                    </Badge>
-                    {course.isPublished ? (
-                      <Badge className="bg-green-500/20 text-green-400">Publicado</Badge>
-                    ) : (
-                      <Badge className="bg-gray-500/20 text-gray-400">Borrador</Badge>
-                    )}
-                  </div>
-
-                  <div className="flex items-center justify-between text-xs text-gray-500 pt-2">
-                    <div className="flex items-center gap-1">
-                      <Calendar className="h-3 w-3" />
-                      {course.estimatedHours}h
-                    </div>
-                    <Link href={`/admin/content/course/${course.id}/lessons`}>
-                      <Button variant="outline" size="sm">
-                        <FileText className="h-4 w-4 mr-1" />
-                        Lecciones
-                      </Button>
-                    </Link>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+            {coursesList.map((course: any) => renderContentCard(course, 'course', false))}
           </div>
 
           {coursesList.length === 0 && (
@@ -352,140 +500,60 @@ export default function ContentManagement() {
 
         {/* Room Courses Tab */}
         <TabsContent value="room-courses" className="space-y-6">
-          <div className="flex gap-4 items-center">
-            <div className="relative flex-1 max-w-sm">
+          <div className="flex gap-4 items-center justify-between">
+            <div className="relative flex-1 max-w-md">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
               <Input
                 placeholder="Buscar cursos de salas..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 bg-slate-900/50 border-slate-700"
+                className="pl-10 bg-slate-900/50 border-slate-700 text-white"
               />
             </div>
-            <Link href="/admin/content/course/new">
-              <Button>
-                <Plus className="h-4 w-4 mr-2" />
-                Nuevo Curso
-              </Button>
-            </Link>
+            <div className="flex gap-2">
+              <Link href="/admin/content/course/new">
+                <Button className="bg-purple-600 hover:bg-purple-700">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Crear nuevo contenido
+                </Button>
+              </Link>
+            </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {roomCoursesList.map((course: any, index: number) => (
-              <Card key={course.id} className="bg-slate-900/50 border-slate-700 hover:bg-slate-900/70 transition-colors">
-                <CardHeader className="pb-3">
-                  <div className="flex items-start justify-between">
-                    <CardTitle className="text-white text-lg line-clamp-2">{course.title}</CardTitle>
-                    <div className="flex gap-1 ml-2">
-                      {/* Reorder buttons */}
-                      <div className="flex flex-col gap-1 mr-1">
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
-                          onClick={() => moveCourseUpMutation.mutate(course.id)}
-                          disabled={index === 0 || moveCourseUpMutation.isPending}
-                          className="h-6 w-6 p-0"
-                          title="Mover arriba"
-                        >
-                          <ChevronUp className="h-3 w-3" />
-                        </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
-                          onClick={() => moveCourseDownMutation.mutate(course.id)}
-                          disabled={index === roomCoursesList.length - 1 || moveCourseDownMutation.isPending}
-                          className="h-6 w-6 p-0"
-                          title="Mover abajo"
-                        >
-                          <ChevronDown className="h-3 w-3" />
-                        </Button>
+          {roomCoursesGroupedArray.length > 0 ? (
+            <div className="space-y-6">
+              {roomCoursesGroupedArray.map((roomData: any) => (
+                <Card key={roomData.roomId} className="bg-slate-900/50 border-slate-700">
+                  <CardHeader className="pb-4 border-b border-slate-700">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-lg bg-purple-600/20 flex items-center justify-center">
+                          <Users className="h-5 w-5 text-purple-400" />
+                        </div>
+                        <div>
+                          <CardTitle className="text-white text-lg">{roomData.roomTitle}</CardTitle>
+                          <p className="text-gray-400 text-sm mt-1">
+                            {roomData.courses.length} {roomData.courses.length === 1 ? 'curso' : 'cursos'}
+                          </p>
+                        </div>
                       </div>
-                      <Link href={`/admin/content/course/${course.id}/edit`}>
-                        <Button variant="ghost" size="sm">
-                          <Edit className="h-4 w-4" />
+                      <Link href={`/sala/${roomData.roomSlug}`}>
+                        <Button variant="outline" size="sm" className="border-slate-600 text-gray-300 hover:bg-slate-800">
+                          <Eye className="h-4 w-4 mr-2" />
+                          Ver Sala
                         </Button>
                       </Link>
-                      <Link href={`/course/${course.id}`}>
-                        <Button variant="ghost" size="sm">
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                      </Link>
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button variant="ghost" size="sm" className="text-red-400 hover:text-red-300 hover:bg-red-900/20">
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent className="bg-slate-900 border-slate-700">
-                          <AlertDialogHeader>
-                            <AlertDialogTitle className="text-white">¿Eliminar curso?</AlertDialogTitle>
-                            <AlertDialogDescription className="text-gray-400">
-                              Esta acción no se puede deshacer. Se eliminará permanentemente el curso "{course.title}" y todas sus lecciones.
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel className="bg-slate-800 text-white border-slate-600 hover:bg-slate-700">
-                              Cancelar
-                            </AlertDialogCancel>
-                            <AlertDialogAction 
-                              onClick={() => deleteMutation.mutate(course.id)}
-                              disabled={deleteMutation.isPending}
-                              className="bg-red-600 text-white hover:bg-red-700"
-                            >
-                              {deleteMutation.isPending ? "Eliminando..." : "Eliminar"}
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
                     </div>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <p className="text-gray-400 text-sm line-clamp-2">{course.description}</p>
-                  
-                  {/* Room information */}
-                  {course.roomContext && course.roomContext.length > 0 && (
-                    <div className="flex flex-wrap gap-2">
-                      {course.roomContext.map((room: any, idx: number) => (
-                        <Badge key={idx} className="bg-blue-500/20 text-blue-400">
-                          Sala: {room.roomTitle || room.roomSlug}
-                        </Badge>
-                      ))}
+                  </CardHeader>
+                  <CardContent className="pt-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {roomData.courses.map((course: any) => renderContentCard(course, 'course', true))}
                     </div>
-                  )}
-                  
-                  <div className="flex flex-wrap gap-2">
-                    <Badge className={getTypeColor(course.type)}>
-                      {course.type}
-                    </Badge>
-                    <Badge className={getDifficultyColor(course.difficulty)}>
-                      {course.difficulty}
-                    </Badge>
-                    {course.isPublished ? (
-                      <Badge className="bg-green-500/20 text-green-400">Publicado</Badge>
-                    ) : (
-                      <Badge className="bg-gray-500/20 text-gray-400">Borrador</Badge>
-                    )}
-                  </div>
-
-                  <div className="flex items-center justify-between text-xs text-gray-500 pt-2">
-                    <div className="flex items-center gap-1">
-                      <Calendar className="h-3 w-3" />
-                      {course.estimatedHours}h
-                    </div>
-                    <Link href={`/admin/content/course/${course.id}/lessons`}>
-                      <Button variant="outline" size="sm">
-                        <FileText className="h-4 w-4 mr-1" />
-                        Lecciones
-                      </Button>
-                    </Link>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-
-          {roomCoursesList.length === 0 && (
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : (
             <Card className="bg-slate-900/50 border-slate-700">
               <CardContent className="text-center py-12">
                 <BookOpen className="h-12 w-12 text-gray-500 mx-auto mb-4" />
@@ -506,100 +574,28 @@ export default function ContentManagement() {
 
         {/* Workshops Tab */}
         <TabsContent value="workshops" className="space-y-6">
-          <div className="flex gap-4 items-center">
-            <div className="relative flex-1 max-w-sm">
+          <div className="flex gap-4 items-center justify-between">
+            <div className="relative flex-1 max-w-md">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
               <Input
                 placeholder="Buscar talleres..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 bg-slate-900/50 border-slate-700"
+                className="pl-10 bg-slate-900/50 border-slate-700 text-white"
               />
             </div>
-            <Link href="/admin/workshops/new">
-              <Button className="bg-blue-600 hover:bg-blue-700">
-                <Plus className="h-4 w-4 mr-2" />
-                Nuevo Taller
-              </Button>
-            </Link>
+            <div className="flex gap-2">
+              <Link href="/admin/workshops/new">
+                <Button className="bg-purple-600 hover:bg-purple-700">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Crear nuevo contenido
+                </Button>
+              </Link>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {workshopsList.map((workshop: any) => (
-              <Card key={workshop.id} className="bg-slate-900/50 border-slate-700 hover:bg-slate-900/70 transition-colors">
-                <CardHeader className="pb-3">
-                  <div className="flex items-start justify-between">
-                    <CardTitle className="text-white text-lg line-clamp-2">{workshop.title}</CardTitle>
-                    <div className="flex gap-1 ml-2">
-                      <Link href={`/admin/workshops/edit/${workshop.id}`}>
-                        <Button variant="ghost" size="sm">
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                      </Link>
-                      <Link href={`/taller/${workshop.id}`}>
-                        <Button variant="ghost" size="sm">
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                      </Link>
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button variant="ghost" size="sm" className="text-red-400 hover:text-red-300 hover:bg-red-900/20">
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent className="bg-slate-900 border-slate-700">
-                          <AlertDialogHeader>
-                            <AlertDialogTitle className="text-white">¿Eliminar taller?</AlertDialogTitle>
-                            <AlertDialogDescription className="text-gray-400">
-                              Esta acción no se puede deshacer. Se eliminará permanentemente el taller "{workshop.title}".
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel className="bg-slate-800 text-white border-slate-600 hover:bg-slate-700">
-                              Cancelar
-                            </AlertDialogCancel>
-                            <AlertDialogAction 
-                              onClick={() => deleteMutation.mutate(workshop.id)}
-                              disabled={deleteMutation.isPending}
-                              className="bg-red-600 text-white hover:bg-red-700"
-                            >
-                              {deleteMutation.isPending ? "Eliminando..." : "Eliminar"}
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <p className="text-gray-400 text-sm line-clamp-2">{workshop.description}</p>
-                  
-                  <div className="flex flex-wrap gap-2">
-                    <Badge className={getTypeColor(workshop.type)}>
-                      {workshop.type}
-                    </Badge>
-                    <Badge className={getDifficultyColor(workshop.difficulty)}>
-                      {workshop.difficulty || 'No definido'}
-                    </Badge>
-                    {workshop.isPublished ? (
-                      <Badge className="bg-green-500/20 text-green-400">Publicado</Badge>
-                    ) : (
-                      <Badge className="bg-gray-500/20 text-gray-400">Borrador</Badge>
-                    )}
-                  </div>
-
-                  <div className="flex items-center justify-between text-xs text-gray-500 pt-2">
-                    <div className="flex items-center gap-1">
-                      <Calendar className="h-3 w-3" />
-                      {workshop.estimatedHours}h
-                    </div>
-                    <Badge className="bg-orange-500/20 text-orange-400 text-xs">
-                      Sesión en vivo
-                    </Badge>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+            {workshopsList.map((workshop: any) => renderContentCard(workshop, 'workshop', false))}
           </div>
 
           {workshopsList.length === 0 && (
@@ -689,7 +685,9 @@ export default function ContentManagement() {
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  <p className="text-gray-400 text-sm line-clamp-2">{guide.description}</p>
+                  <p className="text-gray-400 text-sm line-clamp-2">
+                    {guide.description ? stripHtmlTags(guide.description) : 'Sin descripción'}
+                  </p>
                   
                   <div className="flex flex-wrap gap-2">
                     <Badge className={getTypeColor(guide.type)}>

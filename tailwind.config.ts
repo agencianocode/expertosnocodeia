@@ -57,6 +57,8 @@ export default {
         satoshi: ["Satoshi", "Satoshi Fallback", "ui-sans-serif", "system-ui"],
         inter: ["var(--font-inter)", "Inter", "sans-serif"],
         sans: ["Satoshi", "Satoshi Fallback", "ui-sans-serif", "system-ui"],
+        albert: ["'Albert Sans'", "ui-sans-serif", "system-ui"],
+        sora: ["'Sora'", "ui-sans-serif", "system-ui"],
       },
       keyframes: {
         "accordion-down": {
