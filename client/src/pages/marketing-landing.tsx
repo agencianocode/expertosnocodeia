@@ -36,7 +36,8 @@ import {
   Heart,
   PenLine,
   MessageCircle,
-  Lock
+  Lock,
+  Plus
 } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 
@@ -115,27 +116,33 @@ export default function MarketingLanding() {
   ];
 
   const agentesIA = [
-    { icon: ShoppingCart, label: "Agente IA de Ventas" },
-    { icon: Users, label: "Agente IA SDR" },
-    { icon: Headphones, label: "Agente IA de Atendimiento" },
-    { icon: Wrench, label: "Agente IA de Soporte Técnico" },
-    { icon: GraduationCap, label: "Agente IA Tutor para Cursos" },
-    { icon: Calendar, label: "Agente IA de Agendamiento" },
-    { icon: RefreshCw, label: "Agente IA de Recuperación de Ventas" },
-    { icon: BarChart3, label: "Agente IA de Análisis de Datos" },
-    { icon: UserPlus, label: "Agente IA de Onboarding" },
-    { icon: Heart, label: "Agente IA de Customer Success" },
-    { icon: PenLine, label: "Agente IA de Copywriting" },
+    { icon: ShoppingCart, label: "Agente de ventas de IA", description: "Realizar ventas, ofrecer productos y servicios, presentar la mejor oferta y superar objeciones." },
+    { icon: Users, label: "Agente de IA de SDR", description: "Califica clientes potenciales, programa reuniones y fomenta relaciones con clientes potenciales." },
+    { icon: Headphones, label: "Agente de servicio al cliente con inteligencia artificial", description: "Resuelve dudas, soluciona problemas y deleita a los clientes 24/7 sin interrupciones." },
+    { icon: Wrench, label: "Agente de soporte técnico de IA", description: "Diagnostica problemas, ofrece soluciones y escala casos complejos." },
+    { icon: GraduationCap, label: "Tutor de agentes de IA para cursos en línea", description: "Personaliza el aprendizaje del alumno, aclara dudas y monitoriza su progreso." },
+    { icon: Calendar, label: "Agente de programación de IA", description: "Administra la agenda del cliente, visualizando, programando y modificando citas." },
+    { icon: RefreshCw, label: "Agente de recuperación de ventas de IA", description: "Contacta automáticamente a clientes potenciales que aún no han comprado, supera objeciones y los convierte." },
+    { icon: BarChart3, label: "Agente de análisis de datos de IA", description: "Analiza hojas de cálculo y formularios para obtener información que ayude en la toma de decisiones." },
+    { icon: UserPlus, label: "Agente de incorporación de IA", description: "Guíe a los nuevos usuarios, personalice la capacitación y acelere la adopción del producto." },
+    { icon: Heart, label: "Agente de éxito del cliente con IA", description: "Anticipa las necesidades del cliente y ayuda con la retención." },
+    { icon: PenLine, label: "Agente de redacción de textos publicitarios con IA", description: "Crea piezas publicitarias, imágenes, correos electrónicos, secuencias de mensajes, creatividades y guiones." },
+    { icon: Plus, label: "Y mucho más...", description: "Si es un trabajo que puede realizar una computadora, un agente podrá hacerlo. Y sabrás cómo crearlo." },
   ];
 
   const valueItems = [
-    { label: "300+ Guías paso a paso", value: "Incalculable" },
-    { label: "Cursos y programas certificados", value: "Incalculable" },
-    { label: "Comunidad exclusiva", value: "Incalculable" },
-    { label: "Workshops en vivo semanales", value: "Incalculable" },
-    { label: "Certificados de finalización", value: "Incalculable" },
-    { label: "Descuentos en herramientas", value: "Incalculable" },
-    { label: "Garantía de 30 días", value: "Incalculable" },
+    { title: "Programa Agentes IA 2.0", description: "Domina la creación de agentes de IA, automatizaciones y chatbots con las herramientas más demandadas del mercado.", value: "$997" },
+    { title: "Programa VibeCoding", description: "Aprende a crear aplicaciones completas con IA, sin código y con vibe coding. De la idea al producto en poco tiempo.", value: "$997" },
+    { title: "Programa NoCode SaaS IA", description: "Construye tu propio SaaS, micro-SaaS o negocio digital con NoCode e IA, sin programar.", value: "$997" },
+    { title: "Cursos de IA Certificados", description: "Cursos con certificación para validar tus habilidades en IA y NoCode ante empleadores y clientes.", value: "$397" },
+    { title: "Guías diarias paso a paso", description: "Guías prácticas que se desbloquean semanalmente. Aprende con contenido ordenado y aplicable.", value: "Incalculable" },
+    { title: "Comunidades", description: "Espacio para conectar con otros miembros, resolver dudas, compartir avances y proyectos.", value: "Incalculable" },
+    { title: "Acceso a Plataforma NoCode Match - Centro de Oportunidades", description: "Plataforma exclusiva para encontrar proyectos, clientes y oportunidades laborales para miembros.", value: "Incalculable" },
+    { title: "Contenido Práctico", description: "Enfoque en proyectos reales: aplicaciones y agentes que puedes usar en tu trabajo o emprendimiento.", value: "Incalculable" },
+    { title: "Talleres - Workshops semanales (en vivo y a pedido)", description: "Sesiones en vivo con expertos para preguntar, practicar y profundizar. También disponibles bajo demanda.", value: "Incalculable" },
+    { title: "Apoyo personalizado de nuestro equipo de expertos", description: "Resuelve dudas con el equipo y la comunidad cuando lo necesites.", value: "Incalculable" },
+    { title: "Rutas de Aprendizaje", description: "Rutas paso a paso con metodología única para aprender NoCode e IA de forma ordenada.", value: "Incalculable" },
+    { title: "Descuentos en Herramientas", description: "Descuentos exclusivos en herramientas NoCode e IA para miembros.", value: "Incalculable" },
   ];
 
   const handleNewsletterSubmit = async (e: React.FormEvent) => {
@@ -207,50 +214,17 @@ export default function MarketingLanding() {
     }
   ];
 
-  const benefits = [
-    {
-      icon: <BookOpen className="h-6 w-6" />,
-      title: "300+ Guías Paso a Paso",
-      description: "Aprende con casos de uso reales aplicables inmediatamente"
-    },
-    {
-      icon: <Users className="h-6 w-6" />,
-      title: "Comunidad Exclusiva",
-      description: "Conecta con profesionales que están transformando sus carreras"
-    },
-    {
-      icon: <Zap className="h-6 w-6" />,
-      title: "Workshops en Vivo",
-      description: "Sesiones semanales con expertos para resolver dudas en tiempo real"
-    },
-    {
-      icon: <Award className="h-6 w-6" />,
-      title: "Certificados Reconocidos",
-      description: "Acredita tus conocimientos con certificados profesionales"
-    },
-    {
-      icon: <TrendingUp className="h-6 w-6" />,
-      title: "Descuentos Exclusivos",
-      description: "Accede a descuentos especiales en herramientas NoCode e IA"
-    },
-    {
-      icon: <Shield className="h-6 w-6" />,
-      title: "Garantía de 30 Días",
-      description: "Si no estás satisfecho, te devolvemos tu dinero sin preguntas"
-    }
-  ];
-
   // Cards para la sección "¿Qué recibiré?": texto arriba, imagen debajo (imágenes sin texto). 9 ítems.
   const queRecibireCards = [
     { icon: Layout, title: "Plataforma exclusiva", description: "Área de miembros con cursos y recursos para aprender NoCode e IA.", image: "/que-recibire/plataforma exclusiva.png" },
     { icon: BookOpen, title: "Cursos y guías", description: "Cursos y guías paso a paso para crear aplicaciones y agentes de IA sin programar.", image: "/que-recibire/cursos y guias.png" },
-    { icon: Users, title: "Comunidad", description: "Espacio para conectar con otros miembros y resolver dudas.", image: "/que-recibire/3.jpg" },
-    { icon: Award, title: "Certificados", description: "Al completar cursos, certificado de finalización para tu perfil.", image: "/que-recibire/4.jpg" },
-    { icon: Sparkles, title: "Contenido práctico", description: "Enfoque en proyectos reales: aplicaciones y agentes que puedes usar.", image: "/que-recibire/5.jpg" },
-    { icon: TrendingUp, title: "Descuentos en herramientas", description: "Descuentos exclusivos en herramientas NoCode e IA.", image: "/que-recibire/6.jpg" },
-    { icon: Shield, title: "Garantía de 30 días", description: "Prueba sin riesgo: garantía de devolución para que pruebes la plataforma.", image: "/que-recibire/7.jpg" },
-    { icon: Zap, title: "Acceso inmediato", description: "Acceso desde el primer día y prueba gratuita para explorar.", image: "/que-recibire/8.jpg" },
-    { icon: MessageCircle, title: "Soporte", description: "Resuelve dudas con el equipo y la comunidad cuando lo necesites.", image: "/que-recibire/9.jpg" },
+    { icon: Users, title: "Comunidad", description: "Espacio para conectar con otros miembros y resolver dudas.", image: "/que-recibire/comunidad.png" },
+    { icon: Award, title: "Centro de oportunidades y profesionales de NoCode", description: "Plataforma para encontrar proyectos y clientes, exclusiva para estudiantes.", image: "/que-recibire/centro de oportunidades.png" },
+    { icon: Sparkles, title: "Contenido práctico", description: "Enfoque en proyectos reales: aplicaciones y agentes que puedes usar.", image: "/que-recibire/contenido práctico.png" },
+    { icon: TrendingUp, title: "Sesiones de tutoría en vivo", description: "Todas las semanas expertos humanos responderán a tus preguntas de forma práctica.", image: "/que-recibire/sesiones de tutoría en vivo.png" },
+    { icon: Shield, title: "Rutas de aprendizaje con metodología única", description: "Rutas paso a paso para aprender NoCode e IA de forma ordenada.", image: "/que-recibire/rutas de aprendizaje.png" },
+    { icon: Zap, title: "Reembolsos y descuentos", description: "Descuentos exclusivos en herramientas.", image: "/que-recibire/descuentos herramientas.png" },
+    { icon: MessageCircle, title: "Soporte", description: "Resuelve dudas con el equipo y la comunidad cuando lo necesites.", image: "/que-recibire/soporte.png" },
   ];
 
   const testimonials = [
@@ -452,7 +426,7 @@ export default function MarketingLanding() {
             linear-gradient(rgba(0,0,0,0.03) 1px, transparent 1px),
             linear-gradient(90deg, rgba(0,0,0,0.03) 1px, transparent 1px)
           `,
-          backgroundSize: "24px 24px",
+          backgroundSize: "56px 56px",
         }}
       >
         <div className="container mx-auto max-w-3xl">
@@ -732,14 +706,14 @@ export default function MarketingLanding() {
             linear-gradient(rgba(0,0,0,0.04) 1px, transparent 1px),
             linear-gradient(90deg, rgba(0,0,0,0.04) 1px, transparent 1px)
           `,
-          backgroundSize: "24px 24px",
+          backgroundSize: "56px 56px",
         }}
       >
         <div className="container mx-auto max-w-4xl">
-          <h2 className="text-center font-sora font-bold text-gray-900 mb-10 leading-none tracking-tighter mx-auto" style={{ fontSize: "48px" }}>
-            <span className="block whitespace-nowrap" style={{ fontFamily: "'Sora', ui-sans-serif, system-ui, sans-serif" }}>¿Por qué la Comunidad Expertos</span>
-            <span className="block whitespace-nowrap" style={{ fontFamily: "'Sora', ui-sans-serif, system-ui, sans-serif" }}>NoCode IA es <span style={{ color: "#ad6eff", fontFamily: "'Sora', ui-sans-serif, system-ui, sans-serif", fontSize: "48px", fontWeight: 700 }}>diferente a todo</span></span>
-            <span className="block whitespace-nowrap" style={{ fontFamily: "'Sora', ui-sans-serif, system-ui, sans-serif" }}>lo que hayas visto antes?</span>
+          <h2 className="text-center font-sora font-bold text-gray-900 mb-10 leading-tight tracking-tighter mx-auto px-2 text-xl sm:text-2xl md:text-3xl lg:text-4xl">
+            <span className="block" style={{ fontFamily: "'Sora', ui-sans-serif, system-ui, sans-serif" }}>¿Por qué la Comunidad Expertos</span>
+            <span className="block" style={{ fontFamily: "'Sora', ui-sans-serif, system-ui, sans-serif" }}>NoCode IA es <span style={{ color: "#ad6eff", fontFamily: "'Sora', ui-sans-serif, system-ui, sans-serif", fontWeight: 700 }}>diferente a todo</span></span>
+            <span className="block" style={{ fontFamily: "'Sora', ui-sans-serif, system-ui, sans-serif" }}>lo que hayas visto antes?</span>
           </h2>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-12 md:gap-24 mb-10 justify-items-center">
@@ -787,71 +761,45 @@ export default function MarketingLanding() {
             </div>
           </div>
 
-          <div className="text-center text-gray-700 font-albert max-w-2xl mx-auto mb-8 space-y-3" style={{ fontSize: "18px" }}>
+          <div className="text-center text-gray-700 font-albert max-w-2xl mx-auto mb-8 space-y-3 px-2 sm:px-0" style={{ fontSize: "18px" }}>
             <p>
               Mientras que otros cursos mezclan mucha teoría con contenido técnico innecesario, la Comunidad No-Code está <strong className="text-gray-900">100% enfocada en el conocimiento práctico.</strong>
             </p>
-            <div className="flex justify-center">
-            <p className="whitespace-nowrap text-center">
+            <p className="text-center">
               Aprenderás a utilizar sólo las <strong className="text-gray-900">mejores herramientas visuales</strong> en un contenido totalmente aplicable.
             </p>
-          </div>
             <p>
               Y en sólo las primeras <strong className="text-gray-900">5 horas de curso</strong>, ya habrás creado tu primera <strong className="text-gray-900">Aplicación o Agente de IA</strong>, incluso con <strong className="text-gray-900">CERO experiencia</strong> (y sin necesidad de programar).
             </p>
           </div>
 
-          <div className="text-center">
+          <div className="text-center px-4 sm:px-0">
             <Button
               size="lg"
-              className="bg-gradient-to-r from-green-500 to-green-700 hover:from-green-600 hover:to-green-800 text-white font-bold px-8 py-6 text-base rounded-xl shadow-lg border-2 border-green-600 border-b-4 border-b-green-800"
+              className="w-full sm:w-auto max-w-full bg-gradient-to-r from-green-500 to-green-700 hover:from-green-600 hover:to-green-800 text-white font-bold px-4 py-4 sm:px-8 sm:py-6 text-sm sm:text-base rounded-xl shadow-lg border-2 border-green-600 border-b-4 border-b-green-800"
               onClick={() => document.getElementById("hero")?.scrollIntoView({ behavior: "smooth" })}
             >
               Quiero registrarme en la Comunidad.
-              <ArrowRight className="ml-2 h-5 w-5 inline" />
+              <ArrowRight className="ml-2 h-5 w-5 inline flex-shrink-0" />
             </Button>
           </div>
         </div>
       </section>
 
-      {/* Social Proof */}
-      <section className="py-12 px-4 bg-gray-900/50">
-        <div className="container mx-auto max-w-6xl">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
-            <div>
-              <div className="text-4xl font-bold text-purple-400 mb-2">10,000+</div>
-              <div className="text-gray-400 text-sm">Profesionales activos</div>
-            </div>
-            <div>
-              <div className="text-4xl font-bold text-blue-400 mb-2">300+</div>
-              <div className="text-gray-400 text-sm">Guías paso a paso</div>
-            </div>
-            <div>
-              <div className="text-4xl font-bold text-pink-400 mb-2">50+</div>
-              <div className="text-gray-400 text-sm">Cursos completos</div>
-            </div>
-            <div>
-              <div className="text-4xl font-bold text-green-400 mb-2">4.9/5</div>
-              <div className="text-gray-400 text-sm">Valoración promedio</div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ¿Qué recibiré? - Beneficios al registrarse */}
+      {/* ¿Qué recibiré? - Beneficios al registrarse - mismo estilo que "Las formaciones...": #000 + grid 96px */}
       <section
-        className="py-16 sm:py-20 px-4 bg-[#0f0f1a]"
+        className="py-16 sm:py-20 px-2 sm:px-4 bg-[#000000]"
         style={{
           backgroundImage: `
-            linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px)
+            linear-gradient(#080808 2px, transparent 2px),
+            linear-gradient(90deg, #080808 2px, transparent 2px)
           `,
-          backgroundSize: "24px 24px",
+          backgroundSize: "96px 96px",
         }}
       >
         <div className="container mx-auto max-w-6xl">
           <div className="text-center mb-10">
-            <h2 className="text-3xl sm:text-4xl font-bold mb-3 text-white font-sora">¿Qué recibiré?</h2>
+            <h2 className="font-bold mb-3 text-white font-sora" style={{ fontSize: "48px" }}>¿Qué recibiré?</h2>
             <p className="text-gray-400 text-lg max-w-2xl mx-auto font-albert">
               Todo lo que recibirás al registrarte en la Comunidad Expertos NoCode IA
             </p>
@@ -859,16 +807,18 @@ export default function MarketingLanding() {
 
           {/* Grid: cards 255×286px (+10%), padding 30px 20px, gap 16px */}
           <div
-            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 mb-12 mx-auto w-full max-w-[255px] sm:max-w-[526px] lg:max-w-[797px]"
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 mb-12 mx-auto w-full max-w-full sm:max-w-[526px] lg:max-w-[797px]"
             style={{ gap: "16px" }}
           >
             {queRecibireCards.map((item, i) => (
-              <div key={i} className="flex flex-col w-full min-w-0 h-[286px]">
-                <div className="bg-white rounded-xl border border-gray-200 shadow-md h-full flex flex-col overflow-hidden px-5 py-[30px]">
-                  <h3 className="font-sora font-bold text-gray-900 text-sm mb-0.5 flex-shrink-0">{item.title}</h3>
-                  <p className="text-gray-500 text-xs font-albert leading-snug flex-shrink-0">{item.description}</p>
-                  <div className="flex-1 min-h-0 flex justify-center items-center mt-3">
-                    <div className="w-full max-w-[198px] aspect-[4/3] rounded-lg border-2 border-gray-400 overflow-hidden shadow-md relative bg-white">
+              <div key={i} className="flex flex-col w-full min-w-0 min-h-[286px] sm:min-h-0 sm:h-[286px]">
+                <div className="bg-white rounded-xl border border-gray-200 shadow-md h-full flex flex-col overflow-hidden px-3 py-4">
+                  <div className="min-h-[72px] sm:min-h-[68px] flex-shrink-0">
+                    <h3 className="font-sora font-bold text-gray-900 text-sm mb-0.5">{item.title}</h3>
+                    <p className="text-gray-500 text-xs font-albert leading-snug line-clamp-3">{item.description}</p>
+                  </div>
+                  <div className="flex-1 min-h-0 flex justify-center items-center mt-4 sm:mt-2 pb-5 sm:pb-0">
+                    <div className="w-full max-w-[280px] mx-auto sm:mx-0 sm:max-w-[225px] sm:w-[225px] aspect-[4/3] sm:aspect-auto sm:h-[168px] flex-shrink-0 rounded-lg border-2 border-gray-400 overflow-hidden shadow-md relative bg-white">
                       <img
                         src={item.image}
                         alt=""
@@ -902,174 +852,266 @@ export default function MarketingLanding() {
         </div>
       </section>
 
-      {/* ¿Qué tipos de aplicativos podrás crear? */}
-      <section className="py-16 sm:py-20 px-4 bg-[#0f0f1a]">
+      {/* ¿Qué tipos de aplicativos podrás crear? - Fondo blanco, cards estilo imagen */}
+      <section
+        className="py-16 sm:py-20 px-4 bg-white"
+        style={{
+          backgroundImage: `
+            linear-gradient(rgba(0,0,0,0.04) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(0,0,0,0.04) 1px, transparent 1px)
+          `,
+          backgroundSize: "56px 56px",
+        }}
+      >
         <div className="container mx-auto max-w-6xl">
           <div className="text-center mb-12">
-            <h2 className="text-3xl sm:text-4xl font-bold mb-4 text-white">¿Qué tipos de aplicativos podrás crear?</h2>
-            <p className="text-gray-400 max-w-2xl mx-auto">Desarrolla aplicaciones profesionales sin escribir código</p>
+            <h2 className="font-bold mb-4 text-gray-900 font-sora tracking-tight text-2xl sm:text-3xl md:text-4xl lg:text-[48px]" style={{ fontFamily: "'Sora', sans-serif", letterSpacing: "-0.05em" }}>
+              ¿Qué tipos de <span className="text-purple-600" style={{ fontFamily: "inherit" }}>aplicaciones</span> podré crear?
+            </h2>
+            <p className="text-gray-600 max-w-2xl mx-auto">Desarrolla aplicaciones profesionales sin escribir código</p>
           </div>
-          {/* 4 cards primera fila (235x191), 3+3 abajo (320x168) */}
-          <div className="flex flex-col gap-5">
+          {/* 4 primera fila, 3 segunda, 3 tercera */}
+          <div className="flex flex-col gap-6">
             <div className="flex flex-wrap gap-4 justify-center">
               {aplicativos.slice(0, 4).map((item, i) => (
-                <div key={i} className="w-[235px] h-[191px] flex flex-col bg-gray-800/50 rounded-lg border-2 border-gray-700 border-b-4 border-b-gray-600 p-4 text-left hover:border-purple-500/50 transition-colors overflow-hidden">
-                  <item.icon className="h-6 w-6 text-purple-400 mb-2 flex-shrink-0" />
-                  <p className="font-albert text-[18px] font-medium text-gray-300 mb-0.5 line-clamp-3">{item.label}</p>
-                  <p className="text-xs text-gray-500 mt-auto">{item.example}</p>
+                <div key={i} className="w-full max-w-[260px] flex flex-col bg-white rounded-xl border-2 border-gray-900 border-b-4 border-b-gray-800 p-4 text-left shadow-sm hover:border-purple-500/50 transition-colors">
+                  <div className="w-10 h-10 rounded-lg bg-purple-500 flex items-center justify-center mb-3 flex-shrink-0">
+                    <item.icon className="h-5 w-5 text-white" />
+                  </div>
+                  <p className="font-albert font-bold text-gray-900 text-[18px] mb-1 line-clamp-3">{item.label}</p>
+                  <p className="font-albert text-[16px] text-gray-600">{item.example}</p>
                 </div>
               ))}
             </div>
             <div className="flex flex-wrap gap-4 justify-center">
               {aplicativos.slice(4, 7).map((item, i) => (
-                <div key={i + 4} className="w-[320px] h-[168px] flex flex-col bg-gray-800/50 rounded-lg border-2 border-gray-700 border-b-4 border-b-gray-600 p-4 text-left hover:border-purple-500/50 transition-colors overflow-hidden">
-                  <item.icon className="h-6 w-6 text-purple-400 mb-2 flex-shrink-0" />
-                  <p className="font-albert text-[18px] font-medium text-gray-300 mb-0.5 line-clamp-2">{item.label}</p>
-                  <p className="text-xs text-gray-500 mt-auto">{item.example}</p>
+                <div key={i + 4} className="w-full max-w-[320px] flex flex-col bg-white rounded-xl border-2 border-gray-900 border-b-4 border-b-gray-800 p-4 text-left shadow-sm hover:border-purple-500/50 transition-colors">
+                  <div className="w-10 h-10 rounded-lg bg-purple-500 flex items-center justify-center mb-3 flex-shrink-0">
+                    <item.icon className="h-5 w-5 text-white" />
+                  </div>
+                  <p className="font-albert font-bold text-gray-900 text-[18px] mb-1 line-clamp-2">{item.label}</p>
+                  <p className="font-albert text-[16px] text-gray-600">{item.example}</p>
                 </div>
               ))}
             </div>
             <div className="flex flex-wrap gap-4 justify-center">
               {aplicativos.slice(7, 10).map((item, i) => (
-                <div key={i + 7} className="w-[320px] h-[168px] flex flex-col bg-gray-800/50 rounded-lg border-2 border-gray-700 border-b-4 border-b-gray-600 p-4 text-left hover:border-purple-500/50 transition-colors overflow-hidden">
-                  <item.icon className="h-6 w-6 text-purple-400 mb-2 flex-shrink-0" />
-                  <p className="font-albert text-[18px] font-medium text-gray-300 mb-0.5 line-clamp-2">{item.label}</p>
-                  <p className="text-xs text-gray-500 mt-auto">{item.example}</p>
+                <div key={i + 7} className="w-full max-w-[320px] flex flex-col bg-white rounded-xl border-2 border-gray-900 border-b-4 border-b-gray-800 p-4 text-left shadow-sm hover:border-purple-500/50 transition-colors">
+                  <div className="w-10 h-10 rounded-lg bg-purple-500 flex items-center justify-center mb-3 flex-shrink-0">
+                    <item.icon className="h-5 w-5 text-white" />
+                  </div>
+                  <p className="font-albert font-bold text-gray-900 text-[18px] mb-1 line-clamp-2">{item.label}</p>
+                  <p className="font-albert text-[16px] text-gray-600">{item.example}</p>
                 </div>
               ))}
             </div>
           </div>
           <div className="text-center mt-10">
             <a href={getAppUrl('/planes')}>
-              <Button className="bg-green-600 hover:bg-green-700 text-white">
-                Quiero empezar a crear
-                <ArrowRight className="ml-2 h-4 w-4" />
+              <Button className="bg-green-500 hover:bg-green-600 text-white font-bold border-2 border-gray-900 border-b-4 border-b-gray-800 rounded-full px-10 py-6 text-lg shadow-sm">
+                ¡Quiero empezar a crear!
+                <ArrowRight className="ml-3 h-6 w-6" />
               </Button>
             </a>
           </div>
         </div>
       </section>
 
-      {/* ¿Qué tipos de Agentes IA podrás crear? */}
-      <section className="py-16 sm:py-20 px-4 bg-gray-900/50">
-        <div className="container mx-auto max-w-6xl">
+      {/* ¿Qué tipos de agentes de IA podré crear? - Mismo estilo que ¿Cuáles son las oportunidades?: fondo #b87cff + cuadrícula, gap-6 */}
+      <section
+        className="relative py-16 sm:py-20 px-4 bg-[#b87cff]"
+        style={{
+          backgroundImage: `
+            linear-gradient(#b175f9 2px, transparent 2px),
+            linear-gradient(90deg, #b175f9 2px, transparent 2px)
+          `,
+          backgroundSize: "56px 56px",
+        }}
+      >
+        <div className="container mx-auto max-w-6xl relative z-10">
           <div className="text-center mb-12">
-            <h2 className="text-3xl sm:text-4xl font-bold mb-4">¿Qué tipos de Agentes IA podrás crear?</h2>
-            <p className="text-gray-400 max-w-2xl mx-auto">Automatiza tareas con inteligencia artificial</p>
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-4 text-gray-900 font-sora">
+              ¿Qué tipos de agentes de IA podré crear?
+            </h2>
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-4 gap-4">
+          {/* Grid con ancho fijo para que gap-6 sea igual a los lados y arriba/abajo (320*3 + 24*2 = 1008px) */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mx-auto w-full max-w-[320px] sm:max-w-[664px] lg:max-w-[1008px]">
             {agentesIA.map((item, i) => (
-              <div key={i} className="bg-gray-800/50 border border-gray-700 rounded-lg p-4 text-left hover:border-purple-500/50 transition-colors">
-                <item.icon className="h-6 w-6 text-blue-400 mb-2" />
-                <p className="text-sm text-gray-300">{item.label}</p>
+              <div key={i} className="w-full max-w-[320px] h-[260px] bg-purple-800 rounded-2xl border-2 border-gray-900 border-b-[6px] border-b-gray-900 p-5 text-left shadow-lg flex flex-col overflow-hidden">
+                <div className="w-10 h-10 rounded-lg bg-white flex items-center justify-center mb-3 flex-shrink-0">
+                  <item.icon className="h-6 w-6 text-purple-800" />
+                </div>
+                <h3 className="font-albert font-bold text-white text-[18px] mb-2 line-clamp-3 leading-tight">{item.label}</h3>
+                <p className="font-albert text-[16px] text-white/90 leading-snug flex-1 min-h-0 line-clamp-5">{item.description}</p>
               </div>
             ))}
           </div>
-          <div className="text-center mt-10">
+          <div className="text-center mt-12">
             <a href={getAppUrl('/planes')}>
-              <Button className="bg-green-600 hover:bg-green-700 text-white">
+              <Button className="bg-green-500 hover:bg-green-600 font-sora font-bold text-[20px] text-black border-2 border-gray-900 border-b-4 border-b-gray-800 rounded-full px-10 py-6">
                 Quiero empezar a crear
-                <ArrowRight className="ml-2 h-4 w-4" />
+                <ArrowRight className="ml-3 h-6 w-6 text-black" />
               </Button>
             </a>
-          </div>
-        </div>
-      </section>
-
-      {/* Benefits Section - más compacto */}
-      <section className="py-16 px-4 bg-purple-950/20">
-        <div className="container mx-auto max-w-6xl">
-          <div className="text-center mb-10">
-            <h2 className="text-3xl sm:text-4xl font-bold mb-4">
-              Todo lo que necesitas para dominar NoCode e IA
-            </h2>
-            <p className="text-gray-400 max-w-3xl mx-auto">
-              Una plataforma completa con todo lo necesario para transformar tu carrera
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {benefits.map((benefit, index) => (
-              <Card key={index} className="bg-gray-900/50 border-gray-800 hover:border-purple-500/50 transition-colors">
-                <CardHeader>
-                  <div className="w-12 h-12 bg-purple-500/10 rounded-lg flex items-center justify-center text-purple-400 mb-4">
-                    {benefit.icon}
-                  </div>
-                  <CardTitle className="text-white">{benefit.title}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <CardDescription className="text-gray-400">
-                    {benefit.description}
-                  </CardDescription>
-                </CardContent>
-              </Card>
-            ))}
           </div>
         </div>
       </section>
 
       {/* ¿Cuánto vale todo esto? */}
-      <section className="py-16 sm:py-20 px-4 bg-[#0f0f1a]">
-        <div className="container mx-auto max-w-4xl">
+      <section className="py-16 sm:py-20 px-4 bg-white relative overflow-hidden" style={{ backgroundImage: 'linear-gradient(rgba(0,0,0,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,0.04) 1px, transparent 1px)', backgroundSize: '56px 56px' }}>
+        <div className="container mx-auto max-w-4xl relative z-10">
           <div className="text-center mb-10">
-            <h2 className="text-3xl sm:text-4xl font-bold mb-4">¿Cuánto vale todo esto?</h2>
-            <p className="text-gray-400">Todo lo que recibes al unirte a Expertos NoCode IA</p>
+            <h2 className="font-sora text-3xl sm:text-4xl md:text-[48px] font-bold text-black mb-2">¿Cuánto vale todo esto?</h2>
           </div>
-          <div className="space-y-3 mb-8">
-            {valueItems.map((item, i) => (
-              <div key={i} className="flex items-center justify-between py-2 border-b border-gray-800">
-                <div className="flex items-center gap-3">
-                  <CheckCircle className="h-5 w-5 text-green-400 flex-shrink-0" />
-                  <span className="text-gray-300">{item.label}</span>
-                </div>
-                <span className="text-sm text-gray-500">{item.value}</span>
-              </div>
-            ))}
-          </div>
-          <div className="text-center mb-6">
-            <p className="text-2xl font-bold text-white mb-2">Oferta especial</p>
-            <p className="text-lg text-gray-400">Desde $39/mes con 14 días de prueba gratuita</p>
-          </div>
-          <div className="flex flex-wrap justify-center gap-6 text-sm text-gray-400 mb-8">
-            <div className="flex items-center gap-2">
-              <Lock className="h-5 w-5 text-green-400" />
-              <span>Pago seguro</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Zap className="h-5 w-5 text-green-400" />
-              <span>Acceso inmediato</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Shield className="h-5 w-5 text-green-400" />
-              <span>Garantía de 30 días</span>
+          <div className="bg-white rounded-xl shadow-lg border-2 border-black overflow-hidden">
+            <ul className="divide-y divide-gray-200">
+              {valueItems.map((item, i) => (
+                <li key={i} className="flex items-start justify-between gap-4 py-2.5 px-5 sm:px-6">
+                  <div className="flex items-start gap-3 min-w-0 flex-1">
+                    <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
+                    <div className="min-w-0">
+                      <h3 className="font-sora font-bold text-[16px] text-black leading-tight">{item.title}</h3>
+                      <p className="font-albert text-[14px] text-black/80 mt-0.5 leading-snug">{item.description}</p>
+                    </div>
+                  </div>
+                  <span className={`font-sora text-[16px] flex-shrink-0 whitespace-nowrap ${item.value.startsWith('$') ? 'font-bold text-black/70 line-through' : 'italic text-black'}`}>{item.value}</span>
+                </li>
+              ))}
+            </ul>
+            <div className="flex items-center justify-between px-5 sm:px-6 py-3 bg-green-600 text-white font-albert font-bold text-lg">
+              <span>VALOR TOTAL:</span>
+              <span><span className="line-through opacity-90 mr-2">$1,997</span> $297</span>
             </div>
           </div>
-          <div className="text-center">
-            <a href={getAppUrl('/planes')}>
-              <Button size="lg" className="bg-green-600 hover:bg-green-700 text-white text-lg px-8 py-6">
-                Quiero inscribirme
-                <ArrowRight className="ml-2 h-5 w-5" />
-              </Button>
-            </a>
+          <div className="text-center mt-8">
+            <p className="font-albert text-[18px] text-black mb-0.5">Pero no necesitarás invertir $297 para unirte hoy.</p>
+            <p className="font-albert text-[18px] font-bold text-black leading-tight">Descubre la oferta especial que te he preparado:</p>
           </div>
         </div>
       </section>
 
-      {/* Yo asumo todo el riesgo */}
-      <section className="py-16 px-4 bg-gray-900/50">
-        <div className="container mx-auto max-w-3xl">
-          <div className="bg-gray-800/80 border border-gray-700 rounded-xl p-8 sm:p-10 text-center">
-            <h2 className="text-2xl sm:text-3xl font-bold mb-4">Y lo mejor: yo asumo todo el riesgo</h2>
-            <p className="text-gray-300 mb-6">
-              Garantía de 30 días, 100% libre de riesgo. Puedes probar la plataforma, ver las clases y descargar materiales. Si no es lo que buscabas, te devolvemos el 100% de tu dinero. Sin burocracia.
-            </p>
-            <a href={getAppUrl('/planes')}>
-              <Button size="lg" className="bg-green-600 hover:bg-green-700 text-white">
-                Quiero inscribirme
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
-            </a>
+      {/* Recuerda - Oferta (fondo negro con grid como ¿Qué recibiré?) */}
+      <section
+        className="py-16 sm:py-20 px-4 sm:px-6 relative overflow-hidden bg-[#000000]"
+        style={{
+          backgroundImage: `
+            linear-gradient(#080808 2px, transparent 2px),
+            linear-gradient(90deg, #080808 2px, transparent 2px)
+          `,
+          backgroundSize: "96px 96px",
+        }}
+      >
+        <div className="container mx-auto max-w-5xl relative z-10 px-4 sm:px-6">
+          <div className="flex justify-center w-full">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-8 items-center w-full max-w-4xl">
+              {/* Izquierda: lista de beneficios */}
+              <div className="lg:col-span-5 flex flex-col justify-center">
+                <h3 className="font-sora font-bold text-[16px] text-white mb-4">Recuerda... esto es todo lo que recibirás:</h3>
+                <ul className="space-y-2">
+                  {valueItems.map((item, i) => (
+                    <li key={i} className="flex items-start gap-2">
+                      <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" />
+                      <span className="font-albert text-[14px] text-white leading-snug">{item.title}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              {/* Centro: tarjeta de oferta (más grande) */}
+              <div className="lg:col-span-7 flex justify-center lg:justify-center">
+              <div className="w-full max-w-[460px] bg-stone-50 rounded-2xl border-2 border-gray-300 p-8 shadow-xl font-sans">
+                <div className="text-center mb-5">
+                  <p className="font-bold text-gray-800 text-sm uppercase tracking-wide">Comunidad</p>
+                  <p className="font-bold text-gray-900 text-2xl">Expertos NoCode IA</p>
+                </div>
+                <div className="text-center mb-5">
+                  <p className="font-bold text-xl text-gray-700">
+                    <span className="line-through text-red-600">$1,997</span> → <span className="text-gray-900 text-2xl">$297</span>
+                  </p>
+                  <p className="text-[13px] text-gray-500 mt-1">Precio de lanzamiento</p>
+                </div>
+                <div className="border-2 border-dashed border-green-600 rounded-lg p-6 mb-6" style={{ backgroundColor: '#e3fae1' }}>
+                  <p className="font-bold text-green-700 text-center text-sm uppercase tracking-wide mb-3">Precio de lanzamiento</p>
+                  <p className="text-[15px] text-gray-700 text-center">Pago mensual</p>
+                  <p className="font-bold text-green-800 text-center text-3xl sm:text-4xl mt-0.5">$39 USD/mes</p>
+                  <p className="text-[14px] text-gray-600 text-center mt-3">o</p>
+                  <p className="text-[15px] text-gray-700 text-center mt-1">Pago anual</p>
+                  <p className="font-bold text-green-800 text-center text-4xl sm:text-[2.5rem] mt-0.5">$297</p>
+                  <p className="text-[13px] text-green-700 text-center mt-1">(precio de lanzamiento)</p>
+                </div>
+                <a href={getAppUrl('/planes')} className="block w-full">
+                  <button type="button" className="w-full py-5 rounded-xl bg-green-600 hover:bg-green-700 text-white font-bold text-lg uppercase tracking-wide border-2 border-green-700 shadow-md transition-colors">
+                    QUIERO INSCRIBIRME
+                  </button>
+                </a>
+                <p className="text-[13px] text-gray-500 text-center uppercase tracking-wider mt-4">Pago mensual o anual</p>
+              </div>
+            </div>
+            </div>
           </div>
+
+          {/* Abajo: 3 bloques de confianza */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-16 max-w-5xl mx-auto">
+            <div className="flex flex-col items-center text-center">
+              <div className="w-14 h-14 rounded-full border-2 border-purple-500 flex items-center justify-center mb-3 bg-black/40">
+                <Lock className="h-7 w-7 text-purple-400" />
+              </div>
+              <h4 className="font-sora font-bold text-[16px] text-gray-200 uppercase tracking-wide mb-2">Pago seguro</h4>
+              <p className="font-albert text-[14px] text-gray-400">Entorno seguro. Tus datos están protegidos y tu compra es 100% segura.</p>
+            </div>
+            <div className="flex flex-col items-center text-center">
+              <div className="w-14 h-14 rounded-full border-2 border-purple-500 flex items-center justify-center mb-3 bg-black/40">
+                <Zap className="h-7 w-7 text-purple-400" />
+              </div>
+              <h4 className="font-sora font-bold text-[16px] text-gray-200 uppercase tracking-wide mb-2">Acceso inmediato</h4>
+              <p className="font-albert text-[14px] text-gray-400">Tu usuario y contraseña se envían a tu correo poco después del pago.</p>
+            </div>
+            <div className="flex flex-col items-center text-center">
+              <div className="w-14 h-14 rounded-full border-2 border-purple-500 flex items-center justify-center mb-3 bg-black/40">
+                <Shield className="h-7 w-7 text-purple-400" />
+              </div>
+              <h4 className="font-sora font-bold text-[16px] text-gray-200 uppercase tracking-wide mb-2">Garantía de 30 días</h4>
+              <p className="font-albert text-[14px] text-gray-400">Puedes solicitar un reembolso del 100% dentro de ese período.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Yo asumo todo el riesgo - estilo imagen: fondo blanco grid, badge dorado, card blanca */}
+      <section
+        className="py-16 sm:py-20 px-4 bg-white relative overflow-hidden"
+        style={{
+          backgroundImage: 'linear-gradient(rgba(0,0,0,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,0.04) 1px, transparent 1px)',
+          backgroundSize: '56px 56px',
+        }}
+      >
+        <div className="container mx-auto max-w-3xl relative z-10 text-center">
+          <h2 className="font-sora font-bold text-black mb-1 tracking-tight" style={{ fontSize: '36px', letterSpacing: '-0.03em' }}>Y lo más increíble:</h2>
+          <h2 className="font-sora font-bold text-purple-600 uppercase tracking-tight mb-10" style={{ fontSize: '48px' }}>¡Yo asumo todo el riesgo!</h2>
+
+          {/* Sello de garantía: imagen, mitad superpuesta a la card */}
+          <div className="relative z-20 flex justify-center mb-[-4rem] sm:mb-[-5rem]">
+            <img
+              src="/sello-garantia-15-dias.png"
+              alt="Garantía 15 días - Tu dinero de vuelta"
+              className="w-40 h-40 sm:w-52 sm:h-52 object-contain drop-shadow-[0_8px_24px_rgba(0,0,0,0.25)]"
+            />
+          </div>
+
+          {/* Card blanca con borde negro: padding-top para que el sello no tape el texto */}
+          <div className="bg-white rounded-2xl border-2 border-black border-b-4 border-b-black shadow-md pt-16 sm:pt-20 pb-5 sm:pb-6 px-6 sm:px-8 mb-10 text-center max-w-3xl mx-auto relative z-10">
+            <h3 className="font-sora font-bold text-black mb-4" style={{ fontFamily: "'Sora Variable', 'Sora', sans-serif", fontSize: '22px', lineHeight: 1.2, letterSpacing: '-0.04em' }}>Te ofrezco una garantía de 15 días, 100% libre de riesgos.</h3>
+            <p className="font-albert text-gray-700 leading-relaxed" style={{ fontSize: '18px', letterSpacing: '-0.02em' }}>
+              Podrás acceder al curso, ver las clases, descargar todos los materiales y... si ves que no es lo que buscabas, te devuelvo el 100% de tu dinero. Todo. Sin burocracia.
+            </p>
+          </div>
+
+          <a href={getAppUrl('/planes')}>
+            <button type="button" className="inline-flex items-center justify-center gap-2 rounded-full bg-green-600 hover:bg-green-700 text-white font-sans font-bold text-lg px-8 py-4 border-2 border-black shadow-md transition-colors">
+              Quiero registrarme
+              <ArrowRight className="h-5 w-5" />
+            </button>
+          </a>
         </div>
       </section>
 
