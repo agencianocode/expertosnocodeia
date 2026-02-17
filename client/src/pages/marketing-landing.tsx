@@ -240,6 +240,19 @@ export default function MarketingLanding() {
     }
   ];
 
+  // Cards para la sección "¿Qué recibiré?": texto arriba, imagen debajo (imágenes sin texto). 9 ítems.
+  const queRecibireCards = [
+    { icon: Layout, title: "Plataforma exclusiva", description: "Área de miembros con cursos y recursos para aprender NoCode e IA.", image: "/que-recibire/plataforma exclusiva.png" },
+    { icon: BookOpen, title: "Cursos y guías", description: "Cursos y guías paso a paso para crear aplicaciones y agentes de IA sin programar.", image: "/que-recibire/cursos y guias.png" },
+    { icon: Users, title: "Comunidad", description: "Espacio para conectar con otros miembros y resolver dudas.", image: "/que-recibire/3.jpg" },
+    { icon: Award, title: "Certificados", description: "Al completar cursos, certificado de finalización para tu perfil.", image: "/que-recibire/4.jpg" },
+    { icon: Sparkles, title: "Contenido práctico", description: "Enfoque en proyectos reales: aplicaciones y agentes que puedes usar.", image: "/que-recibire/5.jpg" },
+    { icon: TrendingUp, title: "Descuentos en herramientas", description: "Descuentos exclusivos en herramientas NoCode e IA.", image: "/que-recibire/6.jpg" },
+    { icon: Shield, title: "Garantía de 30 días", description: "Prueba sin riesgo: garantía de devolución para que pruebes la plataforma.", image: "/que-recibire/7.jpg" },
+    { icon: Zap, title: "Acceso inmediato", description: "Acceso desde el primer día y prueba gratuita para explorar.", image: "/que-recibire/8.jpg" },
+    { icon: MessageCircle, title: "Soporte", description: "Resuelve dudas con el equipo y la comunidad cuando lo necesites.", image: "/que-recibire/9.jpg" },
+  ];
+
   const testimonials = [
     {
       name: "María González",
@@ -560,8 +573,8 @@ export default function MarketingLanding() {
         }}
       >
         <div className="container mx-auto max-w-5xl relative z-10">
-          <h2 className="text-center font-sora text-[48px] font-bold text-white mb-12 leading-tight">
-            ¿Cuáles son las oportunidades?
+          <h2 className="text-center font-sora text-2xl sm:text-[48px] font-bold text-white mb-12 leading-tight">
+            ¿Cuáles son las<br className="sm:hidden" /> oportunidades?
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 justify-items-center">
             <div className="w-[318px] h-[160px] bg-purple-900 rounded-xl p-4 flex flex-col justify-center border-2 border-black border-b-4 text-white overflow-hidden">
@@ -668,15 +681,15 @@ export default function MarketingLanding() {
           </div>
 
           {/* Domina las mejores plataformas */}
-          <h3 className="text-center font-sora text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-10 max-w-4xl mx-auto tracking-tight">
+          <h3 className="text-center font-sora text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-5 max-w-4xl mx-auto tracking-tight leading-tight">
             Domina las mejores plataformas para<br />
             construir <span style={{ color: "#8440a7" }}>agentes de IA</span> y crear <span style={{ color: "#8440a7" }}>aplicaciones</span>.
           </h3>
 
           {/* Pills con estilo imagen: fondo blanco, borde gris, logo + nombre. Logos en /logos/nombre.png */}
-          <div className="space-y-8">
+          <div className="space-y-4">
             <div>
-              <p className="text-white font-albert font-bold text-center mb-4">AI CODING · VIBE CODING</p>
+              <p className="text-white font-albert font-bold text-center mb-2 text-[14px]">AI CODING · VIBE CODING</p>
               <div className="flex flex-wrap justify-center gap-3">
                 {["Lovable", "Antigravity", "CURSOR", "replit", "supabase"].map((name) => (
                   <PillLogo key={name} name={name} />
@@ -684,7 +697,7 @@ export default function MarketingLanding() {
               </div>
             </div>
             <div>
-              <p className="text-white font-albert font-bold text-center mb-4">Sin código · Código bajo</p>
+              <p className="text-white font-albert font-bold text-center mb-2 text-[14px]">NO CODE · LOW CODE</p>
               <div className="flex flex-wrap justify-center gap-3">
                 {[".bubble", "FlutterFlow", "weweb", "supabase", "Typebot", "Firebase"].map((name) => (
                   <PillLogo key={name} name={name} />
@@ -692,7 +705,7 @@ export default function MarketingLanding() {
               </div>
             </div>
             <div>
-              <p className="text-white font-albert font-bold text-center mb-4">Agentes de IA · Automatizaciones</p>
+              <p className="text-white font-albert font-bold text-center mb-2 text-[14px]">AGENTES DE IA · AUTOMATIZACIONES</p>
               <div className="flex flex-wrap justify-center gap-3">
                 {["n8n", "Chatvolt", "supabase"].map((name) => (
                   <PillLogo key={name} name={name} />
@@ -700,13 +713,103 @@ export default function MarketingLanding() {
               </div>
             </div>
             <div>
-              <p className="text-white font-albert font-bold text-center mb-4">DISEÑO · SITIOS WEB</p>
+              <p className="text-white font-albert font-bold text-center mb-2 text-[14px]">DISEÑO · SITIOS WEB</p>
               <div className="flex flex-wrap justify-center gap-3">
                 {["Framer", "WordPress", "elementor", "Figma"].map((name) => (
                   <PillLogo key={name} name={name} />
                 ))}
               </div>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ¿Por qué la Comunidad No-Code es diferente? - Fondo blanco, grid, 3 cards oscuras, CTA verde */}
+      <section
+        className="py-16 sm:py-20 px-6 sm:px-10 lg:px-16 bg-white"
+        style={{
+          backgroundImage: `
+            linear-gradient(rgba(0,0,0,0.04) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(0,0,0,0.04) 1px, transparent 1px)
+          `,
+          backgroundSize: "24px 24px",
+        }}
+      >
+        <div className="container mx-auto max-w-4xl">
+          <h2 className="text-center font-sora font-bold text-gray-900 mb-10 leading-none tracking-tighter mx-auto" style={{ fontSize: "48px" }}>
+            <span className="block whitespace-nowrap" style={{ fontFamily: "'Sora', ui-sans-serif, system-ui, sans-serif" }}>¿Por qué la Comunidad Expertos</span>
+            <span className="block whitespace-nowrap" style={{ fontFamily: "'Sora', ui-sans-serif, system-ui, sans-serif" }}>NoCode IA es <span style={{ color: "#ad6eff", fontFamily: "'Sora', ui-sans-serif, system-ui, sans-serif", fontSize: "48px", fontWeight: 700 }}>diferente a todo</span></span>
+            <span className="block whitespace-nowrap" style={{ fontFamily: "'Sora', ui-sans-serif, system-ui, sans-serif" }}>lo que hayas visto antes?</span>
+          </h2>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-12 md:gap-24 mb-10 justify-items-center">
+            <div
+              className="relative overflow-hidden rounded-2xl border-2 border-purple-500 border-b-4 border-b-purple-600 shadow-lg bg-gray-900 bg-cover bg-center w-[320px] h-[300px] flex-shrink-0"
+              style={{ backgroundImage: "url(/card-comunidad-bg.jpg)" }}
+            >
+              <div className="absolute inset-0 bg-black/60" aria-hidden="true" />
+              <div className="relative z-10 p-5">
+                <h3 className="font-bold mb-2 tracking-tighter" style={{ fontSize: "22px", fontFamily: "'Sora Variable', 'Sora', ui-sans-serif, sans-serif", color: "#ffffff" }}>
+                  <span style={{ fontFamily: "'Sora Variable', 'Sora', ui-sans-serif, sans-serif", color: "#ffffff" }}>Metodología 100%<br />práctica, sin teoría vacía.</span>
+                </h3>
+                <p className="font-albert" style={{ fontSize: "18px", lineHeight: "22px", fontWeight: 400, color: "#9eacb3" }}>
+                  Aprende haciendo: proyectos reales con IA y automatización desde el primer día. Contenido aplicable que podrás usar en tu trabajo o en tus propios proyectos.
+                </p>
+              </div>
+            </div>
+            <div
+              className="relative overflow-hidden rounded-2xl border-2 border-purple-500 border-b-4 border-b-purple-600 shadow-lg bg-gray-900 bg-cover bg-center w-[320px] h-[300px] flex-shrink-0"
+              style={{ backgroundImage: "url(/card-comunidad-bg-2.jpg)" }}
+            >
+              <div className="absolute inset-0 bg-black/60" aria-hidden="true" />
+              <div className="relative z-10 p-5">
+                <h3 className="font-bold mb-2 tracking-tighter" style={{ fontSize: "22px", fontFamily: "'Sora Variable', 'Sora', ui-sans-serif, sans-serif", color: "#ffffff" }}>
+                  <span style={{ fontFamily: "'Sora Variable', 'Sora', ui-sans-serif, sans-serif", color: "#ffffff" }}>De cero a la<br />implementación<br />en solo 7 días.</span>
+                </h3>
+                <p className="font-albert" style={{ fontSize: "18px", lineHeight: "22px", fontWeight: 400, color: "#9eacb3" }}>
+                  Te vas con algo funcionando. Un método sencillo, sin rodeos, diseñado para quienes no tienen tiempo que perder.
+                </p>
+              </div>
+            </div>
+            <div
+              className="relative overflow-hidden rounded-2xl border-2 border-purple-500 border-b-4 border-b-purple-600 shadow-lg bg-gray-900 bg-cover bg-center w-[320px] h-[300px] flex-shrink-0"
+              style={{ backgroundImage: "url(/card-comunidad-bg-3.jpg)" }}
+            >
+              <div className="absolute inset-0 bg-black/60" aria-hidden="true" />
+              <div className="relative z-10 p-5">
+                <h3 className="font-bold mb-2 tracking-tighter" style={{ fontSize: "22px", fontFamily: "'Sora Variable', 'Sora', ui-sans-serif, sans-serif", color: "#ffffff" }}>
+                  <span style={{ fontFamily: "'Sora Variable', 'Sora', ui-sans-serif, sans-serif", color: "#ffffff" }}>Apoyo de verdaderos<br />profesores y expertos.</span>
+                </h3>
+                <p className="font-albert" style={{ fontSize: "18px", lineHeight: "22px", fontWeight: 400, color: "#9eacb3" }}>
+                  Haga preguntas a los profesores que construyen, implementan y corrigen proyectos todos los días.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="text-center text-gray-700 font-albert max-w-2xl mx-auto mb-8 space-y-3" style={{ fontSize: "18px" }}>
+            <p>
+              Mientras que otros cursos mezclan mucha teoría con contenido técnico innecesario, la Comunidad No-Code está <strong className="text-gray-900">100% enfocada en el conocimiento práctico.</strong>
+            </p>
+            <div className="flex justify-center">
+            <p className="whitespace-nowrap text-center">
+              Aprenderás a utilizar sólo las <strong className="text-gray-900">mejores herramientas visuales</strong> en un contenido totalmente aplicable.
+            </p>
+          </div>
+            <p>
+              Y en sólo las primeras <strong className="text-gray-900">5 horas de curso</strong>, ya habrás creado tu primera <strong className="text-gray-900">Aplicación o Agente de IA</strong>, incluso con <strong className="text-gray-900">CERO experiencia</strong> (y sin necesidad de programar).
+            </p>
+          </div>
+
+          <div className="text-center">
+            <Button
+              size="lg"
+              className="bg-gradient-to-r from-green-500 to-green-700 hover:from-green-600 hover:to-green-800 text-white font-bold px-8 py-6 text-base rounded-xl shadow-lg border-2 border-green-600 border-b-4 border-b-green-800"
+              onClick={() => document.getElementById("hero")?.scrollIntoView({ behavior: "smooth" })}
+            >
+              Quiero registrarme en la Comunidad.
+              <ArrowRight className="ml-2 h-5 w-5 inline" />
+            </Button>
           </div>
         </div>
       </section>
@@ -731,6 +834,70 @@ export default function MarketingLanding() {
               <div className="text-4xl font-bold text-green-400 mb-2">4.9/5</div>
               <div className="text-gray-400 text-sm">Valoración promedio</div>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ¿Qué recibiré? - Beneficios al registrarse */}
+      <section
+        className="py-16 sm:py-20 px-4 bg-[#0f0f1a]"
+        style={{
+          backgroundImage: `
+            linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px)
+          `,
+          backgroundSize: "24px 24px",
+        }}
+      >
+        <div className="container mx-auto max-w-6xl">
+          <div className="text-center mb-10">
+            <h2 className="text-3xl sm:text-4xl font-bold mb-3 text-white font-sora">¿Qué recibiré?</h2>
+            <p className="text-gray-400 text-lg max-w-2xl mx-auto font-albert">
+              Todo lo que recibirás al registrarte en la Comunidad Expertos NoCode IA
+            </p>
+          </div>
+
+          {/* Grid: cards 255×286px (+10%), padding 30px 20px, gap 16px */}
+          <div
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 mb-12 mx-auto w-full max-w-[255px] sm:max-w-[526px] lg:max-w-[797px]"
+            style={{ gap: "16px" }}
+          >
+            {queRecibireCards.map((item, i) => (
+              <div key={i} className="flex flex-col w-full min-w-0 h-[286px]">
+                <div className="bg-white rounded-xl border border-gray-200 shadow-md h-full flex flex-col overflow-hidden px-5 py-[30px]">
+                  <h3 className="font-sora font-bold text-gray-900 text-sm mb-0.5 flex-shrink-0">{item.title}</h3>
+                  <p className="text-gray-500 text-xs font-albert leading-snug flex-shrink-0">{item.description}</p>
+                  <div className="flex-1 min-h-0 flex justify-center items-center mt-3">
+                    <div className="w-full max-w-[198px] aspect-[4/3] rounded-lg border-2 border-gray-400 overflow-hidden shadow-md relative bg-white">
+                      <img
+                        src={item.image}
+                        alt=""
+                        className="w-full h-full object-cover object-center"
+                        style={{ filter: "brightness(0.88) contrast(1.08)" }}
+                        onError={(e) => {
+                          const el = e.target as HTMLImageElement;
+                          el.style.display = "none";
+                          const placeholder = el.nextElementSibling;
+                          if (placeholder) (placeholder as HTMLElement).classList.remove("hidden");
+                        }}
+                      />
+                      <div className="hidden absolute inset-0 flex items-center justify-center bg-gray-800/80 text-gray-500" aria-hidden="true">
+                        <item.icon className="h-12 w-12" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="text-center">
+            <a href={getAppUrl('/planes')}>
+              <Button size="lg" className="bg-green-600 hover:bg-green-700 text-white font-bold px-8 py-6 text-base rounded-xl">
+                Quiero recibirlo todo
+                <ArrowRight className="ml-2 h-5 w-5 inline" />
+              </Button>
+            </a>
           </div>
         </div>
       </section>
