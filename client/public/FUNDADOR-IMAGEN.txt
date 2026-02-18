@@ -1,0 +1,10 @@
+Para que la foto del fundador se vea nítida (sin pixelado):
+
+1. Sustituye public/fundador.png por una imagen de al menos 1000 px de ancho
+   (por ejemplo 1200x900 px o más). Mientras más resolución, mejor en pantallas grandes.
+
+2. Opción para pantallas Retina/4K: añade además public/fundador@2x.png
+   con la misma foto en el doble de resolución (p. ej. 2000 px de ancho).
+   El sitio la usará automáticamente en pantallas de alta densidad.
+
+Formato: PNG o JPG. Mismo encuadre que fundador.png.

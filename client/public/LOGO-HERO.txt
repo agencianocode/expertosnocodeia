@@ -1,0 +1,10 @@
+Logo del Hero (arriba de "Domina la IA en...")
+
+Sube aquí la imagen del logo con uno de estos nombres:
+
+  logo-hero.png
+  logo-hero.svg
+
+Ruta completa: client/public/logo-hero.png (o .svg)
+
+Recomendado: PNG o SVG con fondo transparente. Tamaño sugerido: unos 200–300 px de ancho; la altura se ajusta automáticamente (h-12 en móvil, h-14 en desktop).
