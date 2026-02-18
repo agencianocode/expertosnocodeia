@@ -221,9 +221,9 @@ export function SimpleAuthProvider({ children }: { children: ReactNode }) {
           description: data.message,
         });
 
-        // Redirect to dashboard
+        // Redirect to planes so user can choose a subscription
         setTimeout(() => {
-          window.location.href = "/";
+          window.location.href = "/planes";
         }, 500);
       } else {
         const errorData = await response.json();

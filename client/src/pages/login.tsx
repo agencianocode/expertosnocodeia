@@ -523,12 +523,12 @@ export default function Login() {
                     Este sitio está protegido por reCAPTCHA y se aplican las políticas de privacidad de Google.
                   </p>
                   <div className="flex justify-center gap-4 text-xs">
-                    <a href="/privacidad" className="text-orange-500 underline hover:no-underline">
+                    <a href="/politica-privacidad" className="text-orange-500 underline hover:no-underline">
                       Política de privacidad
                     </a>
                     <span className="text-gray-400">•</span>
-                    <a href="/terminos" className="text-orange-500 underline hover:no-underline">
-                      Términos de servicio
+                    <a href="/condiciones-servicio" className="text-orange-500 underline hover:no-underline">
+                      Condiciones de servicio
                     </a>
                   </div>
                 </div>

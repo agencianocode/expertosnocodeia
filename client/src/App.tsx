@@ -71,6 +71,8 @@ import ClearCache from "@/pages/clear-cache";
 import Checkout from "@/pages/checkout";
 import CheckoutReturn from "@/pages/checkout-return";
 import CalendarEventDetails from "@/pages/calendar-event-details";
+import PrivacyPolicy from "@/pages/privacy-policy";
+import TermsOfService from "@/pages/terms-of-service";
 
 function Router() {
   const { isAuthenticated, isLoading, user } = useSimpleAuth();
@@ -133,6 +135,8 @@ function Router() {
       {/* Domain-based routing */}
       {!isAppDomain() ? (
         <>
+          <Route path="/politica-privacidad" component={PrivacyPolicy} />
+          <Route path="/condiciones-servicio" component={TermsOfService} />
           <Route path="/" component={MarketingLanding} />
           <Route component={NotFound} />
         </>
@@ -178,6 +182,8 @@ function Router() {
           <Route path="/verify-email" component={VerifyEmail} />
           <Route path="/apoyo" component={Support} />
           <Route path="/support" component={Support} />
+          <Route path="/politica-privacidad" component={PrivacyPolicy} />
+          <Route path="/condiciones-servicio" component={TermsOfService} />
           <Route path="/community" component={Community} />
           <Route component={NotFound} />
         </>
@@ -219,6 +225,8 @@ function Router() {
           <Route path="/guardado" component={Saved} />
           <Route path="/support" component={Support} />
           <Route path="/apoyo" component={Support} />
+          <Route path="/politica-privacidad" component={PrivacyPolicy} />
+          <Route path="/condiciones-servicio" component={TermsOfService} />
           <Route path="/categoria/:categorySlug" component={CategoryPage} />
           <Route path="/course/:courseId/lesson/:lessonId" component={Lesson} />
           <Route path="/course/:id" component={Course} />

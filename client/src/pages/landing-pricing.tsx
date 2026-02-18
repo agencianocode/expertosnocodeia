@@ -186,6 +186,14 @@ export default function LandingPricing() {
                     : 'Accede a cursos completos, guías diarias, workshops en vivo y una comunidad exclusiva'
                   }
                 </p>
+                {!isAuthenticated && (
+                  <p className="text-sm text-muted-foreground">
+                    ¿Ya tienes cuenta?{" "}
+                    <Link href="/login" className="text-primary font-medium hover:underline">
+                      Iniciar sesión
+                    </Link>
+                  </p>
+                )}
               </div>
             </section>
 

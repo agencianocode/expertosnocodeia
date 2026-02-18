@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -37,7 +38,9 @@ import {
   PenLine,
   MessageCircle,
   Lock,
-  Plus
+  Plus,
+  Minus,
+  Send
 } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 
@@ -190,7 +193,11 @@ export default function MarketingLanding() {
   const faqs = [
     {
       question: "¿Qué incluye la membresía?",
-      answer: "Acceso completo a más de 300 guías paso a paso, workshops en vivo semanales, comunidad privada, certificados de finalización y descuentos exclusivos en herramientas NoCode e IA."
+      answer: "Acceso completo guías paso a paso todos los días, workshops en vivo semanales, comunidad privada, certificados de finalización y descuentos exclusivos en herramientas NoCode e IA.\n\nLa membresía incluye además:\n• Formación para gestores de agentes de IA\n• Formación en codificación de IA y Vibe Coding\n• Capacitación en IA SaaS\n• Curso N8N\n• Curso Lovable\n• Curso Cursor\n• Curso Supabase\n• Google Antigravity y muchos cursos más"
+    },
+    {
+      question: "¿Cuál es la carga de trabajo?",
+      answer: "Hasta la fecha, hay más de 2000 lecciones y más de 200 horas de contenido programado. Pero no te preocupes, esta comunidad no tiene por qué ser de principio a fin. Y por eso estamos en proceso de grabación de las lecciones. En las primeras 15 horas, ya habrás creado dos aplicaciones completas y comprendido los fundamentos para crear cualquier tipo de aplicación. A partir de ahí, tendrás los conocimientos necesarios para empezar a crear y podrás ver más lecciones a medida que avances. Además, actualizamos y grabamos nuevas lecciones cada semana."
     },
     {
       question: "¿Puedo cancelar en cualquier momento?",
@@ -199,6 +206,30 @@ export default function MarketingLanding() {
     {
       question: "¿Hay prueba gratuita?",
       answer: "Sí, ofrecemos 14 días de prueba gratuita para que explores todo el contenido sin compromiso. No se requiere tarjeta de crédito."
+    },
+    {
+      question: "¿Cuánto necesito invertir?",
+      answer: "La cuota de acceso a la Comunidad No-Code IA es de $297 USD al año. Precio por Lanzamiento. Se puede pagar mes a mes por $39 USD. El método de pago preautorizará el importe total del límite de la tarjeta y cargará las cuotas mensualmente."
+    },
+    {
+      question: "¿Cuáles son los métodos de pago?",
+      answer: "Se utiliza Stripe para gestionar los pagos. Se aceptan todas las tarjetas de crédito, débito y recibos bancarios."
+    },
+    {
+      question: "¿Qué pasa si no me gusta el curso?",
+      answer: "Ofrecemos una garantía incondicional de 15 días. Si solicitas el reembolso en ese plazo, recibes el 100% de tu dinero y la suscripción se cancela automáticamente. El trámite se hace mediante un botón en la plataforma o vía email a soporte@expertosnocodeia.com"
+    },
+    {
+      question: "¿Cómo funciona el acceso al Marketplace Profesional?",
+      answer: "Los miembros pueden enviar su portafolio a No Code Match, donde empresas buscan desarrolladores nocode, expertos en automatizaciones y desarrolladores de Agentes IA. Tendrás acceso a todas las oportunidades disponibles en su portal oficial de oportunidades."
+    },
+    {
+      question: "¿Cuál es el nivel mínimo de conocimientos necesario?",
+      answer: "No se requieren conocimientos técnicos previos para usar Lovable, n8n, Antigravity, Cursor y demás. Las formaciones empiezan desde cero absoluto, desde la creación de la cuenta hasta el primer elemento en pantalla. 3 de cada 4 estudiantes comienzan sin saber programar."
+    },
+    {
+      question: "¿Necesito saber inglés?",
+      answer: "No es obligatorio; aunque las plataformas estén en inglés, se pueden traducir usando la extensión de Google Translate para Chrome."
     },
     {
       question: "¿Qué diferencia hay entre la membresía y el newsletter?",
@@ -211,6 +242,14 @@ export default function MarketingLanding() {
     {
       question: "¿Puedo cambiar de plan después?",
       answer: "Sí, puedes actualizar o cambiar tu plan en cualquier momento desde tu panel de usuario. Los cambios se aplicarán en el próximo ciclo de facturación."
+    },
+    {
+      question: "¿Existe un mercado laboral para desarrolladores No Code / Low Code?",
+      answer: "Sí, existe una demanda mayor de vacantes que de personas cualificadas. El salario promedio reportado para estos desarrolladores supera los $8.000 USD al mes."
+    },
+    {
+      question: "¿Vale la pena para alguien que ya es un desarrollador/programador tradicional?",
+      answer: "Sí, porque permite aumentar la empleabilidad en un área de alto crecimiento y poca competencia técnica.\n\nLos programadores pueden aplicar su lógica para crear aplicaciones mucho más rápido y atender a una gama más amplia de clientes.\n\nPermite lanzar startups o proyectos SaaS en cuestión de semanas en lugar de meses."
     }
   ];
 
@@ -254,56 +293,54 @@ export default function MarketingLanding() {
     },
   ];
 
+  // Carrusel: fotos en client/public/testimonios/ (carrusel-1.jpg … carrusel-8.jpg). Sube ahí tus imágenes.
+  const testimonialsCarousel = [
+    { name: "María G.", image: "/testimonios/carrusel-1.jpg", comment: "En 3 meses ya tenía mi primera app en producción. Los workshops en vivo fueron clave." },
+    { name: "Carlos R.", image: "/testimonios/carrusel-2.jpg", comment: "Ahora automatizo todo mi marketing sin código. Las guías me ahorraron meses." },
+    { name: "Ana M.", image: "/testimonios/carrusel-3.jpg", comment: "La comunidad es increíble. He hecho conexiones valiosas y conseguí mis primeros clientes." },
+    { name: "Luis F.", image: "/testimonios/carrusel-4.jpg", comment: "Pasé de cero a mi primer agente de IA en menos de una semana. Totalmente recomendado." },
+    { name: "Patricia S.", image: "/testimonios/carrusel-5.jpg", comment: "Vale cada peso. Los descuentos en herramientas ya me pagaron la membresía." },
+    { name: "Roberto D.", image: "/testimonios/carrusel-6.jpg", comment: "El centro de oportunidades me conectó con mi primer proyecto como freelancer." },
+    { name: "Laura V.", image: "/testimonios/carrusel-7.jpg", comment: "Las rutas de aprendizaje me mantuvieron enfocada. Ahora doy soporte en NoCode." },
+    { name: "Miguel T.", image: "/testimonios/carrusel-8.jpg", comment: "Certificado en mano y ya con ofertas. Expertos NoCode IA cambió mi rumbo." },
+  ];
+
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-white">
-      {/* Header */}
-      <header className="border-b border-gray-800 bg-[#0a0a0a]/95 backdrop-blur-md sticky top-0 z-50">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
-                <Target className="h-5 w-5 text-white" />
-              </div>
-              <span className="text-xl font-bold">Expertos NoCode IA</span>
-            </div>
-            <nav className="hidden lg:flex items-center space-x-6">
-              <a href={getAppUrl('/guides')} className="text-gray-300 hover:text-white transition-colors text-sm">
-                Guías
-              </a>
-              <a href={getAppUrl('/courses')} className="text-gray-300 hover:text-white transition-colors text-sm">
-                Cursos
-              </a>
-              <a href={getAppUrl('/planes')} className="text-gray-300 hover:text-white transition-colors text-sm">
-                Precios
-              </a>
-              <a href={getAppUrl('/login')}>
-                <Button variant="ghost" size="sm" className="text-gray-300 hover:text-white">
-                  Iniciar Sesión
-                </Button>
-              </a>
-              <a href={getAppUrl('/planes')}>
-                <Button size="sm" className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700">
-                  Comenzar
-                </Button>
-              </a>
-            </nav>
-          </div>
+      {/* Header: enlace Iniciar sesión */}
+      <header className="absolute top-0 left-0 right-0 z-20 py-4 px-4 sm:px-6">
+        <div className="container mx-auto max-w-6xl flex justify-end">
+          <a
+            href={getAppUrl("/login")}
+            className="font-albert text-sm font-medium text-white border border-gray-500 rounded-full px-4 py-2 hover:bg-white/10 transition-colors"
+          >
+            Iniciar sesión
+          </a>
         </div>
       </header>
 
-      {/* Hero Section - fondo negro con cuadrícula, letra pegada */}
+      {/* Hero Section - mismo fondo que ¿Qué recibiré?: #000 + cuadrícula 96px */}
       <section
-        className="relative py-20 sm:py-32 px-4 overflow-hidden bg-black"
+        className="relative pt-8 pb-20 sm:pt-10 sm:pb-32 px-4 overflow-hidden bg-[#000000]"
         style={{
           backgroundImage: `
-            linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px)
+            linear-gradient(#080808 2px, transparent 2px),
+            linear-gradient(90deg, #080808 2px, transparent 2px)
           `,
-          backgroundSize: "28px 28px",
+          backgroundSize: "96px 96px",
         }}
       >
         <div className="container mx-auto max-w-6xl relative z-10">
           <div className="text-center">
+            {/* Logo del hero: sube tu imagen en client/public/logo-hero.png (o .svg) */}
+            <div className="flex justify-center mb-6">
+              <img
+                src="/logo-hero.png"
+                alt="Expertos NoCode IA"
+                className="h-16 sm:h-20 object-contain object-center"
+                onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+              />
+            </div>
             {/* Badge: Domina la IA en [frase con gradiente] + caritas */}
             <div className="mb-6">
               <div className="inline-flex flex-wrap items-center justify-center gap-2 font-sora text-xl sm:text-2xl lg:text-3xl font-bold tracking-tight leading-tight">
@@ -339,8 +376,8 @@ export default function MarketingLanding() {
               </div>
             </div>
 
-            {/* Headline - Sora 48px negrilla, letra más pegada */}
-            <h1 className="font-sora text-3xl sm:text-[42px] lg:text-[48px] font-bold mb-6 text-white max-w-4xl mx-auto tracking-tight leading-[1.1]">
+            {/* Headline - todo Sora 48px negrilla, letra unida */}
+            <h1 className="font-sora text-[48px] font-bold mb-6 text-white max-w-4xl mx-auto tracking-tighter leading-[1.1]" style={{ fontFamily: "'Sora', sans-serif" }}>
               Cualquiera puede crear aplicaciones y agentes de IA{" "}
               <span className="text-purple-400">sin programación.</span>
             </h1>
@@ -357,33 +394,31 @@ export default function MarketingLanding() {
               <a href={getAppUrl('/planes')}>
                 <Button 
                   size="lg" 
-                  className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white text-lg px-10 py-7 rounded-full font-semibold shadow-lg shadow-purple-500/50"
+                  className="bg-[#63d059] hover:bg-[#52b848] font-sora font-bold text-[20px] text-black rounded-full border-2 border-black border-b-4 border-b-black px-10 py-6 transition-colors"
                 >
                   Comenzar Prueba Gratis
-                  <ArrowRight className="ml-2 h-5 w-5" />
+                  <ArrowRight className="ml-2 h-5 w-5 text-black" />
                 </Button>
               </a>
             </div>
 
-            {/* Newsletter como alternativa sutil */}
-            <div className="mb-12">
-              <p className="text-sm text-gray-400 mb-3">
+            {/* Newsletter como alternativa sutil - estilo organizado como referencia */}
+            <div className="mb-12 max-w-md mx-auto">
+              <p className="text-sm text-gray-400 text-center mb-3">
                 ¿No estás listo aún? Recibe tips gratis por email
               </p>
-              <form onSubmit={handleNewsletterSubmit} className="flex gap-2 justify-center max-w-md mx-auto">
+              <form onSubmit={handleNewsletterSubmit} className="flex rounded-full border border-gray-600 bg-gray-900/60 overflow-hidden">
                 <Input
                   type="email"
                   placeholder="Tu email"
                   value={newsletterEmail}
                   onChange={(e) => setNewsletterEmail(e.target.value)}
-                  className="bg-gray-900/50 border-gray-700 text-white placeholder:text-gray-500 rounded-full px-5 py-3 text-sm"
+                  className="flex-1 border-0 bg-transparent text-white placeholder:text-gray-500 rounded-none min-h-11 pl-5 pr-3 text-sm focus-visible:ring-0 focus-visible:ring-offset-0"
                   disabled={isNewsletterSubmitting}
                 />
                 <Button
                   type="submit"
-                  size="sm"
-                  variant="ghost"
-                  className="text-gray-400 hover:text-white rounded-full px-4"
+                  className="bg-purple-500 hover:bg-purple-600 text-white shrink-0 px-5 min-h-11 rounded-none border-0"
                   disabled={isNewsletterSubmitting}
                 >
                   {isNewsletterSubmitting ? (
@@ -514,9 +549,9 @@ export default function MarketingLanding() {
 
           <div className="text-center mt-10">
             <a href={getAppUrl('/planes')}>
-              <Button className="bg-green-600 hover:bg-green-700 text-white rounded-xl px-8 py-6 text-lg font-semibold border-2 border-green-800 border-b-4 border-b-green-900">
+              <Button className="bg-[#63d059] hover:bg-[#52b848] font-sora font-bold text-[20px] text-black rounded-full border-2 border-black border-b-4 border-b-black px-10 py-6 transition-colors">
                 Quiero empezar ahora
-                <ArrowRight className="ml-2 h-5 w-5" />
+                <ArrowRight className="ml-2 h-5 w-5 text-black" />
               </Button>
             </a>
           </div>
@@ -776,11 +811,11 @@ export default function MarketingLanding() {
           <div className="text-center px-4 sm:px-0">
             <Button
               size="lg"
-              className="w-full sm:w-auto max-w-full bg-gradient-to-r from-green-500 to-green-700 hover:from-green-600 hover:to-green-800 text-white font-bold px-4 py-4 sm:px-8 sm:py-6 text-sm sm:text-base rounded-xl shadow-lg border-2 border-green-600 border-b-4 border-b-green-800"
+              className="w-full sm:w-auto max-w-full bg-[#63d059] hover:bg-[#52b848] font-sora font-bold text-[20px] text-black rounded-full border-2 border-black border-b-4 border-b-black px-6 py-5 sm:px-10 sm:py-6 transition-colors"
               onClick={() => document.getElementById("hero")?.scrollIntoView({ behavior: "smooth" })}
             >
               Quiero registrarme en la Comunidad.
-              <ArrowRight className="ml-2 h-5 w-5 inline flex-shrink-0" />
+              <ArrowRight className="ml-2 h-5 w-5 inline flex-shrink-0 text-black" />
             </Button>
           </div>
         </div>
@@ -843,9 +878,9 @@ export default function MarketingLanding() {
 
           <div className="text-center">
             <a href={getAppUrl('/planes')}>
-              <Button size="lg" className="bg-green-600 hover:bg-green-700 text-white font-bold px-8 py-6 text-base rounded-xl">
+              <Button size="lg" className="bg-[#63d059] hover:bg-[#52b848] font-sora font-bold text-[20px] text-black rounded-full border-2 border-black border-b-4 border-b-black px-10 py-6 transition-colors">
                 Quiero recibirlo todo
-                <ArrowRight className="ml-2 h-5 w-5 inline" />
+                <ArrowRight className="ml-2 h-5 w-5 inline text-black" />
               </Button>
             </a>
           </div>
@@ -908,9 +943,9 @@ export default function MarketingLanding() {
           </div>
           <div className="text-center mt-10">
             <a href={getAppUrl('/planes')}>
-              <Button className="bg-green-500 hover:bg-green-600 text-white font-bold border-2 border-gray-900 border-b-4 border-b-gray-800 rounded-full px-10 py-6 text-lg shadow-sm">
+              <Button className="bg-[#63d059] hover:bg-[#52b848] font-sora font-bold text-[20px] text-black rounded-full border-2 border-black border-b-4 border-b-black px-10 py-6 transition-colors">
                 ¡Quiero empezar a crear!
-                <ArrowRight className="ml-3 h-6 w-6" />
+                <ArrowRight className="ml-3 h-6 w-6 text-black" />
               </Button>
             </a>
           </div>
@@ -948,7 +983,7 @@ export default function MarketingLanding() {
           </div>
           <div className="text-center mt-12">
             <a href={getAppUrl('/planes')}>
-              <Button className="bg-green-500 hover:bg-green-600 font-sora font-bold text-[20px] text-black border-2 border-gray-900 border-b-4 border-b-gray-800 rounded-full px-10 py-6">
+              <Button className="bg-[#63d059] hover:bg-[#52b848] font-sora font-bold text-[20px] text-black rounded-full border-2 border-black border-b-4 border-b-black px-10 py-6 transition-colors">
                 Quiero empezar a crear
                 <ArrowRight className="ml-3 h-6 w-6 text-black" />
               </Button>
@@ -1040,7 +1075,7 @@ export default function MarketingLanding() {
                   <p className="text-[13px] text-green-700 text-center mt-1">(precio de lanzamiento)</p>
                 </div>
                 <a href={getAppUrl('/planes')} className="block w-full">
-                  <button type="button" className="w-full py-5 rounded-xl bg-green-600 hover:bg-green-700 text-white font-bold text-lg uppercase tracking-wide border-2 border-green-700 shadow-md transition-colors">
+                  <button type="button" className="w-full py-5 rounded-full bg-[#63d059] hover:bg-[#52b848] font-sora font-bold text-[20px] text-black uppercase tracking-wide border-2 border-black border-b-4 border-b-black transition-colors">
                     QUIERO INSCRIBIRME
                   </button>
                 </a>
@@ -1073,6 +1108,40 @@ export default function MarketingLanding() {
               <h4 className="font-sora font-bold text-[16px] text-gray-200 uppercase tracking-wide mb-2">Garantía de 30 días</h4>
               <p className="font-albert text-[14px] text-gray-400">Puedes solicitar un reembolso del 100% dentro de ese período.</p>
             </div>
+          </div>
+
+          {/* Newsletter CTA dentro del mismo contenedor negro - estilo imagen 1: input blanco + botón oscuro unidos */}
+          <div className="mt-16 max-w-xl mx-auto">
+            <Card className="bg-gray-900/80 border-purple-500/30">
+              <CardHeader className="text-center">
+                <CardTitle className="text-xl text-white mb-2">¿No estás listo para la membresía completa?</CardTitle>
+                <CardDescription className="text-gray-300">Recibe tips semanales de NoCode e IA por email</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <form onSubmit={handleNewsletterSubmit} className="flex rounded-xl border border-gray-400/60 overflow-hidden bg-white shadow-inner max-w-md mx-auto">
+                  <Input
+                    type="email"
+                    placeholder="Dirección de correo electrónico"
+                    value={newsletterEmail}
+                    onChange={(e) => setNewsletterEmail(e.target.value)}
+                    className="flex-1 border-0 bg-white text-gray-900 placeholder:text-gray-400 rounded-none min-h-12 focus-visible:ring-0 focus-visible:ring-offset-0"
+                    disabled={isNewsletterSubmitting}
+                  />
+                  <Button
+                    type="submit"
+                    className="rounded-none bg-gray-900 hover:bg-gray-800 text-white font-semibold px-6 min-h-12 gap-2 shrink-0"
+                    disabled={isNewsletterSubmitting}
+                  >
+                    {isNewsletterSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : (
+                      <>
+                        Suscribir
+                        <Send className="h-4 w-4" />
+                      </>
+                    )}
+                  </Button>
+                </form>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </section>
@@ -1107,20 +1176,27 @@ export default function MarketingLanding() {
           </div>
 
           <a href={getAppUrl('/planes')}>
-            <button type="button" className="inline-flex items-center justify-center gap-2 rounded-full bg-green-600 hover:bg-green-700 text-white font-sans font-bold text-lg px-8 py-4 border-2 border-black shadow-md transition-colors">
+            <button type="button" className="inline-flex items-center justify-center gap-2 rounded-full bg-[#63d059] hover:bg-[#52b848] font-sora font-bold text-[20px] text-black px-10 py-5 border-2 border-black border-b-4 border-b-black transition-colors">
               Quiero registrarme
-              <ArrowRight className="h-5 w-5" />
+              <ArrowRight className="h-5 w-5 text-black" />
             </button>
           </a>
         </div>
       </section>
 
-      {/* ¿Y los alumnos? */}
-      <section className="py-16 sm:py-20 px-4 bg-purple-950/20">
-        <div className="container mx-auto max-w-6xl">
+      {/* ¿Y los alumnos? - fondo #004fbe con grid 56px como "Yo asumo todo el riesgo" */}
+      <section
+        className="py-16 sm:py-20 px-4 relative overflow-hidden"
+        style={{
+          backgroundColor: '#004fbe',
+          backgroundImage: 'linear-gradient(rgba(255,255,255,0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.08) 1px, transparent 1px)',
+          backgroundSize: '56px 56px',
+        }}
+      >
+        <div className="container mx-auto max-w-6xl relative z-10">
           <div className="text-center mb-12">
-            <h2 className="text-3xl sm:text-4xl font-bold mb-4">¿Y los alumnos? ¿Están logrando sus objetivos?</h2>
-            <p className="text-gray-400">Conoce a profesionales que ya transformaron su carrera</p>
+            <h2 className="text-3xl sm:text-4xl font-bold mb-4 text-white">¿Y los alumnos? ¿Están logrando sus objetivos?</h2>
+            <p className="text-white/80">Conoce a profesionales que ya transformaron su carrera</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {testimonials.map((t, i) => (
@@ -1147,63 +1223,132 @@ export default function MarketingLanding() {
               </Card>
             ))}
           </div>
+
+          {/* Carrusel a ancho completo (de borde a borde de la pantalla) */}
+          <style>{`
+            @keyframes carousel-scroll {
+              0% { transform: translateX(0); }
+              100% { transform: translateX(-50%); }
+            }
+          `}</style>
+          <div className="w-screen relative left-1/2 -translate-x-1/2 mt-14 overflow-hidden">
+            <div className="flex w-max gap-5" style={{ animation: 'carousel-scroll 40s linear infinite' }}>
+              {[...testimonialsCarousel, ...testimonialsCarousel].map((item, i) => (
+                <div key={i} className="flex-shrink-0 w-[150px] rounded-2xl overflow-hidden border-2 border-white/20 shadow-xl bg-gray-900/50">
+                  <div className="relative aspect-[9/12]">
+                    <img src={item.image} alt={item.name} className="absolute inset-0 w-full h-full object-cover" />
+                    <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent pt-16 pb-4 px-4">
+                      <p className="font-semibold text-white text-sm">{item.name}</p>
+                      <p className="text-white/95 text-sm leading-snug mt-1 line-clamp-3">{item.comment}</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       </section>
 
-      {/* Newsletter CTA (opcional) */}
-      <section className="py-12 px-4 bg-[#0f0f1a]">
-        <div className="container mx-auto max-w-4xl">
-          <Card className="bg-gray-900/80 border-purple-500/30">
-            <CardHeader className="text-center">
-              <CardTitle className="text-xl text-white mb-2">¿No estás listo para la membresía completa?</CardTitle>
-              <CardDescription className="text-gray-300">Recibe tips semanales de NoCode e IA por email</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleNewsletterSubmit} className="flex flex-col sm:flex-row gap-4">
-                <Input
-                  type="email"
-                  placeholder="Tu email"
-                  value={newsletterEmail}
-                  onChange={(e) => setNewsletterEmail(e.target.value)}
-                  className="bg-gray-800 border-gray-700 text-white placeholder:text-gray-500 flex-1"
-                  disabled={isNewsletterSubmitting}
-                />
-                <Button type="submit" className="bg-gradient-to-r from-purple-600 to-blue-600" disabled={isNewsletterSubmitting}>
-                  {isNewsletterSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Suscribirme Gratis"}
-                </Button>
-              </form>
-            </CardContent>
-          </Card>
+      {/* Sección Fundador - arriba de FAQ (foto en public/fundador.png) */}
+      <section
+        className="py-16 sm:py-20 px-4 relative overflow-hidden"
+        style={{
+          backgroundColor: '#0a0a0a',
+          backgroundImage: 'linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px)',
+          backgroundSize: '56px 56px',
+        }}
+      >
+        <div className="container mx-auto max-w-5xl relative z-10">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-center">
+            {/* Columna izquierda: texto */}
+            <div className="lg:col-span-7 space-y-4">
+              <h2 className="text-4xl sm:text-5xl font-medium italic text-purple-400" style={{ fontFamily: "'Georgia', 'Times New Roman', serif" }}>
+                Fabián Segura
+              </h2>
+              <p className="font-sora font-bold text-white text-xl">
+                CEO Agencia de No Code - Fundador de Expertos NoCode IA
+              </p>
+              <p className="text-gray-300 text-base leading-relaxed">
+                Ha trabajado con más de 120 clientes creando soluciones No Code, automatizaciones y sitios web con desarrollos de IA que generan resultados reales.
+              </p>
+              <p className="text-gray-300 text-base leading-relaxed">
+                Hoy Fabián se centra en agentes de IA y automatizaciones con N8N y OpenAI, y desde Expertos NoCode IA comparte ese conocimiento con la comunidad.
+              </p>
+              {/* Badges embajador */}
+              <div className="flex flex-wrap gap-3 pt-2">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-gradient-to-r from-pink-500/20 to-purple-600/20 border border-purple-500/40 text-white text-sm font-medium">
+                  <Heart className="h-4 w-4 text-pink-400" />
+                  Embajador Lovable
+                </span>
+                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-orange-500/20 border border-orange-400/50 text-orange-200 text-sm font-medium">
+                  <Zap className="h-4 w-4 text-orange-400" />
+                  Embajador n8n
+                </span>
+              </div>
+            </div>
+            {/* Columna derecha: foto con marco (para nitidez: sustituye fundador.png por una ≥1000px ancho o añade fundador@2x.png) */}
+            <div className="lg:col-span-5 flex justify-center lg:justify-end overflow-visible">
+              <div className="relative w-full max-w-sm origin-center -rotate-[6deg] p-2 sm:p-2.5 bg-white rounded-[2rem] rounded-tl-[2.5rem] rounded-br-[1.75rem] shadow-[0_8px_32px_rgba(0,0,0,0.35)]">
+                <div className="relative w-full aspect-[4/3] rounded-[1.25rem] rounded-tl-[1.5rem] rounded-br-[1rem] overflow-hidden">
+                  <img
+                    src="/fundador.png"
+                    srcSet="/fundador.png 1x, /fundador@2x.png 2x"
+                    alt="Fabián Segura - CEO Agencia de No Code, Fundador de Expertos NoCode IA"
+                    className="w-full h-full object-cover object-center block"
+                    decoding="async"
+                    onError={(e) => {
+                      const el = e.target as HTMLImageElement;
+                      el.style.display = 'none';
+                      const fallback = el.nextElementSibling as HTMLElement;
+                      if (fallback) fallback.classList.remove('hidden');
+                    }}
+                  />
+                  <div className="hidden absolute inset-0 bg-gray-800/90 flex items-center justify-center text-gray-400 text-sm p-6 text-center">
+                    Sube la foto en <code className="block mt-2 bg-gray-700 px-2 py-1 rounded">public/fundador.png</code>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
-      {/* FAQ Section */}
-      <section className="py-16 sm:py-20 px-4 bg-gray-900/50">
-        <div className="container mx-auto max-w-4xl">
+      {/* FAQ Section - mismo fondo negro con cuadrícula que la biografía */}
+      <section
+        className="py-16 sm:py-20 px-4 relative overflow-hidden"
+        style={{
+          backgroundColor: '#0a0a0a',
+          backgroundImage: 'linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px)',
+          backgroundSize: '56px 56px',
+        }}
+      >
+        <div className="container mx-auto max-w-4xl relative z-10">
           <div className="text-center mb-12">
-            <h2 className="text-3xl sm:text-4xl font-bold mb-4">Preguntas Frecuentes</h2>
+            <h2 className="font-sora text-[48px] font-bold tracking-tight mb-4 text-white">Preguntas Frecuentes</h2>
             <p className="text-gray-400">Todo lo que necesitas saber antes de empezar</p>
           </div>
 
           <div className="space-y-4">
             {faqs.map((faq, index) => (
-              <Card key={index} className="bg-gray-900/50 border-gray-800">
+              <Card key={index} className="w-full max-w-[896px] mx-auto border-gray-700" style={{ backgroundColor: '#1c1c1c' }}>
                 <CardHeader
-                  className="cursor-pointer"
+                  className="cursor-pointer h-[59px] flex flex-row items-center px-6 py-0"
                   onClick={() => setOpenFaq(openFaq === index ? null : index)}
                 >
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-white text-left">{faq.question}</CardTitle>
-                    {openFaq === index ? (
-                      <ChevronUp className="h-5 w-5 text-gray-400" />
-                    ) : (
-                      <ChevronDown className="h-5 w-5 text-gray-400" />
-                    )}
+                  <div className="flex items-center justify-between w-full">
+                    <CardTitle className="text-white text-left font-sora text-[18px]">{faq.question}</CardTitle>
+                    <span className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center" style={{ backgroundColor: '#11110f' }}>
+                      {openFaq === index ? (
+                        <Minus className="h-4 w-4" style={{ color: '#af72f3' }} />
+                      ) : (
+                        <Plus className="h-4 w-4" style={{ color: '#af72f3' }} />
+                      )}
+                    </span>
                   </div>
                 </CardHeader>
                 {openFaq === index && (
                   <CardContent>
-                    <CardDescription className="text-gray-300 text-base">
+                    <CardDescription className="text-gray-300 font-albert text-[14px] whitespace-pre-line">
                       {faq.answer}
                     </CardDescription>
                   </CardContent>
@@ -1211,86 +1356,110 @@ export default function MarketingLanding() {
               </Card>
             ))}
           </div>
-        </div>
-      </section>
 
-      {/* ¿Alguna duda? */}
-      <section className="py-12 px-4 bg-[#0f0f1a]">
-        <div className="container mx-auto max-w-2xl text-center">
-          <h2 className="text-2xl font-bold mb-4">¿Te quedó alguna duda?</h2>
-          <p className="text-gray-400 mb-6">Escríbenos por WhatsApp y te respondemos sin compromiso.</p>
-          <a href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer">
-            <Button size="lg" className="bg-green-600 hover:bg-green-700 text-white">
-              <MessageCircle className="mr-2 h-5 w-5" />
-              Hablar con nosotros
-            </Button>
-          </a>
-        </div>
-      </section>
-
-      {/* Cierre motivacional + CTA final */}
-      <section className="py-16 sm:py-20 px-4 bg-gradient-to-r from-purple-600/20 via-blue-600/20 to-purple-600/20">
-        <div className="container mx-auto max-w-4xl text-center">
-          <h2 className="text-3xl sm:text-4xl font-bold mb-6">¡Basta de dejarlo para después!</h2>
-          <p className="text-lg text-gray-300 mb-4 max-w-2xl mx-auto">
-            Tienes toda la información para dar el siguiente paso. El mercado está en auge y las herramientas están a tu alcance.
-          </p>
-          <p className="text-gray-400 mb-6 max-w-2xl mx-auto">
-            La única barrera entre tú y esta oportunidad ya no existe. No se trata solo de conocimiento: es una decisión. En 30 días podrías estar cerrando tu primer proyecto. O seguir exactamente donde estás ahora.
-          </p>
-          <a href={getAppUrl('/planes')}>
-            <Button size="lg" className="bg-green-600 hover:bg-green-700 text-white text-lg px-10 py-7 rounded-full font-semibold">
-              Ahora me decido
-              <ArrowRight className="ml-2 h-5 w-5" />
-            </Button>
-          </a>
-          <p className="text-sm text-gray-400 mt-6">14 días gratis • Sin tarjeta de crédito • Cancela cuando quieras</p>
-        </div>
-      </section>
-
-      {/* Footer */}
-      <footer className="py-12 px-4 border-t border-gray-800">
-        <div className="container mx-auto max-w-6xl">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-            <div>
-              <div className="flex items-center space-x-2 mb-4">
-                <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
-                  <Target className="h-5 w-5 text-white" />
-                </div>
-                <span className="text-xl font-bold">Expertos NoCode IA</span>
-              </div>
-              <p className="text-gray-400 text-sm">
-                La mayor plataforma de educación en NoCode e IA en español. La plataforma más completa para aprender NoCode e IA.
-              </p>
-            </div>
-            <div>
-              <h3 className="font-semibold mb-4">Producto</h3>
-              <ul className="space-y-2 text-sm text-gray-400">
-                <li><a href={getAppUrl('/guides')} className="hover:text-white transition-colors">Guías</a></li>
-                <li><a href={getAppUrl('/courses')} className="hover:text-white transition-colors">Cursos</a></li>
-                <li><a href={getAppUrl('/planes')} className="hover:text-white transition-colors">Precios</a></li>
-              </ul>
-            </div>
-            <div>
-              <h3 className="font-semibold mb-4">Compañía</h3>
-              <ul className="space-y-2 text-sm text-gray-400">
-                <li><a href={getAppUrl('/login')} className="hover:text-white transition-colors">Iniciar Sesión</a></li>
-                <li><a href={getAppUrl('/register')} className="hover:text-white transition-colors">Registrarse</a></li>
-              </ul>
-            </div>
-            <div>
-              <h3 className="font-semibold mb-4">Legal</h3>
-              <ul className="space-y-2 text-sm text-gray-400">
-                <li><a href="#" className="hover:text-white transition-colors">Términos</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Privacidad</a></li>
-              </ul>
-            </div>
+          {/* ¿Tienes alguna pregunta restante? - dentro del mismo fondo negro */}
+          <div className="mt-16 text-center max-w-2xl mx-auto">
+            <h2 className="font-bold text-[36px] mb-4 text-white">¿Tienes alguna pregunta restante?</h2>
+            <p className="font-albert text-[18px] text-gray-400 mb-4">Si tienes alguna pregunta sobre la Comunidad No-Code, tenemos un equipo listo para ayudarte y responder cualquier duda en WhatsApp.</p>
+            <p className="font-albert text-[18px] text-gray-400 mb-6">Simplemente toque el botón a continuación y llámenos.</p>
+            <a href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer">
+              <Button size="lg" className="bg-[#63d059] hover:bg-[#52b848] font-sora font-bold text-[20px] text-black rounded-full border-2 border-black border-b-4 border-b-black px-10 py-6 transition-colors">
+                <MessageCircle className="mr-2 h-5 w-5 text-black" />
+                Hablar con nosotros
+              </Button>
+            </a>
           </div>
-          <div className="mt-8 pt-8 border-t border-gray-800 text-center text-sm text-gray-400">
-            © 2025 Expertos NoCode IA. Todos los derechos reservados.
+        </div>
+      </section>
+
+      {/* Cierre motivacional + CTA final - fondo blanco con cuadrícula (1270×703) */}
+      <section
+        className="py-16 sm:py-20 px-4 bg-white relative overflow-hidden"
+        style={{
+          backgroundImage: 'linear-gradient(rgba(0,0,0,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,0.04) 1px, transparent 1px)',
+          backgroundSize: '56px 56px',
+        }}
+      >
+        <div className="container mx-auto relative z-10 text-left w-full max-w-[1270px] min-h-[520px] flex flex-col justify-center">
+          <h2 className="font-sora text-[48px] font-bold tracking-tighter mb-6 text-black text-center">
+            <span style={{ color: '#b36cf6' }}>¡Basta</span> de dejarlo para después!
+          </h2>
+          <div className="font-albert text-[18px] text-gray-700 text-left max-w-3xl mx-auto mb-8 space-y-1 leading-snug">
+            <p>Ahora tienes toda la información que necesitas para dar el siguiente paso.</p>
+            <p>El mercado está en auge, las herramientas están a tu alcance y el método está probado.</p>
+            <p>La única barrera que existía entre usted y esta oportunidad ya no existe.</p>
+            <p>La cuestión ahora ya no es una cuestión de conocimientos o habilidades técnicas.</p>
+            <p className="font-bold">Es cuestión de decisión.</p>
+            <p>Mientras usted está sentado allí pensando, cientos de empresas están buscando exactamente lo que usted puede ofrecer: aplicaciones y agentes de IA, sin complejidad.</p>
+            <p>Y la competencia todavía es mínima.</p>
+            <p>Únase hoy a la comunidad No-Code IA y comience a crear aplicaciones y agentes de IA rentables hoy mismo.</p>
+            <p>En 30 días, usted podrá estar cerrando su primer proyecto de $5.000 USD.</p>
+            <p>En 90 días podrías tener una cartera de clientes recurrentes.</p>
+            <p>O puedes quedarte exactamente donde estás ahora, viendo como otros se suben a esta ola.</p>
+            <p className="font-bold">La decisión es tuya. Y el momento es ahora.</p>
+          </div>
+          <div className="text-center">
+            <a href={getAppUrl('/planes')} className="inline-block">
+              <Button size="lg" className="bg-[#63d059] hover:bg-[#52b848] font-sora font-bold text-[20px] text-black rounded-full border-2 border-black border-b-4 border-b-black px-10 py-6 transition-colors">
+                ¡Genial! ¡Ya me decidí!
+                <ArrowRight className="ml-2 h-5 w-5 text-black" />
+              </Button>
+            </a>
+          </div>
+        </div>
+      </section>
+
+      {/* Pie de página - mismo fondo que Preguntas Frecuentes (estilo imagen) */}
+      <footer
+        className="py-16 px-4 relative overflow-hidden"
+        style={{
+          backgroundColor: '#0a0a0a',
+          backgroundImage: 'linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px)',
+          backgroundSize: '56px 56px',
+        }}
+      >
+        <div className="container mx-auto max-w-4xl relative z-10">
+          {/* Bloque superior centrado: logo + titular + párrafo */}
+          <div className="text-center mb-14">
+            <div className="flex justify-center mb-6">
+              <img src="/logo-hero.png" alt="Expertos NoCode IA" className="h-14 sm:h-16 object-contain" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; (e.target as HTMLImageElement).nextElementSibling?.classList.remove('hidden'); }} />
+              <span className="hidden w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center"><Target className="h-6 w-6 text-white" /></span>
+            </div>
+            <h2 className="font-sora text-[16px] font-bold text-white tracking-tighter leading-tight mb-4 uppercase">
+              La que será la comunidad No Code IA más grande de Latinoamérica.
+            </h2>
+            <p className="font-albert text-[14px] text-gray-300 max-w-2xl mx-auto leading-snug">
+              Únete a la <span style={{ color: '#60d258' }}>comunidad</span> de emprendedores,
+              <br />
+              desarrolladores y administradores de IA. Que están
+              <br />
+              transformando sus ideas en negocios digitales rentables.
+            </p>
+          </div>
+          {/* Barra inferior: empresa a la izquierda, enlaces legales a la derecha */}
+          <div className="flex flex-col sm:flex-row justify-between items-center gap-4 pt-8 border-t border-gray-700 text-sm text-gray-400">
+            <div className="text-center sm:text-left">
+              <p className="text-white font-medium">Expertos NoCode IA</p>
+              <p className="text-gray-500 text-xs mt-0.5">NIT / RUC según país</p>
+            </div>
+            <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6">
+              <Link href="/politica-privacidad" className="hover:text-white transition-colors">Política de privacidad</Link>
+              <Link href="/condiciones-servicio" className="hover:text-white transition-colors">Condiciones de servicio</Link>
+            </div>
           </div>
         </div>
       </footer>
+
+      {/* Botón flotante WhatsApp - ¿Necesitas ayuda? */}
+      <a
+        href={WHATSAPP_URL}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="fixed bottom-6 right-6 z-50 flex items-center gap-2 bg-[#63d059] hover:bg-[#52b848] text-white font-sora font-bold px-5 py-3 rounded-full shadow-lg border-2 border-black border-b-4 border-b-black transition-colors"
+      >
+        <MessageCircle className="h-5 w-5 text-white" />
+        ¿Necesitas ayuda?
+      </a>
     </div>
   );
 }
