@@ -293,16 +293,16 @@ export default function MarketingLanding() {
     },
   ];
 
-  // Carrusel: fotos en client/public/testimonios/ (carrusel-1.jpg … carrusel-8.jpg). Sube ahí tus imágenes.
+  // Carrusel: fotos en client/public/testimonios/ (carrusel-1.webp … carrusel-8.webp).
   const testimonialsCarousel = [
-    { name: "María G.", image: "/testimonios/carrusel-1.jpg", comment: "En 3 meses ya tenía mi primera app en producción. Los workshops en vivo fueron clave." },
-    { name: "Carlos R.", image: "/testimonios/carrusel-2.jpg", comment: "Ahora automatizo todo mi marketing sin código. Las guías me ahorraron meses." },
-    { name: "Ana M.", image: "/testimonios/carrusel-3.jpg", comment: "La comunidad es increíble. He hecho conexiones valiosas y conseguí mis primeros clientes." },
-    { name: "Luis F.", image: "/testimonios/carrusel-4.jpg", comment: "Pasé de cero a mi primer agente de IA en menos de una semana. Totalmente recomendado." },
-    { name: "Patricia S.", image: "/testimonios/carrusel-5.jpg", comment: "Vale cada peso. Los descuentos en herramientas ya me pagaron la membresía." },
-    { name: "Roberto D.", image: "/testimonios/carrusel-6.jpg", comment: "El centro de oportunidades me conectó con mi primer proyecto como freelancer." },
-    { name: "Laura V.", image: "/testimonios/carrusel-7.jpg", comment: "Las rutas de aprendizaje me mantuvieron enfocada. Ahora doy soporte en NoCode." },
-    { name: "Miguel T.", image: "/testimonios/carrusel-8.jpg", comment: "Certificado en mano y ya con ofertas. Expertos NoCode IA cambió mi rumbo." },
+    { name: "María G.", image: "/testimonios/carrusel-1.webp", comment: "En 3 meses ya tenía mi primera app en producción. Los workshops en vivo fueron clave." },
+    { name: "Carlos R.", image: "/testimonios/carrusel-2.webp", comment: "Ahora automatizo todo mi marketing sin código. Las guías me ahorraron meses." },
+    { name: "Ana M.", image: "/testimonios/carrusel-3.webp", comment: "La comunidad es increíble. He hecho conexiones valiosas y conseguí mis primeros clientes." },
+    { name: "Luis F.", image: "/testimonios/carrusel-4.webp", comment: "Pasé de cero a mi primer agente de IA en menos de una semana. Totalmente recomendado." },
+    { name: "Patricia S.", image: "/testimonios/carrusel-5.webp", comment: "Vale cada peso. Los descuentos en herramientas ya me pagaron la membresía." },
+    { name: "Roberto D.", image: "/testimonios/carrusel-6.webp", comment: "El centro de oportunidades me conectó con mi primer proyecto como freelancer." },
+    { name: "Laura V.", image: "/testimonios/carrusel-7.webp", comment: "Las rutas de aprendizaje me mantuvieron enfocada. Ahora doy soporte en NoCode." },
+    { name: "Miguel T.", image: "/testimonios/carrusel-8.webp", comment: "Certificado en mano y ya con ofertas. Expertos NoCode IA cambió mi rumbo." },
   ];
 
   return (
@@ -857,7 +857,7 @@ export default function MarketingLanding() {
                   <div className="flex-1 min-h-0 flex justify-center items-center mt-4 sm:mt-2 pb-5 sm:pb-0">
                     <div className="w-full max-w-[280px] mx-auto sm:mx-0 sm:max-w-[225px] sm:w-[225px] aspect-[4/3] sm:aspect-auto sm:h-[168px] flex-shrink-0 rounded-lg border-2 border-gray-400 overflow-hidden shadow-md relative bg-white">
                       <img
-                        src={item.image.replace(/\.png$/i, "").replace(/\s+/g, "-") + ".webp"}
+                        src={item.image.replace(/\.png$/i, ".webp")}
                         alt=""
                         className="w-full h-full object-cover object-center"
                         style={{ filter: "brightness(0.88) contrast(1.08)" }}
@@ -1164,7 +1164,7 @@ export default function MarketingLanding() {
           {/* Sello de garantía: imagen, mitad superpuesta a la card */}
           <div className="relative z-20 flex justify-center mb-[-4rem] sm:mb-[-5rem]">
             <img
-              src="/sello-garantia-15-dias.png"
+              src="/sello-garantia-15-dias.webp"
               alt="Garantía 15 días - Tu dinero de vuelta"
               className="w-40 h-40 sm:w-52 sm:h-52 object-contain drop-shadow-[0_8px_24px_rgba(0,0,0,0.25)]"
             />
