@@ -376,8 +376,8 @@ export default function MarketingLanding() {
               </div>
             </div>
 
-            {/* Headline - todo Sora 48px negrilla, letra unida */}
-            <h1 className="font-sora text-[48px] font-bold mb-6 text-white max-w-4xl mx-auto tracking-tighter leading-[1.1]" style={{ fontFamily: "'Sora', sans-serif" }}>
+            {/* Headline - Sora responsive: 24px móvil, escala en pantallas grandes */}
+            <h1 className="font-sora text-[24px] sm:text-[32px] md:text-[40px] lg:text-[48px] font-bold mb-6 text-white max-w-4xl mx-auto tracking-tighter leading-[1.1]" style={{ fontFamily: "'Sora', sans-serif" }}>
               Cualquiera puede crear aplicaciones y agentes de IA{" "}
               <span className="text-purple-400">sin programación.</span>
             </h1>
@@ -1015,12 +1015,12 @@ export default function MarketingLanding() {
             </ul>
             <div className="flex items-center justify-between px-5 sm:px-6 py-3 bg-green-600 text-white font-albert font-bold text-lg">
               <span>VALOR TOTAL:</span>
-              <span><span className="line-through opacity-90 mr-2">$1,997</span> $297</span>
+              <span>$1,997</span>
             </div>
           </div>
           <div className="text-center mt-8">
-            <p className="font-albert text-[18px] text-black mb-0.5">Pero no necesitarás invertir $297 para unirte hoy.</p>
-            <p className="font-albert text-[18px] font-bold text-black leading-tight">Descubre la oferta especial que te he preparado:</p>
+            <p className="font-albert text-[18px] text-black mb-0.5">Pero no necesitarás invertir $1,997 para unirte hoy.</p>
+            <p className="font-albert text-[18px] font-bold text-black leading-tight">Descubre la oferta especial por lanzamiento que te hemos preparado:</p>
           </div>
         </div>
       </section>
@@ -1249,7 +1249,7 @@ export default function MarketingLanding() {
         </div>
       </section>
 
-      {/* Sección Fundador - arriba de FAQ (foto en public/fundador.png) */}
+      {/* Sección Fundador - arriba de FAQ (foto en public/fundador.webp) */}
       <section
         className="py-16 sm:py-20 px-4 relative overflow-hidden"
         style={{
@@ -1286,13 +1286,12 @@ export default function MarketingLanding() {
                 </span>
               </div>
             </div>
-            {/* Columna derecha: foto con marco (para nitidez: sustituye fundador.png por una ≥1000px ancho o añade fundador@2x.png) */}
+            {/* Columna derecha: foto con marco (public/fundador.webp) */}
             <div className="lg:col-span-5 flex justify-center lg:justify-end overflow-visible">
               <div className="relative w-full max-w-sm origin-center -rotate-[6deg] p-2 sm:p-2.5 bg-white rounded-[2rem] rounded-tl-[2.5rem] rounded-br-[1.75rem] shadow-[0_8px_32px_rgba(0,0,0,0.35)]">
                 <div className="relative w-full aspect-[4/3] rounded-[1.25rem] rounded-tl-[1.5rem] rounded-br-[1rem] overflow-hidden">
                   <img
-                    src="/fundador.png"
-                    srcSet="/fundador.png 1x, /fundador@2x.png 2x"
+                    src="/fundador.webp"
                     alt="Fabián Segura - CEO Agencia de No Code, Fundador de Expertos NoCode IA"
                     className="w-full h-full object-cover object-center block"
                     decoding="async"
@@ -1304,7 +1303,7 @@ export default function MarketingLanding() {
                     }}
                   />
                   <div className="hidden absolute inset-0 bg-gray-800/90 flex items-center justify-center text-gray-400 text-sm p-6 text-center">
-                    Sube la foto en <code className="block mt-2 bg-gray-700 px-2 py-1 rounded">public/fundador.png</code>
+                    Sube la foto en <code className="block mt-2 bg-gray-700 px-2 py-1 rounded">public/fundador.webp</code>
                   </div>
                 </div>
               </div>
