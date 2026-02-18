@@ -307,12 +307,12 @@ export default function MarketingLanding() {
 
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-white">
-      {/* Header: enlace Iniciar sesión */}
-      <header className="absolute top-0 left-0 right-0 z-20 py-4 px-4 sm:px-6">
-        <div className="container mx-auto max-w-6xl flex justify-end">
+      {/* Header: solo Iniciar sesión; en móvil baja para quedar en la misma línea que el logo central */}
+      <header className="absolute top-0 left-0 right-0 z-20 pt-8 px-4 sm:pt-4 sm:px-6">
+        <div className="container mx-auto max-w-6xl flex justify-end items-center h-16 sm:h-auto sm:py-2">
           <a
             href={getAppUrl("/login")}
-            className="font-albert text-sm font-medium text-white border border-gray-500 rounded-full px-4 py-2 hover:bg-white/10 transition-colors"
+            className="font-albert text-xs sm:text-sm font-medium text-white border border-gray-500 rounded-full px-3 py-1.5 sm:px-4 sm:py-2 hover:bg-white/10 transition-colors"
           >
             Iniciar sesión
           </a>
@@ -321,7 +321,7 @@ export default function MarketingLanding() {
 
       {/* Hero Section - mismo fondo que ¿Qué recibiré?: #000 + cuadrícula 96px */}
       <section
-        className="relative pt-8 pb-20 sm:pt-10 sm:pb-32 px-4 overflow-hidden bg-[#000000]"
+        className="relative pt-8 pb-8 sm:pt-10 sm:pb-32 px-4 overflow-hidden bg-[#000000]"
         style={{
           backgroundImage: `
             linear-gradient(#080808 2px, transparent 2px),
@@ -403,7 +403,7 @@ export default function MarketingLanding() {
             </div>
 
             {/* Newsletter como alternativa sutil - estilo organizado como referencia */}
-            <div className="mb-12 max-w-md mx-auto">
+            <div className="mb-6 sm:mb-12 max-w-md mx-auto">
               <p className="text-sm text-gray-400 text-center mb-3">
                 ¿No estás listo aún? Recibe tips gratis por email
               </p>
@@ -431,21 +431,21 @@ export default function MarketingLanding() {
             </div>
 
             {/* Trust Indicators */}
-            <div className="flex flex-wrap justify-center items-center gap-8 text-sm text-gray-400">
-              <div className="flex items-center gap-2">
-                <CheckCircle className="h-5 w-5 text-green-400" />
+            <div className="hidden sm:grid sm:grid-cols-2 md:flex md:flex-wrap md:justify-center gap-x-4 gap-y-3 md:gap-8 justify-items-start text-sm text-gray-400">
+              <div className="flex items-center gap-2 sm:justify-start">
+                <CheckCircle className="h-5 w-5 text-green-400 shrink-0" />
                 <span>14 días gratis</span>
               </div>
-              <div className="flex items-center gap-2">
-                <CheckCircle className="h-5 w-5 text-green-400" />
+              <div className="flex items-center gap-2 sm:justify-start">
+                <CheckCircle className="h-5 w-5 text-green-400 shrink-0" />
                 <span>Sin tarjeta de crédito</span>
               </div>
-              <div className="flex items-center gap-2">
-                <CheckCircle className="h-5 w-5 text-green-400" />
+              <div className="flex items-center gap-2 sm:justify-start">
+                <CheckCircle className="h-5 w-5 text-green-400 shrink-0" />
                 <span>Cancelar cuando quieras</span>
               </div>
-              <div className="flex items-center gap-2">
-                <CheckCircle className="h-5 w-5 text-green-400" />
+              <div className="flex items-center gap-2 sm:justify-start">
+                <CheckCircle className="h-5 w-5 text-green-400 shrink-0" />
                 <span>Garantía de 30 días</span>
               </div>
             </div>
@@ -455,7 +455,7 @@ export default function MarketingLanding() {
 
       {/* ¿Por qué aprender IA y No Code? */}
       <section
-        className="py-16 sm:py-20 px-6 sm:px-10 lg:px-16 bg-gray-100"
+        className="pt-8 pb-16 sm:py-20 px-6 sm:px-10 lg:px-16 bg-gray-100"
         style={{
           backgroundImage: `
             linear-gradient(rgba(0,0,0,0.03) 1px, transparent 1px),
@@ -768,7 +768,7 @@ export default function MarketingLanding() {
             </div>
             <div
               className="relative overflow-hidden rounded-2xl border-2 border-purple-500 border-b-4 border-b-purple-600 shadow-lg bg-gray-900 bg-cover bg-center w-[320px] h-[300px] flex-shrink-0"
-              style={{ backgroundImage: "url(/card-comunidad-bg-2.jpg)" }}
+              style={{ backgroundImage: "url(/card-comunidad-bg.jpg)" }}
             >
               <div className="absolute inset-0 bg-black/60" aria-hidden="true" />
               <div className="relative z-10 p-5">
@@ -811,11 +811,12 @@ export default function MarketingLanding() {
           <div className="text-center px-4 sm:px-0">
             <Button
               size="lg"
-              className="w-full sm:w-auto max-w-full bg-[#63d059] hover:bg-[#52b848] font-sora font-bold text-[20px] text-black rounded-full border-2 border-black border-b-4 border-b-black px-6 py-5 sm:px-10 sm:py-6 transition-colors"
+              className="w-full sm:w-auto max-w-full bg-[#63d059] hover:bg-[#52b848] font-sora font-bold text-sm sm:text-[20px] text-black rounded-full border-2 border-black border-b-4 border-b-black px-4 py-3.5 sm:px-10 sm:py-6 transition-colors inline-flex items-center justify-center gap-2 whitespace-nowrap"
               onClick={() => document.getElementById("hero")?.scrollIntoView({ behavior: "smooth" })}
             >
-              Quiero registrarme en la Comunidad.
-              <ArrowRight className="ml-2 h-5 w-5 inline flex-shrink-0 text-black" />
+              <span className="sm:hidden">Registrarme en la Comunidad</span>
+              <span className="hidden sm:inline">Quiero registrarme en la Comunidad.</span>
+              <ArrowRight className="h-5 w-5 flex-shrink-0 text-black" />
             </Button>
           </div>
         </div>
@@ -1155,8 +1156,8 @@ export default function MarketingLanding() {
         }}
       >
         <div className="container mx-auto max-w-3xl relative z-10 text-center">
-          <h2 className="font-sora font-bold text-black mb-1 tracking-tight" style={{ fontSize: '36px', letterSpacing: '-0.03em' }}>Y lo más increíble:</h2>
-          <h2 className="font-sora font-bold text-purple-600 uppercase tracking-tight mb-10" style={{ fontSize: '48px' }}>¡Yo asumo todo el riesgo!</h2>
+          <h2 className="font-sora font-bold text-black mb-1 tracking-tight text-xl sm:text-[36px] sm:leading-tight" style={{ letterSpacing: '-0.03em' }}>Y lo más increíble:</h2>
+          <h2 className="font-sora font-bold text-purple-600 uppercase tracking-tight mb-10 text-2xl sm:text-[48px] leading-tight">¡Yo asumo todo el riesgo!</h2>
 
           {/* Sello de garantía: imagen, mitad superpuesta a la card */}
           <div className="relative z-20 flex justify-center mb-[-4rem] sm:mb-[-5rem]">
@@ -1329,13 +1330,13 @@ export default function MarketingLanding() {
 
           <div className="space-y-4">
             {faqs.map((faq, index) => (
-              <Card key={index} className="w-full max-w-[896px] mx-auto border-gray-700" style={{ backgroundColor: '#1c1c1c' }}>
+              <Card key={index} className="w-full max-w-[896px] mx-auto border-gray-700 overflow-hidden" style={{ backgroundColor: '#1c1c1c' }}>
                 <CardHeader
-                  className="cursor-pointer h-[59px] flex flex-row items-center px-6 py-0"
+                  className="cursor-pointer flex flex-row items-center px-4 sm:px-6 py-4 min-h-[59px]"
                   onClick={() => setOpenFaq(openFaq === index ? null : index)}
                 >
-                  <div className="flex items-center justify-between w-full">
-                    <CardTitle className="text-white text-left font-sora text-[18px]">{faq.question}</CardTitle>
+                  <div className="flex items-center justify-between gap-3 w-full min-w-0">
+                    <CardTitle className="text-white text-left font-sora text-[16px] sm:text-[18px] min-w-0 flex-1 break-words pr-2">{faq.question}</CardTitle>
                     <span className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center" style={{ backgroundColor: '#11110f' }}>
                       {openFaq === index ? (
                         <Minus className="h-4 w-4" style={{ color: '#af72f3' }} />
@@ -1380,7 +1381,7 @@ export default function MarketingLanding() {
         }}
       >
         <div className="container mx-auto relative z-10 text-left w-full max-w-[1270px] min-h-[520px] flex flex-col justify-center">
-          <h2 className="font-sora text-[48px] font-bold tracking-tighter mb-6 text-black text-center">
+          <h2 className="font-sora text-2xl sm:text-[48px] font-bold tracking-tighter mb-6 text-black text-center leading-tight">
             <span style={{ color: '#b36cf6' }}>¡Basta</span> de dejarlo para después!
           </h2>
           <div className="font-albert text-[18px] text-gray-700 text-left max-w-3xl mx-auto mb-8 space-y-1 leading-snug">
@@ -1449,14 +1450,14 @@ export default function MarketingLanding() {
         </div>
       </footer>
 
-      {/* Botón flotante WhatsApp - ¿Necesitas ayuda? */}
+      {/* Botón flotante WhatsApp - ¿Necesitas ayuda? (más compacto en móvil) */}
       <a
         href={WHATSAPP_URL}
         target="_blank"
         rel="noopener noreferrer"
-        className="fixed bottom-6 right-6 z-50 flex items-center gap-2 bg-[#63d059] hover:bg-[#52b848] text-white font-sora font-bold px-5 py-3 rounded-full shadow-lg border-2 border-black border-b-4 border-b-black transition-colors"
+        className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-50 flex items-center gap-1.5 sm:gap-2 bg-[#63d059] hover:bg-[#52b848] text-white font-sora font-bold text-sm sm:text-base px-3 py-2 sm:px-5 sm:py-3 rounded-full shadow-lg border-2 border-black border-b-4 border-b-black transition-colors"
       >
-        <MessageCircle className="h-5 w-5 text-white" />
+        <MessageCircle className="h-4 w-4 sm:h-5 sm:w-5 text-white shrink-0" />
         ¿Necesitas ayuda?
       </a>
     </div>
