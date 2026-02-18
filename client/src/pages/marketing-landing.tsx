@@ -558,13 +558,14 @@ export default function MarketingLanding() {
         </div>
       </section>
 
-      {/* Sea honesto: solo la imagen. Fondo #101010. */}
+      {/* Sea honesto: WebP + lazy loading para carga rápida en móvil */}
       <section className="relative py-8 sm:py-12 px-4 bg-[#101010]">
         <div className="container mx-auto max-w-3xl flex justify-center">
           <img
-            src="/sea-honesto-persona.png"
+            src="/sea-honesto-persona.webp"
             alt="Sea honesto: ¿alguna vez se ha hecho alguna de estas preguntas? En la Comunidad No-Code aprenderás paso a paso."
             className="w-full h-auto rounded-xl"
+            loading="lazy"
             decoding="async"
           />
         </div>
@@ -856,10 +857,11 @@ export default function MarketingLanding() {
                   <div className="flex-1 min-h-0 flex justify-center items-center mt-4 sm:mt-2 pb-5 sm:pb-0">
                     <div className="w-full max-w-[280px] mx-auto sm:mx-0 sm:max-w-[225px] sm:w-[225px] aspect-[4/3] sm:aspect-auto sm:h-[168px] flex-shrink-0 rounded-lg border-2 border-gray-400 overflow-hidden shadow-md relative bg-white">
                       <img
-                        src={item.image}
+                        src={item.image.replace(/\.png$/i, "").replace(/\s+/g, "-") + ".webp"}
                         alt=""
                         className="w-full h-full object-cover object-center"
                         style={{ filter: "brightness(0.88) contrast(1.08)" }}
+                        loading="lazy"
                         onError={(e) => {
                           const el = e.target as HTMLImageElement;
                           el.style.display = "none";

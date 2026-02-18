@@ -21,9 +21,21 @@ Checklist antes de **push a Railway**: validar que todas las imágenes carguen y
 
 ---
 
-## Recomendación: convertir a WebP (opcional)
+## Optimización móvil (Sea honesto + Qué recibiré)
 
-Para que se vean igual de bien y carguen más rápido en móvil, convierte a **WebP** (calidad 80–85) y actualiza las rutas en el código:
+La landing ya usa **`<picture>`** con WebP + PNG: si existe el `.webp`, el navegador lo usa (más ligero); si no, usa el `.png`. Además, esas imágenes tienen **`loading="lazy"`** para que no bloqueen la carga inicial en celular.
+
+Para que "Sea honesto" y "Qué recibiré" carguen más rápido en móvil, **añade los WebP** en `client/public/`:
+- `sea-honesto-persona.webp` (convertir desde `sea-honesto-persona.png`)
+- En `que-recibire/`: las mismas 9 imágenes con extensión `.webp` (mismo nombre, ej. `plataforma exclusiva.webp`).
+
+No hace falta cambiar código: al existir el `.webp`, se usará automáticamente.
+
+---
+
+## Recomendación: resto de imágenes a WebP (opcional)
+
+Para que el resto se vean igual y carguen más rápido, convierte a **WebP** (calidad 80–85) y actualiza las rutas en el código:
 
 | Actual | Pasar a |
 |--------|--------|
