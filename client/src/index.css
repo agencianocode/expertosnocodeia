@@ -27,9 +27,9 @@ body {
 :root {
   --background: hsl(0, 0%, 10%);
   --foreground: hsl(0, 0%, 95%);
-  --card: hsl(0, 0%, 16%);
+  --card: #1f1e23;
   --card-foreground: hsl(0, 0%, 95%);
-  --popover: hsl(0, 0%, 16%);
+  --popover: #1f1e23;
   --popover-foreground: hsl(0, 0%, 95%);
   --primary: hsl(262, 83%, 70%);
   --primary-foreground: hsl(0, 0%, 100%);

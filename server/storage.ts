@@ -156,6 +156,7 @@ export interface IStorage {
   // Recent Activity operations
   trackUserActivity(userId: string, courseId: string, options?: { lastLessonId?: string; contentType?: string; roomSlug?: string }): Promise<void>;
   getUserRecentContent(userId: string, limit?: number): Promise<any[]>;
+  getDashboardActivity(userId: string): Promise<{ streakDays: number; last30Days: { date: string; active: boolean }[] }>;
   
   // Profile Progress operations
   getUserProfileProgress(userId: string): Promise<{
@@ -1038,6 +1039,41 @@ export class DatabaseStorage implements IStorage {
       contentType: item.activity.contentType,
       roomSlug: item.roomSlug, // Include room slug from activity or room join
     }));
+  }
+
+  async getDashboardActivity(userId: string): Promise<{ streakDays: number; last30Days: { date: string; active: boolean }[] }> {
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    const rows = await db
+      .select({ lastAccessedAt: userRecentActivity.lastAccessedAt })
+      .from(userRecentActivity)
+      .where(and(
+        eq(userRecentActivity.userId, userId),
+        sql`${userRecentActivity.lastAccessedAt} >= ${thirtyDaysAgo.toISOString()}`
+      ));
+    const activeDates = new Set(
+      (rows || [])
+        .map((r: any) => r.lastAccessedAt && new Date(r.lastAccessedAt).toISOString().slice(0, 10))
+        .filter(Boolean)
+    );
+    const last30Days: { date: string; active: boolean }[] = [];
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    for (let i = 29; i >= 0; i--) {
+      const d = new Date(today);
+      d.setDate(d.getDate() - i);
+      const dateStr = d.toISOString().slice(0, 10);
+      last30Days.push({ date: dateStr, active: activeDates.has(dateStr) });
+    }
+    let streakDays = 0;
+    for (let i = 0; i < 30; i++) {
+      const d = new Date(today);
+      d.setDate(d.getDate() - i);
+      const dateStr = d.toISOString().slice(0, 10);
+      if (activeDates.has(dateStr)) streakDays++;
+      else break;
+    }
+    return { streakDays, last30Days };
   }
 
   async getUserContinueCourses(userId: string): Promise<any[]> {

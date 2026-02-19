@@ -78,6 +78,8 @@ const courseSchema = z.object({
   guideSummary: z.string().optional(), // Solo para guías
   guideTools: z.string().optional(), // Solo para guías
   guideUpdatedAt: z.string().optional(), // Solo para guías
+  guideInstructorName: z.string().optional(), // Nombre del instructor (guías)
+  guideInstructorAvatar: z.string().optional(), // URL foto del instructor (guías)
   guideFiles: z.array(z.object({
     name: z.string(),
     url: z.string(),
@@ -196,6 +198,8 @@ export default function CourseForm() {
       guideSummary: "",
       guideTools: "",
       guideUpdatedAt: "",
+      guideInstructorName: "",
+      guideInstructorAvatar: "",
       guideFiles: [],
       faqs: [],
       presentationVideoUrl: "",
@@ -253,6 +257,8 @@ export default function CourseForm() {
         guideSummary: metadata.summary || "",
         guideTools: metadata.tools || "",
         guideUpdatedAt: formatDateInput(metadata.updatedAt),
+        guideInstructorName: metadata.instructor?.name || "",
+        guideInstructorAvatar: metadata.instructor?.avatar || "",
         guideFiles: metadata.files || [],
         faqs: metadata.faqs || [],
         presentationVideoUrl: metadata.presentationVideoUrl || "",
@@ -370,6 +376,16 @@ export default function CourseForm() {
       } else {
         delete (nextMetadata as any).files;
       }
+      const instructorName = (submitData as any).guideInstructorName?.trim();
+      const instructorAvatar = (submitData as any).guideInstructorAvatar?.trim();
+      if (instructorName || instructorAvatar) {
+        nextMetadata.instructor = {
+          name: instructorName || (existingMetadata.instructor?.name) || "Instructor",
+          avatar: instructorAvatar || (existingMetadata.instructor?.avatar) || "",
+        };
+      } else {
+        delete (nextMetadata as any).instructor;
+      }
       (submitData as any).metadata = nextMetadata;
     } else if (data.type !== 'guide') {
       // For non-guides, clear categoryIds and keep only categoryId
@@ -399,6 +415,8 @@ export default function CourseForm() {
     delete (submitData as any).guideSummary;
     delete (submitData as any).guideTools;
     delete (submitData as any).guideUpdatedAt;
+    delete (submitData as any).guideInstructorName;
+    delete (submitData as any).guideInstructorAvatar;
     delete (submitData as any).guideFiles;
     delete (submitData as any).faqs; // Remove from submitData, already saved in metadata
     delete (submitData as any).presentationVideoUrl; // Remove from submitData, already saved in metadata
@@ -666,6 +684,82 @@ export default function CourseForm() {
                       {...form.register("guideUpdatedAt")}
                       className="bg-slate-800 border-slate-600 text-white"
                     />
+                  </div>
+                )}
+
+                {currentType === 'guide' && (
+                  <div className="space-y-3 border-t border-slate-600 pt-4">
+                    <Label className="text-white font-medium">Instructor de la guía</Label>
+                    <p className="text-xs text-gray-400">
+                      Se muestra en la card de la guía en la home (nombre y foto en &quot;Impartido por&quot;).
+                    </p>
+                    <div>
+                      <Label htmlFor="guideInstructorName" className="text-gray-300 text-sm">Nombre del instructor</Label>
+                      <Input
+                        id="guideInstructorName"
+                        placeholder="Ej. Fabián Segura"
+                        {...form.register("guideInstructorName")}
+                        className="bg-slate-800 border-slate-600 text-white mt-1"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-gray-300 text-sm block mb-1">Foto del instructor</Label>
+                      <div className="flex flex-wrap items-center gap-3">
+                        <ObjectUploader
+                          maxNumberOfFiles={1}
+                          maxFileSize={2 * 1024 * 1024}
+                          accept="image/*"
+                          onGetUploadParameters={async () => {
+                            const response = await apiRequest('POST', '/api/admin/media/upload-url', { fileType: 'image/jpeg' });
+                            const { uploadURL } = await response.json();
+                            return { method: 'PUT' as const, url: uploadURL };
+                          }}
+                          onComplete={async (result) => {
+                            if (result?.[0]) {
+                              const uploadUrl = result[0].uploadURL;
+                              const imageUrl = uploadUrl?.split('?')[0];
+                              try {
+                                const response = await apiRequest('POST', '/api/admin/media/normalize-path', { url: imageUrl });
+                                const { normalizedPath } = await response.json();
+                                form.setValue("guideInstructorAvatar", normalizedPath || "");
+                              } catch (error) {
+                                console.error('Error normalizing path:', error);
+                                form.setValue("guideInstructorAvatar", imageUrl || "");
+                              }
+                              toast({
+                                title: "Foto subida",
+                                description: "La foto del instructor se ha subido correctamente",
+                              });
+                            }
+                          }}
+                          buttonClassName="bg-slate-700 hover:bg-slate-600 text-white text-sm px-3 py-2"
+                        >
+                          📷 Subir foto
+                        </ObjectUploader>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => form.setValue("guideInstructorAvatar", "")}
+                          className="text-gray-400 border-slate-600 hover:bg-slate-700"
+                        >
+                          Quitar foto
+                        </Button>
+                      </div>
+                      {form.watch("guideInstructorAvatar") && (
+                        <div className="mt-2 flex items-center gap-2">
+                          <img
+                            src={form.watch("guideInstructorAvatar")?.startsWith('/objects/')
+                              ? `/api/object-proxy${form.watch("guideInstructorAvatar")}`
+                              : form.watch("guideInstructorAvatar")}
+                            alt="Instructor"
+                            className="w-14 h-14 rounded-full object-cover border-2 border-slate-600"
+                            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                          />
+                          <span className="text-xs text-gray-400">Vista previa</span>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 )}
 

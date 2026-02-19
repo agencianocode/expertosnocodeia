@@ -1680,10 +1680,12 @@ export function registerSimpleRoutes(app: Express): Server {
       // Get all necessary data for dashboard with better error handling
       let continueCourses: any[] = [];
       let recommendedCourses: any[] = [];
+      let allGuides: any[] = [];
       let categories: any[] = [];
-      
+      let dashboardActivity: { streakDays: number; last30Days: { date: string; active: boolean }[] } = { streakDays: 0, last30Days: [] };
+
       try {
-        [continueCourses, recommendedCourses, categories] = await Promise.all([
+        [continueCourses, recommendedCourses, allGuides, categories, dashboardActivity] = await Promise.all([
           storage.getUserRecentContent(userId, 8).catch((err) => {
             console.error("[ERROR] Failed to get user recent content:", err);
             return [];
@@ -1692,10 +1694,18 @@ export function registerSimpleRoutes(app: Express): Server {
             console.error("[ERROR] Failed to get all courses:", err);
             return [];
           }),
+          storage.getAllGuides().catch((err) => {
+            console.error("[ERROR] Failed to get guides:", err);
+            return [];
+          }),
           storage.getAllCategories().catch((err) => {
             console.error("[ERROR] Failed to get categories:", err);
             return [];
-          })
+          }),
+          storage.getDashboardActivity(userId).catch((err) => {
+            console.error("[ERROR] Failed to get dashboard activity:", err);
+            return { streakDays: 0, last30Days: [] };
+          }),
         ]);
       } catch (error) {
         console.error("[ERROR] Promise.all failed in dashboard:", error);
@@ -1729,10 +1739,27 @@ export function registerSimpleRoutes(app: Express): Server {
         };
       });
 
+      // Las 3 guías más recientes por fecha de publicación (createdAt) - desde getAllGuides()
+      const guidesWithData = (allGuides || []).map((guide: any) => {
+        const category = guide?.categoryId ? categories.find((cat: any) => cat.id === guide.categoryId) : null;
+        const progress = guide?.id ? progressMap[guide.id] : null;
+        return { course: guide, category, progress };
+      });
+      const recentGuides = guidesWithData
+        .sort((a: any, b: any) => {
+          const dateA = a.course?.createdAt ? new Date(a.course.createdAt).getTime() : 0;
+          const dateB = b.course?.createdAt ? new Date(b.course.createdAt).getTime() : 0;
+          return dateB - dateA;
+        })
+        .slice(0, 3);
+
       res.json({
         continueCourses, // Recent activity for "Continue where you left off"
         recommendedCourses: coursesWithData, // All courses with progress and category data
-        categories
+        categories,
+        streakDays: dashboardActivity.streakDays,
+        last30Days: dashboardActivity.last30Days,
+        recentGuides, // 3 guías más recientes por createdAt
       });
     } catch (error) {
       console.error("[ERROR] Error fetching dashboard data:", error);

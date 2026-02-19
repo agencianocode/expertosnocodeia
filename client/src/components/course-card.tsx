@@ -13,20 +13,24 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 interface CourseCardProps {
   course: any;
   category?: any;
   progress?: any;
-  variant?: "default" | "horizontal";
+  variant?: "default" | "horizontal" | "guideGrid";
   lastLessonId?: string; // For "Continue where you left off" navigation
   showContinueText?: boolean; // Show "Continuar" text instead of normal navigation
   isAuthenticated?: boolean; // Whether user is authenticated - shows padlock if false
   roomSlug?: string | null; // Optional room context for navigation
   imageFit?: "cover" | "contain"; // Image fit for cover artwork
+  compact?: boolean; // 380x380 card layout (dashboard carousels)
+  instructorLabel?: string; // Override "Impartido por X" with this text (e.g. "Expertos NoCode IA")
+  showBrandLogo?: boolean; // Show sidebar logo "Universidad Expertos NoCode IA" (gradient + text) instead of instructor
 }
 
-export default function CourseCard({ course, category, progress, variant = "default", lastLessonId, showContinueText = false, isAuthenticated = true, roomSlug, imageFit = "cover" }: CourseCardProps) {
+export default function CourseCard({ course, category, progress, variant = "default", lastLessonId, showContinueText = false, isAuthenticated = true, roomSlug, imageFit = "cover", compact = false, instructorLabel, showBrandLogo }: CourseCardProps) {
   if (!course) return null;
   
   const [, setLocation] = useLocation();
@@ -104,6 +108,39 @@ export default function CourseCard({ course, category, progress, variant = "defa
 
   const getCertificateBadgeColor = (color: string) => {
     return color === 'purple' ? 'certificate-badge' : `certificate-badge-${color}`;
+  };
+
+  const getDifficultyLabel = (difficulty?: string) => {
+    if (difficulty === "beginner") return "Principiante";
+    if (difficulty === "intermediate") return "Intermedio";
+    if (difficulty === "advanced") return "Avanzado";
+    return difficulty || "Nivel";
+  };
+
+  const getDifficultyColors = (difficulty?: string) => {
+    if (difficulty === "beginner") return "bg-green-500/15 text-green-400 border-green-500/30";
+    if (difficulty === "intermediate") return "bg-yellow-500/15 text-yellow-400 border-yellow-500/30";
+    if (difficulty === "advanced") return "bg-red-500/15 text-red-400 border-red-500/30";
+    return "bg-muted text-muted-foreground border-border";
+  };
+
+  // Instructor por defecto para guías sin datos (misma foto que la landing)
+  const DEFAULT_GUIDE_INSTRUCTOR = { name: "Fabián Segura", avatar: "/fundador.webp" };
+
+  const getInstructorInfo = (courseItem: any) => {
+    const raw = courseItem?.metadata;
+    const metadata = raw === undefined || raw === null
+      ? {}
+      : typeof raw === "string"
+        ? (() => { try { return JSON.parse(raw); } catch { return {}; } })()
+        : raw;
+    const instructor = metadata?.instructor || metadata?.Instructor || {};
+    const name = instructor?.name ?? instructor?.nombre ?? courseItem?.instructorName ?? courseItem?.instructor_name ?? (courseItem?.type === "guide" ? DEFAULT_GUIDE_INSTRUCTOR.name : "Instructor");
+    const initial = (name || "I").charAt(0).toUpperCase();
+    const avatarUrl = instructor?.avatar ?? instructor?.avatarUrl ?? instructor?.image ?? courseItem?.instructorAvatar ?? courseItem?.instructor_avatar ?? (courseItem?.type === "guide" ? DEFAULT_GUIDE_INSTRUCTOR.avatar : undefined);
+    const hasValidUrl = typeof avatarUrl === "string" && avatarUrl.trim().length > 0 && (avatarUrl.startsWith("http") || avatarUrl.startsWith("data:") || avatarUrl.startsWith("/"));
+    const avatar = hasValidUrl ? avatarUrl : `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='64' height='64' viewBox='0 0 64 64'><rect width='64' height='64' fill='%236366f1'/><text x='50%' y='50%' dy='.35em' font-size='28' fill='white' text-anchor='middle' font-family='system-ui'>${initial}</text></svg>`;
+    return { name, avatar };
   };
 
   const getIcon = (course: any) => {
@@ -268,6 +305,118 @@ export default function CourseCard({ course, category, progress, variant = "defa
     );
   }
 
+  // Same layout as /guides grid card (aspect 16/10, same typography and spacing)
+  if (variant === "guideGrid") {
+    const courseUrl =
+      course.type === "workshop"
+        ? roomSlug ? `/sala/${roomSlug}/taller/${course.id}` : `/taller/${course.id}`
+        : course.type === "guide"
+          ? roomSlug ? `/sala/${roomSlug}/guia/${course.id}` : `/guia/${course.id}`
+          : roomSlug ? `/sala/${roomSlug}/curso/${(course as any).slug || course.id}` : `/curso/${(course as any).slug || course.id}`;
+    const instructor = getInstructorInfo(course);
+    return (
+      <div className="w-full bg-card border border-border rounded-2xl overflow-hidden hover:shadow-lg hover:shadow-primary/10 transition-all duration-300">
+        <button
+          type="button"
+          onClick={() => setLocation(courseUrl)}
+          className="w-full text-left"
+        >
+          <div className="relative aspect-[16/10] bg-muted/40 rounded-t-2xl overflow-hidden">
+            {course.coverImageUrl ? (
+              <div className="w-full h-full p-4 flex items-center justify-center">
+                <img
+                  src={course.coverImageUrl}
+                  alt={course.title}
+                  className="w-full h-full object-contain rounded-xl"
+                />
+              </div>
+            ) : (
+              <div className="w-full h-full flex items-center justify-center text-muted-foreground text-sm">
+                Sin imagen
+              </div>
+            )}
+          </div>
+          <div className="p-3 space-y-2">
+            <h3 className="text-[18px] font-bold text-foreground line-clamp-2 leading-tight">
+              {course.title}
+            </h3>
+            {course.type === "guide" && course.difficulty && (
+              <div className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide border ${getDifficultyColors(course.difficulty)}`}>
+                {getDifficultyLabel(course.difficulty)}
+              </div>
+            )}
+            {course.type !== "guide" && (
+              <div className="text-xs text-muted-foreground">
+                {category?.name || "General"}
+              </div>
+            )}
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-1.5 text-muted-foreground min-w-0">
+                {showBrandLogo ? (
+                  <span className="font-satoshi font-bold text-xs whitespace-nowrap">
+                    <span className="bg-gradient-to-r from-purple-accent to-blue-accent bg-clip-text text-transparent">Universidad</span>
+                    <span className="text-foreground"> Expertos NoCode IA</span>
+                  </span>
+                ) : instructorLabel ? (
+                  <span className="line-clamp-1 text-sm">{instructorLabel}</span>
+                ) : (
+                  <>
+                    <Avatar className="h-5 w-5 flex-shrink-0">
+                      <AvatarImage src={instructor.avatar} alt={instructor.name} />
+                      <AvatarFallback className="text-[10px]">{instructor.name.charAt(0).toUpperCase()}</AvatarFallback>
+                    </Avatar>
+                    <span className="line-clamp-1 text-sm">Impartido por {instructor.name}</span>
+                  </>
+                )}
+              </div>
+              {isAuthenticated ? (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="w-8 h-8 p-0 flex-shrink-0 hover:bg-muted/50"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    saveCourseMutation.mutate();
+                  }}
+                  disabled={saveCourseMutation.isPending}
+                >
+                  {isSaved ? (
+                    <BookmarkCheck className="w-4 h-4 text-foreground" />
+                  ) : (
+                    <Bookmark className="w-4 h-4 text-foreground" />
+                  )}
+                </Button>
+              ) : (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="w-8 h-8 p-0 flex-shrink-0 hover:bg-muted/50"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setLocation('/planes');
+                        }}
+                      >
+                        <Lock className="w-4 h-4 text-foreground" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="top" className="z-[9999]">
+                      Inicia sesión para guardar
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              )}
+            </div>
+          </div>
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div 
       className={cn(
@@ -295,7 +444,9 @@ export default function CourseCard({ course, category, progress, variant = "defa
     >
       {/* Top section - Image or colored background */}
       <div className={cn(
-        "relative h-48 flex flex-col justify-between overflow-hidden",
+        "relative flex flex-col justify-between overflow-hidden flex-shrink-0",
+        compact ? "h-[240px]" : "h-40",
+        course.coverImageUrl && "p-2.5",
         !course.coverImageUrl && "p-6",
         !course.coverImageUrl && typeColor === 'purple' && "bg-purple-500",
         !course.coverImageUrl && typeColor === 'blue' && "bg-blue-400",
@@ -306,7 +457,7 @@ export default function CourseCard({ course, category, progress, variant = "defa
         
         {/* Progress bar - only show if there's progress */}
         {progress && progressPercentage > 0 && (
-          <div className="absolute bottom-0 left-0 right-0 h-1 bg-muted">
+          <div className="absolute bottom-0 left-0 right-0 h-1 bg-muted z-[1]">
             <div 
               className="h-full bg-destructive transition-all duration-300"
               style={{ width: `${progressPercentage}%` }}
@@ -314,9 +465,9 @@ export default function CourseCard({ course, category, progress, variant = "defa
           </div>
         )}
         
-        {/* Custom course image */}
+        {/* Custom course image - inside inner border frame */}
         {course.coverImageUrl && (
-          <div className="absolute inset-0 flex items-center justify-center bg-black/10">
+          <div className="absolute inset-2.5 rounded-xl border-2 border-white/20 overflow-hidden bg-black/10 shadow-inner">
             <img 
               src={course.coverImageUrl} 
               alt={course.title}
@@ -338,66 +489,17 @@ export default function CourseCard({ course, category, progress, variant = "defa
         
         {/* Gradient overlay for better text visibility on images - reduced opacity for brighter images */}
         {course.coverImageUrl && (
-          <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-black/10 to-black/15" />
+          <div className="absolute inset-2.5 rounded-xl pointer-events-none bg-gradient-to-t from-black/30 via-black/10 to-black/15" />
         )}
-        
-        
-        {/* Save/Bookmark button OR Lock button - moved to top right with gray background */}
-        <div className="absolute top-3 right-3 z-10">
-          <div className="bg-muted/90 backdrop-blur-sm rounded-lg border border-border p-1">
-            {isAuthenticated ? (
-              <Button
-                size="sm"
-                variant="ghost"
-                className="w-8 h-8 p-0 hover:bg-muted/50"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  saveCourseMutation.mutate();
-                }}
-                disabled={saveCourseMutation.isPending}
-              >
-                {isSaved ? (
-                  <BookmarkCheck className="w-4 h-4 text-foreground" />
-                ) : (
-                  <Bookmark className="w-4 h-4 text-foreground" />
-                )}
-              </Button>
-            ) : (
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="w-8 h-8 p-0 hover:bg-muted/50"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setLocation('/planes');
-                      }}
-                    >
-                      <Lock className="w-4 h-4 text-foreground" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent side="top" align="center" avoidCollisions={false} sideOffset={12} className="z-[9999] bg-card border border-border p-3 rounded-lg shadow-lg max-w-48">
-                    <div className="text-sm font-medium text-foreground mb-2">
-                      Exclusivo solo para miembros suscritos
-                    </div>
-                    <Button 
-                      size="sm" 
-                      className="w-full"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setLocation('/planes');
-                      }}
-                    >
-                      Inscribirse
-                    </Button>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            )}
+
+        {/* NUEVO badge for guides (when course.isNew is set) */}
+        {course.type === "guide" && course.isNew && (
+          <div className="absolute top-3 left-3 z-10">
+            <span className="inline-flex items-center rounded-full bg-red-500 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white">
+              Nuevo
+            </span>
           </div>
-        </div>
+        )}
         
         {/* Course icon - only show if no custom image */}
         {!course.coverImageUrl && (
@@ -411,33 +513,116 @@ export default function CourseCard({ course, category, progress, variant = "defa
 
       </div>
       
-      {/* Bottom dark section */}
-      <div className="p-4 bg-card flex-1 flex flex-col">
-        <div className="h-12 mb-2 flex items-start">
-          <h3 className="font-semibold text-foreground line-clamp-2 leading-6">
+      {/* Bottom section: for guides show name + level + instructor; for courses show existing layout */}
+      <div className={cn(
+        "bg-card flex-1 flex flex-col min-h-0 overflow-hidden",
+        compact ? "p-3" : "p-4"
+      )}>
+        <div className={compact ? "mb-1 flex items-start" : "mb-2 flex items-start"}>
+          <h3 className={cn(
+            "font-semibold text-foreground line-clamp-2",
+            compact ? "text-sm leading-5" : "leading-6"
+          )}>
             {course.title}
           </h3>
         </div>
-        
-        <div className="flex items-center gap-2 mb-2">
-          <div className="inline-flex items-center gap-1 px-2 py-1 bg-muted rounded-md">
-            <Award className="h-3 w-3 text-muted-foreground" />
-            <span className="text-xs text-muted-foreground">Certificado</span>
-          </div>
-        </div>
-        
-        <div className="flex items-center justify-between">
-          <p className="text-xs text-muted-foreground">
-            {category?.name || "General"}
-          </p>
-          
-          {/* Show progress percentage if available */}
-          {progress && progressPercentage > 0 && (
-            <span className="text-xs text-destructive font-medium">
-              {progressPercentage}% completado
-            </span>
-          )}
-        </div>
+
+        {course.type === "guide" ? (
+          <>
+            {course.difficulty && (
+              <div className="mb-2">
+                <span className={cn(
+                  "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium border",
+                  getDifficultyColors(course.difficulty)
+                )}>
+                  {getDifficultyLabel(course.difficulty)}
+                </span>
+              </div>
+            )}
+            {(() => {
+              const instructor = getInstructorInfo(course);
+              return (
+                <div className="flex items-center justify-between gap-2 mt-auto">
+                  <div className="flex items-center gap-2 min-w-0">
+                    {showBrandLogo ? (
+                      <span className="font-satoshi font-bold text-xs whitespace-nowrap">
+                        <span className="bg-gradient-to-r from-purple-accent to-blue-accent bg-clip-text text-transparent">Universidad</span>
+                        <span className="text-foreground"> Expertos NoCode IA</span>
+                      </span>
+                    ) : instructorLabel ? (
+                      <span className="text-xs text-muted-foreground truncate">{instructorLabel}</span>
+                    ) : (
+                      <>
+                        <Avatar className="h-6 w-6 flex-shrink-0">
+                          <AvatarImage src={instructor.avatar} alt={instructor.name} />
+                          <AvatarFallback delayMs={0} className="text-xs bg-muted text-muted-foreground">
+                            {instructor.name.charAt(0).toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                        <span className="text-xs text-muted-foreground truncate">
+                          Impartido por {instructor.name}
+                        </span>
+                      </>
+                    )}
+                  </div>
+                  {isAuthenticated ? (
+                    <Button size="sm" variant="ghost" className="w-8 h-8 p-0 flex-shrink-0" onClick={(e) => { e.stopPropagation(); saveCourseMutation.mutate(); }} disabled={saveCourseMutation.isPending}>
+                      {isSaved ? <BookmarkCheck className="w-4 h-4 text-foreground" /> : <Bookmark className="w-4 h-4 text-foreground" />}
+                    </Button>
+                  ) : (
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button size="sm" variant="ghost" className="w-8 h-8 p-0 flex-shrink-0" onClick={(e) => { e.stopPropagation(); setLocation('/planes'); }}>
+                            <Lock className="w-4 h-4 text-foreground" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent side="top" className="z-[9999]">Inicia sesión para guardar</TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  )}
+                </div>
+              );
+            })()}
+          </>
+        ) : (
+          <>
+            <div className="flex items-center gap-2 mb-2">
+              <div className="inline-flex items-center gap-1 px-2 py-1 bg-muted rounded-md">
+                <Award className="h-3 w-3 text-muted-foreground" />
+                <span className="text-xs text-muted-foreground">Certificado</span>
+              </div>
+            </div>
+            <div className="flex items-center justify-between">
+              <p className="text-xs text-muted-foreground">
+                {category?.name || "General"}
+              </p>
+              <div className="flex items-center gap-1">
+                {progress && progressPercentage > 0 && (
+                  <span className="text-xs text-destructive font-medium">
+                    {progressPercentage}% completado
+                  </span>
+                )}
+                {isAuthenticated ? (
+                  <Button size="sm" variant="ghost" className="w-8 h-8 p-0" onClick={(e) => { e.stopPropagation(); saveCourseMutation.mutate(); }} disabled={saveCourseMutation.isPending}>
+                    {isSaved ? <BookmarkCheck className="w-4 h-4 text-foreground" /> : <Bookmark className="w-4 h-4 text-foreground" />}
+                  </Button>
+                ) : (
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button size="sm" variant="ghost" className="w-8 h-8 p-0" onClick={(e) => { e.stopPropagation(); setLocation('/planes'); }}>
+                          <Lock className="w-4 h-4 text-foreground" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent side="top" className="z-[9999]">Inicia sesión para guardar</TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                )}
+              </div>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
