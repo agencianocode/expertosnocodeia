@@ -16,48 +16,38 @@ export function UnlockContentCTA({ variant, className, backUrl }: UnlockContentC
   return (
     <div
       className={cn(
-        "rounded-xl border border-border bg-muted/80 dark:bg-muted/60 p-6 lg:p-8",
+        "rounded-xl border border-white/10 p-6 lg:p-8",
+        "bg-gradient-to-b from-[#21212B] to-[#2a2a38]",
         className
       )}
     >
-      <h3 className="text-lg font-semibold text-foreground mb-1">{title}</h3>
-      <p className="text-sm text-muted-foreground mb-4">
+      <h3 className="text-[40px] font-bold text-white leading-tight mb-2">{title}</h3>
+      <p className="text-base text-[#D0D0D0] mb-4">
         Incluido con la versión de prueba o Pro
       </p>
-      <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground mb-4">
+      <div className="flex flex-wrap items-center gap-2 text-base text-[#D0D0D0] mb-4">
         <span>Tu plan:</span>
-        <span className="font-medium text-foreground">Invitado</span>
-        <span className="text-muted-foreground">No he iniciado sesión</span>
+        <span className="font-semibold text-white">Invitado</span>
+        <span className="text-[#D0D0D0]">No he iniciado sesión</span>
       </div>
-      <p className="text-sm text-muted-foreground mb-4">
+      <p className="text-base text-[#D0D0D0] mb-6">
         ¿Ya eres miembro?{" "}
         <button
           type="button"
           onClick={() => setLocation("/register")}
-          className="font-medium text-primary hover:underline underline-offset-2"
+          className="font-medium text-[#407BFF] hover:underline underline-offset-2"
         >
           Inicia sesión
         </button>
         .
       </p>
-      <div className="flex flex-wrap gap-3">
-        <Button
-          onClick={() => setLocation("/planes")}
-          className="bg-primary hover:bg-primary/90"
-        >
-          Ver planes Pro
-          <ArrowRight className="h-4 w-4 ml-2" />
-        </Button>
-        {backUrl && (
-          <Button
-            variant="outline"
-            onClick={() => setLocation(backUrl)}
-            className="border-border text-foreground"
-          >
-            Volver
-          </Button>
-        )}
-      </div>
+      <Button
+        onClick={() => setLocation("/planes")}
+        className="bg-[#407BFF] hover:bg-[#407BFF]/90 text-white border-0"
+      >
+        Ver planes Pro
+        <ArrowRight className="h-4 w-4 ml-2" />
+      </Button>
     </div>
   );
 }

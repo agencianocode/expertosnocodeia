@@ -22,7 +22,7 @@ import {
 import { LessonResources } from "@/components/lesson-resources";
 import { LessonComments } from "@/components/LessonComments";
 import { UnlockContentCTA } from "@/components/UnlockContentCTA";
-import { Award, Check, ChevronRight, ChevronLeft, Menu, Users, Bot, Code, Megaphone, Settings, DollarSign, Heart, Building, CheckSquare, Scale, BarChart, GraduationCap, PlayCircle, Clock, CheckCircle2, BookOpen, Play, Lock, MessageCirclePlus, Link as LinkIcon } from "lucide-react";
+import { Award, Check, ChevronRight, ChevronLeft, ChevronDown, ChevronUp, Menu, Users, Bot, Code, Megaphone, Settings, DollarSign, Heart, Building, CheckSquare, Scale, BarChart, GraduationCap, PlayCircle, Clock, CheckCircle2, BookOpen, Play, Lock, MessageCirclePlus, Link as LinkIcon } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
@@ -448,7 +448,9 @@ export default function Course() {
       const savedLessonIndex = lessonsArray.findIndex((lesson: any) => lesson.id === savedLessonId);
       if (savedLessonIndex !== -1) {
         setCurrentLessonIndex(savedLessonIndex);
-        setShowCourseInfo(false);
+        // Solo saltar la introducción si la posición guardada NO es la primera lección (así siempre se ve la intro al entrar)
+        const isFirstLesson = savedLessonIndex === firstNavigableLessonIndex || savedLessonIndex === 0;
+        setShowCourseInfo(!!isFirstLesson);
         setHasCheckedSavedPosition(true);
         return;
       }
@@ -461,11 +463,13 @@ export default function Course() {
       const lastIndex = lessonsArray.findIndex((lesson: any) => lesson.id === progressData.lastLessonId);
       if (lastIndex !== -1) {
         setCurrentLessonIndex(lastIndex);
-        setShowCourseInfo(false);
+        const isFirstLesson = lastIndex === firstNavigableLessonIndex || lastIndex === 0;
+        setShowCourseInfo(!!isFirstLesson);
         setHasCheckedSavedPosition(true);
         return;
       }
     }
+    // Siempre mostrar la sección de introducción al entrar al curso (con o sin sala)
     if (isRoomContext) {
       if (!isAuthenticated && firstNavigableLessonIndex !== -1) {
         setCurrentLessonIndex(firstNavigableLessonIndex);
@@ -481,10 +485,8 @@ export default function Course() {
           }
         }
       }
-      setShowCourseInfo(false);
-    } else {
-      setShowCourseInfo(true);
     }
+    setShowCourseInfo(true);
     setHasCheckedSavedPosition(true);
   }, [course, courseId, lessonsArray, hasCheckedSavedPosition, getSavedLessonPosition, isAuthenticated, isRoomContext, firstNavigableLessonIndex, modules, subLessonsByParent, progressData]);
 
@@ -624,6 +626,38 @@ export default function Course() {
     return 'purple';
   };
 
+  const getDifficultyLabel = (difficulty?: string) => {
+    if (difficulty === "beginner") return "Principiante";
+    if (difficulty === "intermediate") return "Intermedio";
+    if (difficulty === "advanced") return "Avanzado";
+    return difficulty || "Nivel";
+  };
+
+  const getDifficultyColors = (difficulty?: string) => {
+    if (difficulty === "beginner") return "bg-green-500/15 text-green-400 border-green-500/30";
+    if (difficulty === "intermediate") return "bg-yellow-500/15 text-yellow-400 border-yellow-500/30";
+    if (difficulty === "advanced") return "bg-red-500/15 text-red-400 border-red-500/30";
+    return "bg-muted text-muted-foreground border-border";
+  };
+
+  const formatCourseDate = (dateString: string | undefined) => {
+    if (!dateString) return "Fecha no disponible";
+    return new Date(dateString).toLocaleDateString("es-ES", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+  };
+
+  const formatEstimatedTime = (hours: number | undefined) => {
+    if (hours == null || hours === 0) return "—";
+    if (hours === 1) return "1 hora";
+    const h = Math.floor(hours);
+    const m = Math.round((hours - h) * 60);
+    if (m === 0) return `${h} horas`;
+    return `${h} ${h === 1 ? "hora" : "horas"} y ${m} minutos`;
+  };
+
   if (authLoading || courseLoading || lessonsLoading) {
     return (
       <div className="min-h-screen bg-background flex">
@@ -694,114 +728,6 @@ export default function Course() {
     tools: [],
     lessons: lessonsArray
   };
-
-  // Teaser view for non-authenticated users: no lesson list, no player
-  if (!isAuthenticated) {
-    const introText = courseData.introduction;
-    const truncatedIntro = typeof introText === "string" && introText.length > 500
-      ? introText.slice(0, 500).trim() + "…"
-      : introText;
-    return (
-      <div className="min-h-screen bg-background text-foreground">
-        <MobileHeader />
-        <div className="flex relative">
-          {sidebarOpen && (
-            <div className="hidden lg:block">
-              <Sidebar onToggle={() => setSidebarOpen(false)} />
-            </div>
-          )}
-          {!sidebarOpen && (
-            <button
-              onClick={() => setSidebarOpen(true)}
-              className="hidden lg:flex fixed top-4 left-4 z-50 items-center justify-center w-10 h-10 bg-card hover:bg-muted text-muted-foreground hover:text-foreground rounded-lg shadow-lg transition-all"
-              title="Mostrar sidebar"
-            >
-              <Menu className="h-5 w-5" />
-            </button>
-          )}
-          <div className={cn(
-            "flex-1 flex bg-background min-h-screen overflow-y-auto hide-scrollbar transition-all duration-300",
-            sidebarOpen ? "lg:ml-[250px]" : "lg:ml-0"
-          )}>
-            <main className="flex-1 w-full bg-background overflow-y-auto min-h-screen">
-              <div className="px-4 lg:px-8 py-4 flex items-center justify-between">
-                <Link href={backUrl}>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className={cn(
-                      "text-muted-foreground hover:text-foreground",
-                      isAgentesIARoom && "text-[#faa318] hover:text-[#faa318] hover:bg-black"
-                    )}
-                  >
-                    <ChevronLeft className="h-4 w-4 mr-1" />
-                    {isRoomContext ? "Volver a la sala" : "Volver a los cursos"}
-                  </Button>
-                </Link>
-              </div>
-              <div className="px-4 lg:px-8 pb-4">
-                <h1 className="text-xl lg:text-2xl xl:text-3xl font-bold text-foreground">{(course as any)?.title}</h1>
-              </div>
-              <div className="px-4 lg:px-8 pb-24 lg:pb-8 lg:pl-[45px] lg:pr-[15px]">
-                {presentationVideoUrl ? (
-                  <div className="relative rounded-lg overflow-hidden mb-6" style={{ paddingBottom: "56.25%" }}>
-                    <iframe
-                      className="absolute top-0 left-0 w-full h-full blur-md select-none pointer-events-none"
-                      src={getYouTubeEmbedUrl(presentationVideoUrl)}
-                      title="Video de presentación del curso"
-                      frameBorder={0}
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                      allowFullScreen
-                    />
-                    <div className="absolute inset-0 flex items-center justify-center bg-black/30">
-                      <Lock className="h-16 w-16 text-white drop-shadow-lg" />
-                    </div>
-                  </div>
-                ) : (course as any)?.coverImageUrl ? (
-                  <div className="relative rounded-xl overflow-hidden bg-muted/30 aspect-video mb-6">
-                    <img
-                      src={(course as any).coverImageUrl}
-                      alt={(course as any)?.title || "Curso"}
-                      className="w-full h-full object-cover blur-md"
-                    />
-                    <div className="absolute inset-0 flex items-center justify-center bg-black/30">
-                      <Lock className="h-16 w-16 text-white drop-shadow-lg" />
-                    </div>
-                  </div>
-                ) : (
-                  <div className="relative rounded-xl overflow-hidden bg-muted/30 aspect-video mb-6 flex items-center justify-center">
-                    <BookOpen className="h-12 w-12 text-muted-foreground" />
-                    <div className="absolute inset-0 flex items-center justify-center bg-black/30">
-                      <Lock className="h-16 w-16 text-white drop-shadow-lg" />
-                    </div>
-                  </div>
-                )}
-                {truncatedIntro && (
-                  <div className="bg-card rounded-xl px-4 lg:px-8 py-4 lg:py-6 mb-6">
-                    <div className="prose prose-sm prose-invert max-w-none text-foreground/80">
-                      <ReactMarkdown
-                        remarkPlugins={[remarkGfm]}
-                        rehypePlugins={[rehypeHighlight, rehypeRaw]}
-                        components={{
-                          p: ({ children }) => <p className="mb-2 text-foreground/80 text-sm leading-relaxed">{children}</p>,
-                          ul: ({ children }) => <ul className="list-disc pl-5 mb-2 space-y-1 text-foreground/80 text-sm">{children}</ul>,
-                          strong: ({ children }) => <strong className="font-semibold text-foreground">{children}</strong>,
-                          img: () => null,
-                        }}
-                      >
-                        {truncatedIntro}
-                      </ReactMarkdown>
-                    </div>
-                  </div>
-                )}
-                <UnlockContentCTA variant="course" backUrl={backUrl} />
-              </div>
-            </main>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   // Calculate progress based on leaf lessons only (sub-lessons or modules without children)
   const leafLessons = lessonsArray.filter((lesson: any) => {
@@ -957,40 +883,89 @@ export default function Course() {
         
       <div className={cn(
         "flex-1 flex bg-background h-screen overflow-y-auto hide-scrollbar transition-all duration-300",
-        sidebarOpen ? "lg:ml-[250px]" : "lg:ml-0",
-        rightSidebarOpen ? "lg:mr-[320px] xl:mr-[360px] 2xl:mr-[30vw]" : "lg:mr-0"
+        sidebarOpen ? "lg:ml-[250px]" : "lg:ml-0"
       )}>
         {/* Main Content - Center Column - Full width on mobile */}
         <main className="flex-1 w-full bg-background overflow-y-auto hide-scrollbar h-screen">
-          {/* Top Navigation Bar */}
-          <div className="px-4 lg:px-8 py-4 flex items-center justify-between">
-            <Link href={backUrl} className="flex-1 mt-[5px] mb-[5px]">
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className={cn(
-                  "text-muted-foreground hover:text-foreground",
-                  isAgentesIARoom && "text-[#faa318] hover:text-[#faa318] hover:bg-black"
-                )}
-              >
-                <ChevronLeft className="h-4 w-4 mr-1" />
-                {isRoomContext ? 'Volver a la sala' : 'Volver a los cursos'}
-              </Button>
-            </Link>
-            {/* Save Course Button - Only on mobile */}
-            <div className="lg:hidden">
-              <Button variant="outline" size="sm" className="border-border text-card-foreground">
-                <span className="mr-1">🔖</span>
-                Guardar curso
-              </Button>
+          {/* Contenedor igual que en guías: max-w-[1200px] centrado */}
+          <div className="max-w-[1200px] mx-auto px-4 lg:px-8 py-6 lg:py-8 pb-24 lg:pb-8">
+            {/* Top Navigation Bar */}
+            <div className="flex items-center justify-between mb-4">
+              <Link href={backUrl} className="flex-1 mt-[5px] mb-[5px]">
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className={cn(
+                    "text-muted-foreground hover:text-foreground",
+                    isAgentesIARoom && "text-[#faa318] hover:text-[#faa318] hover:bg-black"
+                  )}
+                >
+                  <ChevronLeft className="h-4 w-4 mr-1" />
+                  {isRoomContext ? 'Volver a la sala' : 'Volver a los cursos'}
+                </Button>
+              </Link>
+              {/* Save Course Button - Only on mobile */}
+              <div className="lg:hidden">
+                <Button variant="outline" size="sm" className="border-border text-card-foreground">
+                  <span className="mr-1">🔖</span>
+                  Guardar curso
+                </Button>
+              </div>
             </div>
-          </div>
 
-          {/* Course Title */}
-          <div className="px-4 lg:px-8 pb-4">
-            <h1 className="text-xl lg:text-2xl xl:text-3xl font-bold text-foreground">{(course as any)?.title}</h1>
+            {/* Card superior informativa (igual que en guías) */}
+            <div className="bg-background rounded-xl p-5 lg:p-8 border border-border mb-6">
+              <div className="flex flex-wrap gap-2 mb-3">
+                <Badge variant="secondary" className="text-[14px] uppercase">
+                  Curso
+                </Badge>
+                {(course as any)?.difficulty && (
+                  <Badge className={cn("text-[14px] uppercase border", getDifficultyColors((course as any).difficulty))}>
+                    {getDifficultyLabel((course as any).difficulty)}
+                  </Badge>
+                )}
+              </div>
+              <h1 className="text-2xl lg:text-3xl xl:text-4xl font-bold text-foreground mb-3">
+                {(course as any)?.title}
+              </h1>
+              {courseData.introduction && (
+                <p className="text-muted-foreground text-sm lg:text-base leading-relaxed mb-4 line-clamp-3">
+                  {typeof courseData.introduction === "string" && courseData.introduction.length > 320
+                    ? courseData.introduction.replace(/<[^>]+>/g, "").slice(0, 320).trim() + "…"
+                    : typeof courseData.introduction === "string"
+                      ? courseData.introduction.replace(/<[^>]+>/g, "")
+                      : courseData.introduction}
+                </p>
+              )}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4">
+                <div className="bg-muted/50 rounded-xl p-4 border border-border">
+                  <div className="text-xs uppercase tracking-wide text-muted-foreground mb-1">
+                    Lecciones
+                  </div>
+                  <div className="text-sm font-medium text-foreground">
+                    {lessonsArray.length} {lessonsArray.length === 1 ? "lección" : "lecciones"}
+                  </div>
+                </div>
+                <div className="bg-muted/50 rounded-xl p-4 border border-border">
+                  <div className="text-xs uppercase tracking-wide text-muted-foreground mb-1">
+                    Tiempo estimado
+                  </div>
+                  <div className="text-sm font-medium text-foreground">
+                    {formatEstimatedTime((course as any)?.estimatedHours)}
+                  </div>
+                </div>
+                <div className="bg-muted/50 rounded-xl p-4 border border-border">
+                  <div className="text-xs uppercase tracking-wide text-muted-foreground mb-1">
+                    Actualizado
+                  </div>
+                  <div className="text-sm font-medium text-foreground">
+                    {formatCourseDate((course as any)?.updatedAt ?? (course as any)?.createdAt)}
+                  </div>
+                </div>
+              </div>
+            </div>
             {/* Progress bar - Only on mobile - Clickeable */}
-            <div 
+            <div
               className="lg:hidden mt-3 flex items-center gap-2 text-sm text-muted-foreground cursor-pointer hover:text-foreground transition-colors"
               onClick={() => setIsMobileLessonsOpen(true)}
             >
@@ -1001,29 +976,44 @@ export default function Course() {
               </div>
               <ChevronRight className="h-4 w-4 ml-1" />
             </div>
-          </div>
 
-          <div className="px-4 lg:px-8 pb-24 lg:pb-8 lg:pl-[45px] lg:pr-[15px]">
+            {/* Grid dos columnas (igual que en guías) - sidebar siempre visible en PC */}
+            <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_260px] xl:grid-cols-[minmax(0,1fr)_280px] 2xl:grid-cols-[minmax(0,1fr)_22vw] gap-6 mb-6">
+            <div className="min-w-0">
             {/* Course Info View - Show before lessons if no saved position */}
             {showCourseInfo && (
               <section className="space-y-6 lg:space-y-8">
-                {/* Presentation Video */}
+                {/* Presentation Video - sin barra de desplazamiento; invitados: difuminado + candado */}
                 {presentationVideoUrl && (
-                  <div className="relative rounded-lg overflow-hidden" style={{ paddingBottom: '56.25%' }}>
+                  <div className="relative w-full aspect-video rounded-lg overflow-hidden bg-black">
                     <iframe
-                      className="absolute top-0 left-0 w-full h-full"
+                      className={cn(
+                        "absolute top-0 left-0 w-full h-full border-0",
+                        !isAuthenticated && "blur-md select-none pointer-events-none"
+                      )}
                       src={getYouTubeEmbedUrl(presentationVideoUrl)}
                       title="Video de presentación del curso"
-                      frameBorder="0"
                       allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                       allowFullScreen
                     />
+                    {!isAuthenticated && (
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/30 pointer-events-none">
+                        <Lock className="h-16 w-16 text-white drop-shadow-lg" />
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* CTA para invitados: debajo del video */}
+                {!isAuthenticated && (
+                  <div className="pb-4">
+                    <UnlockContentCTA variant="course" backUrl={backUrl} />
                   </div>
                 )}
 
                 {/* Course Description */}
                 {courseData.introduction && (
-                  <div className="bg-card rounded-xl px-4 lg:px-8 py-4 lg:py-6">
+                  <div className="bg-card rounded-xl p-5 lg:p-8">
                     <div className="prose prose-sm lg:prose-base max-w-none">
                       {(() => {
                         const description = courseData.introduction;
@@ -1068,7 +1058,7 @@ export default function Course() {
 
                 {/* FAQs Section */}
                 {courseFaqs && courseFaqs.length > 0 && (
-                  <div className="bg-card rounded-xl px-4 lg:px-8 py-4 lg:py-6">
+                  <div className="bg-card rounded-xl p-5 lg:p-8">
                     <h3 className="text-lg lg:text-xl font-bold text-foreground mb-4 font-satoshi">
                       Preguntas frecuentes
                     </h3>
@@ -1087,41 +1077,51 @@ export default function Course() {
                   </div>
                 )}
 
-                {/* Start Course Button */}
-                <div className="flex justify-center">
+                {/* Botones Anterior y Próximo - mismo tamaño, ancho completo */}
+                <div className="grid grid-cols-2 w-full gap-3">
+                  <Button
+                    variant="outline"
+                    onClick={() => setLocation(backUrl || "/cursos")}
+                    size="lg"
+                    className="w-full text-foreground hover:opacity-90 border-0"
+                    style={{ backgroundColor: '#29282d' }}
+                  >
+                    <ChevronLeft className="h-4 w-4 mr-2" />
+                    Anterior
+                  </Button>
                   <Button
                     onClick={() => {
-                      // Find first navigable lesson
-                      let firstLessonIndex = 0;
-                      if (!isAuthenticated && firstNavigableLessonIndex !== -1) {
-                        firstLessonIndex = firstNavigableLessonIndex;
+                      // Desde intro, ir directamente a la segunda lección navegable (1.2), saltando 1.1
+                      let nextLessonIndex = 0;
+                      if (navigableLessonIndices.length > 1) {
+                        nextLessonIndex = navigableLessonIndices[1];
+                      } else if (navigableLessonIndices.length === 1) {
+                        nextLessonIndex = navigableLessonIndices[0];
                       } else {
                         const firstModule = modules[0];
                         if (firstModule) {
                           const firstModuleSubLessons = subLessonsByParent[firstModule.id];
-                          if (firstModuleSubLessons && firstModuleSubLessons.length > 0) {
+                          if (firstModuleSubLessons && firstModuleSubLessons.length > 1) {
+                            const secondSubLessonIndex = lessonsArray.findIndex((l: any) => l.id === firstModuleSubLessons[1].id);
+                            if (secondSubLessonIndex !== -1) nextLessonIndex = secondSubLessonIndex;
+                          } else if (firstModuleSubLessons?.length === 1) {
                             const firstSubLessonIndex = lessonsArray.findIndex((l: any) => l.id === firstModuleSubLessons[0].id);
-                            if (firstSubLessonIndex !== -1) {
-                              firstLessonIndex = firstSubLessonIndex;
-                            }
+                            if (firstSubLessonIndex !== -1) nextLessonIndex = firstSubLessonIndex;
                           }
                         }
                       }
-                      setCurrentLessonIndex(firstLessonIndex);
+                      setCurrentLessonIndex(nextLessonIndex);
                       setShowCourseInfo(false);
-                      // Save position
-                      if (lessonsArray[firstLessonIndex] && courseId) {
-                        saveLessonPosition(courseId, lessonsArray[firstLessonIndex].id, (course as any)?.type, roomSlug);
+                      if (lessonsArray[nextLessonIndex] && courseId) {
+                        saveLessonPosition(courseId, lessonsArray[nextLessonIndex].id, (course as any)?.type, roomSlug);
                       }
                     }}
                     size="lg"
-                    className={cn(
-                      "text-white font-medium py-6 px-8 text-lg",
-                      isAgentesIARoom ? "bg-[#faa318] hover:bg-[#faa318]/90" : "bg-primary hover:bg-primary/90"
-                    )}
+                    className="w-full text-white hover:opacity-90 border-0"
+                    style={{ backgroundColor: '#000000' }}
                   >
-                    Comenzar curso
-                    <ChevronRight className="ml-2 h-5 w-5" />
+                    Próximo
+                    <ChevronRight className="h-4 w-4 ml-2" />
                   </Button>
                 </div>
               </section>
@@ -1131,59 +1131,105 @@ export default function Course() {
             {!showCourseInfo && currentLesson && (
               <section>
                 {!isAuthenticated && !isFirstNavigableLesson(currentLessonIndex) ? (
-                  // Blocked video/media for lessons after the first when not authenticated
-                  (<>
-                    {/* Media Area - Blocked for non-authenticated users (except first lesson) */}
-                    <div className="relative rounded-lg overflow-hidden mb-6 lg:mb-8 bg-black" style={{ paddingBottom: '56.25%' }}>
-                      <div className="absolute top-0 left-0 w-full h-full flex items-center justify-center bg-black">
-                        <div className="text-center text-white">
-                          <div className="mb-4">
-                            <div className="w-16 h-16 mx-auto rounded-full bg-gray-800 flex items-center justify-center mb-4">
-                              <Play className="h-8 w-8 text-gray-400" />
-                            </div>
-                          </div>
-                          <p className="text-lg mb-4">Tu plan actual no incluye acceso a este curso.</p>
-                          <Button 
-                            onClick={() => window.location.href = "/planes"}
-                            className="bg-white text-black hover:bg-gray-200"
-                          >
-                            Inscribirse
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  </>)
-                ) : (
-                  // Normal content for authenticated users
-                  (<>
-                    {/* Media Area - Video/Image/Empty based on lesson content */}
+                  /* Vista para invitados en lecciones bloqueadas: video arriba, luego Desbloquea, luego card título/mensaje, luego Anterior/Próximo */
+                  <>
+                    {/* 1. Video/imagen de la lección arriba: visible pero difuminado y con candado */}
                     {currentLesson.videoUrl ? (
-                      <div className="relative rounded-lg overflow-hidden mb-6 lg:mb-8" style={{ paddingBottom: '56.25%' }}>
+                      <div className="relative w-full aspect-video rounded-lg overflow-hidden bg-black mb-6 lg:mb-8">
                         <iframe
-                          className="absolute top-0 left-0 w-full h-full"
+                          className="absolute top-0 left-0 w-full h-full blur-md select-none pointer-events-none"
                           src={getYouTubeEmbedUrl(currentLesson.videoUrl)}
                           title={currentLesson.title}
                           frameBorder="0"
                           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                           allowFullScreen
                         />
+                        <div className="absolute inset-0 flex items-center justify-center bg-black/30 pointer-events-none">
+                          <Lock className="h-16 w-16 text-white drop-shadow-lg" />
+                        </div>
                       </div>
                     ) : currentLesson.imageUrl ? (
-                      <div className="rounded-lg mb-6 lg:mb-8">
-                        <img 
-                          src={currentLesson.imageUrl} 
+                      <div className="relative rounded-lg overflow-hidden mb-6 lg:mb-8">
+                        <img
+                          src={currentLesson.imageUrl}
                           alt={currentLesson.title}
-                          className="w-full h-auto rounded-lg"
+                          className="w-full h-auto rounded-lg blur-md select-none pointer-events-none"
                         />
+                        <div className="absolute inset-0 flex items-center justify-center bg-black/30 pointer-events-none">
+                          <Lock className="h-16 w-16 text-white drop-shadow-lg" />
+                        </div>
                       </div>
-                    ) : null}
-                  </>)
-                )}
+                    ) : (
+                      <div className="relative w-full aspect-video rounded-lg overflow-hidden mb-6 lg:mb-8 bg-muted">
+                        <div className="absolute inset-0 flex items-center justify-center bg-black/40">
+                          <Lock className="h-16 w-16 text-white drop-shadow-lg" />
+                        </div>
+                      </div>
+                    )}
+                    {/* 2. Card Desbloquea este curso */}
+                    <div className="mb-6">
+                      <UnlockContentCTA variant="course" backUrl={backUrl} />
+                    </div>
+                    {/* 3. Card con título de la lección y mensaje Pro */}
+                    <div className="bg-card rounded-xl p-5 lg:p-8 border border-border mb-6">
+                      <h2 className="text-xl lg:text-2xl font-bold text-foreground mb-3 font-satoshi">
+                        {currentLesson.title}
+                      </h2>
+                      <p className="text-muted-foreground">
+                        Las notas de lecciones se desbloquean con Pro.
+                      </p>
+                    </div>
+                    <div className="grid grid-cols-2 w-full gap-3">
+                      <Button
+                        variant="outline"
+                        onClick={currentLessonIndex <= 0 ? () => setLocation(backUrl || "/cursos") : handlePreviousLesson}
+                        size="lg"
+                        className="w-full text-foreground hover:opacity-90 border-0"
+                        style={{ backgroundColor: '#29282d' }}
+                      >
+                        <ChevronLeft className="h-4 w-4 mr-2" />
+                        Anterior
+                      </Button>
+                      <Button
+                        onClick={handleNextLesson}
+                        disabled={currentLessonIndex >= lessonsArray.length - 1}
+                        size="lg"
+                        className="w-full text-white hover:opacity-90 border-0 disabled:opacity-30 disabled:cursor-not-allowed"
+                        style={{ backgroundColor: '#000000' }}
+                      >
+                        Próximo
+                        <ChevronRight className="h-4 w-4 ml-2" />
+                      </Button>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                {/* Media Area - Video/Image/Empty based on lesson content (solo autenticados) */}
+                {currentLesson.videoUrl ? (
+                  <div className="relative w-full aspect-video rounded-lg overflow-hidden bg-black mb-6 lg:mb-8">
+                    <iframe
+                      className="absolute top-0 left-0 w-full h-full"
+                      src={getYouTubeEmbedUrl(currentLesson.videoUrl)}
+                      title={currentLesson.title}
+                      frameBorder="0"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                    />
+                  </div>
+                ) : currentLesson.imageUrl ? (
+                  <div className="rounded-lg mb-6 lg:mb-8">
+                    <img 
+                      src={currentLesson.imageUrl} 
+                      alt={currentLesson.title}
+                      className="w-full h-auto rounded-lg"
+                    />
+                  </div>
+                ) : null}
 
                 {/* Lesson Content with Tabs and Side-by-side Layout */}
                 <div className="space-y-6 lg:space-y-8">
                   {/* Lesson Header with Title and Action Buttons */}
-                  <div className="bg-card rounded-xl px-4 lg:px-8 py-4 lg:py-6">
+                  <div className="bg-card rounded-xl p-5 lg:p-8">
                     <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-4">
                       <div className="flex items-center flex-1">
                         <div className="w-7 h-7 lg:w-8 lg:h-8 rounded-lg mr-2 lg:mr-3 flex items-center justify-center flex-shrink-0" style={{backgroundColor: '#363636'}}>
@@ -1267,9 +1313,9 @@ export default function Course() {
                   <div>
                     {/* Informações Tab Content */}
                     {activeTab === 'content' && (
-                      <div className="bg-card rounded-xl px-4 lg:px-8 py-4 lg:py-6 font-satoshi font-normal text-[13px] lg:text-[15px] leading-[20px] lg:leading-[24px] text-card-foreground">
+                      <div className="bg-card rounded-xl p-5 lg:p-8 font-satoshi font-normal text-[13px] lg:text-[15px] leading-[20px] lg:leading-[24px] text-card-foreground">
                         {!isAuthenticated ? (
-                          currentLessonIndex === 0 ? (
+                          isFirstNavigableLesson(currentLessonIndex) ? (
                             <div className="prose prose-sm lg:prose-base max-w-none">
                               {currentLesson.content && (
                                 <div className={cn("markdown-content", isRoomContext && "room-context")}>
@@ -1386,86 +1432,62 @@ export default function Course() {
                     <ChevronRight className="ml-2" size={16} />
                   </Button>
                 </div>
+                  </>
+                )}
               </section>
             )}
-          </div>
-        </main>
-
-        {/* Right Sidebar Toggle Button - Shows when sidebar is collapsed */}
-        {!rightSidebarOpen && (
-          <button
-            onClick={() => setRightSidebarOpen(true)}
-            className="hidden lg:flex fixed right-0 top-1/2 -translate-y-1/2 z-50 bg-card hover:bg-muted border border-border rounded-l-lg p-2 transition-all duration-200 shadow-lg"
-            title="Mostrar contenido del curso"
-          >
-            <ChevronLeft className="h-5 w-5 text-muted-foreground" />
-          </button>
-        )}
-
-        {/* Right Sidebar - Course Info & Lessons - Hidden on mobile */}
-        <aside className={cn(
-          "hidden lg:block w-[320px] xl:w-[360px] 2xl:w-[30vw] bg-background fixed right-0 top-0 h-screen overflow-y-auto scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent transition-transform duration-300 ease-in-out z-40",
-          rightSidebarOpen ? "translate-x-0" : "translate-x-full"
-        )}>
-          {/* Collapse Button */}
-          <div className="pl-3 xl:pl-4 2xl:pl-6 pr-3 xl:pr-4 2xl:pr-8 py-4 flex items-center justify-between">
-            <button
-              onClick={() => setRightSidebarOpen(false)}
-              className="p-1.5 hover:bg-muted rounded-lg transition-colors"
-              title="Ocultar panel"
-            >
-              <ChevronRight className="h-4 w-4 text-muted-foreground" />
-            </button>
-          </div>
-
-          {/* Action Buttons - Save Course & Ask Question - Aligned with video */}
-          <div className="px-4 xl:px-5 2xl:px-6 min-[1920px]:px-8 pt-[88px] lg:pt-[70px] pb-2 space-y-2">
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="w-full text-muted-foreground hover:text-foreground text-[13px] xl:text-[14px] 2xl:text-[16px] bg-muted hover:bg-muted/80 justify-start"
-              onClick={() => saveCourseMutation.mutate()}
-              disabled={saveCourseMutation.isPending}
-            >
-              <BookOpen className="h-4 w-4 mr-2" />
-              Guardar curso
-            </Button>
-            {isAuthenticated && (
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="w-full text-muted-foreground hover:text-foreground text-[13px] xl:text-[14px] 2xl:text-[16px] bg-muted hover:bg-muted/80 justify-start"
-                onClick={() => setAskQuestionOpen(true)}
-              >
-                <MessageCirclePlus className="h-4 w-4 mr-2" />
-                Haz una pregunta
-              </Button>
-            )}
-          </div>
-          
-          <div className="px-4 xl:px-5 2xl:px-6 min-[1920px]:px-8 pt-2 space-y-2 xl:space-y-2.5 2xl:space-y-3 min-[1920px]:space-y-3.5 flex flex-col" style={{ maxHeight: 'calc(100vh - 280px)' }}>
-            {/* Progress Card - Aligned with video */}
-            <div className="bg-card rounded-lg p-4 xl:p-5 min-[1920px]:p-6">
-              <div className="flex justify-between items-center mb-3">
-                <span className="font-satoshi font-medium text-foreground text-sm xl:text-[15px] min-[1920px]:text-base">Progreso del curso</span>
-                <span className="font-satoshi font-normal text-xs xl:text-sm min-[1920px]:text-[15px] leading-[20px] text-muted-foreground">
-                  {isAuthenticated ? `${Math.round(progressPercentage)}% Completado` : "0% Completado"}
-                </span>
-              </div>
-              <Progress value={isAuthenticated ? progressPercentage : 0} className={cn("h-2 min-[1920px]:h-2.5 bg-muted", isAgentesIARoom ? "[&>div]:bg-[#faa318]" : "[&>div]:bg-primary")} />
             </div>
 
-            {/* Lesson Resources Card - Show only if current lesson has resources */}
-            {currentLesson && (
-              <div className="flex-shrink-0">
-                <LessonResources lessonId={currentLesson.id} />
-              </div>
-            )}
+            {/* Right column - sidebar (desktop) - alineado con card superior, sin dropdown */}
+            <div className="hidden lg:flex flex-col min-w-0 pl-5 lg:pl-8 pr-0">
+                {/* Action Buttons - Save Course & Ask Question - alineado en altura con el video */}
+                <div className="pt-0 pb-2 space-y-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="w-full text-muted-foreground hover:text-foreground text-[13px] xl:text-[14px] 2xl:text-[16px] bg-muted hover:bg-muted/80 justify-start"
+                    onClick={() => saveCourseMutation.mutate()}
+                    disabled={saveCourseMutation.isPending}
+                  >
+                    <BookOpen className="h-4 w-4 mr-2" />
+                    Guardar curso
+                  </Button>
+                  {isAuthenticated && (
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="w-full text-muted-foreground hover:text-foreground text-[13px] xl:text-[14px] 2xl:text-[16px] bg-muted hover:bg-muted/80 justify-start"
+                      onClick={() => setAskQuestionOpen(true)}
+                    >
+                      <MessageCirclePlus className="h-4 w-4 mr-2" />
+                      Haz una pregunta
+                    </Button>
+                  )}
+                </div>
+          
+                <div className="pt-2 space-y-2 xl:space-y-2.5 2xl:space-y-3 min-[1920px]:space-y-3.5 flex flex-col flex-1 min-h-0" style={{ maxHeight: 'calc(100vh - 200px)' }}>
+                  {/* Progress Card - Aligned with video */}
+                  <div className="bg-card rounded-lg p-4 xl:p-5 min-[1920px]:p-6">
+                    <div className="flex justify-between items-center mb-3">
+                      <span className="font-satoshi font-medium text-foreground text-sm xl:text-[15px] min-[1920px]:text-base">Progreso del curso</span>
+                      <span className="font-satoshi font-normal text-xs xl:text-sm min-[1920px]:text-[15px] leading-[20px] text-muted-foreground">
+                        {isAuthenticated ? `${Math.round(progressPercentage)}% Completado` : "0% Completado"}
+                      </span>
+                    </div>
+                    <Progress value={isAuthenticated ? progressPercentage : 0} className={cn("h-2 min-[1920px]:h-2.5 bg-muted", isAgentesIARoom ? "[&>div]:bg-[#faa318]" : "[&>div]:bg-primary")} />
+                  </div>
 
-            {/* Lessons List Card - Separate card */}
-            <div className="bg-card rounded-lg p-4 xl:p-5 2xl:p-6 min-[1920px]:p-7 mt-0 mb-2 flex-1 flex flex-col min-h-0">
-              <h3 className="font-satoshi font-medium text-foreground mb-4 text-[15px] xl:text-base 2xl:text-lg min-[1920px]:text-xl">Contenido del curso</h3>
-              <div className="space-y-2 min-[1920px]:space-y-3 flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent pr-2">
+                  {/* Lesson Resources Card - Show only if current lesson has resources */}
+                  {currentLesson && (
+                    <div className="flex-shrink-0">
+                      <LessonResources lessonId={currentLesson.id} />
+                    </div>
+                  )}
+
+                  {/* Lessons List Card - Separate card */}
+                  <div className="bg-card rounded-lg p-4 xl:p-5 2xl:p-6 min-[1920px]:p-7 mt-0 mb-2 flex-1 flex flex-col min-h-0">
+                    <h3 className="font-satoshi font-medium text-foreground mb-4 text-[15px] xl:text-base 2xl:text-lg min-[1920px]:text-xl">Contenido del curso</h3>
+                    <div className="space-y-2 min-[1920px]:space-y-3 flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent pr-2">
                 {hasNoModulesButHasLessons && directLessonsForList.length > 0 ? (
                   /* Numbered List View for courses without modules - Similar to image style */
                   <div className="relative pl-8">
@@ -1559,15 +1581,16 @@ export default function Course() {
                             )}>
                               {lesson.title}
                             </div>
-                            
-                            {/* Lock icon for non-authenticated users */}
                             {!isAuthenticated && !isFirstNavigableLesson(lessonIndex) && (
-                              <div className="flex items-center gap-2 mt-1">
-                                <Lock size={12} className="text-muted-foreground" />
-                                <span className="text-xs text-muted-foreground">Bloqueado</span>
-                              </div>
+                              <span className="text-xs text-muted-foreground mt-1 block">Bloqueado</span>
                             )}
                           </div>
+                          {/* Candado a la derecha - no autenticado: bg #373737, candado #606060 */}
+                          {!isAuthenticated && !isFirstNavigableLesson(lessonIndex) && (
+                            <div className="w-7 h-7 rounded flex items-center justify-center flex-shrink-0 mt-1" style={{ backgroundColor: '#373737' }}>
+                              <Lock size={14} style={{ color: '#606060' }} />
+                            </div>
+                          )}
                         </div>
                       );
                     })}
@@ -1618,15 +1641,14 @@ export default function Course() {
                                 e.stopPropagation();
                                 toggleModuleCollapse(module.id);
                               }}
-                              className="p-1 hover:bg-muted/30 rounded transition-colors flex-shrink-0"
+                              className="p-1 hover:opacity-90 rounded transition-opacity flex-shrink-0"
+                              style={{ backgroundColor: '#303030' }}
                             >
-                              <ChevronRight 
-                                size={16} 
-                                className={cn(
-                                  "text-muted-foreground transition-transform",
-                                  !isCollapsed && "rotate-90"
-                                )}
-                              />
+                              {isCollapsed ? (
+                                <ChevronDown size={16} className="text-muted-foreground" />
+                              ) : (
+                                <ChevronUp size={16} className="text-muted-foreground" />
+                              )}
                             </button>
                           )}
                         </div>
@@ -1684,10 +1706,11 @@ export default function Course() {
                                         {subLesson.title}
                                       </div>
                                     </div>
-                                    
-                                    {/* Lock Icon - Show for non-authenticated users except first lesson */}
+                                    {/* Candado a la derecha - no autenticado: bg #373737, candado #606060 */}
                                     {!isAuthenticated && !isFirstNavigableLesson(subIndex) && (
-                                      <Lock size={12} className="text-muted-foreground flex-shrink-0 mt-1" />
+                                      <div className="w-7 h-7 rounded flex items-center justify-center flex-shrink-0" style={{ backgroundColor: '#373737' }}>
+                                        <Lock size={14} style={{ color: '#606060' }} />
+                                      </div>
                                     )}
                                   </div>
                                 </div>
@@ -1743,15 +1766,14 @@ export default function Course() {
                                 e.stopPropagation();
                                 toggleModuleCollapse(module.id);
                               }}
-                              className="p-1 hover:bg-muted/30 rounded transition-colors"
+                              className="p-1 hover:opacity-90 rounded transition-opacity"
+                              style={{ backgroundColor: '#303030' }}
                             >
-                              <ChevronRight 
-                                size={16} 
-                                className={cn(
-                                  "text-muted-foreground transition-transform",
-                                  !isCollapsed && "rotate-90"
-                                )}
-                              />
+                              {isCollapsed ? (
+                                <ChevronDown size={16} className="text-muted-foreground" />
+                              ) : (
+                                <ChevronUp size={16} className="text-muted-foreground" />
+                              )}
                             </button>
                           )}
                         </div>
@@ -1816,10 +1838,11 @@ export default function Course() {
                                     {subLessonNumber} - {subLesson.title}
                                   </div>
                                 </div>
-                                
-                                {/* Lock Icon for non-accessible lessons */}
+                                {/* Candado a la derecha - no accesible: bg #373737, candado #606060 */}
                                 {!isAccessible && (
-                                  <Lock size={12} className="text-muted-foreground flex-shrink-0 mt-1" />
+                                  <div className="w-7 h-7 rounded flex items-center justify-center flex-shrink-0" style={{ backgroundColor: '#373737' }}>
+                                    <Lock size={14} style={{ color: '#606060' }} />
+                                  </div>
                                 )}
                               </div>
                             );
@@ -1857,9 +1880,12 @@ export default function Course() {
                   </div>
                 </Link>
               )}
+                  </div>
+                </div>
             </div>
           </div>
-        </aside>
+          </div>
+        </main>
         </div>
       </div>
       {/* Mobile Navigation */}
@@ -2103,15 +2129,14 @@ export default function Course() {
                                   e.stopPropagation();
                                   toggleModuleCollapse(module.id);
                                 }}
-                                className="p-1 hover:bg-muted rounded transition-colors"
+                                className="p-1 hover:opacity-90 rounded transition-colors"
+                                style={{ backgroundColor: '#303030' }}
                               >
-                                <ChevronRight 
-                                  size={18} 
-                                  className={cn(
-                                    "text-muted-foreground transition-transform",
-                                    !isCollapsed && "rotate-90"
-                                  )}
-                                />
+                                {isCollapsed ? (
+                                  <ChevronDown size={18} className="text-muted-foreground" />
+                                ) : (
+                                  <ChevronUp size={18} className="text-muted-foreground" />
+                                )}
                               </button>
                             )}
                           </div>
