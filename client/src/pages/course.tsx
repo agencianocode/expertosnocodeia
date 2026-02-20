@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/tooltip";
 import { LessonResources } from "@/components/lesson-resources";
 import { LessonComments } from "@/components/LessonComments";
+import { UnlockContentCTA } from "@/components/UnlockContentCTA";
 import { Award, Check, ChevronRight, ChevronLeft, Menu, Users, Bot, Code, Megaphone, Settings, DollarSign, Heart, Building, CheckSquare, Scale, BarChart, GraduationCap, PlayCircle, Clock, CheckCircle2, BookOpen, Play, Lock, MessageCirclePlus, Link as LinkIcon } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
@@ -693,6 +694,114 @@ export default function Course() {
     tools: [],
     lessons: lessonsArray
   };
+
+  // Teaser view for non-authenticated users: no lesson list, no player
+  if (!isAuthenticated) {
+    const introText = courseData.introduction;
+    const truncatedIntro = typeof introText === "string" && introText.length > 500
+      ? introText.slice(0, 500).trim() + "…"
+      : introText;
+    return (
+      <div className="min-h-screen bg-background text-foreground">
+        <MobileHeader />
+        <div className="flex relative">
+          {sidebarOpen && (
+            <div className="hidden lg:block">
+              <Sidebar onToggle={() => setSidebarOpen(false)} />
+            </div>
+          )}
+          {!sidebarOpen && (
+            <button
+              onClick={() => setSidebarOpen(true)}
+              className="hidden lg:flex fixed top-4 left-4 z-50 items-center justify-center w-10 h-10 bg-card hover:bg-muted text-muted-foreground hover:text-foreground rounded-lg shadow-lg transition-all"
+              title="Mostrar sidebar"
+            >
+              <Menu className="h-5 w-5" />
+            </button>
+          )}
+          <div className={cn(
+            "flex-1 flex bg-background min-h-screen overflow-y-auto hide-scrollbar transition-all duration-300",
+            sidebarOpen ? "lg:ml-[250px]" : "lg:ml-0"
+          )}>
+            <main className="flex-1 w-full bg-background overflow-y-auto min-h-screen">
+              <div className="px-4 lg:px-8 py-4 flex items-center justify-between">
+                <Link href={backUrl}>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className={cn(
+                      "text-muted-foreground hover:text-foreground",
+                      isAgentesIARoom && "text-[#faa318] hover:text-[#faa318] hover:bg-black"
+                    )}
+                  >
+                    <ChevronLeft className="h-4 w-4 mr-1" />
+                    {isRoomContext ? "Volver a la sala" : "Volver a los cursos"}
+                  </Button>
+                </Link>
+              </div>
+              <div className="px-4 lg:px-8 pb-4">
+                <h1 className="text-xl lg:text-2xl xl:text-3xl font-bold text-foreground">{(course as any)?.title}</h1>
+              </div>
+              <div className="px-4 lg:px-8 pb-24 lg:pb-8 lg:pl-[45px] lg:pr-[15px]">
+                {presentationVideoUrl ? (
+                  <div className="relative rounded-lg overflow-hidden mb-6" style={{ paddingBottom: "56.25%" }}>
+                    <iframe
+                      className="absolute top-0 left-0 w-full h-full blur-md select-none pointer-events-none"
+                      src={getYouTubeEmbedUrl(presentationVideoUrl)}
+                      title="Video de presentación del curso"
+                      frameBorder={0}
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                    />
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                      <Lock className="h-16 w-16 text-white drop-shadow-lg" />
+                    </div>
+                  </div>
+                ) : (course as any)?.coverImageUrl ? (
+                  <div className="relative rounded-xl overflow-hidden bg-muted/30 aspect-video mb-6">
+                    <img
+                      src={(course as any).coverImageUrl}
+                      alt={(course as any)?.title || "Curso"}
+                      className="w-full h-full object-cover blur-md"
+                    />
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                      <Lock className="h-16 w-16 text-white drop-shadow-lg" />
+                    </div>
+                  </div>
+                ) : (
+                  <div className="relative rounded-xl overflow-hidden bg-muted/30 aspect-video mb-6 flex items-center justify-center">
+                    <BookOpen className="h-12 w-12 text-muted-foreground" />
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                      <Lock className="h-16 w-16 text-white drop-shadow-lg" />
+                    </div>
+                  </div>
+                )}
+                {truncatedIntro && (
+                  <div className="bg-card rounded-xl px-4 lg:px-8 py-4 lg:py-6 mb-6">
+                    <div className="prose prose-sm prose-invert max-w-none text-foreground/80">
+                      <ReactMarkdown
+                        remarkPlugins={[remarkGfm]}
+                        rehypePlugins={[rehypeHighlight, rehypeRaw]}
+                        components={{
+                          p: ({ children }) => <p className="mb-2 text-foreground/80 text-sm leading-relaxed">{children}</p>,
+                          ul: ({ children }) => <ul className="list-disc pl-5 mb-2 space-y-1 text-foreground/80 text-sm">{children}</ul>,
+                          strong: ({ children }) => <strong className="font-semibold text-foreground">{children}</strong>,
+                          img: () => null,
+                        }}
+                      >
+                        {truncatedIntro}
+                      </ReactMarkdown>
+                    </div>
+                  </div>
+                )}
+                <UnlockContentCTA variant="course" backUrl={backUrl} />
+              </div>
+            </main>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // Calculate progress based on leaf lessons only (sub-lessons or modules without children)
   const leafLessons = lessonsArray.filter((lesson: any) => {

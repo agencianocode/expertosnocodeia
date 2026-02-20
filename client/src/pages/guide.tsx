@@ -8,7 +8,7 @@ import MobileHeader from "@/components/layout/mobile-header";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { ArrowLeft, BookOpen, FileText, User, Calendar, Clock, Download, Bookmark, BookmarkCheck, ChevronLeft, ChevronRight } from "lucide-react";
+import { ArrowLeft, BookOpen, FileText, User, Calendar, Clock, Download, Bookmark, BookmarkCheck, ChevronLeft, ChevronRight, Lock } from "lucide-react";
 import { useSimpleAuth } from "@/hooks/use-simple-auth";
 import { cn } from "@/lib/utils";
 import { VideoPlayer } from "@/components/ui/video-player";
@@ -16,6 +16,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import { UnlockContentCTA } from "@/components/UnlockContentCTA";
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeHighlight from 'rehype-highlight';
@@ -314,44 +315,65 @@ export default function Guide() {
                 {presentationVideoUrl && (
                   <div className="relative rounded-lg overflow-hidden mb-6" style={{ paddingBottom: '56.25%' }}>
                     <iframe
-                      className="absolute top-0 left-0 w-full h-full"
+                      className={cn("absolute top-0 left-0 w-full h-full", !isAuthenticated && "blur-md select-none pointer-events-none")}
                       src={getYouTubeEmbedUrl(presentationVideoUrl)}
                       title="Video de presentación de la guía"
                       frameBorder="0"
                       allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                       allowFullScreen
                     />
+                    {!isAuthenticated && (
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                        <Lock className="h-16 w-16 text-white drop-shadow-lg" />
+                      </div>
+                    )}
                   </div>
                 )}
 
+                {/* Main video / cover - with blur + lock for guests */}
                 {guideVideoUrl ? (
-                  <div className="rounded-xl overflow-hidden bg-muted/30 aspect-video mb-6">
+                  <div className="relative rounded-xl overflow-hidden bg-muted/30 aspect-video mb-6">
                     <VideoPlayer
                       src={guideVideoUrl}
                       poster={guide?.coverImageUrl || undefined}
-                      className="w-full h-full"
+                      className={cn("w-full h-full", !isAuthenticated && "blur-md pointer-events-none")}
                     />
+                    {!isAuthenticated && (
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                        <Lock className="h-16 w-16 text-white drop-shadow-lg" />
+                      </div>
+                    )}
                   </div>
                 ) : guide?.coverImageUrl ? (
-                  <div className="rounded-xl overflow-hidden bg-muted/30 aspect-video mb-6">
+                  <div className="relative rounded-xl overflow-hidden bg-muted/30 aspect-video mb-6">
                     <div className="h-full w-full flex items-center justify-center">
                       <img
                         src={guide.coverImageUrl}
                         alt={guide.title || 'Guía'}
-                        className="w-full h-full object-contain"
+                        className={cn("w-full h-full object-contain", !isAuthenticated && "blur-md")}
                       />
                     </div>
+                    {!isAuthenticated && (
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                        <Lock className="h-16 w-16 text-white drop-shadow-lg" />
+                      </div>
+                    )}
                   </div>
                 ) : (
-                  <div className="rounded-xl overflow-hidden bg-muted/30 aspect-video mb-6">
+                  <div className="relative rounded-xl overflow-hidden bg-muted/30 aspect-video mb-6">
                     <div className="h-full w-full flex items-center justify-center">
                       <FileText className="h-12 w-12 text-muted-foreground" />
                     </div>
+                    {!isAuthenticated && (
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                        <Lock className="h-16 w-16 text-white drop-shadow-lg" />
+                      </div>
+                    )}
                   </div>
                 )}
 
-                {/* Sección RECURSO - Debajo del video */}
-                {guideFiles && guideFiles.length > 0 && (
+                {/* Sección RECURSO - Debajo del video (solo para autenticados) */}
+                {isAuthenticated && guideFiles && guideFiles.length > 0 && (
                   <div className="border border-border rounded-xl p-5 lg:p-6 bg-card mb-6">
                     <h3 className="text-lg font-bold text-foreground mb-2 uppercase">RECURSO</h3>
                     <p className="text-sm text-muted-foreground mb-4">Esta guía tiene recursos.</p>
@@ -543,66 +565,39 @@ export default function Guide() {
 
             <div className="bg-card rounded-xl p-5 lg:p-8 border border-border">
               {!isAuthenticated ? (
-                <div className="prose prose-sm lg:prose-base max-w-none">
-                  {guide?.description ? (
-                    <div className="markdown-content">
-                      <ReactMarkdown 
-                        remarkPlugins={[remarkGfm]}
-                        rehypePlugins={[rehypeHighlight, rehypeRaw]}
-                        components={{
-                          img: ({ src, alt }) => {
-                            // Si la URL es relativa, convertirla a absoluta
-                            let imageUrl = src || '';
-                            if (imageUrl && !imageUrl.startsWith('http') && !imageUrl.startsWith('//') && !imageUrl.startsWith('data:')) {
-                              // Si es una URL relativa, intentar construir la URL completa
-                              if (imageUrl.startsWith('/')) {
-                                imageUrl = `${window.location.origin}${imageUrl}`;
-                              } else {
-                                // Si no empieza con /, asumir que es relativa a la raíz
-                                imageUrl = `${window.location.origin}/${imageUrl}`;
-                              }
-                            }
-                            return (
-                              <img 
-                                src={imageUrl} 
-                                alt={alt || ''} 
-                                className="max-w-full h-auto rounded-lg my-4"
-                                onError={(e) => {
-                                  // Si falla, intentar con la URL original
-                                  if (src && src !== imageUrl) {
-                                    (e.target as HTMLImageElement).src = src;
-                                  }
-                                }}
-                              />
-                            );
-                          }
-                        }}
-                      >
-                        {guide.description}
-                      </ReactMarkdown>
-                    </div>
-                  ) : (
-                    <p className="text-muted-foreground italic">Contenido de la guía no disponible.</p>
-                  )}
-                  
-                  <div className="mt-8 p-6 bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/20 rounded-lg">
-                    <div className="text-center">
-                      <h3 className="text-lg font-semibold text-foreground mb-3">
-                        ¿Te gustó esta guía?
-                      </h3>
-                      <p className="text-muted-foreground mb-4 text-sm">
-                        Únete a nuestra plataforma para acceder a más guías y cursos exclusivos
-                      </p>
-                      <Button 
-                        size="sm"
-                        onClick={() => setLocation('/login')}
-                        data-testid="button-join"
-                      >
-                        Comenzar Ahora
-                      </Button>
-                    </div>
+                <>
+                  <div className="prose prose-sm lg:prose-base max-w-none">
+                    {guideSummary && (
+                      <div className="mb-4">
+                        <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-2">El resumen</h3>
+                        <p className="text-foreground/90 text-sm leading-relaxed">{guideSummary}</p>
+                      </div>
+                    )}
+                    {guide?.description ? (
+                      <div className="markdown-content">
+                        <ReactMarkdown 
+                          remarkPlugins={[remarkGfm]}
+                          rehypePlugins={[rehypeHighlight, rehypeRaw]}
+                          components={{
+                            p: ({ children }) => <p className="mb-2 text-foreground/80 text-sm leading-relaxed">{children}</p>,
+                            ul: ({ children }) => <ul className="list-disc pl-5 mb-2 space-y-1 text-foreground/80 text-sm">{children}</ul>,
+                            strong: ({ children }) => <strong className="font-semibold text-foreground">{children}</strong>,
+                            img: () => null,
+                          }}
+                        >
+                          {guide.description.length > 500
+                            ? guide.description.slice(0, 500).trim() + "…"
+                            : guide.description}
+                        </ReactMarkdown>
+                      </div>
+                    ) : (
+                      <p className="text-muted-foreground italic text-sm">Contenido de la guía no disponible.</p>
+                    )}
                   </div>
-                </div>
+                  <div className="mt-6">
+                    <UnlockContentCTA variant="guide" />
+                  </div>
+                </>
               ) : (
                 <div className="prose prose-sm lg:prose-base max-w-none">
                   {guide?.description ? (
