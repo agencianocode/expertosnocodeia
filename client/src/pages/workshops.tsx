@@ -41,10 +41,10 @@ export default function Workshops() {
 
   if (isLoading || workshopsLoading) {
     return (
-      <div className="min-h-screen bg-dark-bg flex">
-        <div className="w-64 bg-dark-card border-r border-dark-border"></div>
+      <div className="min-h-screen bg-background flex">
+        <div className="w-64 bg-card border-r border-border"></div>
         <div className="flex-1 flex items-center justify-center">
-          <div className="text-white">Loading...</div>
+          <div className="text-foreground">Loading...</div>
         </div>
       </div>
     );
@@ -59,7 +59,7 @@ export default function Workshops() {
   const workshopCount = filteredWorkshops.length;
 
   return (
-    <div className="min-h-screen bg-dark-bg text-white">
+    <div className="min-h-screen bg-background text-foreground">
       {/* Mobile Header */}
       <MobileHeader />
       <div className="flex">
@@ -71,7 +71,7 @@ export default function Workshops() {
         {/* Main Content */}
         <main className="flex-1 overflow-auto pb-20 lg:pb-0 lg:ml-[250px]">
           {/* Header */}
-          <header className="bg-dark-card border-b border-dark-border p-6">
+          <header className="bg-card border-b border-border p-6">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
               <div>
                 <h1 className="text-2xl font-bold">Talleres a demanda</h1>
@@ -82,19 +82,19 @@ export default function Workshops() {
               <div className="flex items-center space-x-4">
                 {/* Category Filter */}
                 <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                  <SelectTrigger className="w-[200px] bg-dark-bg border-dark-border text-white">
+                  <SelectTrigger className="w-[200px] bg-background border-border text-foreground">
                     <Filter className="w-4 h-4 mr-2" />
                     <SelectValue placeholder="Todas las categorías" />
                   </SelectTrigger>
-                  <SelectContent className="bg-dark-card border-dark-border">
-                    <SelectItem value="all" className="text-white hover:bg-dark-hover">
+                  <SelectContent className="bg-card border-border">
+                    <SelectItem value="all" className="text-foreground hover:bg-muted">
                       Todas las categorías
                     </SelectItem>
                     {categories.map((category: any) => (
                       <SelectItem 
                         key={category.id} 
                         value={category.id}
-                        className="text-white hover:bg-dark-hover"
+                        className="text-foreground hover:bg-muted"
                       >
                         {category.name}
                       </SelectItem>

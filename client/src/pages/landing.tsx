@@ -5,9 +5,9 @@ import { Link } from "wouter";
 
 export default function Landing() {
   return (
-    <div className="min-h-screen bg-dark-bg text-white">
+    <div className="min-h-screen bg-background text-foreground">
       {/* Header */}
-      <header className="border-b border-dark-border bg-dark-card/50 backdrop-blur">
+      <header className="border-b border-border bg-card/50 backdrop-blur">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center space-x-2">
@@ -49,7 +49,7 @@ export default function Landing() {
             <Button 
               size="lg" 
               variant="outline"
-              className="border-dark-border text-white hover:bg-dark-card px-8 py-3 text-lg"
+              className="border-border text-white hover:bg-card px-8 py-3 text-lg"
             >
               View Courses
             </Button>
@@ -58,11 +58,11 @@ export default function Landing() {
       </section>
 
       {/* Features */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-dark-card/30">
+      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-card/30">
         <div className="max-w-6xl mx-auto">
           <h2 className="text-3xl font-bold text-center mb-12">Why Choose The Rundown University?</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            <Card className="bg-dark-card border-dark-border">
+            <Card className="bg-card border-border">
               <CardHeader>
                 <div className="w-12 h-12 bg-purple-accent/20 rounded-lg flex items-center justify-center mb-4">
                   <BookOpen className="h-6 w-6 text-purple-accent" />
@@ -74,7 +74,7 @@ export default function Landing() {
               </CardHeader>
             </Card>
 
-            <Card className="bg-dark-card border-dark-border">
+            <Card className="bg-card border-border">
               <CardHeader>
                 <div className="w-12 h-12 bg-blue-accent/20 rounded-lg flex items-center justify-center mb-4">
                   <Award className="h-6 w-6 text-blue-accent" />
@@ -86,7 +86,7 @@ export default function Landing() {
               </CardHeader>
             </Card>
 
-            <Card className="bg-dark-card border-dark-border">
+            <Card className="bg-card border-border">
               <CardHeader>
                 <div className="w-12 h-12 bg-green-accent/20 rounded-lg flex items-center justify-center mb-4">
                   <Lightbulb className="h-6 w-6 text-green-accent" />
@@ -98,7 +98,7 @@ export default function Landing() {
               </CardHeader>
             </Card>
 
-            <Card className="bg-dark-card border-dark-border">
+            <Card className="bg-card border-border">
               <CardHeader>
                 <div className="w-12 h-12 bg-orange-accent/20 rounded-lg flex items-center justify-center mb-4">
                   <Users className="h-6 w-6 text-orange-accent" />
@@ -110,7 +110,7 @@ export default function Landing() {
               </CardHeader>
             </Card>
 
-            <Card className="bg-dark-card border-dark-border">
+            <Card className="bg-card border-border">
               <CardHeader>
                 <div className="w-12 h-12 bg-pink-accent/20 rounded-lg flex items-center justify-center mb-4">
                   <Brain className="h-6 w-6 text-pink-accent" />
@@ -122,7 +122,7 @@ export default function Landing() {
               </CardHeader>
             </Card>
 
-            <Card className="bg-dark-card border-dark-border">
+            <Card className="bg-card border-border">
               <CardHeader>
                 <div className="w-12 h-12 bg-purple-accent/20 rounded-lg flex items-center justify-center mb-4">
                   <Users className="h-6 w-6 text-purple-accent" />
@@ -157,7 +157,7 @@ export default function Landing() {
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-dark-border bg-dark-card py-8">
+      <footer className="border-t border-border bg-card py-8">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center">
             <div className="flex items-center justify-center space-x-2 mb-4">

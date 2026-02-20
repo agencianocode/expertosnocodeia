@@ -289,7 +289,7 @@ export default function CourseLessons() {
   };
 
   return (
-    <div className="min-h-screen bg-dark-bg text-white">
+    <div className="min-h-screen bg-background text-foreground">
       {/* Mobile Header */}
       <MobileHeader />
       

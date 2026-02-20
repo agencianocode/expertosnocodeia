@@ -186,7 +186,7 @@ export default function Events() {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-[#0d0d0d] flex">
-        <div className="w-[250px] bg-[#171717] border-r border-[#262626]"></div>
+        <div className="w-[250px] bg-card border-r border-border"></div>
         <div className="flex-1 flex items-center justify-center">
           <div className="text-white">Cargando...</div>
         </div>
@@ -223,7 +223,7 @@ export default function Events() {
               <Link href="/workshops">
                 <Button 
                   variant="outline" 
-                  className="border-[#333] bg-transparent text-white hover:bg-[#262626] hover:text-white text-sm w-full sm:w-auto"
+                  className="border-border bg-transparent text-foreground hover:bg-muted hover:text-foreground text-sm w-full sm:w-auto"
                 >
                   Ver todos los eventos
                 </Button>
@@ -231,7 +231,7 @@ export default function Events() {
               </div>
 
             {/* Calendar - Full width */}
-            <div className="bg-[#171717] rounded-xl border border-[#262626] overflow-hidden flex-1">
+            <div className="bg-card rounded-xl border border-border overflow-hidden flex-1">
               {/* Month navigation header */}
               <div className="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4">
                 <h3 className="text-base sm:text-lg font-semibold text-white capitalize">
@@ -242,7 +242,7 @@ export default function Events() {
                     variant="ghost"
                     size="icon"
                     onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}
-                    className="h-8 w-8 text-gray-400 hover:text-white hover:bg-[#262626]"
+                    className="h-8 w-8 text-gray-400 hover:text-white hover:bg-muted"
                   >
                     <ChevronLeft className="h-4 w-4" />
                   </Button>
@@ -250,7 +250,7 @@ export default function Events() {
                     variant="ghost"
                     size="icon"
                     onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}
-                    className="h-8 w-8 text-gray-400 hover:text-white hover:bg-[#262626]"
+                    className="h-8 w-8 text-gray-400 hover:text-white hover:bg-muted"
                   >
                     <ChevronRight className="h-4 w-4" />
                   </Button>
@@ -258,14 +258,14 @@ export default function Events() {
               </div>
 
               {/* Calendar grid */}
-              <div className="border-t border-[#262626]">
+              <div className="border-t border-border">
                 {/* Days of week header */}
-                <div className="grid grid-cols-7 border-b border-[#262626]">
+                <div className="grid grid-cols-7 border-b border-border">
                   {['Domingo', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'].map((day, idx) => (
                     <div 
                       key={day} 
                       className={`text-center text-xs sm:text-sm font-medium text-gray-400 py-2 sm:py-3 ${
-                        idx < 6 ? 'border-r border-[#262626]' : ''
+                        idx < 6 ? 'border-r border-border' : ''
                       }`}
                     >
                       <span className="hidden sm:inline">{day}</span>
@@ -290,8 +290,8 @@ export default function Events() {
                       <div
                         key={index}
                         className={`min-h-[60px] sm:min-h-[80px] md:min-h-[100px] lg:min-h-[110px] xl:min-h-[120px] p-1 sm:p-2 relative ${
-                          !isLastColumn ? 'border-r border-[#262626]' : ''
-                        } ${!isLastRow ? 'border-b border-[#262626]' : ''}`}
+                          !isLastColumn ? 'border-r border-border' : ''
+                        } ${!isLastRow ? 'border-b border-border' : ''}`}
                       >
                         {/* Day number */}
                         <div className="flex items-start justify-start">
@@ -315,7 +315,7 @@ export default function Events() {
                           <div className="mt-1 sm:mt-2">
                             <div 
                               onClick={() => setSelectedEvent(event)}
-                              className="bg-[#262626] border border-[#333] rounded px-1 sm:px-2 py-1 sm:py-1.5 text-[10px] sm:text-xs text-gray-300 line-clamp-2 sm:line-clamp-3 hover:bg-[#333] hover:border-cyan-500 cursor-pointer transition-colors"
+                              className="bg-muted border border-border rounded px-1 sm:px-2 py-1 sm:py-1.5 text-[10px] sm:text-xs text-muted-foreground line-clamp-2 sm:line-clamp-3 hover:bg-background hover:border-cyan-500 cursor-pointer transition-colors"
                             >
                               <span className="hidden sm:inline">{event.title}</span>
                               <span className="sm:hidden">{event.title.slice(0, 20)}...</span>
@@ -423,9 +423,9 @@ export default function Events() {
 
       {/* Event Details Dialog - Rediseñado como imagen 1 */}
       <Dialog open={!!selectedEvent && !showRegisterDialog} onOpenChange={(open) => !open && setSelectedEvent(null)}>
-        <DialogContent className="bg-[#1a1a1a] border-[#333] text-foreground max-w-3xl p-0 gap-0 overflow-hidden">
+        <DialogContent className="bg-[#1a1a1a] border-border text-foreground max-w-3xl p-0 gap-0 overflow-hidden">
           {selectedEvent && (
-            <div className="bg-[#262626] rounded-lg border border-[#333]">
+            <div className="bg-muted rounded-lg border border-border">
               {/* Main Content Card */}
               <div className="flex flex-col md:flex-row">
                 {/* Left Section - Text Content */}
@@ -467,7 +467,7 @@ export default function Events() {
 
                   {/* Description - Preview only (plain text, truncated) */}
                   {selectedEvent.description && (
-                    <div className="text-sm text-gray-300 leading-relaxed pt-2 line-clamp-4">
+                    <div className="text-sm text-muted-foreground leading-relaxed pt-2 line-clamp-4">
                       {/* Strip HTML tags for preview */}
                       {selectedEvent.description.replace(/<[^>]*>/g, '').substring(0, 200)}
                       {selectedEvent.description.replace(/<[^>]*>/g, '').length > 200 && '...'}

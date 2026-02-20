@@ -110,76 +110,39 @@ export function SimpleAuthProvider({ children }: { children: ReactNode }) {
       
       if (response.ok) {
         const data = await response.json();
-        console.log('✅ Login response data:', { 
-          hasUser: !!data.user, 
-          hasToken: !!data.token, 
-          hasSupabaseToken: !!data.supabaseToken,
-          userId: data.user?.id 
-        });
-        
-        // If Supabase login succeeded, we need to get the token from Supabase client
-        // For now, create a simple token for session management
-        // Use btoa for base64 encoding in browser (instead of Buffer)
-        const token = data.supabaseToken || data.token || btoa(`${data.user.id}:${Date.now()}`);
-        console.log('🔑 Token to store:', token ? 'Token exists' : 'NO TOKEN');
-        
-        // Store token and user
+        const token = data.token || data.supabaseToken || (data.user && btoa(`${data.user.id}:${Date.now()}`));
+        if (!token || !data.user) {
+          toast({
+            title: "Error de sesión",
+            description: "El servidor no devolvió sesión. Intenta de nuevo.",
+            variant: "destructive",
+          });
+          return;
+        }
         localStorage.setItem('simpleAuthToken', token);
-        console.log('💾 Token stored in localStorage');
         setToken(token);
         setUser(data.user);
-        console.log('👤 User set in state:', data.user?.email);
-        
-        // Save email to localStorage
         saveEmail(data.user.email, 'email');
-        
         toast({
           title: "¡Bienvenido!",
           description: data.message,
         });
-
-        // Redirect to dashboard
-        console.log('🔄 Redirecting to / in 500ms...');
         setTimeout(() => {
-          console.log('🔄 Executing redirect now...');
           window.location.href = "/";
         }, 500);
       } else {
-        console.log('⚠️ Supabase login failed, trying fallback to /api/login...');
-        // Fallback to simple login if Supabase fails
-        const simpleResponse = await fetch('/api/login', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ email, password }),
-        });
-
-        if (simpleResponse.ok) {
-          const simpleData = await simpleResponse.json();
-          localStorage.setItem('simpleAuthToken', simpleData.token);
-          setToken(simpleData.token);
-          setUser(simpleData.user);
-          
-          // Save email to localStorage
-          saveEmail(simpleData.user.email, 'email');
-          
-          toast({
-            title: "¡Bienvenido!",
-            description: simpleData.message,
-          });
-
-          setTimeout(() => {
-            window.location.href = "/";
-          }, 500);
-        } else {
-          const errorData = await simpleResponse.json();
-          toast({
-            title: "Error de login",
-            description: errorData.message || "Email o contraseña incorrectos",
-            variant: "destructive",
-          });
+        let message = "Email o contraseña incorrectos";
+        try {
+          const errorData = await response.json();
+          message = errorData.message || message;
+        } catch {
+          message = response.status === 401 ? "Email o contraseña incorrectos" : "Error al iniciar sesión";
         }
+        toast({
+          title: "Error de login",
+          description: message,
+          variant: "destructive",
+        });
       }
     } catch (error) {
       console.error('❌ Login error caught:', error);
@@ -194,52 +157,90 @@ export function SimpleAuthProvider({ children }: { children: ReactNode }) {
   };
 
   const register = async (email: string, password: string, firstName: string, lastName: string) => {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 25000); // 25s timeout
     try {
       setIsLoading(true);
-      
+
       const response = await fetch('/api/auth/register', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ email, password, firstName, lastName }),
+        signal: controller.signal,
       });
 
+      clearTimeout(timeoutId);
+
       if (response.ok) {
-        const data = await response.json();
-        
-        // Store token and user
+        let data: { token?: string; user?: any; message?: string };
+        try {
+          data = await response.json();
+        } catch {
+          toast({
+            title: "Error",
+            description: "La respuesta del servidor no es válida.",
+            variant: "destructive",
+          });
+          return;
+        }
+        if (!data.token || !data.user) {
+          toast({
+            title: "Error de registro",
+            description: "El servidor no devolvió sesión. Intenta de nuevo.",
+            variant: "destructive",
+          });
+          return;
+        }
         localStorage.setItem('simpleAuthToken', data.token);
         setToken(data.token);
         setUser(data.user);
-        
-        // Save email to localStorage
-        saveEmail(data.user.email, 'email', `${data.user.firstName} ${data.user.lastName}`.trim());
-        
+        saveEmail(data.user.email, 'email', `${data.user.firstName || ''} ${data.user.lastName || ''}`.trim());
+        const intent = typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("intent") : null;
         toast({
-          title: "¡Cuenta creada!",
-          description: data.message,
+          title: intent === "trial" ? "¡Prueba activada!" : "¡Cuenta creada!",
+          description: intent === "trial"
+            ? "Tu prueba gratuita de 14 días ha comenzado. Redirigiendo..."
+            : (data.message || "Redirigiendo..."),
         });
-
-        // Redirect to planes so user can choose a subscription
         setTimeout(() => {
-          window.location.href = "/planes";
+          const target = intent === "trial" ? "/planes?trial_started=1" : "/planes";
+          window.location.href = target;
         }, 500);
       } else {
-        const errorData = await response.json();
+        let message = "Error al crear la cuenta";
+        try {
+          const errorData = await response.json();
+          message = errorData.message || message;
+        } catch {
+          message = response.status === 400 ? "Datos inválidos" : `Error del servidor (${response.status})`;
+        }
+        const isEmailTaken = message.toLowerCase().includes("ya está registrado") || message.toLowerCase().includes("already");
         toast({
           title: "Error de registro",
-          description: errorData.message || "Error al crear la cuenta",
+          description: isEmailTaken
+            ? "Este email ya tiene cuenta. Inicia sesión arriba o usa «Has olvidado tu contraseña» si no recuerdas la contraseña."
+            : message,
           variant: "destructive",
         });
-        throw new Error(errorData.message);
+        throw new Error(message);
       }
     } catch (error: any) {
-      toast({
-        title: "Error de conexión",
-        description: error.message || "No se pudo conectar al servidor",
-        variant: "destructive",
-      });
+      clearTimeout(timeoutId);
+      if (error?.name === 'AbortError') {
+        toast({
+          title: "Tiempo de espera agotado",
+          description: "El servidor no respondió. Comprueba tu conexión e intenta de nuevo.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Error de conexión",
+          description: error?.message || "No se pudo conectar al servidor. Revisa la consola (F12).",
+          variant: "destructive",
+        });
+      }
       throw error;
     } finally {
       setIsLoading(false);

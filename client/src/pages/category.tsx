@@ -122,10 +122,10 @@ export default function CategoryPage() {
 
   if (isLoading || coursesLoading || guidesLoading || roomsLoading) {
     return (
-      <div className="min-h-screen bg-dark-bg flex">
-        <div className="w-64 bg-dark-card border-r border-dark-border"></div>
+      <div className="min-h-screen bg-background flex">
+        <div className="w-64 bg-card border-r border-border"></div>
         <div className="flex-1 flex items-center justify-center">
-          <div className="text-white">Cargando...</div>
+          <div className="text-foreground">Cargando...</div>
         </div>
       </div>
     );
@@ -163,7 +163,7 @@ export default function CategoryPage() {
   const categoryColor = getCategoryColor(currentCategory?.name || '');
 
   return (
-    <div className="min-h-screen bg-dark-bg text-white">
+    <div className="min-h-screen bg-background text-foreground">
       {/* Mobile Header */}
       <MobileHeader />
       
@@ -180,10 +180,10 @@ export default function CategoryPage() {
             {/* Title Section */}
             <div className="flex items-center space-x-3">
               <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${categoryColor}`}>
-                <CategoryIcon className="h-6 w-6 text-white" />
+                <CategoryIcon className="h-6 w-6 text-foreground" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold text-white">
+                <h1 className="text-2xl font-bold text-foreground">
                   {currentCategory?.name || "Categoría"}
                 </h1>
                 <p className="text-sm text-gray-400">
@@ -199,7 +199,7 @@ export default function CategoryPage() {
                 className={`px-4 py-2 text-sm rounded-lg font-medium ${
                   activeFilter === "all" 
                     ? "bg-white text-black" 
-                    : "text-gray-400 hover:text-white"
+                    : "text-muted-foreground hover:text-foreground"
                 }`}
                 data-testid="filter-all"
               >
@@ -210,7 +210,7 @@ export default function CategoryPage() {
                 className={`px-4 py-2 text-sm rounded-lg ${
                   activeFilter === "courses" 
                     ? "bg-white text-black font-medium" 
-                    : "text-gray-400 hover:text-white"
+                    : "text-muted-foreground hover:text-foreground"
                 }`}
                 data-testid="filter-courses"
               >
@@ -221,7 +221,7 @@ export default function CategoryPage() {
                 className={`px-4 py-2 text-sm rounded-lg ${
                   activeFilter === "guides" 
                     ? "bg-white text-black font-medium" 
-                    : "text-gray-400 hover:text-white"
+                    : "text-muted-foreground hover:text-foreground"
                 }`}
                 data-testid="filter-guides"
               >
@@ -232,7 +232,7 @@ export default function CategoryPage() {
                 className={`px-4 py-2 text-sm rounded-lg ${
                   activeFilter === "workshops" 
                     ? "bg-white text-black font-medium" 
-                    : "text-gray-400 hover:text-white"
+                    : "text-muted-foreground hover:text-foreground"
                 }`}
                 data-testid="filter-workshops"
               >
@@ -243,7 +243,7 @@ export default function CategoryPage() {
                 className={`px-4 py-2 text-sm rounded-lg ${
                   activeFilter === "programs" 
                     ? "bg-white text-black font-medium" 
-                    : "text-gray-400 hover:text-white"
+                    : "text-muted-foreground hover:text-foreground"
                 }`}
                 data-testid="filter-programs"
               >
@@ -258,10 +258,10 @@ export default function CategoryPage() {
             {/* Programas Section */}
             {displayedPrograms.length > 0 && (
               <section>
-                <h2 className="text-xl font-semibold mb-6 text-white">Programas</h2>
+                <h2 className="text-xl font-semibold mb-6 text-foreground">Programas</h2>
                 <div className="space-y-6">
                   {displayedPrograms.map((room: any) => (
-                    <div key={room.id} className="bg-dark-card rounded-xl border border-dark-border overflow-hidden hover:shadow-lg transition-shadow">
+                    <div key={room.id} className="bg-card rounded-xl border border-border overflow-hidden hover:shadow-lg transition-shadow">
                       <CourseCard
                         course={{
                           ...room,
@@ -286,10 +286,10 @@ export default function CategoryPage() {
             {/* Cursos Section */}
             {displayedCourses.length > 0 && (
               <section>
-                <h2 className="text-xl font-semibold mb-6 text-white">Cursos</h2>
+                <h2 className="text-xl font-semibold mb-6 text-foreground">Cursos</h2>
                 <div className="space-y-6">
                   {displayedCourses.map((course: any) => (
-                    <div key={course.id} className="bg-dark-card rounded-xl border border-dark-border overflow-hidden hover:shadow-lg transition-shadow">
+                    <div key={course.id} className="bg-card rounded-xl border border-border overflow-hidden hover:shadow-lg transition-shadow">
                       <CourseCard
                         course={course}
                         category={currentCategory}
@@ -304,10 +304,10 @@ export default function CategoryPage() {
             {/* Talleres Section */}
             {displayedGuides.length > 0 && (
               <section>
-                <h2 className="text-xl font-semibold mb-6 text-white">Talleres</h2>
+                <h2 className="text-xl font-semibold mb-6 text-foreground">Talleres</h2>
                 <div className="space-y-6">
                   {displayedGuides.map((guide: any) => (
-                    <div key={guide.id} className="bg-dark-card rounded-xl border border-dark-border overflow-hidden hover:shadow-lg transition-shadow">
+                    <div key={guide.id} className="bg-card rounded-xl border border-border overflow-hidden hover:shadow-lg transition-shadow">
                       <CourseCard
                         course={guide}
                         category={currentCategory}

@@ -2,6 +2,7 @@
 import { Express, Request, Response } from "express";
 import { supabaseAuth, AuthenticatedRequest, supabaseAdmin } from "./supabaseAuth";
 import { storage } from "./storage";
+import { sendEmailVerificationEmail } from "./emailMarketing";
 
 // Simple auth login handler (shared with simple-routes.ts)
 async function handleSimpleAuthLogin(req: Request, res: Response) {
@@ -22,37 +23,52 @@ async function handleSimpleAuthLogin(req: Request, res: Response) {
       });
     }
 
-    // Verify password
-    let passwordValid = false;
-    
-    if (user.password) {
-      try {
-        // Use bcrypt (already installed in package.json)
-        const bcrypt = await import('bcrypt');
-        const bcryptModule = (bcrypt as any).default || bcrypt;
-        passwordValid = await bcryptModule.compare(password, user.password);
-      } catch (error: any) {
-        // Fallback: simple comparison (for development/legacy passwords)
-        try {
-          const storedPassword = Buffer.from(user.password, 'base64').toString('utf-8');
-          passwordValid = storedPassword === password;
-        } catch {
-          // If password is not base64, try direct comparison (legacy)
-          passwordValid = user.password === password;
-        }
+    // Account exists but has no password: allow only if admin; otherwise direct to Google or forgot password
+    if (!user.password || user.password.trim() === '') {
+      const adminUser = await storage.getAdminUser(user.id);
+      if (adminUser && adminUser.isActive !== false) {
+        // Admin without password: allow login (bypass password check)
+        await storage.updateUserLastLogin(user.id);
+        const token = Buffer.from(`${user.id}:${Date.now()}`).toString('base64');
+        return res.json({
+          message: "Login exitoso",
+          user: {
+            id: user.id,
+            email: user.email,
+            firstName: user.firstName,
+            lastName: user.lastName,
+          },
+          token,
+        });
       }
+      if (user.provider === 'google') {
+        return res.status(401).json({
+          message: "Esta cuenta se creó con Google. Usa el botón «Continuar con Google» para iniciar sesión."
+        });
+      }
+      return res.status(401).json({
+        message: "Esta cuenta no tiene contraseña. Usa «Has olvidado tu contraseña» para crear una."
+      });
     }
 
-    // Only allow login without password if user has no password set (for migration)
-    // Once password is set, it must be validated
-    if (!passwordValid && !user.password) {
-      console.log("⚠️ User has no password set, allowing login for migration");
-      passwordValid = true; // Only for users without password
+    // Verify password
+    let passwordValid = false;
+    try {
+      const bcrypt = await import('bcrypt');
+      const bcryptModule = (bcrypt as any).default || bcrypt;
+      passwordValid = await bcryptModule.compare(password, user.password);
+    } catch (error: any) {
+      try {
+        const storedPassword = Buffer.from(user.password, 'base64').toString('utf-8');
+        passwordValid = storedPassword === password;
+      } catch {
+        passwordValid = user.password === password;
+      }
     }
 
     if (!passwordValid) {
       return res.status(401).json({
-        message: "Email o contraseña incorrectos"
+        message: "Email o contraseña incorrectos. Si olvidaste tu contraseña, usa «Has olvidado tu contraseña»."
       });
     }
 
@@ -83,87 +99,136 @@ async function handleSimpleAuthLogin(req: Request, res: Response) {
 export function setupSupabaseAuthRoutes(app: Express) {
   /**
    * POST /api/auth/register
-   * Register new user with Supabase
+   * Register new user. Uses Supabase when configured; otherwise fallback to simple DB auth.
    */
   app.post("/api/auth/register", async (req: Request, res: Response) => {
     try {
       const { email, password, firstName, lastName } = req.body;
 
       if (!email || !password) {
-        return res.status(400).json({ 
-          message: "Email y contraseña son requeridos" 
+        return res.status(400).json({
+          message: "Email y contraseña son requeridos",
         });
       }
 
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        return res.status(400).json({ message: "Email inválido" });
+      }
+      if (password.length < 6) {
+        return res.status(400).json({
+          message: "La contraseña debe tener al menos 6 caracteres",
+        });
+      }
+
+      const existingUser = await storage.getUserByEmail(email);
+      if (existingUser) {
+        return res.status(400).json({
+          message: "Este email ya está registrado",
+        });
+      }
+
+      // When Supabase is not configured: simple registration (DB + token)
       if (!supabaseAdmin) {
-        return res.status(503).json({ 
-          message: "Supabase no configurado. Configura las variables de entorno." 
+        let hashedPassword: string;
+        try {
+          const bcrypt = await import("bcrypt");
+          const bcryptModule = (bcrypt as any).default || bcrypt;
+          hashedPassword = await bcryptModule.hash(password, 10);
+        } catch (e: any) {
+          console.error("bcrypt not available, using fallback:", e?.message);
+          hashedPassword = Buffer.from(password).toString("base64");
+        }
+        const newUser = await storage.createUser({
+          email,
+          password: hashedPassword,
+          firstName: firstName || "",
+          lastName: lastName || "",
+          provider: "email",
+          isEmailVerified: false,
+        });
+        const crypto = await import("crypto");
+        const verificationToken = crypto.randomBytes(32).toString("hex");
+        const verificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000);
+        await storage.setEmailVerificationToken(newUser.id, verificationToken, verificationExpires);
+        try {
+          await sendEmailVerificationEmail(
+            newUser.email,
+            newUser.firstName || newUser.email,
+            verificationToken
+          );
+        } catch (emailErr: any) {
+          console.error("Verification email error:", emailErr?.message);
+        }
+        const token = Buffer.from(`${newUser.id}:${Date.now()}`).toString("base64");
+        return res.json({
+          message: "Usuario registrado. Revisa tu correo para verificar tu cuenta.",
+          user: {
+            id: newUser.id,
+            email: newUser.email,
+            firstName: newUser.firstName,
+            lastName: newUser.lastName,
+            isEmailVerified: false,
+          },
+          token,
         });
       }
 
-      // Register user in Supabase
+      // Supabase path
       const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
         email,
         password,
-        email_confirm: true, // Auto-confirm email for development
+        email_confirm: true,
         user_metadata: {
-          first_name: firstName || '',
-          last_name: lastName || '',
+          first_name: firstName || "",
+          last_name: lastName || "",
         },
       });
 
       if (authError || !authData.user) {
         console.error("Supabase registration error:", authError);
-        return res.status(400).json({ 
-          message: authError?.message || "Error al registrar usuario" 
+        return res.status(400).json({
+          message: authError?.message || "Error al registrar usuario",
         });
       }
 
-      // Check if user already exists in our database
       let dbUser = await storage.getUserByEmail(authData.user.email!);
-      
       if (!dbUser) {
-        // Create user in our database with Supabase ID
         dbUser = await storage.createUser({
-          id: authData.user.id, // ✅ Use Supabase Auth ID
+          id: authData.user.id,
           email: authData.user.email!,
-          firstName: firstName || '',
-          lastName: lastName || '',
-          profileImageUrl: '',
-          provider: 'supabase',
+          firstName: firstName || "",
+          lastName: lastName || "",
+          profileImageUrl: "",
+          provider: "supabase",
           isEmailVerified: true,
-          role: 'user', // Default role for new users
         });
       } else {
-        // Update existing user to use Supabase provider
-        dbUser = await storage.updateUserProfile(dbUser.id, {
-          provider: 'supabase',
+        await storage.updateUserProfile(dbUser.id, {
+          provider: "supabase",
           isEmailVerified: true,
-          firstName: firstName || dbUser.firstName || '',
-          lastName: lastName || dbUser.lastName || '',
+          profileImageUrl: dbUser.profileImageUrl || "",
+          firstName: firstName || dbUser.firstName || "",
+          lastName: lastName || dbUser.lastName || "",
         });
+        dbUser = await storage.getUser(dbUser.id);
       }
 
-      // Get session token
-      const { data: sessionData } = await supabaseAdmin.auth.admin.generateLink({
-        type: 'magiclink',
-        email: authData.user.email!,
-      });
-
+      const token = Buffer.from(`${dbUser!.id}:${Date.now()}`).toString("base64");
       res.json({
         message: "Usuario registrado exitosamente",
         user: {
-          id: dbUser.id,
-          email: dbUser.email,
-          firstName: dbUser.firstName,
-          lastName: dbUser.lastName,
+          id: dbUser!.id,
+          email: dbUser!.email,
+          firstName: dbUser!.firstName,
+          lastName: dbUser!.lastName,
         },
-        // Note: Client should use Supabase client to get access token
+        token,
       });
     } catch (error: any) {
       console.error("Registration error:", error);
-      res.status(500).json({ 
-        message: error.message || "Error interno del servidor" 
+      res.status(500).json({
+        message: error?.message || "Error al registrar usuario",
       });
     }
   });

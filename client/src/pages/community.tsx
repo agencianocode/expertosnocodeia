@@ -897,28 +897,28 @@ export default function Community() {
       <div className={cn("md:ml-16 lg:ml-[250px] min-h-screen flex overflow-hidden transition-all", !isAccordionChannel && selectedPost && "lg:mr-[420px]")}>
         {/* Middle Sidebar - Channels (fixed) */}
         <div className={cn(
-          "hidden lg:flex fixed left-[250px] top-0 w-[280px] h-screen bg-[#2a2a2a] overflow-y-auto flex-col transition-all duration-300 z-40",
+          "hidden lg:flex fixed left-[250px] top-0 w-[280px] h-screen bg-card overflow-y-auto flex-col transition-all duration-300 z-40",
           !channelsSidebarOpen && "lg:hidden"
         )}>
           {/* User Profile Section */}
-          <div className="p-4 flex items-center gap-3 bg-[#232323] mt-[0px] mb-[0px] pl-[16px] pr-[16px] pt-[12px] pb-[12px]">
+          <div className="p-4 flex items-center gap-3 bg-muted mt-[0px] mb-[0px] pl-[16px] pr-[16px] pt-[12px] pb-[12px]">
             <Avatar className="h-10 w-10">
               <AvatarImage src={(user as any)?.profileImageUrl || undefined} />
               <AvatarFallback>{(user?.firstName?.charAt(0) || "U").toUpperCase()}</AvatarFallback>
             </Avatar>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-white truncate">{user?.firstName} {user?.lastName}</p>
+              <p className="text-sm font-semibold text-foreground truncate">{user?.firstName} {user?.lastName}</p>
               <p className="text-xs text-cyan-500 font-medium">● En Línea</p>
             </div>
           </div>
 
           {/* Search */}
-          <div className="p-4 sticky top-0 z-10 bg-[#232323]">
-            <Input type="search" placeholder="Buscar..." className="text-xs h-8 bg-[#1a1a1a] border-[#444444]" />
+          <div className="p-4 sticky top-0 z-10 bg-muted">
+            <Input type="search" placeholder="Buscar..." className="text-xs h-8 bg-card border-border" />
           </div>
 
           {/* Sections */}
-          <div className="flex-1 overflow-y-auto px-2 py-3 space-y-0 bg-[#232323]">
+          <div className="flex-1 overflow-y-auto px-2 py-3 space-y-0 bg-muted">
             {orderedSections.map((section) => (
               <div key={section.title}>
                 <div className="text-xs text-muted-foreground px-2 py-1 font-semibold uppercase">{section.title}</div>
@@ -927,8 +927,8 @@ export default function Community() {
                     key={channel.id}
                     onClick={() => setActiveChannel(channel)}
                     className={cn(
-                      "w-full text-left px-3 py-1.5 rounded text-sm font-medium flex items-center gap-2 hover:bg-[#333333] transition-colors",
-                      activeChannel?.id === channel.id && "bg-[#404040] text-white"
+                      "w-full text-left px-3 py-1.5 rounded text-sm font-medium flex items-center gap-2 hover:bg-muted transition-colors",
+                      activeChannel?.id === channel.id && "bg-muted text-foreground"
                     )}
                     data-testid={`channel-${channel.slug}`}
                   >
@@ -942,14 +942,14 @@ export default function Community() {
 
           {/* Live Event Section */}
           {liveEvent && liveEvent.isLive && (
-            <div className="p-3 bg-[#1a1a1a] border-t border-[#333333]">
+            <div className="p-3 bg-card border-t border-border">
               <div className="bg-gradient-to-br from-[#2a2a4a] to-[#1a1a2e] rounded-lg p-3 border border-[#3a3a5a]">
                 {/* Host info with LIVE badge */}
                 <div className="flex items-center gap-2 mb-2">
                   <div className="relative">
                     <Avatar className="h-8 w-8">
                       <AvatarImage src={liveEvent.hostAvatar} />
-                      <AvatarFallback className="bg-[#4a4a6a] text-white text-xs">
+                      <AvatarFallback className="bg-muted text-foreground text-xs">
                         {liveEvent.hostName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
                       </AvatarFallback>
                     </Avatar>
@@ -966,7 +966,7 @@ export default function Community() {
                 </div>
                 
                 {/* Event title */}
-                <h4 className="text-sm font-medium text-white mb-3 line-clamp-2">
+                <h4 className="text-sm font-medium text-foreground mb-3 line-clamp-2">
                   {liveEvent.title}
                 </h4>
                 
@@ -990,7 +990,7 @@ export default function Community() {
           isRedesChatChannel && "lg:mr-[420px]"
         )}>
           {/* Header */}
-          <div className="bg-[#1a1a1a] px-6 py-4 flex items-center justify-between gap-4">
+          <div className="bg-card px-6 py-4 flex items-center justify-between gap-4">
             <div className="flex items-center gap-4 flex-1">
               <Button
                 variant="ghost"
@@ -1002,7 +1002,7 @@ export default function Community() {
                 <Menu className="h-5 w-5" />
               </Button>
               <div className="flex-1">
-                <h1 className="text-xl font-bold text-white">{activeChannel?.name}</h1>
+                <h1 className="text-xl font-bold text-foreground">{activeChannel?.name}</h1>
                 {activeChannel?.description && <p className="text-xs text-muted-foreground mt-1">{activeChannel.description}</p>}
               </div>
             </div>
@@ -1020,22 +1020,22 @@ export default function Community() {
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="w-40">
-                      <DropdownMenuItem onClick={() => setSortBy("recent")} className={sortBy === "recent" ? "bg-[#333333]" : ""}>
+                      <DropdownMenuItem onClick={() => setSortBy("recent")} className={sortBy === "recent" ? "bg-muted" : ""}>
                         Más reciente
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => setSortBy("activity")} className={sortBy === "activity" ? "bg-[#333333]" : ""}>
+                      <DropdownMenuItem onClick={() => setSortBy("activity")} className={sortBy === "activity" ? "bg-muted" : ""}>
                         Nueva actividad
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => setSortBy("oldest")} className={sortBy === "oldest" ? "bg-[#333333]" : ""}>
+                      <DropdownMenuItem onClick={() => setSortBy("oldest")} className={sortBy === "oldest" ? "bg-muted" : ""}>
                         Más antiguo
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => setSortBy("popular")} className={sortBy === "popular" ? "bg-[#333333]" : ""}>
+                      <DropdownMenuItem onClick={() => setSortBy("popular")} className={sortBy === "popular" ? "bg-muted" : ""}>
                         Popular
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => setSortBy("likes")} className={sortBy === "likes" ? "bg-[#333333]" : ""}>
+                      <DropdownMenuItem onClick={() => setSortBy("likes")} className={sortBy === "likes" ? "bg-muted" : ""}>
                         Me gusta
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => setSortBy("alphabetical")} className={sortBy === "alphabetical" ? "bg-[#333333]" : ""}>
+                      <DropdownMenuItem onClick={() => setSortBy("alphabetical")} className={sortBy === "alphabetical" ? "bg-muted" : ""}>
                         Alfabético
                       </DropdownMenuItem>
                     </DropdownMenuContent>
@@ -1064,10 +1064,10 @@ export default function Community() {
                       <MoreVertical className="h-4 w-4" />
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-80 bg-[#2a2a2a] border-[#444444] p-4">
-                    <div className="flex items-center gap-2 mb-4 pb-4 border-b border-[#444444]">
+                  <DropdownMenuContent align="end" className="w-80 bg-card border-border p-4">
+                    <div className="flex items-center gap-2 mb-4 pb-4 border-b border-border">
                       <Bell className="h-4 w-4 text-cyan-500" />
-                      <span className="font-semibold text-white">Mi preferencia de notificaciones</span>
+                      <span className="font-semibold text-foreground">Mi preferencia de notificaciones</span>
                     </div>
                     <div className="space-y-4">
                       <div className="flex items-center space-x-3">
@@ -1080,7 +1080,7 @@ export default function Community() {
                               emailNotifications: checked as boolean
                             }));
                           }}
-                          className="border-[#555555]"
+                          className="border-border"
                         />
                         <Label htmlFor="email-notif-dd" className="cursor-pointer text-sm text-gray-200">
                           Notificaciones por Email
@@ -1096,7 +1096,7 @@ export default function Community() {
                               inAppNotifications: checked as boolean
                             }));
                           }}
-                          className="border-[#555555]"
+                          className="border-border"
                         />
                         <Label htmlFor="app-notif-dd" className="cursor-pointer text-sm text-gray-200">
                           Notificaciones en la App
@@ -1112,7 +1112,7 @@ export default function Community() {
                               mobileNotifications: checked as boolean
                             }));
                           }}
-                          className="border-[#555555]"
+                          className="border-border"
                         />
                         <Label htmlFor="mobile-notif-dd" className="cursor-pointer text-sm text-gray-200">
                           Notificaciones Móvil
@@ -1153,7 +1153,7 @@ export default function Community() {
               <div className="max-w-6xl mx-auto">
                 {/* User's Personal Progress Card */}
                 {user && (
-                  <Card className="bg-[#1a1a1a] border-[#333333] mb-6">
+                  <Card className="bg-card border-border mb-6">
                     <CardContent className="p-6">
                       <div className="flex flex-col sm:flex-row items-start gap-6">
                         {/* Left side: Avatar with name and points below */}
@@ -1161,16 +1161,16 @@ export default function Community() {
                           <div className="relative mb-3">
                             <Avatar className="h-20 w-20">
                               <AvatarImage src={(user as any)?.profileImageUrl || undefined} />
-                              <AvatarFallback className="bg-[#333333] text-white text-2xl">
+                              <AvatarFallback className="bg-muted text-foreground text-2xl">
                                 {(user?.firstName?.charAt(0) || "U").toUpperCase()}
                               </AvatarFallback>
                             </Avatar>
                             {/* Badge de nivel en el avatar */}
-                            <div className="absolute -bottom-1 -right-1 bg-yellow-500 text-white text-xs font-bold rounded-full h-7 w-7 flex items-center justify-center border-2 border-[#1a1a1a]">
+                            <div className="absolute -bottom-1 -right-1 bg-yellow-500 text-white text-xs font-bold rounded-full h-7 w-7 flex items-center justify-center border-2 border-border">
                               {userStats?.level || 1}
                             </div>
                           </div>
-                          <h3 className="text-lg font-bold text-white text-center sm:text-left mb-1">
+                          <h3 className="text-lg font-bold text-foreground text-center sm:text-left mb-1">
                             {user.firstName} {user.lastName}
                           </h3>
                           <p className="text-sm text-muted-foreground text-center sm:text-left">
@@ -1183,7 +1183,7 @@ export default function Community() {
                           <div className="flex items-center gap-3 mb-4">
                             <div className="flex items-center gap-2">
                               <Trophy className="h-6 w-6 text-yellow-500" />
-                              <span className="text-white font-semibold text-lg">Nivel {userStats?.level || 1}</span>
+                              <span className="text-foreground font-semibold text-lg">Nivel {userStats?.level || 1}</span>
                             </div>
                           </div>
                           <div className="flex items-center gap-2 mb-6">
@@ -1205,7 +1205,7 @@ export default function Community() {
                                   key={level.level}
                                   className={cn(
                                     "flex items-center gap-2 text-sm",
-                                    isUnlocked ? "text-white" : "text-muted-foreground"
+                                    isUnlocked ? "text-foreground" : "text-muted-foreground"
                                   )}
                                 >
                                   {isCurrent ? (
@@ -1236,7 +1236,7 @@ export default function Community() {
                     className={cn(
                       leaderboardPeriod === "7_days"
                         ? "bg-cyan-500 hover:bg-cyan-600 text-white border-cyan-500"
-                        : "border-[#333333] text-white hover:bg-[#232323] bg-transparent"
+                        : "border-border text-foreground hover:bg-muted bg-transparent"
                     )}
                   >
                     7 días
@@ -1247,7 +1247,7 @@ export default function Community() {
                     className={cn(
                       leaderboardPeriod === "30_days"
                         ? "bg-cyan-500 hover:bg-cyan-600 text-white border-cyan-500"
-                        : "border-[#333333] text-white hover:bg-[#232323] bg-transparent"
+                        : "border-border text-foreground hover:bg-muted bg-transparent"
                     )}
                   >
                     30 días
@@ -1258,7 +1258,7 @@ export default function Community() {
                     className={cn(
                       leaderboardPeriod === "all_time"
                         ? "bg-cyan-500 hover:bg-cyan-600 text-white border-cyan-500"
-                        : "border-[#333333] text-white hover:bg-[#232323] bg-transparent"
+                        : "border-border text-foreground hover:bg-muted bg-transparent"
                     )}
                   >
                     Todo el tiempo
@@ -1293,14 +1293,14 @@ export default function Community() {
                         } else if (rank === 3) {
                           return <div className="bg-amber-700 text-white text-sm font-bold rounded-full h-8 w-8 flex items-center justify-center border-2 border-amber-800">3</div>;
                         } else {
-                          return <div className="bg-[#404040] text-gray-400 text-sm font-bold rounded-full h-8 w-8 flex items-center justify-center">{rank}</div>;
+                          return <div className="bg-muted text-gray-400 text-sm font-bold rounded-full h-8 w-8 flex items-center justify-center">{rank}</div>;
                         }
                       };
                       return (
                         <Card
                           key={member.userId}
                           className={cn(
-                            "bg-[#1a1a1a] border-[#333333] hover:bg-[#232323] transition-colors",
+                            "bg-card border-border hover:bg-muted transition-colors",
                             isCurrentUser && "border-cyan-500 border-2"
                           )}
                         >
@@ -1311,12 +1311,12 @@ export default function Community() {
                               </div>
                               <Avatar className="h-12 w-12">
                                 <AvatarImage src={member.profileImageUrl || undefined} />
-                                <AvatarFallback className="bg-[#333333] text-white">
+                                <AvatarFallback className="bg-muted text-foreground">
                                   {(member.firstName?.charAt(0) || "U").toUpperCase()}
                                 </AvatarFallback>
                               </Avatar>
                               <div className="flex-1 min-w-0">
-                                <h3 className="text-white font-semibold truncate">
+                                <h3 className="text-foreground font-semibold truncate">
                                   {member.firstName} {member.lastName}
                                 </h3>
                                 {member.shortDescription && (
@@ -1327,7 +1327,7 @@ export default function Community() {
                               </div>
                               <div className="flex items-center gap-2">
                                 <div className="text-right">
-                                  <p className="text-white font-semibold">+ {member.points || 0}</p>
+                                  <p className="text-foreground font-semibold">+ {member.points || 0}</p>
                                   <p className="text-xs text-muted-foreground">Nivel {member.level || 1}</p>
                                 </div>
                               </div>
@@ -1358,13 +1358,13 @@ export default function Community() {
                   <div className="w-full max-w-3xl mx-auto space-y-4">
                     {/* Pinned Messages Section */}
                     {groupMessagesByDate(messages).pinned.length > 0 && (
-                      <div className="space-y-3 pb-4 border-b border-[#444444]">
+                      <div className="space-y-3 pb-4 border-b border-border">
                         <div className="flex items-center gap-2 text-xs font-semibold text-cyan-400">
                           <Pin className="h-3 w-3" />
                           <span>Mensajes fijados</span>
                         </div>
                         {groupMessagesByDate(messages).pinned.map((message) => (
-                          <div key={message.id} className="rounded-lg border border-[#444444] bg-[#252525] p-3">
+                          <div key={message.id} className="rounded-lg border border-border bg-card p-3">
                             <div className="flex items-start gap-3">
                               <Avatar className="h-6 w-6 flex-shrink-0">
                                 <AvatarImage src={message.user?.profileImageUrl || undefined} />
@@ -1372,7 +1372,7 @@ export default function Community() {
                               </Avatar>
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-2">
-                                  <p className="font-semibold text-white text-sm">
+                                  <p className="font-semibold text-foreground text-sm">
                                     {message.user?.firstName} {message.user?.lastName}
                                   </p>
                                   <p className="text-xs text-muted-foreground">
@@ -1441,14 +1441,14 @@ export default function Community() {
                     {Object.entries(groupMessagesByDate(messages).grouped).map(([date, dateMessages]) => (
                       <div key={date} className="space-y-3">
                         <div className="flex items-center justify-center gap-3">
-                          <div className="flex-1 border-t border-[#333333]"></div>
-                          <span className="text-xs text-muted-foreground px-3 py-1 rounded-full bg-[#1a1a1a] border border-[#333333]">
+                          <div className="flex-1 border-t border-border"></div>
+                          <span className="text-xs text-muted-foreground px-3 py-1 rounded-full bg-card border border-border">
                             {date}
                           </span>
-                          <div className="flex-1 border-t border-[#333333]"></div>
+                          <div className="flex-1 border-t border-border"></div>
                         </div>
                         {dateMessages.map((message) => (
-                          <div key={message.id} className="rounded-lg border border-[#333333] bg-[#1a1a1a] p-4 group">
+                          <div key={message.id} className="rounded-lg border border-border bg-card p-4 group">
                             <div className="flex items-start gap-3 mb-2">
                               <Avatar 
                                 className="h-8 w-8 flex-shrink-0 cursor-pointer hover:opacity-80 transition-opacity"
@@ -1460,7 +1460,7 @@ export default function Community() {
                               <div className="flex-1">
                                 <div className="flex items-center gap-2">
                                   <p 
-                                    className="font-semibold text-white cursor-pointer hover:underline"
+                                    className="font-semibold text-foreground cursor-pointer hover:underline"
                                     onClick={() => message.user && handleOpenProfile(message.user)}
                                   >
                                     {message.user?.firstName} {message.user?.lastName}
@@ -1538,7 +1538,7 @@ export default function Community() {
                                   <Smile className="h-3 w-3" />
                                 </button>
                                 {openReactionMessageId === message.id && (
-                                  <div className="absolute bottom-full left-0 mb-2 bg-[#2a2a2a] border border-[#444444] rounded-lg p-2 grid grid-cols-5 gap-1 w-40 z-50 shadow-lg">
+                                  <div className="absolute bottom-full left-0 mb-2 bg-card border border-border rounded-lg p-2 grid grid-cols-5 gap-1 w-40 z-50 shadow-lg">
                                     {["👍", "❤️", "😂", "😮", "🎉"].map((emoji) => (
                                       <button
                                         key={emoji}
@@ -1563,7 +1563,7 @@ export default function Community() {
                               {(userMessageEmojis[message.id] || []).length > 0 && (
                                 <div className="flex gap-1">
                                   {(userMessageEmojis[message.id] || []).map((emoji) => (
-                                    <span key={emoji} className="text-sm px-1.5 py-0.5 rounded-full bg-[#292929]">{emoji}</span>
+                                    <span key={emoji} className="text-sm px-1.5 py-0.5 rounded-full bg-muted">{emoji}</span>
                                   ))}
                                 </div>
                               )}
@@ -1577,10 +1577,10 @@ export default function Community() {
               )}
 
               {/* Message Input with Toolbar */}
-              <div className="flex-shrink-0 border-t border-[#333333] flex justify-center w-full bg-[#1a1a1a]">
-                <div className="flex flex-col w-full px-6 py-2 max-w-3xl bg-[#1a1a1a]">
+              <div className="flex-shrink-0 border-t border-border flex justify-center w-full bg-card">
+                <div className="flex flex-col w-full px-6 py-2 max-w-3xl bg-card">
                   {/* Text Input with Integrated Toolbar */}
-                  <div className="flex flex-col border border-[#333333] rounded-lg bg-[#1a1a1a] p-2">
+                  <div className="flex flex-col border border-border rounded-lg bg-card p-2">
                     {/* Textarea - Full width on top */}
                     <textarea
                       placeholder="Escribe un mensaje... (Shift+Enter para nueva línea)"
@@ -1634,7 +1634,7 @@ export default function Community() {
                         }
                       }}
                       disabled={sendingMessage}
-                      className="w-full bg-transparent border-0 text-white text-left resize-none min-h-[24px] max-h-[120px] overflow-y-auto outline-none text-sm"
+                      className="w-full bg-transparent border-0 text-foreground text-left resize-none min-h-[24px] max-h-[120px] overflow-y-auto outline-none text-sm"
                       rows={1}
                       data-testid="message-input"
                     />
@@ -1646,14 +1646,14 @@ export default function Community() {
                         <div className="relative">
                           <button 
                             onClick={() => setShowMessageEmojiToolbar(!showMessageEmojiToolbar)}
-                            className="p-1 hover:bg-[#292929] rounded transition-colors" 
+                            className="p-1 hover:bg-muted rounded transition-colors" 
                             data-testid="toolbar-emoji" 
                             title="Emoticones"
                           >
                             <Smile className="h-4 w-4 text-muted-foreground hover:text-cyan-400" />
                           </button>
                           {showMessageEmojiToolbar && (
-                            <div className="absolute bottom-full left-0 mb-2 bg-[#2a2a2a] border border-[#444444] rounded-lg p-2 grid grid-cols-5 gap-1 w-40 z-50 shadow-lg">
+                            <div className="absolute bottom-full left-0 mb-2 bg-card border border-border rounded-lg p-2 grid grid-cols-5 gap-1 w-40 z-50 shadow-lg">
                               {["👍", "❤️", "😂", "😮", "🎉", "🔥", "👀", "💯", "🙏", "😍", "😱", "😭", "🤔", "👌", "🚀"].map((emoji) => (
                                 <button
                                   key={emoji}
@@ -1673,7 +1673,7 @@ export default function Community() {
                         </div>
                         <button 
                           onClick={() => toast({ title: "Próximamente", description: "Adjuntar archivos está en desarrollo", variant: "default" })}
-                          className="p-1 hover:bg-[#292929] rounded transition-colors" 
+                          className="p-1 hover:bg-muted rounded transition-colors" 
                           data-testid="toolbar-attachments" 
                           title="Archivos"
                         >
@@ -1681,7 +1681,7 @@ export default function Community() {
                         </button>
                         <button 
                           onClick={() => toast({ title: "Próximamente", description: "Cargar imágenes está en desarrollo", variant: "default" })}
-                          className="p-1 hover:bg-[#292929] rounded transition-colors" 
+                          className="p-1 hover:bg-muted rounded transition-colors" 
                           data-testid="toolbar-image" 
                           title="Imagen"
                         >
@@ -1689,7 +1689,7 @@ export default function Community() {
                         </button>
                         <button 
                           onClick={() => toast({ title: "Próximamente", description: "Grabar audio está en desarrollo", variant: "default" })}
-                          className="p-1 hover:bg-[#292929] rounded transition-colors" 
+                          className="p-1 hover:bg-muted rounded transition-colors" 
                           data-testid="toolbar-audio" 
                           title="Audio"
                         >
@@ -1697,7 +1697,7 @@ export default function Community() {
                         </button>
                         <button 
                           onClick={() => toast({ title: "Próximamente", description: "Mencionar usuarios está en desarrollo", variant: "default" })}
-                          className="p-1 hover:bg-[#292929] rounded transition-colors" 
+                          className="p-1 hover:bg-muted rounded transition-colors" 
                           data-testid="toolbar-mention" 
                           title="Mencionar"
                         >
@@ -1750,7 +1750,7 @@ export default function Community() {
 
               {/* Inicia una publicación - para Presentante y Dudas */}
               {(isPresentanteChannel || isDudasChannel) && (
-                <div className="border border-[#333333] rounded-lg p-3 bg-[#1a1a1a] flex items-center gap-3 w-full">
+                <div className="border border-border rounded-lg p-3 bg-card flex items-center gap-3 w-full">
                   <Avatar className="h-8 w-8 flex-shrink-0">
                     <AvatarImage src={(user as any)?.profileImageUrl || undefined} />
                     <AvatarFallback>{(user?.firstName?.charAt(0) || "U").toUpperCase()}</AvatarFallback>
@@ -1767,7 +1767,7 @@ export default function Community() {
                         button?.click();
                       }
                     }}
-                    className="flex-1 bg-transparent border-0 outline-none text-sm text-white placeholder-muted-foreground focus:ring-0"
+                    className="flex-1 bg-transparent border-0 outline-none text-sm text-foreground placeholder-muted-foreground focus:ring-0"
                     data-testid="new-post-input"
                   />
                   <Button
@@ -1823,10 +1823,10 @@ export default function Community() {
                       className={cn(
                         "rounded-lg border transition-colors",
                         isAccordionChannel 
-                          ? "border-[#333333] bg-[#1a1a1a]" 
+                          ? "border-border bg-card" 
                           : cn(
-                              "p-4 border-[#333333] bg-[#1a1a1a] cursor-pointer hover:border-[#555555]",
-                              selectedPost?.post.id === post.post.id && "border-cyan-500 bg-[#1a2a2a]"
+                              "p-4 border-border bg-card cursor-pointer hover:border-border",
+                              selectedPost?.post.id === post.post.id && "border-cyan-500 bg-muted"
                             )
                       )}
                       data-testid={`post-${post.post.id}`}
@@ -1835,10 +1835,10 @@ export default function Community() {
                       {isAccordionChannel && (
                         <button
                           onClick={() => setExpandedPostId(isExpanded ? null : post.post.id)}
-                          className="w-full text-left p-4 hover:bg-[#222222] transition-colors flex items-center justify-between"
+                          className="w-full text-left p-4 hover:bg-muted transition-colors flex items-center justify-between"
                         >
                           <div>
-                            <h3 className="font-bold text-white">{post.post.title}</h3>
+                            <h3 className="font-bold text-foreground">{post.post.title}</h3>
                             <p className="text-xs text-muted-foreground mt-1">
                               {new Date(post.post.createdAt).toLocaleDateString("es-ES", { year: "numeric", month: "long", day: "numeric" })}
                             </p>
@@ -1848,7 +1848,7 @@ export default function Community() {
                       )}
                       {/* Header para Presentante y Dudas - estilo chat */}
                       {!isAccordionChannel && (isPresentanteChannel || isDudasChannel) && !(post.post as any)?.isAdminPost && (
-                        <div className="bg-[#232323] rounded-lg p-3 mb-3 relative">
+                        <div className="bg-muted rounded-lg p-3 mb-3 relative">
                           <div className="flex items-start gap-3">
                             <Avatar className="h-10 w-10 flex-shrink-0">
                               <AvatarImage src={(post.user as any)?.profileImageUrl || undefined} />
@@ -1895,7 +1895,7 @@ export default function Community() {
                                       toast({ title: "Error", description: "Error al fijar/desfijar la publicación", variant: "destructive" });
                                     }
                                   }}
-                                  className="p-1 hover:bg-[#333333] rounded transition-colors"
+                                  className="p-1 hover:bg-muted rounded transition-colors"
                                   title={(post.post as any)?.isPinned ? "Desfijar publicación" : "Fijar publicación"}
                                 >
                                   <Pin className={cn("h-4 w-4", (post.post as any)?.isPinned ? "text-cyan-500 fill-cyan-500" : "text-muted-foreground")} />
@@ -1923,7 +1923,7 @@ export default function Community() {
                                       }
                                     }
                                   }}
-                                  className="p-1 hover:bg-[#333333] rounded transition-colors"
+                                  className="p-1 hover:bg-muted rounded transition-colors"
                                   data-testid={`delete-post-${post.post.id}`}
                                 >
                                   <Trash2 className="h-4 w-4 text-muted-foreground hover:text-red-500" />
@@ -1944,14 +1944,14 @@ export default function Community() {
                               </p>
 
                               {/* Título */}
-                              <h3 className="font-bold text-white mb-3">{post.post.title}</h3>
+                              <h3 className="font-bold text-foreground mb-3">{post.post.title}</h3>
                             </>
                           )}
                           {(isPresentanteChannel || isDudasChannel) && (
                             <>
                               {/* Título - para Presentante y Dudas */}
                               <div className="flex items-center justify-between mb-3">
-                                <h3 className="font-bold text-white">{post.post.title}</h3>
+                                <h3 className="font-bold text-foreground">{post.post.title}</h3>
                                 {(user as any)?.isAdmin && (post.post as any)?.isAdminPost && (
                                   <div className="flex gap-2">
                                     <button
@@ -1974,7 +1974,7 @@ export default function Community() {
                                           toast({ title: "Error", description: "Error al fijar/desfijar la publicación", variant: "destructive" });
                                         }
                                       }}
-                                      className="p-1 hover:bg-[#333333] rounded transition-colors flex-shrink-0"
+                                      className="p-1 hover:bg-muted rounded transition-colors flex-shrink-0"
                                       title={(post.post as any)?.isPinned ? "Desfijar publicación" : "Fijar publicación"}
                                     >
                                       <Pin className={cn("h-4 w-4", (post.post as any)?.isPinned ? "text-cyan-500 fill-cyan-500" : "text-muted-foreground")} />
@@ -2001,7 +2001,7 @@ export default function Community() {
                                           }
                                         }
                                       }}
-                                      className="p-1 hover:bg-[#333333] rounded transition-colors flex-shrink-0"
+                                      className="p-1 hover:bg-muted rounded transition-colors flex-shrink-0"
                                       title="Eliminar publicación"
                                     >
                                       <Trash2 className="h-4 w-4 text-muted-foreground hover:text-red-500" />
@@ -2012,7 +2012,7 @@ export default function Community() {
                             </>
                           )}
 
-                          {isAccordionChannel && <div className="border-t border-[#333333] px-4 py-3" />}
+                          {isAccordionChannel && <div className="border-t border-border px-4 py-3" />}
 
 
                           {/* Renderizar bloques si existen */}
@@ -2236,7 +2236,7 @@ export default function Community() {
                             </button>
                           {/* Emoji selector popup - visible when open */}
                           {openReactionPostId === post.post.id && (
-                            <div className="absolute bottom-full left-0 mb-2 bg-[#2a2a2a] border border-[#444444] rounded-lg p-2 grid grid-cols-5 gap-1 w-56 z-50 shadow-lg">
+                            <div className="absolute bottom-full left-0 mb-2 bg-card border border-border rounded-lg p-2 grid grid-cols-5 gap-1 w-56 z-50 shadow-lg">
                               {["👍", "❤️", "😂", "😮", "🎉", "🔥", "🍊", "🌟", "👏", "🎯"].map((emoji) => {
                                 const hasEmoji = (userEmojis[post.post.id] || []).includes(emoji);
                                 const userReactionsCount = (userEmojis[post.post.id] || []).length;
@@ -2281,7 +2281,7 @@ export default function Community() {
                                     });
                                   }}
                                   className={cn(
-                                    "text-sm px-2 py-1 rounded-full transition-all cursor-pointer bg-[#292929]",
+                                    "text-sm px-2 py-1 rounded-full transition-all cursor-pointer bg-muted",
                                     isUserReaction 
                                       ? "text-white" 
                                       : "text-muted-foreground hover:text-white"
@@ -2310,7 +2310,7 @@ export default function Community() {
                           {postCommentCount > 0 && (
                             <div className="flex items-center -space-x-2">
                               {postComments.slice(0, 3).map((comment, idx) => (
-                                <Avatar key={idx} className="h-5 w-5 border border-[#1a1a1a]">
+                                <Avatar key={idx} className="h-5 w-5 border border-border">
                                   <AvatarImage src={comment.user?.profileImageUrl || undefined} />
                                   <AvatarFallback className="text-xs">{(comment.user?.firstName?.charAt(0) || "U").toUpperCase()}</AvatarFallback>
                                 </Avatar>
@@ -2418,9 +2418,9 @@ export default function Community() {
           const isQuestionThread = !!metadataBlock;
           
           return (
-          <div className="hidden lg:fixed right-0 top-0 h-screen w-[420px] lg:flex flex-col bg-[#1a1a1a] overflow-hidden z-40">
+          <div className="hidden lg:fixed right-0 top-0 h-screen w-[420px] lg:flex flex-col bg-card overflow-hidden z-40">
             {/* Comments/Thread Header */}
-            <div className="flex-shrink-0 px-6 py-4 flex items-center justify-between bg-[#232323]">
+            <div className="flex-shrink-0 px-6 py-4 flex items-center justify-between bg-muted">
               <div>
                 <h2 className="text-lg font-bold text-white">{isQuestionThread ? "Hilo" : "Comentarios"}</h2>
                 <p className="text-xs text-muted-foreground mt-1">{comments.length} {isQuestionThread ? "mensajes" : "comentarios"}</p>
@@ -2437,7 +2437,7 @@ export default function Community() {
             </div>
 
             {/* Comments List - scrollable, stuck to input, grouped by date */}
-            <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4 bg-[#232323] scrollbar-thin">
+            <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4 bg-muted scrollbar-thin">
               {comments.length === 0 ? (
                 <div className="flex items-center justify-center text-muted-foreground text-sm">
                   <p>Sin comentarios aún. ¡Sé el primero!</p>
@@ -2448,7 +2448,7 @@ export default function Community() {
                     <div key={date} className="space-y-3">
                       {/* Date separator */}
                       <div className="text-center">
-                        <span className="text-xs bg-[#333333] px-3 py-1 rounded-full text-muted-foreground">
+                        <span className="text-xs bg-muted px-3 py-1 rounded-full text-muted-foreground">
                           {date}
                         </span>
                       </div>
@@ -2459,8 +2459,8 @@ export default function Community() {
                         <div key={comment.comment.id} className={cn(
                           "rounded-lg p-3 border",
                           isOriginalPost 
-                            ? "bg-[#1a2a2a] border-cyan-500/30" 
-                            : "bg-[#1f1f1f] border-[#333333]"
+                            ? "bg-muted border-cyan-500/30" 
+                            : "bg-[#1f1f1f] border-border"
                         )}>
                           <div className="flex gap-2">
                             <Avatar className="h-8 w-8 flex-shrink-0">
@@ -2502,7 +2502,7 @@ export default function Community() {
                                   </button>
                                   {/* Emoji selector popup */}
                                   {openReactionCommentId === comment.comment.id && (
-                                    <div className="absolute bottom-full left-0 mb-2 bg-[#2a2a2a] border border-[#444444] rounded-lg p-2 grid grid-cols-5 gap-1 w-56 z-50 shadow-lg">
+                                    <div className="absolute bottom-full left-0 mb-2 bg-card border border-border rounded-lg p-2 grid grid-cols-5 gap-1 w-56 z-50 shadow-lg">
                                       {["👍", "❤️", "😂", "😮", "🎉", "🔥", "🍊", "🌟", "👏", "🎯"].map((emoji) => {
                                         const hasEmoji = (userCommentEmojis[comment.comment.id] || []).includes(emoji);
                                         const userReactionsCount = (userCommentEmojis[comment.comment.id] || []).length;
@@ -2608,7 +2608,7 @@ export default function Community() {
                                           }
                                         }}
                                         className={cn(
-                                          "text-sm px-2 py-1 rounded-full transition-all cursor-pointer bg-[#292929]",
+                                          "text-sm px-2 py-1 rounded-full transition-all cursor-pointer bg-muted",
                                           (userCommentEmojis[comment.comment.id] || []).includes(reaction.emoji)
                                             ? "text-white" 
                                             : "text-muted-foreground hover:text-white"
@@ -2634,11 +2634,11 @@ export default function Community() {
             </div>
 
             {/* Comment Input */}
-            <div className="flex-shrink-0 px-6 py-4 bg-[#232323]">
+            <div className="flex-shrink-0 px-6 py-4 bg-muted">
               <div className="flex gap-2">
                 <Input
                   placeholder="Escribe un comentario..."
-                  className="border-[#444444] text-white text-sm bg-[#181818]"
+                  className="border-border text-white text-sm bg-[#181818]"
                   value={commentInput}
                   onChange={(e) => setCommentInput(e.target.value)}
                   onKeyPress={(e) => e.key === "Enter" && handleSendComment()}
@@ -2680,14 +2680,14 @@ export default function Community() {
           });
           
           return (
-          <div className="hidden lg:fixed right-0 top-0 h-screen w-[420px] lg:flex flex-col bg-[#1a1a1a] overflow-hidden z-40 border-l border-[#333333]">
+          <div className="hidden lg:fixed right-0 top-0 h-screen w-[420px] lg:flex flex-col bg-card overflow-hidden z-40 border-l border-border">
               {/* Header */}
-            <div className="flex-shrink-0 px-6 py-4 bg-[#232323] border-b border-[#333333]">
+            <div className="flex-shrink-0 px-6 py-4 bg-muted border-b border-border">
                 <h2 className="text-lg font-bold text-white">Detalles</h2>
             </div>
 
             {/* Channel Description */}
-            <div className="flex-shrink-0 px-6 py-4 border-b border-[#333333]">
+            <div className="flex-shrink-0 px-6 py-4 border-b border-border">
                 <p className="text-sm text-muted-foreground">
                   Canal para debates sobre el universo NoCode e Inteligencia Artificial.
                 </p>
@@ -2716,7 +2716,7 @@ export default function Community() {
                       {onlineUsersList.map((member) => (
                         <div 
                           key={member?.id} 
-                          className="flex items-center gap-3 p-2 rounded-lg hover:bg-[#232323] transition-colors cursor-pointer"
+                          className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted transition-colors cursor-pointer"
                           onClick={() => handleOpenProfile(member)}
                         >
                           <div className="relative">
@@ -2724,7 +2724,7 @@ export default function Community() {
                       <AvatarImage src={member?.profileImageUrl || undefined} />
                       <AvatarFallback>{(member?.firstName?.charAt(0) || "U").toUpperCase()}</AvatarFallback>
                     </Avatar>
-                            <div className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-green-500 border-2 border-[#1a1a1a]"></div>
+                            <div className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-green-500 border-2 border-border"></div>
                           </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm text-white truncate">
@@ -2732,7 +2732,7 @@ export default function Community() {
                       </p>
                     </div>
                           {member?.isAdmin && (
-                            <span className="text-xs bg-[#404040] text-muted-foreground px-2 py-0.5 rounded flex items-center gap-1">
+                            <span className="text-xs bg-muted text-muted-foreground px-2 py-0.5 rounded flex items-center gap-1">
                               <span>👤</span>
                               <span>ADMINISTRADOR</span>
                             </span>
@@ -2753,7 +2753,7 @@ export default function Community() {
                       {offlineUsersList.map((member) => (
                         <div 
                           key={member?.id} 
-                          className="flex items-center gap-3 p-2 rounded-lg hover:bg-[#232323] transition-colors cursor-pointer"
+                          className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted transition-colors cursor-pointer"
                           onClick={() => handleOpenProfile(member)}
                         >
                           <div className="relative">
@@ -2761,7 +2761,7 @@ export default function Community() {
                               <AvatarImage src={member?.profileImageUrl || undefined} />
                               <AvatarFallback>{(member?.firstName?.charAt(0) || "U").toUpperCase()}</AvatarFallback>
                             </Avatar>
-                            <div className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-gray-500 border-2 border-[#1a1a1a]"></div>
+                            <div className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-gray-500 border-2 border-border"></div>
           </div>
                           <div className="flex-1 min-w-0">
                             <p className="text-sm text-white truncate">
@@ -2769,7 +2769,7 @@ export default function Community() {
                             </p>
                           </div>
                           {member?.isAdmin && (
-                            <span className="text-xs bg-[#404040] text-muted-foreground px-2 py-0.5 rounded flex items-center gap-1">
+                            <span className="text-xs bg-muted text-muted-foreground px-2 py-0.5 rounded flex items-center gap-1">
                               <span>👤</span>
                               <span>ADMINISTRADOR</span>
                             </span>
@@ -2788,7 +2788,7 @@ export default function Community() {
 
       {/* Profile Dialog */}
       <Dialog open={profileDialogOpen} onOpenChange={setProfileDialogOpen}>
-        <DialogContent className="w-[95vw] sm:w-[90vw] max-w-4xl h-[90vh] max-h-[90vh] overflow-hidden flex flex-col bg-[#1a1a1a] border-[#333333] text-white p-0 sm:p-6 m-0 translate-x-[-50%] translate-y-[-50%] left-[50%] top-[50%]">
+        <DialogContent className="w-[95vw] sm:w-[90vw] max-w-4xl h-[90vh] max-h-[90vh] overflow-hidden flex flex-col bg-card border-border text-white p-0 sm:p-6 m-0 translate-x-[-50%] translate-y-[-50%] left-[50%] top-[50%]">
           {selectedProfileUser && (
             <div className="flex flex-col h-full overflow-hidden">
               <DialogHeader className="pb-4 px-4 sm:px-0 flex-shrink-0">
@@ -2796,12 +2796,12 @@ export default function Community() {
                   <div className="relative flex-shrink-0">
                     <Avatar className="h-24 w-24 sm:h-28 sm:w-28">
                       <AvatarImage src={selectedProfileUser.profileImageUrl || undefined} />
-                      <AvatarFallback className="bg-[#333333] text-white text-3xl sm:text-4xl">
+                      <AvatarFallback className="bg-muted text-white text-3xl sm:text-4xl">
                         {(selectedProfileUser.firstName?.charAt(0) || "U").toUpperCase()}
                       </AvatarFallback>
                     </Avatar>
                     {/* Badge de nivel */}
-                    <div className="absolute -bottom-1 -right-1 bg-blue-500 text-white text-xs sm:text-sm font-bold rounded-full h-7 w-7 sm:h-8 sm:w-8 flex items-center justify-center border-2 border-[#1a1a1a]">
+                    <div className="absolute -bottom-1 -right-1 bg-blue-500 text-white text-xs sm:text-sm font-bold rounded-full h-7 w-7 sm:h-8 sm:w-8 flex items-center justify-center border-2 border-border">
                       {selectedProfileUser.level || 1}
                     </div>
                   </div>
@@ -2832,7 +2832,7 @@ export default function Community() {
                       <Button className="bg-green-500 hover:bg-green-600 text-white text-xs px-2 py-1 h-auto">
                         Mensaje
                       </Button>
-                      <Button variant="outline" size="icon" className="border-[#333333] hover:bg-[#232323] h-auto w-auto p-1">
+                      <Button variant="outline" size="icon" className="border-border hover:bg-muted h-auto w-auto p-1">
                         <MoreVertical className="h-4 w-4" />
                       </Button>
                     </div>
@@ -2841,7 +2841,7 @@ export default function Community() {
               </DialogHeader>
 
               {/* Tabs */}
-              <div className="border-b border-[#333333] mb-4 px-4 sm:px-0 flex-shrink-0 overflow-x-auto">
+              <div className="border-b border-border mb-4 px-4 sm:px-0 flex-shrink-0 overflow-x-auto">
                 <div className="flex gap-2 sm:gap-4 min-w-max">
                   <button 
                     className={cn(
@@ -2960,7 +2960,7 @@ export default function Community() {
                       userPosts.map((item: any) => (
                         <div
                           key={item.post.id}
-                          className="rounded-lg border border-[#333333] bg-[#1a1a1a] p-4 hover:border-[#555555] transition-colors"
+                          className="rounded-lg border border-border bg-card p-4 hover:border-border transition-colors"
                         >
                           <div className="flex items-start gap-3 mb-3">
                             <div className="flex-1">
@@ -2997,7 +2997,7 @@ export default function Community() {
                         <div
                           key={item.comment.id}
                           onClick={() => handleNavigateToPost(item)}
-                          className="rounded-lg border border-[#333333] bg-[#1a1a1a] p-4 hover:border-cyan-500 hover:bg-[#1a2a2a] transition-colors cursor-pointer"
+                          className="rounded-lg border border-border bg-card p-4 hover:border-cyan-500 hover:bg-muted transition-colors cursor-pointer"
                         >
                           <div className="flex items-start gap-3 mb-2">
                             <div className="flex-1">
@@ -3063,7 +3063,7 @@ export default function Community() {
                           return (
                             <div
                               key={reward.id}
-                              className="flex items-start gap-3 p-3 rounded-lg border border-[#333333] bg-[#1a1a1a] hover:border-[#555555] transition-colors"
+                              className="flex items-start gap-3 p-3 rounded-lg border border-border bg-card hover:border-border transition-colors"
                             >
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-2 mb-1">
@@ -3102,7 +3102,7 @@ export default function Community() {
 
       {/* Points Info Dialog */}
       <Dialog open={pointsInfoOpen} onOpenChange={setPointsInfoOpen}>
-        <DialogContent className="max-w-lg bg-[#1a1a1a] border-[#333333] text-white max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-lg bg-card border-border text-white max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-2xl font-bold text-white">
               ¿Cómo funcionan los puntos?
@@ -3157,7 +3157,7 @@ export default function Community() {
                           ? "bg-yellow-500/20 border-yellow-500 text-white"
                           : isUnlocked
                           ? "bg-green-500/10 border-green-500/50 text-white"
-                          : "bg-[#2a2a2a] border-[#333333] text-muted-foreground"
+                          : "bg-card border-border text-muted-foreground"
                       )}
                     >
                       <div className="flex items-center gap-2">

@@ -42,8 +42,8 @@ export default function Perks() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-dark-bg flex">
-        <div className="w-[250px] bg-dark-card border-r border-dark-border"></div>
+      <div className="min-h-screen bg-background flex">
+        <div className="w-[250px] bg-card border-r border-border"></div>
         <div className="flex-1 flex items-center justify-center">
           <div className="text-white">Loading...</div>
         </div>
@@ -165,7 +165,7 @@ export default function Perks() {
   ];
 
   return (
-    <div className="min-h-screen bg-dark-bg text-white">
+    <div className="min-h-screen bg-background text-white">
       {/* Mobile Header */}
       <MobileHeader />
       
@@ -176,7 +176,7 @@ export default function Perks() {
         {/* Main Content */}
         <main className="flex-1 overflow-auto pb-20 lg:pb-0 md:ml-16 lg:ml-[250px]">
           {/* Header */}
-          <header className="bg-dark-card border-b border-dark-border p-6">
+          <header className="bg-card border-b border-border p-6">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
               <div>
                 <h1 className="text-2xl font-bold">Beneficios y Perks</h1>
@@ -197,7 +197,7 @@ export default function Perks() {
               <h2 className="text-xl font-bold text-white mb-6">Planes de Membresía</h2>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {membershipTiers.map((tier) => (
-                  <Card key={tier.id} className={`bg-dark-card border-dark-border relative ${tier.popular ? 'ring-2 ring-purple-500' : ''}`}>
+                  <Card key={tier.id} className={`bg-card border-border relative ${tier.popular ? 'ring-2 ring-purple-500' : ''}`}>
                     {tier.popular && (
                       <Badge className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-purple-600 text-white">
                         Más Popular
@@ -223,7 +223,7 @@ export default function Perks() {
                         ))}
                       </ul>
                       {!tier.current && (
-                        <Button className={`w-full ${tier.popular ? 'bg-purple-600 hover:bg-purple-700' : 'bg-dark-bg hover:bg-dark-bg/80'} border-dark-border`}>
+                        <Button className={`w-full ${tier.popular ? 'bg-purple-600 hover:bg-purple-700' : 'bg-background hover:bg-background/80'} border-border`}>
                           {tier.id === 'enterprise' ? 'Contactar Ventas' : 'Actualizar Plan'}
                         </Button>
                       )}
@@ -238,7 +238,7 @@ export default function Perks() {
               <h2 className="text-xl font-bold text-white mb-6">Beneficios Exclusivos</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {exclusivePerks.map((perk, index) => (
-                  <Card key={index} className="bg-dark-card border-dark-border">
+                  <Card key={index} className="bg-card border-border">
                     <CardContent className="p-6">
                       <div className="flex items-center gap-4 mb-4">
                         <div className="p-3 rounded-lg bg-purple-600/20">
@@ -268,7 +268,7 @@ export default function Perks() {
               <h2 className="text-xl font-bold text-white mb-6">Beneficios de Partners</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {partnerBenefits.map((partner, index) => (
-                  <Card key={index} className="bg-dark-card border-dark-border">
+                  <Card key={index} className="bg-card border-border">
                     <CardContent className="p-6">
                       <div className="flex items-start gap-4">
                         <div className="text-3xl">{partner.logo}</div>
@@ -276,7 +276,7 @@ export default function Perks() {
                           <h3 className="font-semibold text-white text-lg">{partner.partner}</h3>
                           <p className="text-purple-400 font-medium mt-1">{partner.benefit}</p>
                           <p className="text-gray-400 text-sm mt-2">{partner.description}</p>
-                          <Button variant="outline" className="mt-4 border-dark-border text-gray-300 hover:bg-dark-bg">
+                          <Button variant="outline" className="mt-4 border-border text-gray-300 hover:bg-background">
                             <ExternalLink className="h-4 w-4 mr-2" />
                             Obtener Beneficio
                           </Button>

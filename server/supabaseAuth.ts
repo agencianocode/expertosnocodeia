@@ -42,78 +42,77 @@ export const supabaseAuth = async (
       });
     }
 
-    // Verify token with Supabase (fallback to legacy auth for development)
+    const cleanToken = token.replace(/^Legacy\s+/i, '');
+
+    // Simple token from our login/register (base64 "userId:timestamp") — always try legacy first for these
+    if (!cleanToken.startsWith('eyJ')) {
+      let userId: string | undefined;
+      try {
+        const decoded = Buffer.from(cleanToken, 'base64').toString('utf-8');
+        try {
+          const tokenData = JSON.parse(decoded);
+          userId = tokenData.claims?.sub || tokenData.userId || tokenData.id;
+        } catch {
+          [userId] = decoded.split(':');
+        }
+      } catch {
+        // not base64 or invalid
+      }
+      if (userId) {
+        const dbUser = await storage.getUser(userId);
+        if (dbUser) {
+          req.user = {
+            id: dbUser.id,
+            email: dbUser.email,
+            firstName: dbUser.firstName || undefined,
+            lastName: dbUser.lastName || undefined,
+            profileImageUrl: dbUser.profileImageUrl || undefined,
+          };
+          return next();
+        }
+      }
+      // If we have Supabase and token wasn't simple, don't fall through to Supabase with invalid token
+      if (!supabaseAdmin) {
+        if (!userId) {
+          const fallback = await storage.getUserByEmail("fabianseguraconsultor@gmail.com");
+          if (fallback) userId = fallback.id;
+        }
+        if (userId) {
+          const dbUser = await storage.getUser(userId);
+          if (dbUser) {
+            req.user = { id: dbUser.id, email: dbUser.email, firstName: dbUser.firstName || undefined, lastName: dbUser.lastName || undefined, profileImageUrl: dbUser.profileImageUrl || undefined };
+            return next();
+          }
+        }
+        return res.status(401).json({ message: "Token inválido", reason: "invalid_legacy_token" });
+      }
+      return res.status(401).json({ message: "Token inválido o expirado", reason: "invalid_token" });
+    }
+
+    // JWT token: use Supabase when available
     if (!supabaseAdmin) {
-      // Legacy auth fallback for development without Supabase
-      let userId;
-      
-      // Remove any "Legacy " prefix if present
-      const cleanToken = token.replace(/^Legacy\s+/i, '');
-      
-      if (cleanToken.startsWith('eyJ')) {
-        // Handle JWT tokens - check 'sub' claim (standard JWT claim for user ID)
-        try {
-          const parts = cleanToken.split('.');
-          if (parts.length === 3) {
-            const payload = JSON.parse(Buffer.from(parts[1], 'base64').toString());
-            userId = payload.sub || payload.userId; // Try both 'sub' and 'userId'
-          }
-        } catch (jwtError) {
-          console.log("JWT parse error:", jwtError);
+      let userId: string | undefined;
+      try {
+        const parts = cleanToken.split('.');
+        if (parts.length === 3) {
+          const payload = JSON.parse(Buffer.from(parts[1], 'base64').toString());
+          userId = payload.sub || payload.userId;
         }
-      } else {
-        // Handle simple base64 tokens - these encode JSON objects
-        try {
-          const decoded = Buffer.from(cleanToken, 'base64').toString('utf-8');
-          
-          // Try parsing as JSON first (current simple-auth format)
-          try {
-            const tokenData = JSON.parse(decoded);
-            // Check for nested claims structure first
-            userId = tokenData.claims?.sub || tokenData.userId || tokenData.id;
-          } catch (jsonError) {
-            // Fallback to colon-separated format (legacy)
-            [userId] = decoded.split(':');
-          }
-        } catch (decodeError) {
-          console.log("Base64 decode failed:", decodeError);
-        }
+      } catch {
+        // ignore
       }
-      
-      // Final fallback for development
       if (!userId) {
-        console.log("No userId found in token, using fallback email");
-        const user = await storage.getUserByEmail("fabianseguraconsultor@gmail.com");
-        if (user) {
-          userId = user.id;
+        const fallback = await storage.getUserByEmail("fabianseguraconsultor@gmail.com");
+        if (fallback) userId = fallback.id;
+      }
+      if (userId) {
+        const dbUser = await storage.getUser(userId);
+        if (dbUser) {
+          req.user = { id: dbUser.id, email: dbUser.email, firstName: dbUser.firstName || undefined, lastName: dbUser.lastName || undefined, profileImageUrl: dbUser.profileImageUrl || undefined };
+          return next();
         }
       }
-      
-      if (!userId) {
-        return res.status(401).json({ 
-          message: "Token inválido",
-          reason: "invalid_legacy_token" 
-        });
-      }
-
-      // Get user from database
-      const dbUser = await storage.getUser(userId);
-      if (!dbUser) {
-        return res.status(401).json({ 
-          message: "Usuario no encontrado",
-          reason: "user_not_found" 
-        });
-      }
-
-      req.user = {
-        id: dbUser.id,
-        email: dbUser.email,
-        firstName: dbUser.firstName || undefined,
-        lastName: dbUser.lastName || undefined,
-        profileImageUrl: dbUser.profileImageUrl || undefined,
-      };
-
-      return next();
+      return res.status(401).json({ message: "Token inválido", reason: "invalid_legacy_token" });
     }
 
     const { data: { user }, error } = await supabaseAdmin.auth.getUser(token);

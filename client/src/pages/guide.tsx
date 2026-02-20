@@ -248,7 +248,7 @@ export default function Guide() {
           <Sidebar />
         </div>
 
-        <div className="flex-1 lg:ml-[250px] bg-[#0f0f19]">
+        <div className="flex-1 lg:ml-[250px] bg-background">
           <div className="max-w-[1200px] mx-auto px-4 lg:px-8 py-6 lg:py-8">
             <div className="lg:hidden mb-4">
               <Button
@@ -262,7 +262,7 @@ export default function Guide() {
               </Button>
             </div>
 
-            <div className="bg-[#0f0f19] rounded-xl p-5 lg:p-8 border border-border mb-6">
+            <div className="bg-background rounded-xl p-5 lg:p-8 border border-border mb-6">
               <div className="flex flex-wrap gap-2 mb-3">
                 <Badge variant="secondary" className="text-[14px] uppercase">
                   Guía

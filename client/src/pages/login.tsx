@@ -18,6 +18,7 @@ export default function Login() {
   const [location] = useLocation();
   // Check if we're on register/inscribirse route
   const isRegisterRoute = location === '/register' || location === '/inscribirse';
+  const registerIntent = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('intent') : null;
   const [isLogin, setIsLogin] = useState(!isRegisterRoute);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -26,7 +27,7 @@ export default function Login() {
   const { toast } = useToast();
   
   // Use simple auth system
-  const { isAuthenticated, login, register } = useSimpleAuth();
+  const { isAuthenticated, login, register, isLoading: authLoading } = useSimpleAuth();
   
   // Email suggestions state
   const [savedEmails, setSavedEmails] = useState<SavedEmail[]>([]);
@@ -45,6 +46,28 @@ export default function Login() {
     const emails = getSavedEmails();
     setSavedEmails(emails);
   }, []);
+
+  // Show error from Google OAuth (or other) when redirected with ?error=
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const error = params.get('error');
+    if (!error) return;
+    const messages: Record<string, string> = {
+      google_auth_failed: 'No se pudo completar el acceso con Google. Vuelve a intentarlo.',
+      google_not_configured: 'El acceso con Google no está configurado en el servidor.',
+      token_exchange_failed: 'Error al verificar la sesión con Google. Intenta de nuevo.',
+      user_info_failed: 'No se pudo obtener tu información de Google.',
+      google_auth_error: 'Error al registrar o iniciar sesión con Google. Intenta de nuevo o usa email y contraseña.',
+    };
+    const description = messages[error] || 'Ha ocurrido un error. Vuelve a intentarlo.';
+    toast({
+      title: 'Error con Google',
+      description,
+      variant: 'destructive',
+    });
+    // Remove error from URL so it doesn't show again on refresh
+    window.history.replaceState({}, document.title, window.location.pathname);
+  }, [toast]);
 
   // Close suggestions when clicking outside
   useEffect(() => {
@@ -134,7 +157,7 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-dark-bg text-white">
+    <div className="min-h-screen bg-background text-foreground">
       <div className="flex min-h-screen">
         {/* Sidebar - Hidden on mobile */}
         <div className="hidden lg:block">
@@ -146,13 +169,10 @@ export default function Login() {
           <div className="w-full max-w-md space-y-6">
             {/* Header Banner */}
             <div className="flex justify-center mb-6">
-              <div 
-                className="px-8 py-4 rounded-lg"
-                style={{ backgroundColor: '#171717' }}
-              >
+              <div className="px-8 py-4 rounded-lg bg-card">
                 <h1 className="font-bold text-xl md:text-2xl text-center">
                   <span className="bg-gradient-to-r from-purple-accent to-blue-accent bg-clip-text text-transparent">Universidad</span>
-                  <span className="text-white"> Expertos NoCode IA</span>
+                  <span className="text-foreground"> Expertos NoCode IA</span>
                 </h1>
               </div>
             </div>
@@ -160,25 +180,27 @@ export default function Login() {
             {/* Welcome Message */}
             {isLogin ? (
               <div className="text-center mb-6">
-                <h1 className="font-bold text-white mb-2" style={{ fontSize: '30px' }}>
+                <h1 className="font-bold text-foreground mb-2" style={{ fontSize: '30px' }}>
                   ¡Bienvenido de nuevo!
                 </h1>
-                <p className="text-gray-400 text-sm">
+                <p className="text-muted-foreground text-sm">
                   Introduce tus datos
                 </p>
               </div>
             ) : (
               <div className="mb-6 text-center">
-                <h1 className="font-bold text-white mb-2" style={{ fontSize: '30px' }}>
-                  Inscribirse
+                <h1 className="font-bold text-foreground mb-2" style={{ fontSize: '30px' }}>
+                  {registerIntent === 'trial' ? 'Empezar prueba gratuita' : 'Inscribirse'}
                 </h1>
-                <p className="text-gray-400 text-sm">
-                  Únete a Universidad Expertos NoCode IA y comienza a aprender hoy mismo
+                <p className="text-muted-foreground text-sm">
+                  {registerIntent === 'trial'
+                    ? 'Crea tu cuenta para comenzar tu prueba de 14 días. No necesitas tarjeta.'
+                    : 'Únete a Universidad Expertos NoCode IA y comienza a aprender hoy mismo'}
                 </p>
               </div>
             )}
 
-            <div className="bg-dark-card border border-dark-border rounded-lg p-8 shadow-lg">
+            <div className="bg-card border border-border rounded-lg p-8 shadow-lg">
 
               {/* Login Form */}
               {isLogin && (
@@ -190,18 +212,18 @@ export default function Login() {
                         name="email"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel className="text-white text-sm mb-2 block">
+                            <FormLabel className="text-foreground text-sm mb-2 block">
                               Dirección de correo electrónico
                             </FormLabel>
                             <FormControl>
                               <div className="relative">
-                                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400 z-10" />
+                                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground z-10" />
                                 <Input
                                   {...field}
                                   ref={emailInputRef}
                                   type="email"
                                   placeholder="soporte.agenciadenocode@gmail.com"
-                                  className="pl-10 pr-4 bg-[#2a2a2a] border-dark-border text-white rounded-lg h-12"
+                                  className="pl-10 pr-4 bg-input border-border text-foreground rounded-lg h-12"
                                   data-testid="input-email"
                                   onFocus={() => {
                                     setEmailInputFocused(true);
@@ -222,7 +244,7 @@ export default function Login() {
                                 {showEmailSuggestions && savedEmails.length > 0 && emailInputFocused && (
                                   <div
                                     ref={suggestionsRef}
-                                    className="absolute z-50 w-full mt-1 bg-[#2a2a2a] border border-dark-border rounded-lg shadow-lg max-h-60 overflow-y-auto"
+                                    className="absolute z-50 w-full mt-1 bg-input border border-border rounded-lg shadow-lg max-h-60 overflow-y-auto"
                                   >
                                     {savedEmails.map((savedEmail, index) => (
                                       <button
@@ -233,24 +255,24 @@ export default function Login() {
                                           setShowEmailSuggestions(false);
                                           emailInputRef.current?.focus();
                                         }}
-                                        className="w-full px-4 py-3 text-left hover:bg-[#3a3a3a] transition-colors flex items-center gap-3 border-b border-dark-border last:border-b-0"
+                                        className="w-full px-4 py-3 text-left hover:bg-muted transition-colors flex items-center gap-3 border-b border-border last:border-b-0"
                                       >
                                         <div className="flex-shrink-0">
                                           {savedEmail.provider === 'google' ? (
                                             <div className="w-8 h-8 rounded-full bg-gradient-to-r from-purple-500 to-blue-500 flex items-center justify-center">
-                                              <span className="text-white text-xs font-bold">G</span>
+                                              <span className="text-foreground text-xs font-bold">G</span>
                                             </div>
                                           ) : (
-                                            <Mail className="h-5 w-5 text-gray-400" />
+                                            <Mail className="h-5 w-5 text-muted-foreground" />
                                           )}
                                         </div>
                                         <div className="flex-1 min-w-0">
                                           {savedEmail.name && (
-                                            <div className="text-white text-sm font-medium truncate">
+                                            <div className="text-foreground text-sm font-medium truncate">
                                               {savedEmail.name}
                                             </div>
                                           )}
-                                          <div className="text-gray-400 text-sm truncate">
+                                          <div className="text-muted-foreground text-sm truncate">
                                             {savedEmail.email}
                                           </div>
                                         </div>
@@ -270,23 +292,23 @@ export default function Login() {
                         name="password"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel className="text-white text-sm mb-2 block">
+                            <FormLabel className="text-foreground text-sm mb-2 block">
                               Contraseña
                             </FormLabel>
                             <FormControl>
                               <div className="relative">
-                                <Key className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                                <Key className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                                 <Input
                                   {...field}
                                   type={showPassword ? "text" : "password"}
                                   placeholder="••••••••"
-                                  className="pl-10 pr-12 bg-[#2a2a2a] border-dark-border text-white rounded-lg h-12"
+                                  className="pl-10 pr-12 bg-input border-border text-foreground rounded-lg h-12"
                                   data-testid="input-password"
                                 />
                                 <button
                                   type="button"
                                   onClick={() => setShowPassword(!showPassword)}
-                                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white"
+                                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground"
                                   data-testid="button-toggle-password"
                                 >
                                   {showPassword ? (
@@ -305,7 +327,7 @@ export default function Login() {
 
                     <Button
                       type="submit"
-                      className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-lg transition-colors uppercase"
+                      className="w-full bg-blue-600 hover:bg-blue-700 text-foreground font-semibold py-3 px-4 rounded-lg transition-colors uppercase"
                       disabled={false}
                       data-testid="button-login"
                     >
@@ -314,7 +336,7 @@ export default function Login() {
 
                     <button
                       type="button"
-                      className="w-full text-white text-xs uppercase underline hover:no-underline"
+                      className="w-full text-foreground text-xs uppercase underline hover:no-underline"
                       data-testid="link-forgot-password"
                       onClick={() => setLocation('/forgot-password')}
                     >
@@ -334,17 +356,17 @@ export default function Login() {
                         name="email"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel className="text-white text-sm mb-2 block">
+                            <FormLabel className="text-foreground text-sm mb-2 block">
                               Dirección de correo electrónico
                             </FormLabel>
                             <FormControl>
                               <div className="relative">
-                                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                                 <Input
                                   {...field}
                                   type="email"
                                   placeholder="Introduce tu correo electrónico"
-                                  className="pl-10 pr-4 bg-[#2a2a2a] border-dark-border text-white rounded-lg h-12"
+                                  className="pl-10 pr-4 bg-input border-border text-foreground rounded-lg h-12"
                                   data-testid="input-register-email"
                                 />
                               </div>
@@ -359,21 +381,21 @@ export default function Login() {
                         name="password"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel className="text-white text-sm mb-2 block">Contraseña</FormLabel>
+                            <FormLabel className="text-foreground text-sm mb-2 block">Contraseña</FormLabel>
                             <FormControl>
                               <div className="relative">
-                                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                                 <Input
                                   {...field}
                                   type={showPassword ? "text" : "password"}
                                   placeholder="Crear una contraseña"
-                                  className="pl-10 pr-12 bg-[#2a2a2a] border-dark-border text-white rounded-lg h-12"
+                                  className="pl-10 pr-12 bg-input border-border text-foreground rounded-lg h-12"
                                   data-testid="input-register-password"
                                 />
                                 <button
                                   type="button"
                                   onClick={() => setShowPassword(!showPassword)}
-                                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white"
+                                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground"
                                   data-testid="button-toggle-register-password"
                                 >
                                   {showPassword ? (
@@ -384,28 +406,28 @@ export default function Login() {
                                 </button>
                               </div>
                             </FormControl>
-                            <p className="text-xs text-gray-400 mt-1">La contraseña debe tener al menos 8 caracteres.</p>
+                            <p className="text-xs text-muted-foreground mt-1">La contraseña debe tener al menos 8 caracteres.</p>
                             <FormMessage />
                           </FormItem>
                         )}
                       />
 
                       <FormItem>
-                        <FormLabel className="text-white text-sm mb-2 block">Confirmar Contraseña</FormLabel>
+                        <FormLabel className="text-foreground text-sm mb-2 block">Confirmar Contraseña</FormLabel>
                         <FormControl>
                           <div className="relative">
-                            <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                            <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                             <Input
                               type={showConfirmPassword ? "text" : "password"}
                               placeholder="Confirma tu contraseña"
                               value={confirmPassword}
                               onChange={(e) => setConfirmPassword(e.target.value)}
-                              className="pl-10 pr-12 bg-[#2a2a2a] border-dark-border text-white rounded-lg h-12"
+                              className="pl-10 pr-12 bg-input border-border text-foreground rounded-lg h-12"
                             />
                             <button
                               type="button"
                               onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white"
+                              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground"
                             >
                               {showConfirmPassword ? (
                                 <EyeOff className="h-5 w-5" />
@@ -424,11 +446,20 @@ export default function Login() {
                     <Button
                       type="submit"
                       className="w-full bg-white hover:bg-gray-100 text-gray-900 font-semibold py-3 px-4 rounded-lg transition-colors flex items-center justify-center gap-2"
-                      disabled={false}
+                      disabled={authLoading}
                       data-testid="button-register"
                     >
-                      <Shield className="h-5 w-5" />
-                      Inscribirse
+                      {authLoading ? (
+                        <>
+                          <span className="h-5 w-5 animate-spin rounded-full border-2 border-gray-900 border-t-transparent" />
+                          Inscribiendo...
+                        </>
+                      ) : (
+                        <>
+                          <Shield className="h-5 w-5" />
+                          Inscribirse
+                        </>
+                      )}
                     </Button>
                   </form>
                 </Form>
@@ -439,10 +470,10 @@ export default function Login() {
                 <div className="mt-6">
                   <div className="relative">
                     <div className="absolute inset-0 flex items-center">
-                      <div className="w-full border-t border-gray-600"></div>
+                      <div className="w-full border-t border-border"></div>
                     </div>
                     <div className="relative flex justify-center text-sm">
-                      <span className="px-2 bg-dark-card text-gray-400 uppercase">O Continuar con</span>
+                      <span className="px-2 bg-card text-muted-foreground uppercase">O Continuar con</span>
                     </div>
                   </div>
                 </div>
@@ -459,12 +490,12 @@ export default function Login() {
                       <button
                         type="button"
                         onClick={handleGoogleLogin}
-                        className="w-full inline-flex justify-between items-center px-4 py-3 border border-gray-600 rounded-lg bg-white text-gray-900 hover:bg-gray-50 transition-colors"
+                        className="w-full inline-flex justify-between items-center px-4 py-3 border border-border rounded-lg bg-white text-gray-900 hover:bg-gray-50 transition-colors"
                         data-testid="button-google-register"
                       >
                         <div className="flex items-center gap-3">
                           <div className="w-5 h-5 bg-gradient-to-r from-purple-500 to-blue-500 rounded flex items-center justify-center flex-shrink-0">
-                            <span className="text-white text-xs font-bold">U</span>
+                            <span className="text-foreground text-xs font-bold">U</span>
                           </div>
                           <div className="text-left">
                             {firstGoogleEmail ? (
@@ -503,7 +534,7 @@ export default function Login() {
               {/* Sign Up Link for Register */}
               {!isLogin && (
                 <div className="mt-6 text-center">
-                  <p className="text-white text-sm">
+                  <p className="text-foreground text-sm">
                     ¿Ya tienes una cuenta?{" "}
                     <button
                       type="button"
@@ -519,14 +550,14 @@ export default function Login() {
               {/* Terms and Privacy for Register */}
               {!isLogin && (
                 <div className="mt-8 text-center space-y-2">
-                  <p className="text-xs text-gray-400">
+                  <p className="text-xs text-muted-foreground">
                     Este sitio está protegido por reCAPTCHA y se aplican las políticas de privacidad de Google.
                   </p>
                   <div className="flex justify-center gap-4 text-xs">
                     <a href="/politica-privacidad" className="text-orange-500 underline hover:no-underline">
                       Política de privacidad
                     </a>
-                    <span className="text-gray-400">•</span>
+                    <span className="text-muted-foreground">•</span>
                     <a href="/condiciones-servicio" className="text-orange-500 underline hover:no-underline">
                       Condiciones de servicio
                     </a>
@@ -545,12 +576,12 @@ export default function Login() {
                       <button
                         type="button"
                         onClick={handleGoogleLogin}
-                        className="w-full inline-flex justify-between items-center px-4 py-3 border border-gray-600 rounded-lg bg-white text-gray-900 hover:bg-gray-50 transition-colors"
+                        className="w-full inline-flex justify-between items-center px-4 py-3 border border-border rounded-lg bg-white text-gray-900 hover:bg-gray-50 transition-colors"
                         data-testid="button-google-login"
                       >
                         <div className="flex items-center gap-3">
                           <div className="w-5 h-5 bg-gradient-to-r from-purple-500 to-blue-500 rounded flex items-center justify-center flex-shrink-0">
-                            <span className="text-white text-xs font-bold">U</span>
+                            <span className="text-foreground text-xs font-bold">U</span>
                           </div>
                           <div className="text-left">
                             {firstGoogleEmail ? (
@@ -589,7 +620,7 @@ export default function Login() {
               {/* Sign Up Link */}
               {isLogin && (
                 <div className="mt-6 text-center">
-                  <p className="text-white text-sm">
+                  <p className="text-foreground text-sm">
                     ¿No tienes una cuenta?{" "}
                     <button
                       type="button"

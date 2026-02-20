@@ -493,13 +493,13 @@ export default function AdminLiveEvents() {
                         value={formData.title}
                         onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                         placeholder="Ej: Live de Bienvenida"
-                        className="bg-[#2a2a2a] border-[#444] mt-1"
+                        className="bg-input border-border mt-1"
                       />
                     </div>
                     
                     <div>
                       <Label>Descripción</Label>
-                      <div className="mt-1 border border-[#444] rounded-md bg-[#2a2a2a] max-h-[300px] overflow-y-auto">
+                      <div className="mt-1 border border-border rounded-md bg-input max-h-[300px] overflow-y-auto">
                         <RichTextEditor
                           content={formData.description}
                           onChange={(content) => setFormData({ ...formData, description: content })}
@@ -516,7 +516,7 @@ export default function AdminLiveEvents() {
                           value={formData.hostName}
                           onChange={(e) => setFormData({ ...formData, hostName: e.target.value })}
                           placeholder="Nombre del host"
-                          className="bg-[#2a2a2a] border-[#444] mt-1"
+                          className="bg-input border-border mt-1"
                         />
                       </div>
                       <div>
@@ -525,7 +525,7 @@ export default function AdminLiveEvents() {
                           value={formData.hostRole}
                           onChange={(e) => setFormData({ ...formData, hostRole: e.target.value })}
                           placeholder="Ej: Community Manager"
-                          className="bg-[#2a2a2a] border-[#444] mt-1"
+                          className="bg-input border-border mt-1"
                         />
                       </div>
                     </div>
@@ -545,7 +545,7 @@ export default function AdminLiveEvents() {
                             size="sm"
                             disabled={uploadingAvatar}
                             onClick={() => document.getElementById('avatar-upload-create')?.click()}
-                            className="border-[#444] text-white"
+                            className="border-border text-white"
                           >
                             {uploadingAvatar ? (
                               <>
@@ -596,7 +596,7 @@ export default function AdminLiveEvents() {
                             size="sm"
                             disabled={uploadingEventImage}
                             onClick={() => document.getElementById('event-image-upload-create')?.click()}
-                            className="border-[#444] text-white"
+                            className="border-border text-white"
                           >
                             {uploadingEventImage ? (
                               <>
@@ -640,7 +640,7 @@ export default function AdminLiveEvents() {
                           type="datetime-local"
                           value={formData.startTime}
                           onChange={(e) => setFormData({ ...formData, startTime: e.target.value })}
-                          className="bg-[#2a2a2a] border-[#444] mt-1"
+                          className="bg-input border-border mt-1"
                         />
                       </div>
                       <div>
@@ -649,7 +649,7 @@ export default function AdminLiveEvents() {
                           type="datetime-local"
                           value={formData.endTime}
                           onChange={(e) => setFormData({ ...formData, endTime: e.target.value })}
-                          className="bg-[#2a2a2a] border-[#444] mt-1"
+                          className="bg-input border-border mt-1"
                         />
                       </div>
                     </div>
@@ -660,10 +660,10 @@ export default function AdminLiveEvents() {
                         value={formData.eventType}
                         onValueChange={(value) => setFormData({ ...formData, eventType: value })}
                       >
-                        <SelectTrigger className="bg-[#2a2a2a] border-[#444] mt-1">
+                        <SelectTrigger className="bg-input border-border mt-1">
                           <SelectValue />
                         </SelectTrigger>
-                        <SelectContent className="bg-[#2a2a2a] border-[#444]">
+                        <SelectContent className="bg-input border-border">
                           <SelectItem value="live">Live / Transmisión</SelectItem>
                           <SelectItem value="workshop">Taller / Workshop</SelectItem>
                           <SelectItem value="webinar">Webinar</SelectItem>
@@ -678,10 +678,10 @@ export default function AdminLiveEvents() {
                         value={formData.category || undefined}
                         onValueChange={(value) => setFormData({ ...formData, category: value })}
                       >
-                        <SelectTrigger className="bg-[#2a2a2a] border-[#444] mt-1">
+                        <SelectTrigger className="bg-input border-border mt-1">
                           <SelectValue placeholder="Selecciona una categoría" />
                         </SelectTrigger>
-                        <SelectContent className="bg-[#2a2a2a] border-[#444]">
+                        <SelectContent className="bg-input border-border">
                           {categories.map((cat) => (
                             <SelectItem key={cat.id} value={cat.name}>
                               {cat.name}
@@ -698,7 +698,7 @@ export default function AdminLiveEvents() {
                       <Button
                         variant="outline"
                         onClick={() => setIsCreateOpen(false)}
-                        className="border-[#444]"
+                        className="border-border"
                       >
                         Cancelar
                       </Button>
@@ -745,7 +745,7 @@ export default function AdminLiveEvents() {
                 {events.map((event) => {
                   const status = getEventStatus(event);
                   return (
-                    <Card key={event.id} className="bg-[#1a1a1a] border-[#333] hover:border-[#444] transition-colors">
+                    <Card key={event.id} className="bg-[#1a1a1a] border-[#333] hover:border-border transition-colors">
                       <CardContent className="p-4">
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                           {/* Event Info */}
@@ -808,7 +808,7 @@ export default function AdminLiveEvents() {
                               size="sm"
                               variant="outline"
                               onClick={() => openEditDialog(event)}
-                              className="border-[#444]"
+                              className="border-border"
                             >
                               <Edit className="h-3.5 w-3.5" />
                             </Button>
@@ -821,7 +821,7 @@ export default function AdminLiveEvents() {
                                   deleteMutation.mutate(event.id);
                                 }
                               }}
-                              className="border-[#444] text-red-400 hover:text-red-300 hover:bg-red-500/10"
+                              className="border-border text-red-400 hover:text-red-300 hover:bg-red-500/10"
                             >
                               <Trash2 className="h-3.5 w-3.5" />
                             </Button>
@@ -876,13 +876,13 @@ export default function AdminLiveEvents() {
               <Input
                 value={formData.title}
                 onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                className="bg-[#2a2a2a] border-[#444] mt-1"
+                className="bg-input border-border mt-1"
               />
             </div>
             
             <div>
               <Label>Descripción</Label>
-              <div className="mt-1 border border-[#444] rounded-md bg-[#2a2a2a] max-h-[300px] overflow-y-auto">
+              <div className="mt-1 border border-border rounded-md bg-input max-h-[300px] overflow-y-auto">
                 <RichTextEditor
                   content={formData.description}
                   onChange={(content) => setFormData({ ...formData, description: content })}
@@ -898,7 +898,7 @@ export default function AdminLiveEvents() {
                 <Input
                   value={formData.hostName}
                   onChange={(e) => setFormData({ ...formData, hostName: e.target.value })}
-                  className="bg-[#2a2a2a] border-[#444] mt-1"
+                  className="bg-input border-border mt-1"
                 />
               </div>
               <div>
@@ -906,7 +906,7 @@ export default function AdminLiveEvents() {
                 <Input
                   value={formData.hostRole}
                   onChange={(e) => setFormData({ ...formData, hostRole: e.target.value })}
-                  className="bg-[#2a2a2a] border-[#444] mt-1"
+                  className="bg-input border-border mt-1"
                 />
               </div>
             </div>
@@ -926,7 +926,7 @@ export default function AdminLiveEvents() {
                     size="sm"
                     disabled={uploadingAvatar}
                     onClick={() => document.getElementById('avatar-upload-edit')?.click()}
-                    className="border-[#444] text-white"
+                    className="border-border text-white"
                   >
                     {uploadingAvatar ? (
                       <>
@@ -977,7 +977,7 @@ export default function AdminLiveEvents() {
                     size="sm"
                     disabled={uploadingEventImage}
                     onClick={() => document.getElementById('event-image-upload-edit')?.click()}
-                    className="border-[#444] text-white"
+                    className="border-border text-white"
                   >
                     {uploadingEventImage ? (
                       <>
@@ -1020,7 +1020,7 @@ export default function AdminLiveEvents() {
                   type="datetime-local"
                   value={formData.startTime}
                   onChange={(e) => setFormData({ ...formData, startTime: e.target.value })}
-                  className="bg-[#2a2a2a] border-[#444] mt-1"
+                  className="bg-input border-border mt-1"
                 />
               </div>
               <div>
@@ -1029,7 +1029,7 @@ export default function AdminLiveEvents() {
                   type="datetime-local"
                   value={formData.endTime}
                   onChange={(e) => setFormData({ ...formData, endTime: e.target.value })}
-                  className="bg-[#2a2a2a] border-[#444] mt-1"
+                  className="bg-input border-border mt-1"
                 />
               </div>
             </div>
@@ -1040,10 +1040,10 @@ export default function AdminLiveEvents() {
                 value={formData.eventType}
                 onValueChange={(value) => setFormData({ ...formData, eventType: value })}
               >
-                <SelectTrigger className="bg-[#2a2a2a] border-[#444] mt-1">
+                <SelectTrigger className="bg-input border-border mt-1">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent className="bg-[#2a2a2a] border-[#444]">
+                <SelectContent className="bg-input border-border">
                   <SelectItem value="live">Live / Transmisión</SelectItem>
                   <SelectItem value="workshop">Taller / Workshop</SelectItem>
                   <SelectItem value="webinar">Webinar</SelectItem>
@@ -1058,10 +1058,10 @@ export default function AdminLiveEvents() {
                 value={formData.category || undefined}
                 onValueChange={(value) => setFormData({ ...formData, category: value })}
               >
-                <SelectTrigger className="bg-[#2a2a2a] border-[#444] mt-1">
+                <SelectTrigger className="bg-input border-border mt-1">
                   <SelectValue placeholder="Selecciona una categoría" />
                 </SelectTrigger>
-                <SelectContent className="bg-[#2a2a2a] border-[#444]">
+                <SelectContent className="bg-input border-border">
                   {categories.map((cat) => (
                     <SelectItem key={cat.id} value={cat.name}>
                       {cat.name}
@@ -1078,7 +1078,7 @@ export default function AdminLiveEvents() {
               <Button
                 variant="outline"
                 onClick={() => setIsEditOpen(false)}
-                className="border-[#444]"
+                className="border-border"
               >
                 Cancelar
               </Button>

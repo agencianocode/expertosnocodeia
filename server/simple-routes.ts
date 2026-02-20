@@ -715,9 +715,10 @@ export function registerSimpleRoutes(app: Express): Server {
   // Google OAuth endpoints
   app.get("/api/auth/google", async (req: Request, res: Response) => {
     try {
-      // Redirect to Google OAuth
+      // Redirect to Google OAuth - use BACKEND_URL for callback when API is on another host
       const clientId = process.env.GOOGLE_CLIENT_ID;
-      const redirectUri = `${process.env.FRONTEND_URL || 'http://localhost:5000'}/api/auth/google/callback`;
+      const baseUrl = process.env.BACKEND_URL || process.env.FRONTEND_URL || 'http://localhost:5000';
+      const redirectUri = `${baseUrl.replace(/\/$/, '')}/api/auth/google/callback`;
       const scope = 'openid email profile';
       
       if (!clientId) {
@@ -742,19 +743,22 @@ export function registerSimpleRoutes(app: Express): Server {
   });
 
   app.get("/api/auth/google/callback", async (req: Request, res: Response) => {
+    const frontendUrl = (process.env.FRONTEND_URL || 'http://localhost:5000').replace(/\/$/, '');
+    const loginErrorUrl = `${frontendUrl}/login?error=`;
     try {
       const { code } = req.query;
       
       if (!code) {
-        return res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:5000'}/login?error=google_auth_failed`);
+        return res.redirect(`${loginErrorUrl}google_auth_failed`);
       }
       
       const clientId = process.env.GOOGLE_CLIENT_ID;
       const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
-      const redirectUri = `${process.env.FRONTEND_URL || 'http://localhost:5000'}/api/auth/google/callback`;
+      const baseUrl = process.env.BACKEND_URL || process.env.FRONTEND_URL || 'http://localhost:5000';
+      const redirectUri = `${baseUrl.replace(/\/$/, '')}/api/auth/google/callback`;
       
       if (!clientId || !clientSecret) {
-        return res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:5000'}/login?error=google_not_configured`);
+        return res.redirect(`${loginErrorUrl}google_not_configured`);
       }
       
       // Exchange code for tokens
@@ -774,8 +778,8 @@ export function registerSimpleRoutes(app: Express): Server {
       
       if (!tokenResponse.ok) {
         const errorData = await tokenResponse.text();
-        console.error('Token exchange error:', errorData);
-        return res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:5000'}/login?error=token_exchange_failed`);
+        console.error('Google OAuth token exchange error:', tokenResponse.status, errorData);
+        return res.redirect(`${loginErrorUrl}token_exchange_failed`);
       }
       
       const tokens = await tokenResponse.json();
@@ -788,48 +792,56 @@ export function registerSimpleRoutes(app: Express): Server {
       });
       
       if (!userResponse.ok) {
-        return res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:5000'}/login?error=user_info_failed`);
+        console.error('Google userinfo error:', userResponse.status);
+        return res.redirect(`${loginErrorUrl}user_info_failed`);
       }
       
       const googleUser = await userResponse.json();
+      if (!googleUser.email) {
+        console.error('Google userinfo missing email');
+        return res.redirect(`${loginErrorUrl}user_info_failed`);
+      }
       
       // Find or create user in database
       let user = await storage.getUserByEmail(googleUser.email);
       
+      try {
+        if (!user) {
+          user = await storage.createUser({
+            email: googleUser.email,
+            firstName: googleUser.given_name || '',
+            lastName: googleUser.family_name || '',
+            profileImageUrl: googleUser.picture || '',
+            provider: 'google',
+            isEmailVerified: true,
+          });
+        } else {
+          await storage.updateUserProfile(user.id, {
+            provider: 'google',
+            isEmailVerified: true,
+            profileImageUrl: googleUser.picture || user.profileImageUrl,
+            firstName: googleUser.given_name || user.firstName,
+            lastName: googleUser.family_name || user.lastName,
+          });
+          user = await storage.getUser(user.id);
+        }
+      } catch (dbError: any) {
+        console.error('Google OAuth create/update user error:', dbError?.message || dbError);
+        return res.redirect(`${loginErrorUrl}google_auth_error`);
+      }
+      
       if (!user) {
-        // Create new user
-        user = await storage.createUser({
-          email: googleUser.email,
-          firstName: googleUser.given_name || '',
-          lastName: googleUser.family_name || '',
-          profileImageUrl: googleUser.picture || '',
-          provider: 'google',
-          isEmailVerified: true,
-        });
-      } else {
-        // Update existing user
-        await storage.updateUserProfile(user.id, {
-          provider: 'google',
-          isEmailVerified: true,
-          profileImageUrl: googleUser.picture || user.profileImageUrl,
-          firstName: googleUser.given_name || user.firstName,
-          lastName: googleUser.family_name || user.lastName,
-        });
-        user = await storage.getUser(user.id);
+        return res.redirect(`${loginErrorUrl}google_auth_error`);
       }
       
       // Create session token
-      const token = Buffer.from(`${user!.id}:${Date.now()}`).toString('base64');
+      const token = Buffer.from(`${user.id}:${Date.now()}`).toString('base64');
+      await storage.updateUserLastLogin(user.id);
       
-      // Update last login
-      await storage.updateUserLastLogin(user!.id);
-      
-      // Redirect to frontend with token
-      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5000';
       res.redirect(`${frontendUrl}/?token=${encodeURIComponent(token)}`);
     } catch (error: any) {
-      console.error("Google OAuth callback error:", error);
-      res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:5000'}/login?error=google_auth_error`);
+      console.error("Google OAuth callback error:", error?.message || error);
+      res.redirect(`${loginErrorUrl}google_auth_error`);
     }
   });
 
@@ -1071,6 +1083,58 @@ export function registerSimpleRoutes(app: Express): Server {
     } catch (error) {
       console.error("Error fetching workshops:", error);
       res.status(500).json({ message: "Failed to fetch workshops" });
+    }
+  });
+
+  function formatTimeAgo(date: Date): string {
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+    if (diffMins < 60) return diffMins <= 1 ? "Hace un momento" : `Hace ${diffMins} minutos`;
+    if (diffHours < 24) return diffHours === 1 ? "Hace 1 hora" : `Hace ${diffHours} horas`;
+    if (diffDays < 7) return diffDays === 1 ? "Hace 1 día" : `Hace ${diffDays} días`;
+    return `Hace ${Math.floor(diffDays / 7)} semanas`;
+  }
+
+  app.get("/api/notifications", simpleAdminAuth, async (req: any, res: Response) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ notifications: [], unreadCount: 0 });
+      }
+      const clearedAt = await storage.getUserNotificationClearedAt(userId);
+      const all = await storage.getContentNotifications(100);
+      const filtered = clearedAt
+        ? all.filter((n) => n.createdAt && new Date(n.createdAt) > clearedAt)
+        : all;
+      const notifications = filtered.map((n) => ({
+        id: n.id,
+        contentId: n.contentId,
+        type: n.type,
+        title: n.title,
+        description: (n.description || n.title).length > 120 ? (n.description || n.title).slice(0, 120) + "..." : (n.description || n.title),
+        timeAgo: n.createdAt ? formatTimeAgo(new Date(n.createdAt)) : "Hace un momento",
+      }));
+      res.json({ notifications, unreadCount: notifications.length });
+    } catch (error) {
+      console.error("Error fetching notifications:", error);
+      res.status(500).json({ notifications: [], unreadCount: 0 });
+    }
+  });
+
+  app.post("/api/notifications/clear-all", simpleAdminAuth, async (req: any, res: Response) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "No autorizado" });
+      }
+      await storage.setUserNotificationClearedAt(userId);
+      res.status(200).json({ ok: true });
+    } catch (error) {
+      console.error("Error clearing notifications:", error);
+      res.status(500).json({ message: "Error al borrar notificaciones" });
     }
   });
 
@@ -2415,6 +2479,20 @@ export function registerSimpleRoutes(app: Express): Server {
       if (roomId && phaseId) {
         await storage.upsertPhaseContentForCourse(course.id, roomId, phaseId, course.type as any);
       }
+
+      // Notificación in-app cuando se publica una guía, curso o taller
+      if (course.isPublished && (course.type === "guide" || course.type === "course" || course.type === "workshop")) {
+        try {
+          await storage.createContentNotification({
+            contentId: course.id,
+            type: course.type as "guide" | "course" | "workshop",
+            title: course.title,
+            description: course.description || course.title,
+          });
+        } catch (notifErr) {
+          console.error("Error creating content notification:", notifErr);
+        }
+      }
       
       res.json(course);
     } catch (error) {
@@ -2432,6 +2510,7 @@ export function registerSimpleRoutes(app: Express): Server {
         rest.createdAt = new Date(rest.createdAt);
       }
       const courseData = rest;
+      const previous = await storage.getCourseById(courseId);
       
       const course = await storage.updateCourse(courseId, courseData);
       if (!course) {
@@ -2448,6 +2527,22 @@ export function registerSimpleRoutes(app: Express): Server {
       
       // Handle room/phase assignment (upsert will remove if not provided)
       await storage.upsertPhaseContentForCourse(courseId, roomId, phaseId, course.type as any);
+
+      // Notificación in-app cuando se pasa a publicado (antes no estaba publicado)
+      const nowPublished = !!course.isPublished;
+      const wasUnpublished = previous && !previous.isPublished;
+      if (nowPublished && wasUnpublished && (course.type === "guide" || course.type === "course" || course.type === "workshop")) {
+        try {
+          await storage.createContentNotification({
+            contentId: courseId,
+            type: course.type as "guide" | "course" | "workshop",
+            title: course.title,
+            description: course.description || course.title,
+          });
+        } catch (notifErr) {
+          console.error("Error creating content notification:", notifErr);
+        }
+      }
       
       res.json(course);
     } catch (error) {
@@ -2709,29 +2804,27 @@ export function registerSimpleRoutes(app: Express): Server {
     }
   });
 
-  // Get user progress for a specific course (returns array of completed lesson IDs)
+  // Get user progress for a specific course (completed lesson IDs + last lesson for "continuar")
   app.get("/api/courses/:courseId/progress", legacyAuth, async (req: Request, res: Response) => {
     try {
       const { courseId } = req.params;
-      // First, get the course to resolve slug to ID if needed
+      const roomSlug = (req as any).query?.roomSlug as string | undefined;
       const course = await storage.getCourseById(courseId);
       if (!course) {
         return res.status(404).json({ message: "Curso no encontrado" });
       }
-      const userId = (req as any).user?.claims?.sub;
+      const userId = (req as any).user?.claims?.sub ?? (req as any).user?.id;
       if (!userId) {
         return res.status(401).json({ message: "Usuario no autenticado" });
       }
-      
-      // Get completed lesson IDs from userLessonProgress table (use actual course ID)
-      const completedLessonIds = await storage.getCompletedLessons(userId, course.id);
-      
-      console.log("Completed lessons for user", userId, "course", course.id, ":", completedLessonIds);
-      res.json(completedLessonIds);
+      const [completedLessonIds, lastLessonId] = await Promise.all([
+        storage.getCompletedLessons(userId, course.id),
+        storage.getLastLessonIdForCourse(userId, course.id, roomSlug ?? null),
+      ]);
+      res.json({ completedLessonIds, lastLessonId: lastLessonId ?? undefined });
     } catch (error) {
       console.error("Error fetching user progress:", error);
-      // Return empty array on error so frontend doesn't crash
-      res.json([]);
+      res.json({ completedLessonIds: [], lastLessonId: undefined });
     }
   });
 

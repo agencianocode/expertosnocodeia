@@ -521,8 +521,8 @@ export default function LiveRoom() {
 
   if (isLoading || eventLoading) {
     return (
-      <div className="min-h-screen bg-[#0d0d0d] flex items-center justify-center">
-        <div className="text-white">Cargando evento...</div>
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-foreground">Cargando evento...</div>
       </div>
     );
   }
@@ -530,10 +530,10 @@ export default function LiveRoom() {
   // Show error state if event not found and no fallback data
   if (eventError && !eventDetails) {
     return (
-      <div className="min-h-screen bg-[#0d0d0d] text-white flex items-center justify-center p-4">
+      <div className="min-h-screen bg-background text-foreground flex items-center justify-center p-4">
         <div className="w-full max-w-md mx-auto text-center">
-          <div className="bg-[#1a1a1a] rounded-2xl p-8 border border-[#333]">
-            <h1 className="text-2xl font-bold text-white mb-4">Evento no encontrado</h1>
+          <div className="bg-card rounded-2xl p-8 border border-border">
+            <h1 className="text-2xl font-bold text-foreground mb-4">Evento no encontrado</h1>
             <p className="text-gray-400 mb-6">
               El evento con ID {params?.eventId} no existe o no está disponible.
             </p>
@@ -572,10 +572,10 @@ export default function LiveRoom() {
   // Pre-join lobby view
   if (!hasJoined) {
     return (
-      <div className="min-h-screen bg-[#0d0d0d] text-white flex items-center justify-center p-4">
+      <div className="min-h-screen bg-background text-foreground flex items-center justify-center p-4">
         <div className="w-full max-w-md mx-auto">
           {/* Event Card */}
-          <div className="bg-[#1a1a1a] rounded-2xl p-8 text-center border border-[#333]">
+          <div className="bg-card rounded-2xl p-8 text-center border border-border">
             {/* Live indicator - solo mostrar si está en vivo */}
             {isEventCurrentlyLive && !isEventPast && (
               <div className="flex items-center justify-center gap-2 mb-4">
@@ -606,21 +606,21 @@ export default function LiveRoom() {
             )}
             
             {/* Event Title */}
-            <h1 className="text-2xl font-bold text-white mb-2">
+            <h1 className="text-2xl font-bold text-foreground mb-2">
               {event?.title}
             </h1>
             
             {/* Host Info */}
             <p className="text-gray-400 mb-6">
-              Hosted by <span className="text-white font-medium">{event?.hostName}</span>
+              Hosted by <span className="text-foreground font-medium">{event?.hostName}</span>
               {event?.hostRole && ` - ${event.hostRole}`}
             </p>
             
             {/* Mostrar fecha/hora si el evento es futuro */}
             {isEventUpcoming && eventStartTime && (
-              <div className="bg-[#2a2a2a] rounded-lg p-4 mb-6">
+              <div className="bg-muted rounded-lg p-4 mb-6">
                 <p className="text-sm text-gray-400 mb-1">El evento comenzará el:</p>
-                <p className="text-white font-semibold">
+                <p className="text-foreground font-semibold">
                   {format(eventStartTime, "EEEE, d 'de' MMMM 'de' yyyy", { locale: es })}
                 </p>
                 <p className="text-cyan-400 text-sm mt-1">
@@ -636,11 +636,11 @@ export default function LiveRoom() {
                   {visibleParticipants.map((participant, idx) => (
                     <Avatar 
                       key={participant.id} 
-                      className="h-10 w-10 border-2 border-[#1a1a1a]"
+                      className="h-10 w-10 border-2 border-card"
                     >
                       <AvatarImage src={participant.avatar} />
                       <AvatarFallback 
-                        className="text-white text-xs font-bold"
+                        className="text-foreground text-xs font-bold"
                         style={{ backgroundColor: getAvatarColor(idx) }}
                       >
                         {participant.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
@@ -648,7 +648,7 @@ export default function LiveRoom() {
                     </Avatar>
                   ))}
                   {remainingCount > 0 && (
-                    <div className="h-10 w-10 rounded-full bg-[#333] border-2 border-[#1a1a1a] flex items-center justify-center text-white text-xs font-medium">
+                    <div className="h-10 w-10 rounded-full bg-background border-2 border-card flex items-center justify-center text-foreground text-xs font-medium">
                       +{remainingCount}
                     </div>
                   )}
@@ -664,7 +664,7 @@ export default function LiveRoom() {
             )}
             
             {/* Room name info */}
-            <div className="bg-[#2a2a2a] rounded-lg p-3 mb-4">
+            <div className="bg-muted rounded-lg p-3 mb-4">
               <p className="text-xs text-gray-400 mb-1">Sala de video:</p>
               <p className="text-cyan-400 font-mono text-sm">{getRoomName()}</p>
             </div>
@@ -687,7 +687,7 @@ export default function LiveRoom() {
           {/* Back Link */}
           <div className="text-center mt-6">
             <Link href="/community">
-              <span className="text-gray-400 hover:text-white transition-colors flex items-center justify-center gap-2 cursor-pointer">
+              <span className="text-gray-400 hover:text-foreground transition-colors flex items-center justify-center gap-2 cursor-pointer">
                 <ArrowLeft className="h-4 w-4" />
                 Volver a la comunidad
               </span>
@@ -727,7 +727,7 @@ export default function LiveRoom() {
             ? "border-green-500" 
             : participant.id === 'current-user'
               ? "border-cyan-500" 
-              : "border-[#333]"
+              : "border-border"
         )}
       >
         {/* Video placeholder or avatar */}
@@ -738,7 +738,7 @@ export default function LiveRoom() {
           <Avatar className={avatarSize}>
             <AvatarImage src={participant.avatar} />
             <AvatarFallback 
-              className={cn("text-white font-bold", textSize)}
+              className={cn("text-foreground font-bold", textSize)}
               style={{ backgroundColor: getAvatarColor(index) }}
             >
               {participant.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
@@ -756,7 +756,7 @@ export default function LiveRoom() {
         {/* Mute indicator */}
         {participant.isMuted && (
           <div className="absolute top-1 right-1 bg-red-500 rounded-full p-0.5">
-            <MicOff className="h-2.5 w-2.5 text-white" />
+            <MicOff className="h-2.5 w-2.5 text-foreground" />
           </div>
         )}
         
@@ -770,7 +770,7 @@ export default function LiveRoom() {
         {/* Name label */}
         <div className="absolute bottom-0 left-0 right-0 bg-black/70 px-1 py-0.5 flex items-center gap-1">
           {participant.isMuted && <MicOff className="h-2.5 w-2.5 text-red-400 flex-shrink-0" />}
-          <p className="text-[10px] text-white truncate flex-1">
+          <p className="text-[10px] text-foreground truncate flex-1">
             {participant.name.length > 12 ? participant.name.slice(0, 10) + '...' : participant.name}
           </p>
         </div>
@@ -780,12 +780,12 @@ export default function LiveRoom() {
 
   // Live room view (after joining)
   return (
-    <div className="h-screen bg-[#0d0d0d] text-white flex flex-col overflow-hidden">
+    <div className="h-screen bg-background text-foreground flex flex-col overflow-hidden">
       {/* Main Layout based on viewMode */}
       <div className="flex-1 flex overflow-hidden">
         {/* Side participants (speaker-side mode) */}
         {viewMode === 'speaker-side' && (
-          <div className="w-20 flex-shrink-0 bg-[#1a1a1a] border-r border-[#333] p-1.5 flex flex-col gap-1.5 overflow-y-auto">
+          <div className="w-20 flex-shrink-0 bg-card border-r border-border p-1.5 flex flex-col gap-1.5 overflow-y-auto">
             {displayedParticipants.map((participant, idx) => (
               <ParticipantThumbnail 
                 key={participant.id} 
@@ -795,7 +795,7 @@ export default function LiveRoom() {
               />
             ))}
             {participants.length > speakerTiles && (
-              <div className="flex-shrink-0 w-full h-10 rounded-lg bg-[#2a2a2a] border border-[#333] flex items-center justify-center">
+              <div className="flex-shrink-0 w-full h-10 rounded-lg bg-muted border border-border flex items-center justify-center">
                 <span className="text-[10px] text-gray-400">+{participants.length - speakerTiles}</span>
               </div>
             )}
@@ -806,7 +806,7 @@ export default function LiveRoom() {
         <div className="flex-1 flex flex-col overflow-hidden">
           {/* Top participants strip (speaker-top mode) */}
           {viewMode === 'speaker-top' && (
-            <div className="flex-shrink-0 bg-[#1a1a1a] border-b border-[#333] p-2">
+            <div className="flex-shrink-0 bg-card border-b border-border p-2">
               <div className="flex items-center gap-2 overflow-x-auto">
                 {displayedParticipants.map((participant, idx) => (
                   <ParticipantThumbnail 
@@ -816,7 +816,7 @@ export default function LiveRoom() {
                   />
                 ))}
                 {participants.length > speakerTiles && (
-                  <div className="flex-shrink-0 w-28 h-20 rounded-lg bg-[#2a2a2a] border-2 border-[#333] flex items-center justify-center">
+                  <div className="flex-shrink-0 w-28 h-20 rounded-lg bg-muted border-2 border-border flex items-center justify-center">
                     <span className="text-sm text-gray-400">+{participants.length - speakerTiles} más</span>
                   </div>
                 )}
@@ -862,7 +862,7 @@ export default function LiveRoom() {
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="bg-black/60 hover:bg-black/80 text-white backdrop-blur-sm"
+                  className="bg-black/60 hover:bg-black/80 text-foreground backdrop-blur-sm"
                   onClick={togglePiP}
                 >
                   <PictureInPicture2 className="h-4 w-4" />
@@ -870,7 +870,7 @@ export default function LiveRoom() {
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="bg-black/60 hover:bg-black/80 text-white backdrop-blur-sm"
+                  className="bg-black/60 hover:bg-black/80 text-foreground backdrop-blur-sm"
                   onClick={toggleFullscreen}
                 >
                   <Maximize2 className="h-4 w-4" />
@@ -881,11 +881,11 @@ export default function LiveRoom() {
               <div className="absolute top-4 left-4 z-10">
                 <div className="bg-black/60 backdrop-blur-sm rounded-lg px-4 py-2">
                   <div className="flex items-center gap-2">
-                    <span className="flex items-center gap-1 bg-red-500 text-white text-xs px-2 py-0.5 rounded">
+                    <span className="flex items-center gap-1 bg-red-500 text-foreground text-xs px-2 py-0.5 rounded">
                       <Radio className="h-2.5 w-2.5 animate-pulse" />
                       LIVE
                     </span>
-                    <span className="text-white text-sm font-medium">{event?.title}</span>
+                    <span className="text-foreground text-sm font-medium">{event?.title}</span>
                   </div>
                 </div>
               </div>
@@ -895,7 +895,7 @@ export default function LiveRoom() {
       </div>
       
       {/* Bottom Control Bar */}
-      <div className="flex-shrink-0 bg-[#1a1a1a] border-t border-[#333] px-4 py-3 z-20">
+      <div className="flex-shrink-0 bg-card border-t border-border px-4 py-3 z-20">
         <div className="flex items-center justify-between max-w-5xl mx-auto">
           {/* Left controls */}
           <div className="flex items-center gap-1">
@@ -906,7 +906,7 @@ export default function LiveRoom() {
               onClick={toggleHand}
               className={cn(
                 "h-10 w-10 rounded-full",
-                hasHandRaised ? "bg-yellow-500 text-black hover:bg-yellow-600" : "bg-[#2a2a2a] text-white hover:bg-[#333]"
+                hasHandRaised ? "bg-yellow-500 text-black hover:bg-yellow-600" : "bg-muted text-foreground hover:bg-background"
               )}
               title="Levantar mano"
             >
@@ -919,14 +919,14 @@ export default function LiveRoom() {
                 variant="ghost"
                 size="icon"
                 onClick={() => setShowReactions(!showReactions)}
-                className="h-10 w-10 rounded-full bg-[#2a2a2a] text-white hover:bg-[#333]"
+                className="h-10 w-10 rounded-full bg-muted text-foreground hover:bg-background"
                 title="Reacciones"
               >
                 <Smile className="h-5 w-5" />
               </Button>
               
               {showReactions && (
-                <div className="absolute bottom-full left-0 mb-2 bg-[#2a2a2a] border border-[#333] rounded-lg p-2 flex gap-1 z-50">
+                <div className="absolute bottom-full left-0 mb-2 bg-muted border border-border rounded-lg p-2 flex gap-1 z-50">
                   {['👍', '❤️', '😂', '👏', '🎉', '🔥'].map((emoji) => (
                     <button
                       key={emoji}
@@ -950,7 +950,7 @@ export default function LiveRoom() {
               onClick={toggleMic}
               className={cn(
                 "h-12 w-12 rounded-full",
-                isMuted ? "bg-red-500 text-white hover:bg-red-600" : "bg-[#2a2a2a] text-white hover:bg-[#333]"
+                isMuted ? "bg-red-500 text-foreground hover:bg-red-600" : "bg-muted text-foreground hover:bg-background"
               )}
               title={isMuted ? "Activar micrófono" : "Desactivar micrófono"}
             >
@@ -964,7 +964,7 @@ export default function LiveRoom() {
               onClick={toggleVideo}
               className={cn(
                 "h-12 w-12 rounded-full",
-                isVideoOff ? "bg-red-500 text-white hover:bg-red-600" : "bg-[#2a2a2a] text-white hover:bg-[#333]"
+                isVideoOff ? "bg-red-500 text-foreground hover:bg-red-600" : "bg-muted text-foreground hover:bg-background"
               )}
               title={isVideoOff ? "Activar cámara" : "Desactivar cámara"}
             >
@@ -978,7 +978,7 @@ export default function LiveRoom() {
               onClick={toggleScreenShare}
               className={cn(
                 "h-12 w-12 rounded-full",
-                isScreenSharing ? "bg-cyan-500 text-black hover:bg-cyan-600" : "bg-[#2a2a2a] text-white hover:bg-[#333]"
+                isScreenSharing ? "bg-cyan-500 text-black hover:bg-cyan-600" : "bg-muted text-foreground hover:bg-background"
               )}
               title={isScreenSharing ? "Dejar de compartir" : "Compartir pantalla"}
             >
@@ -995,7 +995,7 @@ export default function LiveRoom() {
               onClick={toggleJitsiChat}
               className={cn(
                 "h-10 w-10 rounded-full",
-                showChat ? "bg-cyan-500 text-black" : "bg-[#2a2a2a] text-white hover:bg-[#333]"
+                showChat ? "bg-cyan-500 text-black" : "bg-muted text-foreground hover:bg-background"
               )}
               title="Chat"
             >
@@ -1008,7 +1008,7 @@ export default function LiveRoom() {
               onClick={toggleParticipantsPanel}
               className={cn(
                 "h-10 rounded-full px-3 gap-1",
-                showParticipants ? "bg-cyan-500 text-black" : "bg-[#2a2a2a] text-white hover:bg-[#333]"
+                showParticipants ? "bg-cyan-500 text-black" : "bg-muted text-foreground hover:bg-background"
               )}
               title="Participantes"
             >
@@ -1023,7 +1023,7 @@ export default function LiveRoom() {
                 onClick={() => setShowViewOptions(!showViewOptions)}
                 className={cn(
                   "h-10 rounded-full px-3 gap-1",
-                  showViewOptions ? "bg-cyan-500 text-black" : "bg-[#2a2a2a] text-white hover:bg-[#333]"
+                  showViewOptions ? "bg-cyan-500 text-black" : "bg-muted text-foreground hover:bg-background"
                 )}
                 title="Vista"
               >
@@ -1033,7 +1033,7 @@ export default function LiveRoom() {
               </Button>
               
               {showViewOptions && (
-                <div className="absolute bottom-full right-0 mb-2 bg-[#2a2a2a] border border-[#333] rounded-xl p-4 w-80 z-50 shadow-xl">
+                <div className="absolute bottom-full right-0 mb-2 bg-muted border border-border rounded-xl p-4 w-80 z-50 shadow-xl">
                   {/* View mode options */}
                   <div className="grid grid-cols-3 gap-2 mb-4">
                     <button
@@ -1042,7 +1042,7 @@ export default function LiveRoom() {
                         "flex flex-col items-center gap-2 p-3 rounded-lg border transition-all",
                         viewMode === 'speaker-top' 
                           ? "border-cyan-500 bg-cyan-500/10" 
-                          : "border-[#444] hover:bg-[#333] hover:border-[#555]"
+                          : "border-border hover:bg-background hover:border-border"
                       )}
                     >
                       <div className="w-12 h-8 border border-current rounded flex flex-col">
@@ -1061,7 +1061,7 @@ export default function LiveRoom() {
                         "flex flex-col items-center gap-2 p-3 rounded-lg border transition-all",
                         viewMode === 'speaker-side' 
                           ? "border-cyan-500 bg-cyan-500/10" 
-                          : "border-[#444] hover:bg-[#333] hover:border-[#555]"
+                          : "border-border hover:bg-background hover:border-border"
                       )}
                     >
                       <div className="w-12 h-8 border border-current rounded flex">
@@ -1083,7 +1083,7 @@ export default function LiveRoom() {
                         "flex flex-col items-center gap-2 p-3 rounded-lg border transition-all",
                         viewMode === 'gallery' 
                           ? "border-cyan-500 bg-cyan-500/10" 
-                          : "border-[#444] hover:bg-[#333] hover:border-[#555]"
+                          : "border-border hover:bg-background hover:border-border"
                       )}
                     >
                       <div className="w-12 h-8 border border-current rounded grid grid-cols-2 gap-px p-1">
@@ -1121,7 +1121,7 @@ export default function LiveRoom() {
                     <Button
                       variant="outline"
                       size="sm"
-                      className="flex-1 border-[#444] bg-transparent hover:bg-[#333] text-white"
+                      className="flex-1 border-border bg-transparent hover:bg-background text-foreground"
                       onClick={() => {
                         toggleFullscreen();
                         setShowViewOptions(false);
@@ -1133,7 +1133,7 @@ export default function LiveRoom() {
                     <Button
                       variant="outline"
                       size="sm"
-                      className="flex-1 border-[#444] bg-transparent hover:bg-[#333] text-white"
+                      className="flex-1 border-border bg-transparent hover:bg-background text-foreground"
                       onClick={() => {
                         togglePiP();
                         setShowViewOptions(false);
@@ -1156,7 +1156,7 @@ export default function LiveRoom() {
                   jitsiApiRef.current.executeCommand('toggleSettings');
                 }
               }}
-              className="h-10 w-10 rounded-full bg-[#2a2a2a] text-white hover:bg-[#333]"
+              className="h-10 w-10 rounded-full bg-muted text-foreground hover:bg-background"
               title="Configuración"
             >
               <Settings className="h-5 w-5" />
@@ -1165,7 +1165,7 @@ export default function LiveRoom() {
             {/* Leave */}
             <Button
               onClick={leaveMeeting}
-              className="bg-red-500 hover:bg-red-600 text-white font-semibold px-4 rounded-full gap-1"
+              className="bg-red-500 hover:bg-red-600 text-foreground font-semibold px-4 rounded-full gap-1"
             >
               <LogOut className="h-4 w-4" />
               Dejar

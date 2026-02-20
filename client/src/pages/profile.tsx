@@ -330,8 +330,8 @@ export default function Profile() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-dark-bg flex">
-        <div className="w-[250px] bg-dark-card border-r border-dark-border"></div>
+      <div className="min-h-screen bg-background flex">
+        <div className="w-[250px] bg-card border-r border-border"></div>
         <div className="flex-1 flex items-center justify-center">
           <div className="text-white">Loading...</div>
         </div>
@@ -340,7 +340,7 @@ export default function Profile() {
   }
 
   return (
-    <div className="min-h-screen bg-dark-bg text-white">
+    <div className="min-h-screen bg-background text-white">
       {/* Mobile Header */}
       <MobileHeader />
       
@@ -351,7 +351,7 @@ export default function Profile() {
         {/* Main Content */}
         <main className="flex-1 overflow-auto pb-20 lg:pb-0 md:ml-16 lg:ml-[250px]">
           {/* Header */}
-          <header className="bg-dark-card border-b border-dark-border p-6">
+          <header className="bg-card border-b border-border p-6">
             <h1 className="text-2xl font-bold text-white">Perfil</h1>
           </header>
 
@@ -361,7 +361,7 @@ export default function Profile() {
               {/* Foto de perfil */}
               <section>
                 <h2 className="text-lg font-semibold text-white mb-4">Foto de perfil</h2>
-                <Card className="bg-dark-card border-dark-border">
+                <Card className="bg-card border-border">
                   <CardContent className="p-6">
                     <div className="flex items-center gap-6">
                       <Avatar className="h-20 w-20">
@@ -383,7 +383,7 @@ export default function Profile() {
                           />
                           <Button
                             variant="outline"
-                            className="border-dark-border text-gray-300 hover:bg-dark-bg"
+                            className="border-border text-muted-foreground hover:bg-background"
                             onClick={() => document.getElementById("profile-image-input")?.click()}
                             disabled={uploadingImage}
                           >
@@ -401,7 +401,7 @@ export default function Profile() {
               {/* Detalles del perfil */}
               <section>
                 <h2 className="text-lg font-semibold text-white mb-4">Detalles del perfil</h2>
-                <Card className="bg-dark-card border-dark-border">
+                <Card className="bg-card border-border">
                   <CardContent className="p-6">
                     <form onSubmit={handleUpdateProfile} className="space-y-4">
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -410,7 +410,7 @@ export default function Profile() {
                           <Input
                             value={firstName}
                             onChange={(e) => setFirstName(e.target.value)}
-                            className="bg-[#2a2a2a] border-dark-border text-white"
+                            className="bg-input border-border text-white"
                             placeholder="Tu nombre"
                           />
                         </div>
@@ -419,7 +419,7 @@ export default function Profile() {
                           <Input
                             value={lastName}
                             onChange={(e) => setLastName(e.target.value)}
-                            className="bg-[#2a2a2a] border-dark-border text-white"
+                            className="bg-input border-border text-white"
                             placeholder="Tu apellido"
                           />
                         </div>
@@ -431,7 +431,7 @@ export default function Profile() {
                           type="email"
                           value={email}
                           onChange={(e) => setEmail(e.target.value)}
-                          className="bg-[#2a2a2a] border-dark-border text-white"
+                          className="bg-input border-border text-white"
                           placeholder="tu@ejemplo.com"
                         />
                       </div>
@@ -441,7 +441,7 @@ export default function Profile() {
                         <Input
                           value={shortDescription}
                           onChange={(e) => setShortDescription(e.target.value)}
-                          className="bg-[#2a2a2a] border-dark-border text-white"
+                          className="bg-input border-border text-white"
                           placeholder="Una breve descripción sobre ti..."
                           maxLength={150}
                         />
@@ -453,7 +453,7 @@ export default function Profile() {
                         <textarea
                           value={bio}
                           onChange={(e) => setBio(e.target.value)}
-                          className="w-full bg-[#2a2a2a] border border-dark-border text-white rounded px-3 py-2 min-h-[120px] resize-y"
+                          className="w-full bg-input border border-border text-white rounded px-3 py-2 min-h-[120px] resize-y"
                           placeholder="Cuéntanos más sobre ti..."
                           maxLength={1000}
                         />
@@ -514,7 +514,7 @@ export default function Profile() {
               {/* Datos */}
               <section>
                 <h2 className="text-lg font-semibold text-white mb-4">Datos</h2>
-                <Card className="bg-dark-card border-dark-border">
+                <Card className="bg-card border-border">
                   <CardContent className="p-6">
                     <div className="space-y-4">
                       <div className="flex justify-between items-center">
@@ -548,7 +548,7 @@ export default function Profile() {
               {/* Cambiar mi contraseña */}
               <section>
                 <h2 className="text-lg font-semibold text-white mb-4">Cambiar mi contraseña</h2>
-                <Card className="bg-dark-card border-dark-border">
+                <Card className="bg-card border-border">
                   <CardContent className="p-6">
                     <form onSubmit={handleUpdatePassword} className="space-y-4">
                       <div>
@@ -558,7 +558,7 @@ export default function Profile() {
                             type={showCurrentPassword ? "text" : "password"}
                             value={currentPassword}
                             onChange={(e) => setCurrentPassword(e.target.value)}
-                            className="bg-[#2a2a2a] border-dark-border text-white pr-10"
+                            className="bg-input border-border text-white pr-10"
                             placeholder="Tu contraseña actual"
                           />
                           <button
@@ -578,7 +578,7 @@ export default function Profile() {
                             type={showNewPassword ? "text" : "password"}
                             value={newPassword}
                             onChange={(e) => setNewPassword(e.target.value)}
-                            className="bg-[#2a2a2a] border-dark-border text-white pr-10"
+                            className="bg-input border-border text-white pr-10"
                             placeholder="Tu nueva contraseña"
                           />
                           <button
@@ -598,7 +598,7 @@ export default function Profile() {
                             type={showConfirmPassword ? "text" : "password"}
                             value={confirmPassword}
                             onChange={(e) => setConfirmPassword(e.target.value)}
-                            className="bg-[#2a2a2a] border-dark-border text-white pr-10"
+                            className="bg-input border-border text-white pr-10"
                             placeholder="Confirma tu nueva contraseña"
                           />
                           <button
@@ -626,7 +626,7 @@ export default function Profile() {
               {/* Zona de membresía */}
               <section>
                 <h2 className="text-lg font-semibold text-white mb-4">Zona de membresía</h2>
-                <Card className="bg-dark-card border-dark-border">
+                <Card className="bg-card border-border">
                   <CardContent className="p-6">
                     <div className="flex justify-between items-center">
                       <div>
@@ -661,7 +661,7 @@ export default function Profile() {
               {/* Cambiar mi suscripción */}
               <section>
                 <h2 className="text-lg font-semibold text-white mb-4">Cambiar mi suscripción</h2>
-                <Card className="bg-dark-card border-dark-border">
+                <Card className="bg-card border-border">
                   <CardContent className="p-6">
                     <div className="flex justify-between items-center">
                       <div>
@@ -670,7 +670,7 @@ export default function Profile() {
                       </div>
                       <Button 
                         variant="outline" 
-                        className="border-dark-border text-gray-300 hover:bg-dark-bg"
+                        className="border-border text-muted-foreground hover:bg-background"
                         onClick={() => window.location.href = '/planes'}
                       >
                         <CreditCard className="h-4 w-4 mr-2" />
@@ -689,28 +689,28 @@ export default function Profile() {
                     <p className="text-gray-400 text-sm">Recomendamos contenido en su panel según tu nivel de experiencia, habilidades y tipo de contenido.</p>
                   </div>
                 </div>
-                <Card className="bg-dark-card border-dark-border">
+                <Card className="bg-card border-border">
                   <CardContent className="p-6">
                     {!showFocusEdit ? (
                       <div className="space-y-4">
                         <div className="flex justify-between items-center">
                           <div>
                             <h3 className="text-white font-medium">Nivel de experiencia:</h3>
-                            <p className="text-gray-300">{experienceLevel}</p>
+                            <p className="text-muted-foreground">{experienceLevel}</p>
                           </div>
                         </div>
                         
                         <div className="flex justify-between items-center">
                           <div>
                             <h3 className="text-white font-medium">Tipo de habilidad preferida:</h3>
-                            <p className="text-gray-300">{preferredSkillType}</p>
+                            <p className="text-muted-foreground">{preferredSkillType}</p>
                           </div>
                         </div>
                         
                         <div className="flex justify-between items-center">
                           <div>
                             <h3 className="text-white font-medium">Tipo de contenido preferido:</h3>
-                            <p className="text-gray-300">{preferredContentTypes.join(", ")}</p>
+                            <p className="text-muted-foreground">{preferredContentTypes.join(", ")}</p>
                           </div>
                         </div>
                         
@@ -730,7 +730,7 @@ export default function Profile() {
                           <select 
                             value={experienceLevel}
                             onChange={(e) => setExperienceLevel(e.target.value)}
-                            className="w-full bg-dark-bg border border-dark-border rounded-lg px-3 py-2 text-white"
+                            className="w-full bg-background border border-border rounded-lg px-3 py-2 text-white"
                           >
                             <option value="Principiante">Principiante</option>
                             <option value="Intermedio">Intermedio</option>
@@ -743,7 +743,7 @@ export default function Profile() {
                           <select 
                             value={preferredSkillType}
                             onChange={(e) => setPreferredSkillType(e.target.value)}
-                            className="w-full bg-dark-bg border border-dark-border rounded-lg px-3 py-2 text-white"
+                            className="w-full bg-background border border-border rounded-lg px-3 py-2 text-white"
                           >
                             <option value="Consultoría">Consultoría</option>
                             <option value="Desarrollo">Desarrollo</option>
@@ -764,7 +764,7 @@ export default function Profile() {
                                 className={`px-3 py-1 rounded-full text-sm transition-colors ${
                                   preferredContentTypes.includes(type)
                                     ? "bg-blue-600 text-white"
-                                    : "bg-gray-700 text-gray-300 hover:bg-gray-600"
+                                    : "bg-gray-700 text-muted-foreground hover:bg-gray-600"
                                 }`}
                               >
                                 {type}
@@ -787,7 +787,7 @@ export default function Profile() {
                             type="button"
                             onClick={() => setShowFocusEdit(false)}
                             variant="outline"
-                            className="border-dark-border text-gray-300 hover:bg-dark-bg"
+                            className="border-border text-muted-foreground hover:bg-background"
                             size="sm"
                           >
                             <X className="h-4 w-4 mr-2" />
@@ -803,7 +803,7 @@ export default function Profile() {
               {/* Configuración */}
               <section>
                 <h2 className="text-lg font-semibold text-white mb-4">Configuración</h2>
-                <Card className="bg-dark-card border-dark-border">
+                <Card className="bg-card border-border">
                   <CardContent className="p-6">
                     <div className="space-y-4">
                       <div className="flex justify-between items-center">
@@ -814,7 +814,7 @@ export default function Profile() {
                         <Button 
                           variant="outline" 
                           size="sm"
-                          className="border-dark-border text-gray-300 hover:bg-dark-bg"
+                          className="border-border text-muted-foreground hover:bg-background"
                         >
                           <Bell className="h-4 w-4 mr-2" />
                           Configurar
@@ -829,7 +829,7 @@ export default function Profile() {
                         <Button 
                           variant="outline" 
                           size="sm"
-                          className="border-dark-border text-gray-300 hover:bg-dark-bg"
+                          className="border-border text-muted-foreground hover:bg-background"
                         >
                           <Shield className="h-4 w-4 mr-2" />
                           Configurar

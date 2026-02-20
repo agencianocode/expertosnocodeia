@@ -21,6 +21,7 @@ import {
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { 
   Brain, 
@@ -37,12 +38,14 @@ import {
   User,
   BarChart3,
   Bookmark,
+  Bell,
   Monitor,
   Sun,
   Moon,
   HelpCircle,
   LogOut,
   MoreHorizontal,
+  MoreVertical,
   TrendingUp,
   ChevronDown,
   ChevronRight,
@@ -74,7 +77,19 @@ export default function Sidebar({ onToggle }: SidebarProps = {}) {
   });
   
   const unreadCommentsCount = unreadCommentsData?.count || 0;
-  
+
+  // Notificaciones (guías, cursos, talleres desde BD; filtradas por clearedAt del usuario)
+  const { data: notificationsData } = useQuery<{
+    notifications: { id: string; contentId?: string; type: "guide" | "course" | "workshop"; title: string; description: string; timeAgo: string }[];
+    unreadCount: number;
+  }>({
+    queryKey: ["/api/notifications"],
+    enabled: !!user,
+    refetchInterval: 60000,
+  });
+  const notifications = notificationsData?.notifications ?? [];
+  const notificationCount = notificationsData?.unreadCount ?? notifications.length;
+
   // Auto-expand Programas when entering a room route
   const isInRoomRoute = location.startsWith('/sala/');
   
@@ -253,6 +268,57 @@ export default function Sidebar({ onToggle }: SidebarProps = {}) {
         {user ? (
           // Sección completa para usuario autenticado
           <>
+            {/* Tema / Apariencia: encima de Empezar, 3 puntos verticales abren opciones Luz/Oscuro/Sistema */}
+            <div className="px-4 pt-2 pb-3">
+              <div className="flex items-center justify-between rounded-lg bg-muted/50 py-2 px-3">
+                <div className="flex items-center gap-3 min-w-0">
+                  {theme === "claro" && <Sun className="h-4 w-4 text-muted-foreground shrink-0" />}
+                  {theme === "oscuro" && <Moon className="h-4 w-4 text-muted-foreground shrink-0" />}
+                  {theme === "sistema" && <Monitor className="h-4 w-4 text-muted-foreground shrink-0" />}
+                  <span className="text-sm text-foreground truncate">
+                    Tema: {theme === "claro" ? "Claro" : theme === "oscuro" ? "Oscuro" : "Sistema"}
+                  </span>
+                </div>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="text-muted-foreground hover:text-foreground h-6 w-6 shrink-0"
+                      aria-label="Opciones de tema"
+                    >
+                      <MoreVertical className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-56 bg-card border-border" sideOffset={5}>
+                    <DropdownMenuItem
+                      className="text-card-foreground hover:bg-muted cursor-pointer"
+                      onClick={() => changeTheme("claro")}
+                    >
+                      <Sun className="mr-2 h-4 w-4" />
+                      <span>Luz</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      className="text-card-foreground hover:bg-muted cursor-pointer"
+                      onClick={() => changeTheme("oscuro")}
+                    >
+                      <Moon className="mr-2 h-4 w-4" />
+                      <span>Oscuro</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      className="text-card-foreground hover:bg-muted cursor-pointer"
+                      onClick={() => changeTheme("sistema")}
+                    >
+                      <Monitor className="mr-2 h-4 w-4" />
+                      <span>Sistema</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            </div>
+
+            <div className="border-t border-border mx-4" aria-hidden />
+
             {/* Start Button */}
             <div className="p-4">
               <OnboardingModal 
@@ -260,16 +326,30 @@ export default function Sidebar({ onToggle }: SidebarProps = {}) {
                 onOpenChange={setOnboardingOpen}
                 trigger={
                   <Button 
-                    className="w-full bg-secondary hover:bg-secondary/80 text-secondary-foreground font-satoshi text-[13px] leading-[20px] rounded-lg py-2 px-4 flex items-center justify-between"
+                    className="w-full font-satoshi text-[13px] leading-[20px] rounded-lg py-2 px-4 flex items-center justify-between border-0"
+                    style={{ backgroundColor: '#404040' }}
                   >
-                    <div className="flex items-center">
-                      <span className="w-6 h-6 bg-green-accent rounded-full flex items-center justify-center lg:mr-3">
-                        <span className="text-white text-xs">▶</span>
+                    <div className="flex items-center" style={{ color: '#3c4fb8' }}>
+                      <span 
+                        className="w-6 h-6 rounded-full flex items-center justify-center lg:mr-3 border border-current"
+                        style={{ backgroundColor: 'rgba(60, 79, 184, 0.2)', color: '#3c4fb8' }}
+                      >
+                        <span className="text-xs">▶</span>
                       </span>
                       <span className="hidden lg:block">Empezar</span>
                     </div>
-                    <div className="bg-green-accent text-white text-xs px-2 py-1 rounded-full hidden lg:block">
-                      67%
+                    <div 
+                      className="hidden lg:flex items-center justify-center w-8 h-8 rounded-full text-white text-xs font-medium shrink-0"
+                      style={{
+                        background: 'conic-gradient(from -90deg, #8b5cf6 0%, #ec4899 35%, #3b82f6 65%, #a855f7 100%)',
+                        padding: '2px',
+                      }}
+                    >
+                      <span 
+                        className="w-full h-full rounded-full bg-[#404040] flex items-center justify-center"
+                      >
+                        67%
+                      </span>
                     </div>
                   </Button>
                 }
@@ -308,10 +388,73 @@ export default function Sidebar({ onToggle }: SidebarProps = {}) {
                     {getUserName()}
                   </p>
                 </div>
-                <div className="flex items-center space-x-2 hidden lg:flex">
-                  <div className="w-4 h-4 bg-yellow-500 rounded-full flex items-center justify-center">
-                    <span className="text-xs">🔔</span>
-                  </div>
+                <div className="flex items-center space-x-2">
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="relative h-8 w-8 text-muted-foreground hover:text-foreground"
+                        aria-label="Notificaciones"
+                      >
+                        <Bell className="h-4 w-4" />
+                        {notificationCount > 0 && (
+                          <span className="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[10px] font-medium text-destructive-foreground">
+                            {notificationCount > 9 ? "9+" : notificationCount}
+                          </span>
+                        )}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent
+                      align="end"
+                      side="bottom"
+                      sideOffset={8}
+                      className="w-[360px] p-0 bg-card border-border shadow-lg rounded-lg overflow-hidden"
+                    >
+                      <div className="border-b border-border px-4 py-3">
+                        <h3 className="font-semibold text-foreground">Notificaciones</h3>
+                      </div>
+                      <div className="max-h-[320px] overflow-y-auto">
+                        {notifications.length === 0 ? (
+                          <div className="px-4 py-6 text-center text-sm text-muted-foreground">
+                            No hay notificaciones nuevas
+                          </div>
+                        ) : (
+                          <ul className="divide-y divide-border">
+                            {notifications.map((n) => {
+                              const href = n.contentId
+                                ? n.type === "guide"
+                                  ? `/guia/${n.contentId}`
+                                  : n.type === "course"
+                                    ? `/course/${n.contentId}`
+                                    : `/taller/${n.contentId}`
+                                : "/notifications";
+                              return (
+                                <li key={n.id} className="px-4 py-3 hover:bg-muted/50 transition-colors">
+                                  <Link href={href} className="block">
+                                    <p className="font-medium text-foreground text-sm">
+                                      {n.type === "guide" && "¡Nueva guía publicada!"}
+                                      {n.type === "course" && "¡Nuevo curso publicado!"}
+                                      {n.type === "workshop" && "¡Nuevo taller publicado!"}
+                                    </p>
+                                    <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">
+                                      {n.description}
+                                    </p>
+                                    <p className="text-xs text-muted-foreground mt-1">{n.timeAgo}</p>
+                                  </Link>
+                                </li>
+                              );
+                            })}
+                          </ul>
+                        )}
+                      </div>
+                      <div className="border-t border-border px-4 py-2.5 bg-muted/30">
+                        <Link href="/notifications" className="text-sm font-medium text-primary hover:underline">
+                          Ver todas las notificaciones
+                        </Link>
+                      </div>
+                    </PopoverContent>
+                  </Popover>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button
@@ -319,7 +462,7 @@ export default function Sidebar({ onToggle }: SidebarProps = {}) {
                         size="icon"
                         className="text-muted-foreground hover:text-foreground h-6 w-6"
                       >
-                        <MoreHorizontal className="h-4 w-4" />
+                        <MoreVertical className="h-4 w-4" />
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent 
@@ -335,7 +478,7 @@ export default function Sidebar({ onToggle }: SidebarProps = {}) {
                         <span>Mi perfil</span>
                       </DropdownMenuItem>
                       
-                      {/* Admin Panel - Only visible to admins */}
+                      {/* Admin-only: Panel, Comentarios, Mi progreso */}
                       {isAdmin && (
                         <>
                           <DropdownMenuSeparator className="bg-border" />
@@ -360,17 +503,16 @@ export default function Sidebar({ onToggle }: SidebarProps = {}) {
                               )}
                             </div>
                           </DropdownMenuItem>
+                          <DropdownMenuItem 
+                            className="text-card-foreground hover:bg-muted hover:text-foreground cursor-pointer"
+                            onClick={() => window.location.href = "/progreso"}
+                          >
+                            <TrendingUp className="mr-2 h-4 w-4" />
+                            <span>Mi progreso</span>
+                          </DropdownMenuItem>
                           <DropdownMenuSeparator className="bg-border" />
                         </>
                       )}
-                      
-                      <DropdownMenuItem 
-                        className="text-card-foreground hover:bg-muted hover:text-foreground cursor-pointer"
-                        onClick={() => window.location.href = "/progreso"}
-                      >
-                        <TrendingUp className="mr-2 h-4 w-4" />
-                        <span>Mi progreso</span>
-                      </DropdownMenuItem>
                       
                       <DropdownMenuItem 
                         className="text-card-foreground hover:bg-muted hover:text-foreground cursor-pointer"
@@ -379,36 +521,6 @@ export default function Sidebar({ onToggle }: SidebarProps = {}) {
                         <Bookmark className="mr-2 h-4 w-4" />
                         <span>Guardado</span>
                       </DropdownMenuItem>
-                      
-                      <DropdownMenuSub>
-                        <DropdownMenuSubTrigger className="text-muted-foreground hover:bg-muted hover:text-foreground">
-                          <Monitor className="mr-2 h-4 w-4" />
-                          <span>Tema: {theme.charAt(0).toUpperCase() + theme.slice(1)}</span>
-                        </DropdownMenuSubTrigger>
-                        <DropdownMenuSubContent className="bg-card border-border">
-                          <DropdownMenuItem 
-                            className="text-card-foreground hover:bg-muted hover:text-foreground cursor-pointer"
-                            onClick={() => changeTheme("claro")}
-                          >
-                            <Sun className="mr-2 h-4 w-4" />
-                            <span>Claro</span>
-                          </DropdownMenuItem>
-                          <DropdownMenuItem 
-                            className="text-card-foreground hover:bg-muted hover:text-foreground cursor-pointer"
-                            onClick={() => changeTheme("oscuro")}
-                          >
-                            <Moon className="mr-2 h-4 w-4" />
-                            <span>Oscuro</span>
-                          </DropdownMenuItem>
-                          <DropdownMenuItem 
-                            className="text-card-foreground hover:bg-muted hover:text-foreground cursor-pointer"
-                            onClick={() => changeTheme("sistema")}
-                          >
-                            <Monitor className="mr-2 h-4 w-4" />
-                            <span>Sistema</span>
-                          </DropdownMenuItem>
-                        </DropdownMenuSubContent>
-                      </DropdownMenuSub>
                       
                       <DropdownMenuItem 
                         className="text-card-foreground hover:bg-muted hover:text-foreground cursor-pointer"
@@ -449,7 +561,7 @@ export default function Sidebar({ onToggle }: SidebarProps = {}) {
                     size="icon"
                     className="text-muted-foreground hover:text-foreground h-6 w-6"
                   >
-                    <MoreHorizontal className="h-4 w-4" />
+                    <MoreVertical className="h-4 w-4" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent 

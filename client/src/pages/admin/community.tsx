@@ -340,7 +340,7 @@ export default function AdminCommunity() {
   }
 
   return (
-    <div className="min-h-screen bg-dark-bg text-white">
+    <div className="min-h-screen bg-background text-foreground">
       <MobileHeader />
       <div className="flex">
         <div className="hidden lg:block">
@@ -371,7 +371,7 @@ export default function AdminCommunity() {
             {/* Create/Edit Modal */}
             {showCreateModal && (
               <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 overflow-y-auto">
-                <Card className="w-full max-w-2xl bg-[#1a1a1a] border-[#333333] my-8">
+                <Card className="w-full max-w-2xl bg-card border-border my-8">
                   <CardHeader>
                     <CardTitle>{editingPost ? "Editar Anuncio" : "Nuevo Anuncio"}</CardTitle>
                     <CardDescription>Crea bloques de contenido: texto → video → más texto</CardDescription>
@@ -383,7 +383,7 @@ export default function AdminCommunity() {
                         placeholder="Título del anuncio (ej: ¡Bienvenido a la Comunidad!)"
                         value={formData.title}
                         onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                        className="bg-[#2a2a2a] border-[#444444]"
+                        className="bg-muted border-border"
                       />
                     </div>
 
@@ -391,16 +391,16 @@ export default function AdminCommunity() {
                       <label className="text-sm font-medium mb-3 block">Bloques de Contenido</label>
                       <div className="space-y-3">
                         {formData.contentBlocks.map((block, index) => (
-                          <div key={index} className="bg-[#2a2a2a] border border-[#444444] rounded p-3 space-y-2">
+                          <div key={index} className="bg-muted border border-border rounded p-3 space-y-2">
                             <div className="flex items-center justify-between gap-2">
                               <span className="text-sm font-medium text-cyan-400">
                                 Bloque {index + 1}: {block.type === "text" ? "📝 Texto" : block.type === "video" ? "🎬 Video" : "🖼️ Imagen"}
                               </span>
                               <div className="flex gap-1">
-                                <button onClick={() => moveBlock(index, "up")} disabled={index === 0} className="p-1 hover:bg-[#333333] disabled:opacity-30 rounded">
+                                <button onClick={() => moveBlock(index, "up")} disabled={index === 0} className="p-1 hover:bg-muted disabled:opacity-30 rounded">
                                   <ChevronUp className="h-4 w-4" />
                                 </button>
-                                <button onClick={() => moveBlock(index, "down")} disabled={index === formData.contentBlocks.length - 1} className="p-1 hover:bg-[#333333] disabled:opacity-30 rounded">
+                                <button onClick={() => moveBlock(index, "down")} disabled={index === formData.contentBlocks.length - 1} className="p-1 hover:bg-muted disabled:opacity-30 rounded">
                                   <ChevronDown className="h-4 w-4" />
                                 </button>
                                 <button onClick={() => removeBlock(index)} className="p-1 hover:bg-red-500/20 rounded">
@@ -420,7 +420,7 @@ export default function AdminCommunity() {
                                 placeholder="URL del video (YouTube, Vimeo, etc.)"
                                 value={block.url || ""}
                                 onChange={(e) => updateBlock(index, { url: e.target.value })}
-                                className="bg-[#1a1a1a] border-[#333333] text-sm"
+                                className="bg-card border-border text-sm"
                               />
                             ) : (
                               <div className="space-y-2">
@@ -440,7 +440,7 @@ export default function AdminCommunity() {
                                   <button
                                     type="button"
                                     onClick={() => document.getElementById(`block-image-${index}`)?.click()}
-                                    className="w-full bg-[#1a1a1a] border border-[#333333] rounded p-2 text-white hover:bg-[#222222] text-sm"
+                                    className="w-full bg-card border border-border rounded p-2 text-foreground hover:bg-muted text-sm"
                                   >
                                     Seleccionar imagen
                                   </button>
@@ -468,7 +468,7 @@ export default function AdminCommunity() {
                       <select
                         value={formData.channelId}
                         onChange={(e) => setFormData({ ...formData, channelId: e.target.value })}
-                        className="w-full bg-[#2a2a2a] border border-[#444444] rounded p-2 text-white"
+                        className="w-full bg-muted border border-border rounded p-2 text-foreground"
                       >
                         <option value="">Selecciona un canal</option>
                         {channels.map((channel: any) => (
@@ -479,7 +479,7 @@ export default function AdminCommunity() {
                       </select>
                     </div>
                   </CardContent>
-                  <div className="px-6 py-4 border-t border-[#333333] flex gap-2">
+                  <div className="px-6 py-4 border-t border-border flex gap-2">
                     <Button
                       variant="outline"
                       onClick={() => {
@@ -622,7 +622,7 @@ export default function AdminCommunity() {
                                   <Trash2 className="h-4 w-4" />
                                 </Button>
                               </AlertDialogTrigger>
-                              <AlertDialogContent className="bg-[#1a1a1a] border-[#333333]">
+                              <AlertDialogContent className="bg-card border-border">
                                 <AlertDialogHeader>
                                   <AlertDialogTitle>Eliminar anuncio</AlertDialogTitle>
                                   <AlertDialogDescription>

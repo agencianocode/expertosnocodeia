@@ -80,8 +80,8 @@ export default function Workshop() {
 
   if (authLoading || workshopLoading) {
     return (
-      <div className="min-h-screen bg-dark-bg flex">
-        <div className="w-64 bg-dark-card border-r border-dark-border"></div>
+      <div className="min-h-screen bg-background flex">
+        <div className="w-64 bg-card border-r border-border"></div>
         <div className="flex-1 flex items-center justify-center">
           <div className="text-white">Loading...</div>
         </div>
@@ -91,7 +91,7 @@ export default function Workshop() {
 
   if (!workshop) {
     return (
-      <div className="min-h-screen bg-dark-bg text-white">
+      <div className="min-h-screen bg-background text-white">
         <div className="flex items-center justify-center h-full">
           <div className="text-center">
             <h2 className="text-2xl font-bold mb-4">Taller no encontrado</h2>
@@ -129,7 +129,7 @@ export default function Workshop() {
   };
 
   return (
-    <div className="min-h-screen bg-dark-bg text-white">
+    <div className="min-h-screen bg-background text-white">
       {/* Mobile Header */}
       <MobileHeader />
       <div className="flex">

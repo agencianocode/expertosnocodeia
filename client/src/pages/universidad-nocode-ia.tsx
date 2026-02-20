@@ -806,7 +806,7 @@ export default function UniversidadNoCodeIA() {
               }
             ].map((faq, index) => (
               <details key={index} className="bg-[#1a1a1a] rounded-lg border border-gray-800 group">
-                <summary className="p-6 cursor-pointer flex justify-between items-center hover:bg-[#2a2a2a] transition-colors">
+                <summary className="p-6 cursor-pointer flex justify-between items-center hover:bg-muted transition-colors">
                   <span className="text-white font-medium font-satoshi text-lg">{faq.question}</span>
                   <span className="text-gray-400 group-open:rotate-180 transition-transform duration-200">▼</span>
                 </summary>

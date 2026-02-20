@@ -129,16 +129,16 @@ export default function ResetPassword() {
 
   if (isSuccess) {
     return (
-      <div className="min-h-screen bg-dark-bg text-white flex">
+      <div className="min-h-screen bg-background text-foreground flex">
         <LoginSidebar />
         <div className="flex-1 flex items-center justify-center p-6">
           <div className="w-full max-w-md">
-            <div className="bg-dark-card border border-dark-border rounded-lg p-8 text-center">
+            <div className="bg-card border border-border rounded-lg p-8 text-center">
               <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
                 <CheckCircle className="w-8 h-8 text-green-500" />
               </div>
               <h1 className="text-2xl font-bold mb-2">¡Contraseña restablecida!</h1>
-              <p className="text-gray-400 mb-6">
+              <p className="text-muted-foreground mb-6">
                 Tu contraseña ha sido restablecida exitosamente. Ahora puedes iniciar sesión con tu nueva contraseña.
               </p>
               <Button
@@ -156,13 +156,13 @@ export default function ResetPassword() {
 
   if (!token) {
     return (
-      <div className="min-h-screen bg-dark-bg text-white flex">
+      <div className="min-h-screen bg-background text-foreground flex">
         <LoginSidebar />
         <div className="flex-1 flex items-center justify-center p-6">
           <div className="w-full max-w-md">
-            <div className="bg-dark-card border border-dark-border rounded-lg p-8 text-center">
+            <div className="bg-card border border-border rounded-lg p-8 text-center">
               <h1 className="text-2xl font-bold mb-2">Token no válido</h1>
-              <p className="text-gray-400 mb-6">
+              <p className="text-muted-foreground mb-6">
                 El enlace de recuperación no es válido o ha expirado.
               </p>
               <Button
@@ -179,13 +179,13 @@ export default function ResetPassword() {
   }
 
   return (
-    <div className="min-h-screen bg-dark-bg text-white flex">
+    <div className="min-h-screen bg-background text-foreground flex">
       <LoginSidebar />
       <div className="flex-1 flex items-center justify-center p-6">
         <div className="w-full max-w-md">
-          <div className="bg-dark-card border border-dark-border rounded-lg p-8">
+          <div className="bg-card border border-border rounded-lg p-8">
             <h1 className="text-2xl font-bold mb-2">Restablecer contraseña</h1>
-            <p className="text-gray-400 mb-6">
+            <p className="text-muted-foreground mb-6">
               Ingresa tu nueva contraseña. Debe tener al menos 6 caracteres.
             </p>
 
@@ -203,12 +203,12 @@ export default function ResetPassword() {
                             {...field}
                             type={showPassword ? "text" : "password"}
                             placeholder="••••••••"
-                            className="bg-[#2a2a2a] border-dark-border text-white pr-10"
+                            className="bg-input border-border text-foreground pr-10"
                           />
                           <button
                             type="button"
                             onClick={() => setShowPassword(!showPassword)}
-                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white"
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                           >
                             {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                           </button>
@@ -231,12 +231,12 @@ export default function ResetPassword() {
                             {...field}
                             type={showConfirmPassword ? "text" : "password"}
                             placeholder="••••••••"
-                            className="bg-[#2a2a2a] border-dark-border text-white pr-10"
+                            className="bg-input border-border text-foreground pr-10"
                           />
                           <button
                             type="button"
                             onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white"
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                           >
                             {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                           </button>

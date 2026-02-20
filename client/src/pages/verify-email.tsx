@@ -69,16 +69,16 @@ export default function VerifyEmail() {
 
   if (isVerifying) {
     return (
-      <div className="min-h-screen bg-dark-bg text-white flex">
+      <div className="min-h-screen bg-background text-foreground flex">
         <LoginSidebar />
         <div className="flex-1 flex items-center justify-center p-6">
           <div className="w-full max-w-md">
-            <div className="bg-dark-card border border-dark-border rounded-lg p-8 text-center">
+            <div className="bg-card border border-border rounded-lg p-8 text-center">
               <div className="w-16 h-16 bg-blue-500/20 rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse">
                 <Mail className="w-8 h-8 text-blue-500" />
               </div>
               <h1 className="text-2xl font-bold mb-2">Verificando email...</h1>
-              <p className="text-gray-400">
+              <p className="text-muted-foreground">
                 Por favor espera mientras verificamos tu email.
               </p>
             </div>
@@ -90,16 +90,16 @@ export default function VerifyEmail() {
 
   if (isVerified) {
     return (
-      <div className="min-h-screen bg-dark-bg text-white flex">
+      <div className="min-h-screen bg-background text-foreground flex">
         <LoginSidebar />
         <div className="flex-1 flex items-center justify-center p-6">
           <div className="w-full max-w-md">
-            <div className="bg-dark-card border border-dark-border rounded-lg p-8 text-center">
+            <div className="bg-card border border-border rounded-lg p-8 text-center">
               <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
                 <CheckCircle className="w-8 h-8 text-green-500" />
               </div>
               <h1 className="text-2xl font-bold mb-2">¡Email verificado!</h1>
-              <p className="text-gray-400 mb-6">
+              <p className="text-muted-foreground mb-6">
                 Tu email ha sido verificado exitosamente. Ya puedes usar todas las funcionalidades de la plataforma.
               </p>
               <Button
@@ -116,16 +116,16 @@ export default function VerifyEmail() {
   }
 
   return (
-    <div className="min-h-screen bg-dark-bg text-white flex">
+    <div className="min-h-screen bg-background text-foreground flex">
       <LoginSidebar />
       <div className="flex-1 flex items-center justify-center p-6">
         <div className="w-full max-w-md">
-          <div className="bg-dark-card border border-dark-border rounded-lg p-8 text-center">
+          <div className="bg-card border border-border rounded-lg p-8 text-center">
             <div className="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
               <XCircle className="w-8 h-8 text-red-500" />
             </div>
             <h1 className="text-2xl font-bold mb-2">Error de verificación</h1>
-            <p className="text-gray-400 mb-6">
+            <p className="text-muted-foreground mb-6">
               {error || "El token de verificación no es válido o ha expirado."}
             </p>
             <div className="space-y-3">
@@ -138,7 +138,7 @@ export default function VerifyEmail() {
               <Button
                 onClick={() => setLocation('/profile')}
                 variant="outline"
-                className="w-full border-dark-border text-gray-300 hover:bg-dark-bg"
+                className="w-full border-border text-muted-foreground hover:bg-muted"
               >
                 Reenviar email de verificación
               </Button>

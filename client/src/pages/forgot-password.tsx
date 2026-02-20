@@ -58,7 +58,7 @@ export default function ForgotPassword() {
 
   if (isSubmitted) {
     return (
-      <div className="min-h-screen bg-dark-bg text-white">
+      <div className="min-h-screen bg-background text-foreground">
         <div className="flex min-h-screen">
           {/* Sidebar - Hidden on mobile */}
           <div className="hidden lg:block">
@@ -70,31 +70,28 @@ export default function ForgotPassword() {
             <div className="w-full max-w-md space-y-6">
               {/* Header Banner */}
               <div className="flex justify-center mb-6">
-                <div 
-                  className="px-8 py-4 rounded-lg"
-                  style={{ backgroundColor: '#171717' }}
-                >
+                <div className="px-8 py-4 rounded-lg bg-card">
                   <h1 className="font-bold text-xl md:text-2xl text-center">
                     <span className="bg-gradient-to-r from-purple-accent to-blue-accent bg-clip-text text-transparent">Universidad</span>
-                    <span className="text-white"> Expertos NoCode IA</span>
+                    <span className="text-foreground"> Expertos NoCode IA</span>
                   </h1>
                 </div>
               </div>
 
-              <div className="bg-dark-card border border-dark-border rounded-lg p-8 shadow-lg text-center">
+              <div className="bg-card border border-border rounded-lg p-8 shadow-lg text-center">
                 <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
                   <Mail className="w-8 h-8 text-green-500" />
                 </div>
-                <h1 className="text-2xl font-bold mb-2 text-white">Email enviado</h1>
-                <p className="text-gray-400 mb-6">
+                <h1 className="text-2xl font-bold mb-2 text-foreground">Email enviado</h1>
+                <p className="text-muted-foreground mb-6">
                   Si el email existe en nuestro sistema, recibirás un enlace para restablecer tu contraseña.
                 </p>
-                <p className="text-sm text-gray-500 mb-6">
+                <p className="text-sm text-muted-foreground mb-6">
                   Revisa tu bandeja de entrada y la carpeta de spam. El enlace expirará en 1 hora.
                 </p>
                 <Button
                   onClick={() => setLocation('/login')}
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-lg transition-colors uppercase"
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-foreground font-semibold py-3 px-4 rounded-lg transition-colors uppercase"
                 >
                   Volver al inicio de sesión
                 </Button>
@@ -107,7 +104,7 @@ export default function ForgotPassword() {
   }
 
   return (
-    <div className="min-h-screen bg-dark-bg text-white">
+    <div className="min-h-screen bg-background text-foreground">
       <div className="flex min-h-screen">
         {/* Sidebar - Hidden on mobile */}
         <div className="hidden lg:block">
@@ -120,7 +117,7 @@ export default function ForgotPassword() {
           <Button
             variant="ghost"
             onClick={() => setLocation('/login')}
-            className="absolute top-8 left-8 text-white hover:bg-white/10"
+            className="absolute top-8 left-8 text-foreground hover:bg-muted"
           >
             <ArrowLeft className="w-5 h-5" />
           </Button>
@@ -130,23 +127,23 @@ export default function ForgotPassword() {
             <div className="flex justify-center mb-6">
               <div 
                 className="px-8 py-4 rounded-lg"
-                style={{ backgroundColor: '#171717' }}
+                className="bg-card"
               >
                 <h1 className="font-bold text-xl md:text-2xl text-center">
                   <span className="bg-gradient-to-r from-purple-accent to-blue-accent bg-clip-text text-transparent">Universidad</span>
-                  <span className="text-white"> Expertos NoCode IA</span>
+                  <span className="text-foreground"> Expertos NoCode IA</span>
                 </h1>
               </div>
             </div>
 
             {/* Title */}
             <div className="text-center mb-6">
-              <h1 className="font-bold text-white mb-2" style={{ fontSize: '30px' }}>
+              <h1 className="font-bold text-foreground mb-2" style={{ fontSize: '30px' }}>
                 Restablecer su contraseña
               </h1>
             </div>
 
-            <div className="bg-dark-card border border-dark-border rounded-lg p-8 shadow-lg">
+            <div className="bg-card border border-border rounded-lg p-8 shadow-lg">
               <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                   <FormField
@@ -154,17 +151,17 @@ export default function ForgotPassword() {
                     name="email"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-white text-sm mb-2 block">
+                        <FormLabel className="text-foreground text-sm mb-2 block">
                           Dirección de correo electrónico
                         </FormLabel>
                         <FormControl>
                           <div className="relative">
-                            <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                            <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                             <Input
                               {...field}
                               type="email"
                               placeholder="nombre@ejemplo.com"
-                              className="pl-10 pr-4 bg-[#2a2a2a] border-dark-border text-white rounded-lg h-12"
+                              className="pl-10 pr-4 bg-input border-border text-foreground rounded-lg h-12"
                             />
                           </div>
                         </FormControl>
@@ -175,7 +172,7 @@ export default function ForgotPassword() {
 
                   <Button
                     type="submit"
-                    className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-lg transition-colors uppercase"
+                    className="w-full bg-blue-600 hover:bg-blue-700 text-foreground font-semibold py-3 px-4 rounded-lg transition-colors uppercase"
                     disabled={form.formState.isSubmitting}
                   >
                     {form.formState.isSubmitting ? "Enviando..." : "Enviar enlace de restablecimiento"}
@@ -186,7 +183,7 @@ export default function ForgotPassword() {
               <button
                 type="button"
                 onClick={() => setLocation('/login')}
-                className="w-full mt-6 text-white text-xs uppercase underline hover:no-underline text-center"
+                className="w-full mt-6 text-foreground text-xs uppercase underline hover:no-underline text-center"
               >
                 Volver al inicio de sesión
               </button>

@@ -137,15 +137,10 @@ export default function Room() {
 
   const { room, phases, promoBanners, userHasAccess } = roomDetail;
   const hasAccess = userHasAccess;
-  const isAgentesIARoom = slug === 'agentes-ia';
-  const isVibeCodingRoom = slug === 'vibe-coding';
   const shouldEnhanceGlow = slug === 'vibe-coding' || slug === 'nocode-saas-ia';
 
   return (
-    <div className={cn(
-      "min-h-screen text-foreground",
-      isAgentesIARoom ? "bg-[#171717]" : isVibeCodingRoom ? "bg-[#151515]" : "bg-background"
-    )}>
+    <div className="min-h-screen text-foreground bg-background">
       {/* Mobile Header */}
       <MobileHeader />
       
@@ -346,7 +341,7 @@ export default function Room() {
                                     <Button
                                       size="sm"
                                       variant="ghost"
-                                      className="absolute top-2 right-2 z-20 w-5 h-5 p-0 bg-transparent hover:bg-black/30 rounded-full opacity-30 hover:opacity-80 transition-all duration-200 border-0"
+                                      className="absolute top-2 right-2 z-20 w-5 h-5 p-0 bg-transparent hover:bg-muted rounded-full opacity-70 hover:opacity-100 transition-all duration-200 border-0"
                                       onClick={(e) => {
                                         e.preventDefault();
                                         e.stopPropagation();
@@ -357,23 +352,23 @@ export default function Room() {
                                         e.stopPropagation();
                                       }}
                                     >
-                                      <Info className="h-2.5 w-2.5 text-white/50 hover:text-white/90" />
+                                      <Info className="h-2.5 w-2.5 text-foreground/70 hover:text-foreground" />
                                     </Button>
                                   </PopoverTrigger>
                                   <PopoverContent 
                                     side="right" 
                                     align="start"
-                                    className="w-[500px] max-w-[90vw] bg-black/95 border border-white/20 p-6 rounded-lg shadow-2xl z-[9999]"
+                                    className="w-[500px] max-w-[90vw] bg-card border border-border p-6 rounded-lg shadow-2xl z-[9999]"
                                     onClick={(e) => e.stopPropagation()}
                                     onPointerDownOutside={(e) => {
                                       setOpenPopovers(prev => ({ ...prev, [content.id]: false }));
                                     }}
                                   >
                                     <div className="space-y-3">
-                                      <h4 className="text-white font-semibold text-base mb-3">
+                                      <h4 className="text-foreground font-semibold text-base mb-3">
                                         {content.courseData?.title}
                                       </h4>
-                                      <div className="text-sm max-h-[400px] overflow-y-auto pr-3 scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent">
+                                      <div className="text-sm max-h-[400px] overflow-y-auto pr-3 scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent">
                                         {(() => {
                                           const description = content.courseData.description || '';
                                           // Detectar si el contenido tiene HTML
@@ -383,7 +378,7 @@ export default function Room() {
                                             // Si es HTML, renderizar con dangerouslySetInnerHTML pero con estilos
                                             return (
                                               <div 
-                                                className="prose prose-invert prose-sm max-w-none text-white/80 [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:space-y-2 [&_ol]:list-decimal [&_ol]:pl-5 [&_ol]:space-y-2 [&_li]:mb-1.5 [&_p]:mb-3 [&_p]:leading-relaxed [&_strong]:text-white [&_strong]:font-semibold [&_h1]:text-white [&_h1]:text-lg [&_h1]:mb-3 [&_h2]:text-white [&_h2]:text-base [&_h2]:mb-2 [&_h3]:text-white [&_h3]:text-sm [&_h3]:mb-2"
+                                                className="prose prose-sm max-w-none text-muted-foreground [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:space-y-2 [&_ol]:list-decimal [&_ol]:pl-5 [&_ol]:space-y-2 [&_li]:mb-1.5 [&_p]:mb-3 [&_p]:leading-relaxed [&_strong]:text-foreground [&_strong]:font-semibold [&_h1]:text-foreground [&_h1]:text-lg [&_h1]:mb-3 [&_h2]:text-foreground [&_h2]:text-base [&_h2]:mb-2 [&_h3]:text-foreground [&_h3]:text-sm [&_h3]:mb-2"
                                                 dangerouslySetInnerHTML={{ __html: description }}
                                               />
                                             );
@@ -396,17 +391,17 @@ export default function Room() {
                                                 remarkPlugins={[remarkGfm]}
                                                 rehypePlugins={[rehypeHighlight, rehypeRaw]}
                                                 components={{
-                                                  p: ({ children }) => <p className="mb-3 text-white/80 leading-relaxed">{children}</p>,
-                                                  ul: ({ children }) => <ul className="list-disc list-inside mb-3 space-y-2 text-white/80 pl-5">{children}</ul>,
-                                                  ol: ({ children }) => <ol className="list-decimal list-inside mb-3 space-y-2 text-white/80 pl-5">{children}</ol>,
-                                                  li: ({ children }) => <li className="mb-1.5 text-white/80">{children}</li>,
-                                                  strong: ({ children }) => <strong className="font-semibold text-white">{children}</strong>,
-                                                  em: ({ children }) => <em className="italic text-white/90">{children}</em>,
-                                                  h1: ({ children }) => <h1 className="text-lg font-bold text-white mb-3 mt-4 first:mt-0">{children}</h1>,
-                                                  h2: ({ children }) => <h2 className="text-base font-bold text-white mb-2 mt-3 first:mt-0">{children}</h2>,
-                                                  h3: ({ children }) => <h3 className="text-sm font-semibold text-white mb-2 mt-2 first:mt-0">{children}</h3>,
-                                                  code: ({ children }) => <code className="bg-white/10 px-1.5 py-0.5 rounded text-xs font-mono text-purple-300">{children}</code>,
-                                                  blockquote: ({ children }) => <blockquote className="border-l-2 border-white/30 pl-3 italic my-3 text-white/70">{children}</blockquote>,
+                                                  p: ({ children }) => <p className="mb-3 text-muted-foreground leading-relaxed">{children}</p>,
+                                                  ul: ({ children }) => <ul className="list-disc list-inside mb-3 space-y-2 text-muted-foreground pl-5">{children}</ul>,
+                                                  ol: ({ children }) => <ol className="list-decimal list-inside mb-3 space-y-2 text-muted-foreground pl-5">{children}</ol>,
+                                                  li: ({ children }) => <li className="mb-1.5 text-muted-foreground">{children}</li>,
+                                                  strong: ({ children }) => <strong className="font-semibold text-foreground">{children}</strong>,
+                                                  em: ({ children }) => <em className="italic text-muted-foreground">{children}</em>,
+                                                  h1: ({ children }) => <h1 className="text-lg font-bold text-foreground mb-3 mt-4 first:mt-0">{children}</h1>,
+                                                  h2: ({ children }) => <h2 className="text-base font-bold text-foreground mb-2 mt-3 first:mt-0">{children}</h2>,
+                                                  h3: ({ children }) => <h3 className="text-sm font-semibold text-foreground mb-2 mt-2 first:mt-0">{children}</h3>,
+                                                  code: ({ children }) => <code className="bg-muted px-1.5 py-0.5 rounded text-xs font-mono text-foreground">{children}</code>,
+                                                  blockquote: ({ children }) => <blockquote className="border-l-2 border-border pl-3 italic my-3 text-muted-foreground">{children}</blockquote>,
                                                 }}
                                               >
                                                 {description}
@@ -487,16 +482,16 @@ export default function Room() {
                                     </div>
                                   </>
                                 ) : isLockedForUser ? (
-                                  <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
-                                    <Lock className="h-12 w-12 text-white" />
+                                  <div className="absolute inset-0 bg-background/80 flex items-center justify-center">
+                                    <Lock className="h-12 w-12 text-foreground" />
                                   </div>
                                 ) : null}
                               </div>
 
                               {/* Title and Progress - Show on hover */}
-                              <div className="max-h-0 group-hover:max-h-96 overflow-hidden transition-all duration-300 bg-black rounded-b-lg w-full">
+                              <div className="max-h-0 group-hover:max-h-96 overflow-hidden transition-all duration-300 bg-card border border-t-0 border-border rounded-b-lg w-full">
                                 <div className="p-3 space-y-1">
-                                  <h4 className="text-white font-semibold text-sm line-clamp-2 leading-tight">
+                                  <h4 className="text-foreground font-semibold text-sm line-clamp-2 leading-tight">
                                     {content.courseData?.title || 'Sin título'}
                                   </h4>
                                   
@@ -504,19 +499,19 @@ export default function Room() {
                                   {courseProgress ? (
                                     <>
                                       {courseProgress.lastLessonTitle && (
-                                        <p className="text-white/70 text-xs line-clamp-1 mt-1">
+                                        <p className="text-muted-foreground text-xs line-clamp-1 mt-1">
                                           {courseProgress.lastLessonTitle}
                                         </p>
                                       )}
                                       {courseProgress.subscriptionExpiresAt && (
-                                        <p className="text-white/60 text-xs flex items-center gap-1 mt-1">
+                                        <p className="text-muted-foreground text-xs flex items-center gap-1 mt-1">
                                           <Clock className="h-3 w-3" />
                                           Acceso hasta {format(new Date(courseProgress.subscriptionExpiresAt), "dd/MM/yy", { locale: es })}
                                         </p>
                                       )}
                                       {/* Progress bar */}
                                       <div className="mt-2 space-y-1">
-                                        <div className="h-1 bg-white/20 rounded-full overflow-hidden">
+                                        <div className="h-1 bg-muted rounded-full overflow-hidden">
                                           <div 
                                             className={cn(
                                               "h-full transition-all duration-300",
@@ -527,14 +522,14 @@ export default function Room() {
                                         </div>
                                         <p className={cn(
                                           "text-xs text-right",
-                                          (courseProgress.progressPercentage >= 100) ? "text-green-500 font-semibold" : "text-white/60"
+                                          (courseProgress.progressPercentage >= 100) ? "text-green-500 font-semibold" : "text-muted-foreground"
                                         )}>
                                           {(courseProgress.progressPercentage >= 100) ? "100% Completado" : `${courseProgress.progressPercentage || 0}%`}
                                         </p>
                                       </div>
                                     </>
                                   ) : (
-                                    <p className="text-white/60 text-xs mt-1">
+                                    <p className="text-muted-foreground text-xs mt-1">
                                       0% completado
                                     </p>
                                   )}
@@ -569,7 +564,7 @@ export default function Room() {
                         {phase.content.length > 2 && (
                           <div className="sm:hidden absolute right-2 top-1/2 -translate-y-1/2 z-10 pointer-events-none">
                             <div className="w-8 h-8 rounded-full bg-[#faa318] flex items-center justify-center shadow-lg">
-                              <ChevronRight className="h-5 w-5 text-white" />
+                              <ChevronRight className="h-5 w-5 text-primary-foreground" />
                             </div>
                           </div>
                         )}

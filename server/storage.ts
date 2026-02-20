@@ -99,6 +99,8 @@ import {
   type InsertCommunityChannel,
   type InsertCommunityMessage,
   type InsertMessageReaction,
+  contentNotifications,
+  userNotificationCleared,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, sql, not, inArray, isNull, isNotNull, or } from "drizzle-orm";
@@ -155,6 +157,7 @@ export interface IStorage {
   
   // Recent Activity operations
   trackUserActivity(userId: string, courseId: string, options?: { lastLessonId?: string; contentType?: string; roomSlug?: string }): Promise<void>;
+  getLastLessonIdForCourse(userId: string, courseId: string, roomSlug?: string | null): Promise<string | null>;
   getUserRecentContent(userId: string, limit?: number): Promise<any[]>;
   getDashboardActivity(userId: string): Promise<{ streakDays: number; last30Days: { date: string; active: boolean }[] }>;
   
@@ -277,6 +280,12 @@ export interface IStorage {
   // Multiple categories support for guides
   getCourseCategories(courseId: string): Promise<string[]>;
   updateCourseCategories(courseId: string, categoryIds: string[]): Promise<void>;
+
+  // Content notifications (in-app: guías, cursos, talleres publicados)
+  createContentNotification(data: { contentId: string; type: "guide" | "course" | "workshop"; title: string; description?: string }): Promise<{ id: string; contentId: string; type: string; title: string; description: string | null; createdAt: Date | null }>;
+  getContentNotifications(limit?: number): Promise<Array<{ id: string; contentId: string; type: string; title: string; description: string | null; createdAt: Date | null }>>;
+  getUserNotificationClearedAt(userId: string): Promise<Date | null>;
+  setUserNotificationClearedAt(userId: string): Promise<void>;
 
   // ========================================
   // ROOMS & PHASES OPERATIONS
@@ -980,6 +989,27 @@ export class DatabaseStorage implements IStorage {
         .insert(userRecentActivity)
         .values(insertData);
     }
+  }
+
+  async getLastLessonIdForCourse(userId: string, courseId: string, roomSlug?: string | null): Promise<string | null> {
+    const whereClause = roomSlug != null && roomSlug !== ""
+      ? and(
+          eq(userRecentActivity.userId, userId),
+          eq(userRecentActivity.courseId, courseId),
+          eq(userRecentActivity.roomSlug, roomSlug)
+        )
+      : and(
+          eq(userRecentActivity.userId, userId),
+          eq(userRecentActivity.courseId, courseId),
+          isNull(userRecentActivity.roomSlug)
+        );
+    const [row] = await db
+      .select({ lastLessonId: userRecentActivity.lastLessonId })
+      .from(userRecentActivity)
+      .where(whereClause)
+      .orderBy(desc(userRecentActivity.lastAccessedAt))
+      .limit(1);
+    return row?.lastLessonId ?? null;
   }
 
   // Get user's recently accessed content (courses, guides, workshops) - last 8, no duplicates
@@ -1905,6 +1935,45 @@ export class DatabaseStorage implements IStorage {
         }))
       );
     }
+  }
+
+  async createContentNotification(data: { contentId: string; type: "guide" | "course" | "workshop"; title: string; description?: string }): Promise<{ id: string; contentId: string; type: string; title: string; description: string | null; createdAt: Date | null }> {
+    const [row] = await db.insert(contentNotifications).values({
+      contentId: data.contentId,
+      type: data.type,
+      title: data.title,
+      description: data.description ?? null,
+    }).returning();
+    if (!row) throw new Error("Failed to create content notification");
+    return row;
+  }
+
+  async getContentNotifications(limit = 100): Promise<Array<{ id: string; contentId: string; type: string; title: string; description: string | null; createdAt: Date | null }>> {
+    const rows = await db
+      .select()
+      .from(contentNotifications)
+      .orderBy(desc(contentNotifications.createdAt))
+      .limit(limit);
+    return rows;
+  }
+
+  async getUserNotificationClearedAt(userId: string): Promise<Date | null> {
+    const [row] = await db
+      .select({ clearedAt: userNotificationCleared.clearedAt })
+      .from(userNotificationCleared)
+      .where(eq(userNotificationCleared.userId, userId))
+      .limit(1);
+    return row?.clearedAt ?? null;
+  }
+
+  async setUserNotificationClearedAt(userId: string): Promise<void> {
+    await db
+      .insert(userNotificationCleared)
+      .values({ userId, clearedAt: new Date() })
+      .onConflictDoUpdate({
+        target: userNotificationCleared.userId,
+        set: { clearedAt: new Date() },
+      });
   }
 
   // Course Template operations

@@ -62,8 +62,8 @@ export default function MyProgress() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-dark-bg flex">
-        <div className="w-[250px] bg-dark-card border-r border-dark-border"></div>
+      <div className="min-h-screen bg-background flex">
+        <div className="w-[250px] bg-card border-r border-border"></div>
         <div className="flex-1 flex items-center justify-center">
           <div className="text-white">Cargando autenticación...</div>
         </div>
@@ -73,7 +73,7 @@ export default function MyProgress() {
 
   if (progressLoading) {
     return (
-      <div className="min-h-screen bg-dark-bg text-white">
+      <div className="min-h-screen bg-background text-white">
         <MobileHeader />
         <div className="flex">
           <Sidebar />
@@ -89,7 +89,7 @@ export default function MyProgress() {
   }
 
   return (
-    <div className="min-h-screen bg-dark-bg text-white">
+    <div className="min-h-screen bg-background text-white">
       {/* Mobile Header */}
       <MobileHeader />
       
@@ -100,9 +100,9 @@ export default function MyProgress() {
         {/* Main Content */}
         <main className="flex-1 overflow-auto pb-20 lg:pb-0 md:ml-16 lg:ml-[250px]">
           {/* Header */}
-          <header className="bg-dark-card border-b border-dark-border p-6">
+          <header className="bg-card border-b border-border p-6">
             <h1 className="text-2xl font-bold text-white">Mi progreso</h1>
-            <p className="text-gray-400 mt-1">Revisa el seguimiento de tu progreso de los cursos y guías completados.</p>
+            <p className="text-muted-foreground mt-1">Revisa el seguimiento de tu progreso de los cursos y guías completados.</p>
           </header>
 
           <div className="p-6 space-y-8">
@@ -124,7 +124,7 @@ export default function MyProgress() {
                   ))}
                 </div>
               ) : (
-                <div className="text-center py-16 text-gray-400 bg-dark-card rounded-xl border border-dark-border">
+                <div className="text-center py-16 text-muted-foreground bg-card rounded-xl border border-border">
                   <BookOpen className="h-12 w-12 mx-auto mb-4 opacity-50" />
                   <h3 className="text-lg font-medium text-white mb-2">No tienes cursos en progreso</h3>
                   <p className="text-sm">Comienza un nuevo curso para ver tu progreso aquí</p>
@@ -150,7 +150,7 @@ export default function MyProgress() {
                   ))}
                 </div>
               ) : (
-                <div className="text-center py-16 text-gray-400 bg-dark-card rounded-xl border border-dark-border">
+                <div className="text-center py-16 text-muted-foreground bg-card rounded-xl border border-border">
                   <Award className="h-12 w-12 mx-auto mb-4 opacity-50" />
                   <h3 className="text-lg font-medium text-white mb-2">Aún no has completado ningún curso</h3>
                   <p className="text-sm">Completa tu primer curso para obtener tu certificado</p>
@@ -176,7 +176,7 @@ export default function MyProgress() {
                   ))}
                 </div>
               ) : (
-                <div className="text-center py-16 text-gray-400 bg-dark-card rounded-xl border border-dark-border">
+                <div className="text-center py-16 text-muted-foreground bg-card rounded-xl border border-border">
                   <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
                   <h3 className="text-lg font-medium text-white mb-2">Aún no hay guías completadas</h3>
                   <p className="text-sm">Lee tu primera guía para verla aquí</p>

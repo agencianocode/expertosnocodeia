@@ -69,7 +69,7 @@ export default function Dashboard() {
 
   if (isLoading || dashboardLoading || (!isAuthenticated && (coursesLoading || guidesLoading || categoriesLoading || workshopsLoading))) {
     return (
-      <div className="min-h-screen flex" style={{ backgroundColor: '#0f0f19' }}>
+      <div className="min-h-screen flex bg-background">
         <div className="w-64 bg-card border-r border-border"></div>
         <div className="flex-1 flex items-center justify-center">
           <div className="text-foreground">Loading...</div>
@@ -132,7 +132,7 @@ export default function Dashboard() {
   // };
 
   return (
-    <div className="min-h-screen text-foreground" style={{ backgroundColor: '#0f0f19' }}>
+    <div className="min-h-screen text-foreground bg-background">
       {/* Mobile Header */}
       <MobileHeader />
       <div className="flex">
@@ -142,19 +142,19 @@ export default function Dashboard() {
         </div>
         
         {/* Main Content */}
-        <main className="flex-1 overflow-auto pb-20 lg:pb-0 lg:ml-[250px]" style={{ backgroundColor: '#0f0f19' }}>
+        <main className="flex-1 overflow-auto pb-20 lg:pb-0 lg:ml-[250px] bg-background">
         <div className="w-full min-w-0 px-8 lg:px-16 xl:px-24 py-6 lg:py-8 space-y-6 lg:space-y-8" key="main-content">
           {/* Authenticated: Hero with greeting + 30-day activity (same card design as home) */}
           {isAuthenticated && (
             <div className="max-w-6xl mx-auto mb-8">
-              <div className="rounded-xl p-6 lg:p-12 border border-gray-800/50 shadow-xl" style={{ backgroundColor: '#0f0f19' }}>
+              <div className="rounded-xl p-6 lg:p-12 border border-border shadow-xl bg-background">
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-stretch">
                   <div className="lg:col-span-7 text-left">
-                    <p className="text-sm text-gray-400 uppercase tracking-wide mb-4">TU ENFOQUE DIARIO</p>
-                    <h1 className="font-bold text-white mb-4 tracking-tighter leading-[1.05]" style={{ fontSize: '40px', fontFamily: "'Sora', sans-serif", letterSpacing: '-0.03em' }}>
+                    <p className="text-sm text-muted-foreground uppercase tracking-wide mb-4">TU ENFOQUE DIARIO</p>
+                    <h1 className="font-bold text-foreground mb-4 tracking-tighter leading-[1.05]" style={{ fontSize: '40px', fontFamily: "'Sora', sans-serif", letterSpacing: '-0.03em' }}>
                       Bienvenido de nuevo, {user?.firstName || 'Usuario'}
                     </h1>
-                    <p className="text-lg text-gray-400 max-w-xl mb-8">
+                    <p className="text-lg text-muted-foreground max-w-xl mb-8">
                       Tu próxima victoria con IA ya está lista. Mantén el impulso y aprovecha al máximo el día de hoy.
                     </p>
                     <div className="flex flex-col sm:flex-row gap-4">
@@ -164,7 +164,7 @@ export default function Dashboard() {
                         </Button>
                       </Link>
                       <Link href="/courses">
-                        <Button size="lg" variant="outline" className="bg-transparent border-gray-600 text-white hover:bg-gray-800 text-base px-8 py-3 rounded-lg font-medium">
+                        <Button size="lg" variant="outline" className="bg-transparent border-border text-foreground hover:bg-muted text-base px-8 py-3 rounded-lg font-medium">
                           Empezar de nuevo
                         </Button>
                       </Link>
@@ -184,10 +184,10 @@ export default function Dashboard() {
                       </div>
                     </div>
                     {/* Card ÚLTIMOS 30 DÍAS: título + leyenda (Menos + círculos + Más) + grid 3×10 */}
-                    <div className="rounded-xl p-4 border border-gray-700/50 flex-1 min-h-0" style={{ backgroundColor: '#1f1e23' }}>
-                      <p className="text-xs text-gray-400 uppercase tracking-wide mb-3">ÚLTIMOS 30 DÍAS</p>
+                    <div className="rounded-xl p-4 border border-border flex-1 min-h-0 bg-card">
+                      <p className="text-xs text-muted-foreground uppercase tracking-wide mb-3">ÚLTIMOS 30 DÍAS</p>
                       <div className="flex items-center gap-1.5 mb-2">
-                        <span className="text-[10px] text-gray-500">Menos</span>
+                        <span className="text-[10px] text-muted-foreground">Menos</span>
                         {[
                           'rgba(255,255,255,0.08)',
                           'rgba(59, 130, 246, 0.35)',
@@ -196,7 +196,7 @@ export default function Dashboard() {
                         ].map((bg, i) => (
                           <div key={i} className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: bg }} />
                         ))}
-                        <span className="text-[10px] text-gray-500">Más</span>
+                        <span className="text-[10px] text-muted-foreground">Más</span>
                       </div>
                       <div className="grid grid-cols-10 gap-0.5 auto-rows-fr" style={{ aspectRatio: '10/3' }}>
                         {last30Days.map((day) => (
@@ -279,19 +279,19 @@ export default function Dashboard() {
               <>
                 {/* Hero Banner Section - card gris oscura centrada con márgenes (estilo imagen 2) */}
                 <div className="max-w-6xl mx-auto mb-8">
-                  <div className="rounded-xl p-6 lg:p-12 border border-gray-800/50 shadow-xl" style={{ backgroundColor: '#0f0f19' }}>
+                  <div className="rounded-xl p-6 lg:p-12 border border-border shadow-xl bg-background">
                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-stretch">
                       {/* Columna izquierda: título, descripción, botones (define altura de la fila) */}
                       <div className="lg:col-span-7 text-left">
-                        <p className="text-sm text-gray-400 uppercase tracking-wide mb-4">QUEREMOS SER LA PLATAFORMA DE EDUCACIÓN EN NOCODE IA N.º 1</p>
+                        <p className="text-sm text-muted-foreground uppercase tracking-wide mb-4">QUEREMOS SER LA PLATAFORMA DE EDUCACIÓN EN NOCODE IA N.º 1</p>
                         <h1
-                          className="font-bold text-white mb-4 tracking-tighter leading-[1.05]"
+                          className="font-bold text-foreground mb-4 tracking-tighter leading-[1.05]"
                           style={{ fontSize: '64px', fontFamily: "'Sora', sans-serif", letterSpacing: '-0.03em' }}
                         >
                           <span className="block">Domina la IA en</span>
                           <span className="block text-purple-500">{HERO_PHRASES[heroPhraseIndex]}</span>
                         </h1>
-                      <p className="text-lg text-gray-400 max-w-xl mb-8">
+                      <p className="text-lg text-muted-foreground max-w-xl mb-8">
                         Únase a nuevos profesionales que están transformando sus carreras con tutoriales prácticos de NoCode e IA actualizados diariamente.
                       </p>
                       <div className="flex flex-col sm:flex-row gap-4">
@@ -305,7 +305,7 @@ export default function Dashboard() {
                         <Button 
                           size="lg" 
                           variant="outline"
-                          className="bg-transparent border-gray-600 text-white hover:bg-gray-800 text-base px-8 py-3 rounded-lg font-medium"
+                          className="bg-transparent border-border text-foreground hover:bg-muted text-base px-8 py-3 rounded-lg font-medium"
                           onClick={() => window.location.href = '/api/login'}
                         >
                           Iniciar sesión
@@ -314,35 +314,35 @@ export default function Dashboard() {
                     </div>
                       {/* Columna derecha: misma altura que la columna izquierda (hasta los botones); testimonio con rostros */}
                       <div className="lg:col-span-5 flex flex-col gap-2 min-h-0 self-stretch">
-                        <div className="rounded-xl px-5 py-4 border border-gray-700/50 text-left w-full min-h-[5.5rem] flex flex-col justify-center shrink-0" style={{ backgroundColor: '#1f1e23' }}>
-                          <p className="text-xs text-gray-400 uppercase tracking-wide">MIEMBROS ACTUALES</p>
+                        <div className="rounded-xl px-5 py-4 border border-border text-left w-full min-h-[5.5rem] flex flex-col justify-center shrink-0 bg-card">
+                          <p className="text-xs text-muted-foreground uppercase tracking-wide">MIEMBROS ACTUALES</p>
                           <p className="text-sm font-medium text-purple-400">Subiendo hasta llegar a los primeros 1000</p>
                         </div>
                         {/* Testimonios - poco espacio interno para que la línea inferior coincida con los botones */}
-                        <div className="rounded-xl px-3 py-2 border border-gray-700/50 text-left flex-1 min-h-0 flex flex-col overflow-hidden" style={{ backgroundColor: '#1f1e23' }}>
+                        <div className="rounded-xl px-3 py-2 border border-border text-left flex-1 min-h-0 flex flex-col overflow-hidden bg-card">
                           <div className="flex -space-x-2 mb-1 shrink-0">
                             {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
                               <Avatar key={i} className="h-8 w-8 border-2 border-gray-800">
                                 <AvatarImage src={`https://i.pravatar.cc/100?img=${i + 10}`} alt="" />
-                                <AvatarFallback className="bg-gray-600 text-gray-300 text-xs">{["LC", "A", "B", "C", "D", "E", "F", "G"][i - 1]}</AvatarFallback>
+                                <AvatarFallback className="bg-muted text-muted-foreground text-xs">{["LC", "A", "B", "C", "D", "E", "F", "G"][i - 1]}</AvatarFallback>
                               </Avatar>
                             ))}
                           </div>
                           {/* Testimonio 1 - Mateo S. */}
-                          <p className="text-xs text-gray-300 mb-0 leading-snug">
+                          <p className="text-xs text-muted-foreground mb-0 leading-snug">
                             Muy relevante y fácil de seguir. Valoro la claridad de los marcos y enfoques para utilizar la IA.
                           </p>
-                          <p className="text-xs text-gray-500 mb-0.5">— Mateo S. Miembro de Universidad Expertos NoCode UA</p>
+                          <p className="text-xs text-muted-foreground mb-0.5">— Mateo S. Miembro de Universidad Expertos NoCode UA</p>
                           <div className="flex gap-0.5 mb-2">
                             {[1, 2, 3, 4, 5].map((i) => (
                               <Star key={i} className="h-4 w-4 text-yellow-400 fill-yellow-400" />
                             ))}
                           </div>
                           {/* Testimonio 2 - Carmen M. */}
-                          <p className="text-xs text-gray-300 mb-0 leading-snug">
+                          <p className="text-xs text-muted-foreground mb-0 leading-snug">
                             Excelente contenido, muy práctico para aplicar en mi día a día. Lo recomiendo totalmente.
                           </p>
-                          <p className="text-xs text-gray-500 mb-0.5">— Carmen M. Miembro de Universidad Expertos NoCode UA</p>
+                          <p className="text-xs text-muted-foreground mb-0.5">— Carmen M. Miembro de Universidad Expertos NoCode UA</p>
                           <div className="flex gap-0.5 mt-auto">
                             {[1, 2, 3, 4, 5].map((i) => (
                               <Star key={`2-${i}`} className="h-4 w-4 text-yellow-400 fill-yellow-400" />
@@ -353,29 +353,29 @@ export default function Dashboard() {
                     </div>
                     {/* Feature Highlights - fila ancho completo, distribuidas hasta el borde */}
                     <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 w-full mt-8">
-                      <div className="rounded-lg p-4 border border-gray-700 text-left min-w-0 flex items-center gap-3" style={{ backgroundColor: '#1f1e23' }}>
-                        <div className="rounded-full flex-shrink-0 flex items-center justify-center w-11 h-11" style={{ backgroundColor: '#1d2d35' }}>
+                      <div className="rounded-lg p-4 border border-border text-left min-w-0 flex items-center gap-3 bg-card">
+                        <div className="rounded-full flex-shrink-0 flex items-center justify-center w-11 h-11 bg-muted">
                           <Star className="h-6 w-6" style={{ color: '#2548b6' }} />
                         </div>
-                        <p className="text-sm text-gray-300">Más de 300 casos de uso de IA</p>
+                        <p className="text-sm text-muted-foreground">Más de 300 casos de uso de IA</p>
                       </div>
-                      <div className="rounded-lg p-4 border border-gray-700 text-left min-w-0 flex items-center gap-3" style={{ backgroundColor: '#1f1e23' }}>
-                        <div className="rounded-full flex-shrink-0 flex items-center justify-center w-11 h-11" style={{ backgroundColor: '#1d2d35' }}>
+                      <div className="rounded-lg p-4 border border-border text-left min-w-0 flex items-center gap-3 bg-card">
+                        <div className="rounded-full flex-shrink-0 flex items-center justify-center w-11 h-11 bg-muted">
                           <Zap className="h-6 w-6" style={{ color: '#2548b6' }} />
                         </div>
-                        <p className="text-sm text-gray-300">Actualizaciones diarias</p>
+                        <p className="text-sm text-muted-foreground">Actualizaciones diarias</p>
                       </div>
-                      <div className="rounded-lg p-4 border border-gray-700 text-left min-w-0 flex items-center gap-3" style={{ backgroundColor: '#1f1e23' }}>
-                        <div className="rounded-full flex-shrink-0 flex items-center justify-center w-11 h-11" style={{ backgroundColor: '#1d2d35' }}>
+                      <div className="rounded-lg p-4 border border-border text-left min-w-0 flex items-center gap-3 bg-card">
+                        <div className="rounded-full flex-shrink-0 flex items-center justify-center w-11 h-11 bg-muted">
                           <Users className="h-6 w-6" style={{ color: '#2548b6' }} />
                         </div>
-                        <p className="text-sm text-gray-300">Comunidad de expertos</p>
+                        <p className="text-sm text-muted-foreground">Comunidad de expertos</p>
                       </div>
-                      <div className="rounded-lg p-4 border border-gray-700 text-left min-w-0 flex items-center gap-3" style={{ backgroundColor: '#1f1e23' }}>
-                        <div className="rounded-full flex-shrink-0 flex items-center justify-center w-11 h-11" style={{ backgroundColor: '#1d2d35' }}>
+                      <div className="rounded-lg p-4 border border-border text-left min-w-0 flex items-center gap-3 bg-card">
+                        <div className="rounded-full flex-shrink-0 flex items-center justify-center w-11 h-11 bg-muted">
                           <Award className="h-6 w-6" style={{ color: '#2548b6' }} />
                         </div>
-                        <p className="text-sm text-gray-300">Certificaciones de IA</p>
+                        <p className="text-sm text-muted-foreground">Certificaciones de IA</p>
                       </div>
                     </div>
                   </div>
@@ -391,7 +391,7 @@ export default function Dashboard() {
                 <div className="flex items-center justify-between mb-4">
                   <div>
                     <h2 className="font-semibold text-foreground mb-2" style={{ fontFamily: "'Sora', sans-serif", fontSize: '36px', letterSpacing: '-0.03em' }}>Guías diarias</h2>
-                    <span className="inline-block px-4 py-2 rounded-full text-white" style={{ backgroundColor: '#22211f', fontFamily: "'Sora', sans-serif", fontSize: '14px', letterSpacing: '-0.02em' }}>Disponible con nuestra prueba gratuita</span>
+                    <span className="inline-block px-4 py-2 rounded-full text-foreground bg-muted font-sora text-sm tracking-tight">Disponible con nuestra prueba gratuita</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <Button
@@ -459,7 +459,7 @@ export default function Dashboard() {
             <section className="mb-8">
               <div className="max-w-6xl mx-auto">
                 <h2 className="font-semibold text-foreground mb-4" style={{ fontFamily: "'Sora', sans-serif", fontSize: '36px', letterSpacing: '-0.03em' }}>Últimos boletines</h2>
-                <div className="rounded-xl border border-border p-8 text-center" style={{ backgroundColor: '#1f1e23' }}>
+                <div className="rounded-xl border border-border p-8 text-center bg-card">
                   <p className="text-muted-foreground text-sm">No hay boletines disponibles aún.</p>
                 </div>
               </div>
@@ -503,7 +503,7 @@ export default function Dashboard() {
                 <div className="flex items-center justify-between mb-4 lg:mb-6">
                   <div>
                     <h2 className="font-semibold text-foreground mb-2" style={{ fontFamily: "'Sora', sans-serif", fontSize: '36px', letterSpacing: '-0.03em' }}>Programas</h2>
-                    <span className="inline-block px-4 py-2 rounded-full text-white mt-1" style={{ backgroundColor: '#22211f', fontFamily: "'Sora', sans-serif", fontSize: '14px', letterSpacing: '-0.02em' }}>Disponibles con una suscripción</span>
+                    <span className="inline-block px-4 py-2 rounded-full text-foreground bg-muted mt-1 font-sora text-sm tracking-tight">Disponibles con una suscripción</span>
                   </div>
                 </div>
 
@@ -563,7 +563,7 @@ export default function Dashboard() {
                 <div className="flex items-center justify-between mb-4">
                   <div>
                     <h2 className="font-semibold text-foreground mb-2" style={{ fontFamily: "'Sora', sans-serif", fontSize: '36px', letterSpacing: '-0.03em' }}>Talleres semanales</h2>
-                    <span className="inline-block px-4 py-2 rounded-full text-white" style={{ backgroundColor: '#22211f', fontFamily: "'Sora', sans-serif", fontSize: '14px', letterSpacing: '-0.02em' }}>Disponibles con una cuenta gratuita</span>
+                    <span className="inline-block px-4 py-2 rounded-full text-foreground bg-muted font-sora text-sm tracking-tight">Disponibles con una cuenta gratuita</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <Button
@@ -624,7 +624,7 @@ export default function Dashboard() {
                 <div className="flex items-center justify-between mb-4">
                   <div>
                     <h2 className="font-semibold text-foreground mb-2" style={{ fontFamily: "'Sora', sans-serif", fontSize: '36px', letterSpacing: '-0.03em' }}>Cursos</h2>
-                    <span className="inline-block px-4 py-2 rounded-full text-white" style={{ backgroundColor: '#22211f', fontFamily: "'Sora', sans-serif", fontSize: '14px', letterSpacing: '-0.02em' }}>Disponibles con una suscripción</span>
+                    <span className="inline-block px-4 py-2 rounded-full text-foreground bg-muted font-sora text-sm tracking-tight">Disponibles con una suscripción</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <Button

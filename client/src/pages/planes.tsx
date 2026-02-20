@@ -27,7 +27,7 @@ export default function Planes() {
   const { isAuthenticated } = useSimpleAuth();
   const [, setLocation] = useLocation();
   
-  // Check for success/cancel from Stripe
+  // Check for success/cancel from Stripe and trial_started after registration
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get('success') === 'true') {
@@ -35,7 +35,6 @@ export default function Planes() {
         title: "¡Pago exitoso!",
         description: "Tu suscripción se ha activado correctamente.",
       });
-      // Clean URL
       window.history.replaceState({}, '', '/planes');
     } else if (params.get('canceled') === 'true') {
       toast({
@@ -43,7 +42,12 @@ export default function Planes() {
         description: "No se procesó ningún pago.",
         variant: "destructive",
       });
-      // Clean URL
+      window.history.replaceState({}, '', '/planes');
+    } else if (params.get('trial_started') === '1') {
+      toast({
+        title: "¡Bienvenido!",
+        description: "Tu prueba gratuita de 14 días está activa. Explora los cursos y guías.",
+      });
       window.history.replaceState({}, '', '/planes');
     }
   }, [toast]);
@@ -100,12 +104,16 @@ export default function Planes() {
 
   const handlePlanSelect = (planId: string) => {
     if (!isAuthenticated) {
+      const isFreePlan = planId === 'prueba-gratis';
       toast({
-        title: "Inicia sesión",
-        description: "Debes iniciar sesión para suscribirte.",
-        variant: "destructive",
+        title: "Crea tu cuenta",
+        description: isFreePlan
+          ? "Regístrate para comenzar tu prueba gratuita de 14 días."
+          : "Regístrate para elegir tu plan y continuar al pago.",
+        variant: "default",
       });
-      setLocation('/login');
+      const intent = isFreePlan ? "trial" : "subscribe";
+      setLocation(`/register?intent=${intent}`);
       return;
     }
 

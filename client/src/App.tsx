@@ -57,6 +57,7 @@ import Profile from "@/pages/profile";
 import Leaderboard from "@/pages/leaderboard";
 import MyProgress from "@/pages/my-progress";
 import Saved from "@/pages/saved";
+import NotificationsPage from "@/pages/notifications";
 import Planes from "@/pages/planes";
 import Support from "@/pages/support";
 import Login from "@/pages/login";
@@ -223,6 +224,7 @@ function Router() {
           <Route path="/mi-progreso" component={MyProgress} />
           <Route path="/saved" component={Saved} />
           <Route path="/guardado" component={Saved} />
+          <Route path="/notifications" component={NotificationsPage} />
           <Route path="/support" component={Support} />
           <Route path="/apoyo" component={Support} />
           <Route path="/politica-privacidad" component={PrivacyPolicy} />

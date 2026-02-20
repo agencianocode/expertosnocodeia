@@ -29,7 +29,7 @@ export default function LandingPricing() {
   const { isAuthenticated } = useSimpleAuth();
   const [, setLocation] = useLocation();
   
-  // Check for success/cancel from Stripe
+  // Check for success/cancel from Stripe and trial_started after registration
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get('success') === 'true') {
@@ -43,6 +43,12 @@ export default function LandingPricing() {
         title: "Pago cancelado",
         description: "No se procesó ningún pago.",
         variant: "destructive",
+      });
+      window.history.replaceState({}, '', '/planes');
+    } else if (params.get('trial_started') === '1') {
+      toast({
+        title: "¡Bienvenido!",
+        description: "Tu prueba gratuita de 14 días está activa. Explora los cursos y guías.",
       });
       window.history.replaceState({}, '', '/planes');
     }
@@ -65,11 +71,14 @@ export default function LandingPricing() {
   const handlePlanSelect = (planId: string, isFreePlan: boolean = false) => {
     if (!isAuthenticated) {
       toast({
-        title: "Inicia sesión",
-        description: "Debes iniciar sesión para suscribirte.",
-        variant: "destructive",
+        title: "Crea tu cuenta",
+        description: isFreePlan
+          ? "Regístrate para comenzar tu prueba gratuita de 14 días."
+          : "Regístrate para elegir tu plan y continuar al pago.",
+        variant: "default",
       });
-      setLocation('/login');
+      const intent = isFreePlan ? "trial" : "subscribe";
+      setLocation(`/register?intent=${intent}`);
       return;
     }
 

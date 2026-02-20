@@ -208,10 +208,12 @@ export default function Course() {
     enabled: !!courseId, // Use actual course ID, not slug
   });
 
-  const { data: completedLessons = [] } = useQuery<string[]>({
-    queryKey: [`/api/courses/${courseId}/progress`],
-    enabled: isAuthenticated && !!courseId, // Use actual course ID, not slug
+  const progressQueryKey = `/api/courses/${courseId}/progress${roomSlug ? `?roomSlug=${encodeURIComponent(roomSlug)}` : ""}`;
+  const { data: progressData } = useQuery<{ completedLessonIds: string[]; lastLessonId?: string }>({
+    queryKey: [progressQueryKey],
+    enabled: isAuthenticated && !!courseId,
   });
+  const completedLessons = progressData?.completedLessonIds ?? [];
 
   // Check if course is saved/bookmarked
   const { data: savedCourses } = useQuery({
@@ -435,45 +437,35 @@ export default function Course() {
     });
   };
 
-  // Verificar si hay una lección guardada y redirigir automáticamente
+  // Verificar si hay una lección guardada (localStorage o backend) y redirigir automáticamente
   useEffect(() => {
-    // Wait for course to be loaded to get the correct courseId
     if (!course || !courseId || lessonsArray.length === 0 || hasCheckedSavedPosition) {
       return;
     }
-    
-    // console.log('🔍 Checking saved position...', { 
-    //   courseId, 
-    //   lessonsCount: lessonsArray.length, 
-    //   hasCheckedSavedPosition,
-    //   isRoomContext
-    // });
-    
     const savedLessonId = getSavedLessonPosition(courseId);
-    // console.log('📋 Got saved lesson ID:', savedLessonId);
-    
     if (savedLessonId) {
-      // Verificar que la lección guardada aún existe en este curso
       const savedLessonIndex = lessonsArray.findIndex((lesson: any) => lesson.id === savedLessonId);
-      // console.log('🔍 Found lesson index:', savedLessonIndex);
-      
       if (savedLessonIndex !== -1) {
-        // console.log('🚀 Setting current lesson index to:', savedLessonIndex);
-        // Establecer el índice de la lección guardada
         setCurrentLessonIndex(savedLessonIndex);
-        setShowCourseInfo(false); // Si hay posición guardada, mostrar lecciones directamente
+        setShowCourseInfo(false);
         setHasCheckedSavedPosition(true);
         return;
-      } else {
-        // console.log('❌ Saved lesson not found in current course lessons');
       }
     }
-    
-    // No saved lesson found
-    // Si estamos en una sala, mostrar directamente las lecciones (comportamiento anterior)
-    // Si estamos en /courses, mostrar la información del curso primero
+    // Si no hay en localStorage pero el usuario está autenticado, esperar progreso del backend (lastLessonId)
+    if (isAuthenticated && progressData === undefined) {
+      return; // No marcar como comprobado hasta tener progreso para poder usar lastLessonId
+    }
+    if (isAuthenticated && progressData?.lastLessonId) {
+      const lastIndex = lessonsArray.findIndex((lesson: any) => lesson.id === progressData.lastLessonId);
+      if (lastIndex !== -1) {
+        setCurrentLessonIndex(lastIndex);
+        setShowCourseInfo(false);
+        setHasCheckedSavedPosition(true);
+        return;
+      }
+    }
     if (isRoomContext) {
-      // Para cursos en salas, comportamiento anterior: encontrar primera lección navegable
       if (!isAuthenticated && firstNavigableLessonIndex !== -1) {
         setCurrentLessonIndex(firstNavigableLessonIndex);
       } else {
@@ -490,30 +482,27 @@ export default function Course() {
       }
       setShowCourseInfo(false);
     } else {
-      // Para cursos desde /courses, mostrar información del curso primero
       setShowCourseInfo(true);
     }
     setHasCheckedSavedPosition(true);
-  }, [course, courseId, lessonsArray, hasCheckedSavedPosition, getSavedLessonPosition, isAuthenticated, isRoomContext, firstNavigableLessonIndex, modules, subLessonsByParent]);
+  }, [course, courseId, lessonsArray, hasCheckedSavedPosition, getSavedLessonPosition, isAuthenticated, isRoomContext, firstNavigableLessonIndex, modules, subLessonsByParent, progressData]);
 
   const markLessonCompleteMutation = useMutation({
     mutationFn: async (lessonId: string) => {
       return await apiRequest('POST', `/api/lessons/${lessonId}/complete`);
     },
     onMutate: async (lessonId: string) => {
-      // Optimistically update the completed lessons list
-      await queryClient.cancelQueries({ queryKey: [`/api/courses/${courseId}/progress`] });
-      const previousCompletedLessons = queryClient.getQueryData<string[]>([`/api/courses/${courseId}/progress`]);
-      queryClient.setQueryData<string[]>([`/api/courses/${courseId}/progress`], (old = []) => {
-        if (!old.includes(lessonId)) {
-          return [...old, lessonId];
-        }
-        return old;
+      await queryClient.cancelQueries({ queryKey: [progressQueryKey] });
+      const previous = queryClient.getQueryData<{ completedLessonIds: string[]; lastLessonId?: string }>([progressQueryKey]);
+      queryClient.setQueryData([progressQueryKey], (old: { completedLessonIds: string[]; lastLessonId?: string } | undefined) => {
+        const list = old?.completedLessonIds ?? [];
+        if (list.includes(lessonId)) return old ?? { completedLessonIds: list };
+        return { ...old, completedLessonIds: [...list, lessonId], lastLessonId: old?.lastLessonId };
       });
-      return { previousCompletedLessons };
+      return { previous };
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/courses/${courseId}/progress`] });
+      queryClient.invalidateQueries({ queryKey: [progressQueryKey] });
       // Also invalidate room progress if in room context
       if (roomSlug && isRoomContext) {
         queryClient.invalidateQueries({ queryKey: [`/api/rooms/${roomSlug}/user-progress`] });
@@ -523,10 +512,9 @@ export default function Course() {
         description: "Has marcado la lección como completada exitosamente.",
       });
     },
-    onError: (error: any, lessonId: string, context: any) => {
-      // Rollback optimistic update on error
-      if (context?.previousCompletedLessons) {
-        queryClient.setQueryData([`/api/courses/${courseId}/progress`], context.previousCompletedLessons);
+    onError: (error: any, _lessonId: string, context: any) => {
+      if (context?.previous) {
+        queryClient.setQueryData([progressQueryKey], context.previous);
       }
       if (isUnauthorizedError(error)) {
         toast({
@@ -552,16 +540,16 @@ export default function Course() {
       return await apiRequest('DELETE', `/api/lessons/${lessonId}/complete`);
     },
     onMutate: async (lessonId: string) => {
-      // Optimistically update the completed lessons list
-      await queryClient.cancelQueries({ queryKey: [`/api/courses/${courseId}/progress`] });
-      const previousCompletedLessons = queryClient.getQueryData<string[]>([`/api/courses/${courseId}/progress`]);
-      queryClient.setQueryData<string[]>([`/api/courses/${courseId}/progress`], (old = []) => {
-        return old.filter(id => id !== lessonId);
+      await queryClient.cancelQueries({ queryKey: [progressQueryKey] });
+      const previous = queryClient.getQueryData<{ completedLessonIds: string[]; lastLessonId?: string }>([progressQueryKey]);
+      queryClient.setQueryData([progressQueryKey], (old: { completedLessonIds: string[]; lastLessonId?: string } | undefined) => {
+        const list = old?.completedLessonIds ?? [];
+        return { ...old, completedLessonIds: list.filter(id => id !== lessonId), lastLessonId: old?.lastLessonId };
       });
-      return { previousCompletedLessons };
+      return { previous };
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/courses/${courseId}/progress`] });
+      queryClient.invalidateQueries({ queryKey: [progressQueryKey] });
       // Also invalidate room progress if in room context
       if (roomSlug && isRoomContext) {
         queryClient.invalidateQueries({ queryKey: [`/api/rooms/${roomSlug}/user-progress`] });
@@ -572,9 +560,8 @@ export default function Course() {
       });
     },
     onError: (error: any, lessonId: string, context: any) => {
-      // Rollback optimistic update on error
-      if (context?.previousCompletedLessons) {
-        queryClient.setQueryData([`/api/courses/${courseId}/progress`], context.previousCompletedLessons);
+      if (context?.previous) {
+        queryClient.setQueryData([progressQueryKey], context.previous);
       }
       if (isUnauthorizedError(error)) {
         toast({
@@ -638,8 +625,8 @@ export default function Course() {
 
   if (authLoading || courseLoading || lessonsLoading) {
     return (
-      <div className="min-h-screen bg-dark-bg flex">
-        <div className="w-64 bg-dark-card border-r border-dark-border"></div>
+      <div className="min-h-screen bg-background flex">
+        <div className="w-64 bg-card border-r border-border"></div>
         <div className="flex-1 flex items-center justify-center">
           <div className="text-white">Loading...</div>
         </div>
@@ -649,7 +636,7 @@ export default function Course() {
 
   if (!course) {
     return (
-      <div className="min-h-screen bg-dark-bg flex">
+      <div className="min-h-screen bg-background flex">
         <Sidebar />
         <div className="flex-1 flex items-center justify-center ml-64">
           <div className="text-white text-center">
@@ -663,7 +650,7 @@ export default function Course() {
 
   if (!lessonsArray || lessonsArray.length === 0) {
     return (
-      <div className="min-h-screen bg-dark-bg flex">
+      <div className="min-h-screen bg-background flex">
         <Sidebar />
         <div className="flex-1 flex items-center justify-center ml-64">
           <div className="text-white text-center">
@@ -1492,8 +1479,8 @@ export default function Course() {
                           className={cn(
                             "flex items-start gap-3 p-4 transition-colors cursor-pointer",
                             isCollapsed 
-                              ? "bg-transparent hover:bg-border/10" 
-                              : "bg-[#191919] border-b border-border/40"
+                              ? "bg-transparent hover:bg-muted/50" 
+                              : "bg-muted border-b border-border/40"
                           )}
                           onClick={() => {
                             if (!hasSubLessons) {
@@ -1549,8 +1536,8 @@ export default function Course() {
                                     className={cn(
                                       "group relative flex items-start gap-3 min-h-[32px] rounded-lg px-3 py-3 transition-all",
                                       isCurrentLesson 
-                                        ? isAgentesIARoom ? "bg-[#2d2d2d] border-2 border-[#ffa018]" : "bg-muted border-2 border-primary" 
-                                        : "bg-[#262626] border border-border/30 hover:bg-[#2d2d2d] hover:border-border/50"
+                                        ? isAgentesIARoom ? "bg-muted border-2 border-[#faa318]" : "bg-muted border-2 border-primary" 
+                                        : "bg-muted/70 border border-border/30 hover:bg-muted hover:border-border/50"
                                     )}
                                   >
                                     {/* Circle Marker - Clickable to toggle completion */}
@@ -1620,7 +1607,7 @@ export default function Course() {
                           "flex items-center justify-between p-4 transition-colors cursor-pointer",
                           isCollapsed 
                             ? "bg-transparent hover:bg-muted/10" 
-                            : "bg-[#191919] border-b border-border/40"
+                            : "bg-muted border-b border-border/40"
                         )}
                         onClick={() => {
                           if (!hasSubLessons) {
@@ -1663,7 +1650,7 @@ export default function Course() {
                       
                       {/* Sub-lessons List */}
                       {hasSubLessons && !isCollapsed && (
-                        <div className="px-4 py-3 space-y-2 bg-[#191919]">
+                        <div className="px-4 py-3 space-y-2 bg-muted/50">
                           {subLessons.map((subLesson: any, subIdx: number) => {
                             const subIndex = lessonsArray.findIndex((l: any) => l.id === subLesson.id);
                             const subLessonNumber = `${moduleNumber}.${subIdx + 1}`;
@@ -1739,8 +1726,8 @@ export default function Course() {
               {/* Next Course Card - Desktop - Only show in room context when there is a next course */}
               {isRoomContext && nextCourse && (
                 <Link href={`/sala/${roomSlug}/curso/${nextCourse.slug || nextCourse.courseId}`}>
-                  <div className={cn("p-4 bg-[#1a1a1a] border rounded-lg cursor-pointer hover:bg-[#1a1a1a]/80 transition-all pt-[6px] pb-[6px] mt-[16px] mb-[16px]", isAgentesIARoom ? "border-[#faa318]" : "border-primary")}>
-                    <div className="text-xs text-gray-400 mb-2 font-satoshi">Próximo contenido</div>
+                  <div className={cn("p-4 bg-card border rounded-lg cursor-pointer hover:bg-muted/80 transition-all pt-[6px] pb-[6px] mt-[16px] mb-[16px]", isAgentesIARoom ? "border-[#faa318]" : "border-primary")}>
+                    <div className="text-xs text-muted-foreground mb-2 font-satoshi">Próximo contenido</div>
                     <div className="flex items-center gap-3">
                       {nextCourse.coverImageUrl && (
                         <img 
@@ -1774,37 +1761,37 @@ export default function Course() {
           {/* Background overlay - partial transparency to show content behind */}
           <div className="absolute inset-0 bg-black/40" onClick={() => setIsMobileLessonsOpen(false)}></div>
           {/* Sliding sidebar from right */}
-          <div className="fixed right-0 top-0 h-full w-[85%] max-w-md bg-[#171717] flex flex-col animate-in slide-in-from-right duration-300">
+          <div className="fixed right-0 top-0 h-full w-[85%] max-w-md bg-background flex flex-col animate-in slide-in-from-right duration-300">
             {/* Header */}
-            <div className="flex items-center justify-between p-4 border-b border-gray-700">
+            <div className="flex items-center justify-between p-4 border-b border-border">
               <div className="flex items-center space-x-3">
-                <h2 className="text-white font-bold text-lg">Lecciones</h2>
+                <h2 className="text-foreground font-bold text-lg">Lecciones</h2>
               </div>
               <button 
                 onClick={() => setIsMobileLessonsOpen(false)}
-                className="w-8 h-8 rounded-full bg-gray-700 hover:bg-gray-600 flex items-center justify-center transition-colors"
+                className="w-8 h-8 rounded-full bg-muted hover:bg-muted/80 flex items-center justify-center transition-colors"
               >
-                <ChevronRight className="h-4 w-4 text-white" />
+                <ChevronRight className="h-4 w-4 text-foreground" />
               </button>
             </div>
 
             {/* Progress */}
-            <div className="p-4 border-b border-gray-700">
+            <div className="p-4 border-b border-border">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-white font-medium">Progreso</span>
-                <span className="text-gray-400 text-sm">{Math.round(progressPercentage)}% completado</span>
+                <span className="text-foreground font-medium">Progreso</span>
+                <span className="text-muted-foreground text-sm">{Math.round(progressPercentage)}% completado</span>
               </div>
-              <div className="w-full bg-gray-700 rounded-full h-2">
+              <div className="w-full bg-muted rounded-full h-2">
                 <div 
-                  className="bg-white h-2 rounded-full transition-all duration-300"
+                  className={cn("h-2 rounded-full transition-all duration-300", isAgentesIARoom ? "bg-[#faa318]" : "bg-primary")}
                   style={{ width: `${progressPercentage}%` }}
                 ></div>
               </div>
             </div>
 
             {/* Course Title */}
-            <div className="p-4 border-b border-gray-700">
-              <h3 className="text-white font-bold text-lg">{(course as any)?.title}</h3>
+            <div className="p-4 border-b border-border">
+              <h3 className="text-foreground font-bold text-lg">{(course as any)?.title}</h3>
             </div>
 
             {/* Lessons List */}
@@ -1820,10 +1807,10 @@ export default function Course() {
                     const progress = moduleProgress[module.id] || { total: 0, completed: 0, percentage: 0 };
 
                     return (
-                      <div key={module.id} className="mb-4 border border-gray-700 rounded-lg overflow-hidden">
+                      <div key={module.id} className="mb-4 border border-border rounded-lg overflow-hidden">
                         {/* Module Header with Circle and Progress */}
                         <div 
-                          className="flex items-start gap-3 p-4 bg-black/40 border-b border-gray-700 cursor-pointer hover:bg-black/50 transition-colors"
+                          className="flex items-start gap-3 p-4 bg-muted/50 border-b border-border cursor-pointer hover:bg-muted transition-colors"
                           onClick={() => {
                             if (!hasSubLessons) {
                               isAuthenticated && handleLessonClick(moduleIndex);
@@ -1836,7 +1823,7 @@ export default function Course() {
                           <div className="h-3 w-3 rounded-full border border-primary/60 bg-transparent flex-shrink-0 mt-2" />
                           <div className="flex-1">
                             <div className="flex items-start justify-between">
-                              <h4 className="font-satoshi font-medium text-[15px] text-white">
+                              <h4 className="font-satoshi font-medium text-[15px] text-foreground">
                                 {module.title}
                               </h4>
                               <span className={cn("font-semibold text-sm ml-2 flex-shrink-0", isAgentesIARoom ? "text-[#faa318]" : "text-primary")}>
@@ -1850,12 +1837,12 @@ export default function Course() {
                                 e.stopPropagation();
                                 toggleModuleCollapse(module.id);
                               }}
-                              className="p-1 hover:bg-[#404040]/30 rounded transition-colors flex-shrink-0"
+                              className="p-1 hover:bg-muted rounded transition-colors flex-shrink-0"
                             >
                               <ChevronRight 
                                 size={16} 
                                 className={cn(
-                                  "text-gray-400 transition-transform",
+                                  "text-muted-foreground transition-transform",
                                   !isCollapsed && "rotate-90"
                                 )}
                               />
@@ -1878,8 +1865,8 @@ export default function Course() {
                                     className={cn(
                                       "group relative flex items-center gap-4 min-h-[32px] rounded-lg px-2 py-1 -mx-2 transition-all",
                                       isCurrentLesson 
-                                        ? isAgentesIARoom ? "bg-[#2d2d2d] border-2 border-[#ffa018]" : "bg-muted border-2 border-primary" 
-                                        : "hover:bg-gray-800/30"
+                                        ? isAgentesIARoom ? "bg-muted border-2 border-[#faa318]" : "bg-muted border-2 border-primary" 
+                                        : "hover:bg-muted/70"
                                     )}
                                   >
                                     {/* Circle Marker - Clickable to toggle completion */}
@@ -1888,8 +1875,8 @@ export default function Course() {
                                         "h-5 w-5 rounded-full border-[2.5px] flex-shrink-0 transition-all relative z-10",
                                         isCompleted 
                                           ? isAgentesIARoom ? "bg-[#faa318] border-[#faa318] shadow-lg shadow-[#faa318]/20" : "bg-primary border-primary shadow-lg shadow-primary/20" 
-                                          : "bg-black border-gray-600",
-                                        isCurrentLesson && (isAgentesIARoom ? "ring-2 ring-[#faa318]/40 ring-offset-2 ring-offset-black" : "ring-2 ring-primary/40 ring-offset-2 ring-offset-black"),
+                                          : "bg-transparent border-border",
+                                        isCurrentLesson && (isAgentesIARoom ? "ring-2 ring-[#faa318]/40 ring-offset-2 ring-offset-background" : "ring-2 ring-primary/40 ring-offset-2 ring-offset-background"),
                                         "cursor-pointer hover:scale-110",
                                         isAgentesIARoom ? "hover:border-[#faa318]/60" : "hover:border-primary/60"
                                       )}
@@ -1912,8 +1899,8 @@ export default function Course() {
                                       }}
                                     >
                                       <div className={cn(
-                                        "font-satoshi text-[14px] pr-2 transition-colors hover:text-[#151515]",
-                                        isCurrentLesson ? "text-[#151515] font-medium" : "text-gray-300"
+                                        "font-satoshi text-[14px] pr-2 transition-colors hover:text-foreground",
+                                        isCurrentLesson ? "text-foreground font-medium" : "text-muted-foreground"
                                       )}>
                                         {subLesson.title}
                                       </div>
@@ -1922,14 +1909,14 @@ export default function Course() {
                                     {/* Mark Complete Button */}
                                     {!isCompleted && (
                                       <div 
-                                        className="opacity-0 group-hover:opacity-100 flex items-center border border-gray-600 rounded px-2 py-0.5 cursor-pointer hover:bg-[#404040]/20 transition-all flex-shrink-0"
+                                        className="opacity-0 group-hover:opacity-100 flex items-center border border-border rounded px-2 py-0.5 cursor-pointer hover:bg-muted transition-all flex-shrink-0"
                                         onClick={(e) => {
                                           e.stopPropagation();
                                           handleMarkComplete(subLesson.id);
                                         }}
                                       >
-                                        <Check size={10} className="mr-1 text-gray-400" />
-                                        <span className="text-gray-400 font-satoshi text-[11px]">Marcar</span>
+                                        <Check size={10} className="mr-1 text-muted-foreground" />
+                                        <span className="text-muted-foreground font-satoshi text-[11px]">Marcar</span>
                                       </div>
                                     )}
                                   </div>
@@ -1957,11 +1944,11 @@ export default function Course() {
                         className={cn(
                           "group p-4 rounded-lg transition-all cursor-pointer",
                           hasSubLessons 
-                            ? "bg-transparent hover:bg-[#262626]/30" 
+                            ? "bg-transparent hover:bg-muted/50" 
                             : cn(
                                 moduleIndex === currentLessonIndex 
-                                  ? "bg-[#262626] border border-[#404040]" 
-                                  : "bg-transparent hover:bg-[#262626]/50"
+                                  ? "bg-muted border border-border" 
+                                  : "bg-transparent hover:bg-muted/50"
                               )
                         )}
                         onClick={() => {
@@ -1977,14 +1964,11 @@ export default function Course() {
                           <div 
                             className="flex items-start space-x-3 flex-1"
                           >
-                            <div className="w-8 h-8 rounded-lg border flex items-center justify-center font-medium flex-shrink-0 bg-gray-600 text-white border-gray-600 text-sm">
+                            <div className="w-8 h-8 rounded-lg border flex items-center justify-center font-medium flex-shrink-0 bg-muted text-foreground border-border text-sm">
                               {moduleNumber}
                             </div>
                             <div className="flex-1">
-                              <div className={cn(
-                                "font-medium text-base",
-                                !hasSubLessons && moduleIndex === currentLessonIndex ? "text-white" : "text-white"
-                              )}>
+                              <div className="font-medium text-base text-foreground">
                                 {module.title}
                               </div>
                             </div>
@@ -1993,14 +1977,14 @@ export default function Course() {
                           <div className="flex items-center gap-2">
                             {!hasSubLessons && !isLessonCompleted(module.id) && (
                               <div 
-                                className="opacity-0 group-hover:opacity-100 flex items-center border border-[#404040] rounded px-2 py-1 cursor-pointer hover:bg-[#404040]/20 transition-all"
+                                className="opacity-0 group-hover:opacity-100 flex items-center border border-border rounded px-2 py-1 cursor-pointer hover:bg-muted transition-all"
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   handleMarkComplete(module.id);
                                 }}
                               >
-                                <Check size={12} className="mr-1 text-gray-400" />
-                                <span className="text-gray-400 font-satoshi text-[11px]">Marcar</span>
+                                <Check size={12} className="mr-1 text-muted-foreground" />
+                                <span className="text-muted-foreground font-satoshi text-[11px]">Marcar</span>
                               </div>
                             )}
                             
@@ -2010,12 +1994,12 @@ export default function Course() {
                                   e.stopPropagation();
                                   toggleModuleCollapse(module.id);
                                 }}
-                                className="p-1 hover:bg-[#404040]/30 rounded transition-colors"
+                                className="p-1 hover:bg-muted rounded transition-colors"
                               >
                                 <ChevronRight 
                                   size={18} 
                                   className={cn(
-                                    "text-gray-400 transition-transform",
+                                    "text-muted-foreground transition-transform",
                                     !isCollapsed && "rotate-90"
                                   )}
                                 />
@@ -2041,15 +2025,15 @@ export default function Course() {
                             className={cn(
                               "group p-3 ml-6 rounded-lg cursor-pointer transition-all",
                               isCurrentLesson 
-                                ? "bg-[#262626] border border-[#404040]" 
-                                : "bg-transparent hover:bg-[#262626]/50"
+                                ? "bg-muted border border-border" 
+                                : "bg-transparent hover:bg-muted/50"
                             )}
                           >
                             <div className="flex items-start justify-between">
                               <div className="flex items-start space-x-3 flex-1">
-                                <div className="w-auto min-w-[32px] h-7 px-1.5 rounded-lg border flex items-center justify-center font-medium flex-shrink-0 bg-gray-600 text-white border-gray-600 text-xs">
+                                <div className="w-auto min-w-[32px] h-7 px-1.5 rounded-lg border flex items-center justify-center font-medium flex-shrink-0 bg-muted text-foreground border-border text-xs">
                                   {isLessonCompleted(subLesson.id) ? (
-                                    <Check size={14} className="text-green-400" />
+                                    <Check size={14} className="text-primary" />
                                   ) : (
                                     subLessonNumber
                                   )}
@@ -2057,7 +2041,7 @@ export default function Course() {
                                 <div className="flex-1">
                                   <div className={cn(
                                     "font-normal text-sm",
-                                    subIndex === currentLessonIndex ? "text-white" : "text-gray-300"
+                                    subIndex === currentLessonIndex ? "text-foreground" : "text-muted-foreground"
                                   )}>
                                     {subLesson.title}
                                   </div>
@@ -2065,14 +2049,14 @@ export default function Course() {
                               </div>
                               {!isLessonCompleted(subLesson.id) && (
                                 <div 
-                                  className="opacity-0 group-hover:opacity-100 flex items-center border border-[#404040] rounded px-2 py-1 cursor-pointer hover:bg-[#404040]/20 transition-all ml-2"
+                                  className="opacity-0 group-hover:opacity-100 flex items-center border border-border rounded px-2 py-1 cursor-pointer hover:bg-muted transition-all ml-2"
                                   onClick={(e) => {
                                     e.stopPropagation();
                                     handleMarkComplete(subLesson.id);
                                   }}
                                 >
-                                  <Check size={10} className="mr-1 text-gray-400" />
-                                  <span className="text-gray-400 font-satoshi text-[10px]">Marcar</span>
+                                  <Check size={10} className="mr-1 text-muted-foreground" />
+                                  <span className="text-muted-foreground font-satoshi text-[10px]">Marcar</span>
                                 </div>
                               )}
                             </div>
@@ -2087,8 +2071,8 @@ export default function Course() {
                 {/* Next Course Card - Only show in room context when there is a next course */}
                 {isRoomContext && nextCourse && (
                   <Link href={`/sala/${roomSlug}/curso/${nextCourse.slug || nextCourse.courseId}`}>
-                    <div className={cn("mt-4 p-4 bg-[#1a1a1a] border rounded-lg cursor-pointer hover:bg-[#1a1a1a]/80 transition-all", isAgentesIARoom ? "border-[#faa318]" : "border-primary")}>
-                      <div className="text-xs text-gray-400 mb-2 font-satoshi">Próximo contenido</div>
+                    <div className={cn("mt-4 p-4 bg-card border rounded-lg cursor-pointer hover:bg-muted/80 transition-all", isAgentesIARoom ? "border-[#faa318]" : "border-primary")}>
+                      <div className="text-xs text-muted-foreground mb-2 font-satoshi">Próximo contenido</div>
                       <div className="flex items-center gap-3">
                         {nextCourse.coverImageUrl && (
                           <img 

@@ -3,12 +3,6 @@ import { Link, useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { useTheme } from "@/hooks/useTheme";
 import { cn } from "@/lib/utils";
 import { 
@@ -25,7 +19,6 @@ import {
   Sun,
   Moon,
   HelpCircle,
-  MoreHorizontal,
   ChevronDown,
   ChevronRight
 } from "lucide-react";
@@ -193,50 +186,39 @@ export default function LoginSidebar() {
       <div className="mt-auto">
         {/* Sección minimalista para usuario NO autenticado (imagen de referencia exacta) */}
         <div className="p-4 border-t border-border space-y-3">
-          {/* Tema: Sistema - línea directa con dropdown de opciones */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <Monitor className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm text-muted-foreground">Tema: Sistema</span>
-            </div>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="text-muted-foreground hover:text-foreground h-6 w-6"
-                >
-                  <MoreHorizontal className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent 
-                align="end" 
-                className="w-56 bg-card border-border"
-                sideOffset={5}
+          {/* Apariencia: selector de tema visible (alineado con sidebar logueado) */}
+          <div>
+            <p className="text-[11px] uppercase tracking-wide text-muted-foreground hidden lg:block mb-2">Apariencia</p>
+            <div className="flex items-center justify-center lg:justify-start gap-1">
+              <Button
+                variant={theme === "claro" ? "secondary" : "ghost"}
+                size="icon"
+                className="h-8 w-8"
+                onClick={() => changeTheme("claro")}
+                title="Claro"
               >
-                <DropdownMenuItem 
-                  className="text-card-foreground hover:bg-muted hover:text-foreground cursor-pointer"
-                  onClick={() => changeTheme("claro")}
-                >
-                  <Sun className="mr-2 h-4 w-4" />
-                  <span>Luz</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem 
-                  className="text-card-foreground hover:bg-muted hover:text-foreground cursor-pointer"
-                  onClick={() => changeTheme("oscuro")}
-                >
-                  <Moon className="mr-2 h-4 w-4" />
-                  <span>Oscuro</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem 
-                  className="text-card-foreground hover:bg-muted hover:text-foreground cursor-pointer"
-                  onClick={() => changeTheme("sistema")}
-                >
-                  <Monitor className="mr-2 h-4 w-4" />
-                  <span>Sistema</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+                <Sun className="h-4 w-4" />
+              </Button>
+              <Button
+                variant={theme === "oscuro" ? "secondary" : "ghost"}
+                size="icon"
+                className="h-8 w-8"
+                onClick={() => changeTheme("oscuro")}
+                title="Oscuro"
+              >
+                <Moon className="h-4 w-4" />
+              </Button>
+              <Button
+                variant={theme === "sistema" ? "secondary" : "ghost"}
+                size="icon"
+                className="h-8 w-8"
+                onClick={() => changeTheme("sistema")}
+                title="Sistema"
+              >
+                <Monitor className="h-4 w-4" />
+              </Button>
+              <span className="hidden lg:inline text-xs text-muted-foreground ml-2 capitalize">{theme}</span>
+            </div>
           </div>
 
           {/* Apoyo - línea directa */}

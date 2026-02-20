@@ -37,7 +37,7 @@ export default function MobileNav() {
   ];
 
   return (
-    <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-[#262626] border-t border-dark-border z-50">
+    <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-card border-t border-border z-50">
       <div className="flex justify-around items-center py-2">
         {navigation.map((item) => {
           const isActive = location === item.href || (item.hasDropdown && isInRoomRoute);
@@ -52,7 +52,7 @@ export default function MobileNav() {
                       "flex flex-col items-center justify-center p-3 rounded-lg transition-colors cursor-pointer",
                       isActive
                         ? "text-purple-accent"
-                        : "text-gray-400"
+                        : "text-muted-foreground"
                     )}
                   >
                     <item.icon className="h-5 w-5 mb-1" />
@@ -89,7 +89,7 @@ export default function MobileNav() {
                   "flex flex-col items-center justify-center p-3 rounded-lg transition-colors",
                   isActive
                     ? "text-purple-accent"
-                    : "text-gray-400"
+                    : "text-muted-foreground"
                 )}
               >
                 <item.icon className="h-5 w-5 mb-1" />

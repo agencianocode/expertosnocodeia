@@ -347,7 +347,7 @@ export default function WorkshopEditor() {
   }
 
   return (
-    <div className="min-h-screen bg-dark-bg text-white">
+    <div className="min-h-screen bg-background text-foreground">
       {/* Mobile Navigation */}
       <div className="lg:hidden">
         <MobileHeader />
@@ -410,7 +410,7 @@ export default function WorkshopEditor() {
                   <div className="lg:col-span-2 space-y-6">
                     
                     {/* Basic Info Card */}
-                    <Card className="bg-dark-card border-dark-border">
+                    <Card className="bg-card border-border">
                       <CardHeader>
                         <CardTitle>Información Básica</CardTitle>
                       </CardHeader>
@@ -425,7 +425,7 @@ export default function WorkshopEditor() {
                                 <Input 
                                   {...field} 
                                   placeholder="Ej: Dominando los agentes de IA para el servicio al cliente..."
-                                  className="bg-dark-bg border-dark-border"
+                                  className="bg-background border-border"
                                 />
                               </FormControl>
                               <FormMessage />
@@ -443,7 +443,7 @@ export default function WorkshopEditor() {
                                 <Textarea 
                                   {...field}
                                   placeholder="Describe el contenido del taller..."
-                                  className="bg-dark-bg border-dark-border min-h-[100px]"
+                                  className="bg-background border-border min-h-[100px]"
                                 />
                               </FormControl>
                               <FormMessage />
@@ -466,7 +466,7 @@ export default function WorkshopEditor() {
                                       Nueva Categoría
                                     </Button>
                                   </DialogTrigger>
-                                  <DialogContent className="bg-dark-card border-dark-border">
+                                  <DialogContent className="bg-card border-border">
                                     <DialogHeader>
                                       <DialogTitle>Crear Nueva Categoría</DialogTitle>
                                     </DialogHeader>
@@ -475,17 +475,17 @@ export default function WorkshopEditor() {
                                         placeholder="Nombre de la categoría"
                                         value={newCategoryForm.name}
                                         onChange={(e) => setNewCategoryForm({...newCategoryForm, name: e.target.value})}
-                                        className="bg-dark-bg border-dark-border"
+                                        className="bg-background border-border"
                                       />
                                       <Input
                                         placeholder="Descripción (opcional)"
                                         value={newCategoryForm.description}
                                         onChange={(e) => setNewCategoryForm({...newCategoryForm, description: e.target.value})}
-                                        className="bg-dark-bg border-dark-border"
+                                        className="bg-background border-border"
                                       />
                                       <div className="grid grid-cols-2 gap-4">
                                         <Select onValueChange={(value) => setNewCategoryForm({...newCategoryForm, color: value})}>
-                                          <SelectTrigger className="bg-dark-bg border-dark-border">
+                                          <SelectTrigger className="bg-background border-border">
                                             <SelectValue placeholder="Color" />
                                           </SelectTrigger>
                                           <SelectContent>
@@ -497,7 +497,7 @@ export default function WorkshopEditor() {
                                           </SelectContent>
                                         </Select>
                                         <Select onValueChange={(value) => setNewCategoryForm({...newCategoryForm, icon: value})}>
-                                          <SelectTrigger className="bg-dark-bg border-dark-border">
+                                          <SelectTrigger className="bg-background border-border">
                                             <SelectValue placeholder="Icono" />
                                           </SelectTrigger>
                                           <SelectContent>
@@ -560,7 +560,7 @@ export default function WorkshopEditor() {
                               <FormLabel>Estado</FormLabel>
                               <Select onValueChange={field.onChange} value={field.value}>
                                 <FormControl>
-                                  <SelectTrigger className="bg-dark-bg border-dark-border">
+                                  <SelectTrigger className="bg-background border-border">
                                     <SelectValue placeholder="Estado del taller" />
                                   </SelectTrigger>
                                 </FormControl>
@@ -577,7 +577,7 @@ export default function WorkshopEditor() {
                     </Card>
 
                     {/* Video & Technical Info */}
-                    <Card className="bg-dark-card border-dark-border">
+                    <Card className="bg-card border-border">
                       <CardHeader>
                         <CardTitle>Información del Video</CardTitle>
                       </CardHeader>
@@ -592,7 +592,7 @@ export default function WorkshopEditor() {
                                 <Input 
                                   {...field}
                                   placeholder="https://youtube.com/embed/..."
-                                  className="bg-dark-bg border-dark-border"
+                                  className="bg-background border-border"
                                 />
                               </FormControl>
                               <FormMessage />
@@ -611,7 +611,7 @@ export default function WorkshopEditor() {
                                   <Input 
                                     {...field}
                                     placeholder="60 min"
-                                    className="bg-dark-bg border-dark-border"
+                                    className="bg-background border-border"
                                   />
                                 </FormControl>
                                 <FormMessage />
@@ -630,7 +630,7 @@ export default function WorkshopEditor() {
                                     {...field}
                                     type="number"
                                     placeholder="125"
-                                    className="bg-dark-bg border-dark-border"
+                                    className="bg-background border-border"
                                     onChange={(e) => field.onChange(Number(e.target.value))}
                                   />
                                 </FormControl>
@@ -653,7 +653,7 @@ export default function WorkshopEditor() {
                                     min="0"
                                     max="5"
                                     placeholder="4.8"
-                                    className="bg-dark-bg border-dark-border"
+                                    className="bg-background border-border"
                                     onChange={(e) => field.onChange(Number(e.target.value))}
                                   />
                                 </FormControl>
@@ -673,7 +673,7 @@ export default function WorkshopEditor() {
                                 <Input 
                                   {...field}
                                   type="date"
-                                  className="bg-dark-bg border-dark-border"
+                                  className="bg-background border-border"
                                   onChange={(e) => {
                                     // Convert date to friendly Spanish format for display
                                     if (e.target.value) {
@@ -731,7 +731,7 @@ export default function WorkshopEditor() {
                     </Card>
 
                     {/* Timestamps Card */}
-                    <Card className="bg-dark-card border-dark-border">
+                    <Card className="bg-card border-border">
                       <CardHeader>
                         <div className="flex items-center justify-between">
                           <CardTitle>Marcas de Tiempo</CardTitle>
@@ -749,7 +749,7 @@ export default function WorkshopEditor() {
                       <CardContent>
                         <div className="space-y-4">
                           {timestamps.map((timestamp, index) => (
-                            <div key={index} className="flex items-start space-x-3 p-4 bg-dark-bg rounded-lg border border-dark-border">
+                            <div key={index} className="flex items-start space-x-3 p-4 bg-background rounded-lg border border-border">
                               <Input
                                 placeholder="[00:00]"
                                 value={timestamp.time}
@@ -790,7 +790,7 @@ export default function WorkshopEditor() {
                   <div className="space-y-6">
                     
                     {/* Instructor Info */}
-                    <Card className="bg-dark-card border-dark-border">
+                    <Card className="bg-card border-border">
                       <CardHeader>
                         <CardTitle>Instructor</CardTitle>
                       </CardHeader>
@@ -804,7 +804,7 @@ export default function WorkshopEditor() {
                               <FormControl>
                                 <Input 
                                   {...field}
-                                  className="bg-dark-bg border-dark-border"
+                                  className="bg-background border-border"
                                 />
                               </FormControl>
                               <FormMessage />
@@ -822,7 +822,7 @@ export default function WorkshopEditor() {
                                 <Input 
                                   {...field}
                                   placeholder="Instructor"
-                                  className="bg-dark-bg border-dark-border"
+                                  className="bg-background border-border"
                                 />
                               </FormControl>
                               <FormMessage />
@@ -905,7 +905,7 @@ export default function WorkshopEditor() {
                     </Card>
 
                     {/* Cover Image */}
-                    <Card className="bg-dark-card border-dark-border">
+                    <Card className="bg-card border-border">
                       <CardHeader>
                         <CardTitle>Imagen de Portada</CardTitle>
                       </CardHeader>
@@ -973,7 +973,7 @@ export default function WorkshopEditor() {
                     </Card>
 
                     {/* Resources */}
-                    <Card className="bg-dark-card border-dark-border">
+                    <Card className="bg-card border-border">
                       <CardHeader>
                         <div className="flex items-center justify-between">
                           <CardTitle>Recursos del Taller</CardTitle>
@@ -1012,7 +1012,7 @@ export default function WorkshopEditor() {
                       <CardContent>
                         <div className="space-y-3">
                           {resources.map((resource, index) => (
-                            <div key={resource.id || index} className="flex items-center justify-between p-3 bg-dark-bg rounded-lg border border-dark-border">
+                            <div key={resource.id || index} className="flex items-center justify-between p-3 bg-background rounded-lg border border-border">
                               <div className="flex items-center space-x-3">
                                 <FileText className="w-5 h-5 text-blue-400" />
                                 <div>

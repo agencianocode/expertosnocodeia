@@ -700,8 +700,8 @@ export const loginSchema = z.object({
 export const registerSchema = z.object({
   email: z.string().email("Email inválido"),
   password: z.string().min(6, "La contraseña debe tener al menos 6 caracteres"),
-  firstName: z.string().min(1, "El nombre es requerido"),
-  lastName: z.string().min(1, "El apellido es requerido"),
+  firstName: z.string().optional().default(""),
+  lastName: z.string().optional().default(""),
 });
 
 export const forgotPasswordSchema = z.object({
@@ -954,6 +954,24 @@ export const userNotificationPreferences = pgTable("user_notification_preference
 }, (table) => [
   index("idx_notification_prefs_user").on(table.userId),
 ]);
+
+// Content notifications (guías, cursos, talleres publicados - para campana e historial)
+export const contentNotifications = pgTable("content_notifications", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  contentId: varchar("content_id").notNull(),
+  type: varchar("type").notNull(), // 'guide' | 'course' | 'workshop'
+  title: varchar("title").notNull(),
+  description: text("description"),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("idx_content_notifications_created").on(table.createdAt),
+]);
+
+// Per-user "cleared" timestamp: notificaciones con createdAt <= clearedAt se ocultan
+export const userNotificationCleared = pgTable("user_notification_cleared", {
+  userId: varchar("user_id").references(() => users.id, { onDelete: "cascade" }).primaryKey(),
+  clearedAt: timestamp("cleared_at").notNull().defaultNow(),
+});
 
 // ========================================
 // RELATIONS

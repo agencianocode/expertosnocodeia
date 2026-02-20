@@ -111,7 +111,7 @@ export default function PromoBannersManagement() {
   };
 
   return (
-    <div className="min-h-screen bg-dark-bg text-white">
+    <div className="min-h-screen bg-background text-foreground">
       <MobileHeader />
       
       <div className="flex">

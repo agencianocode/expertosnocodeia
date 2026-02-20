@@ -79,7 +79,7 @@ export default function Leaderboard() {
 
           {/* User's Personal Progress Card */}
           {user && (
-            <Card className="bg-[#1a1a1a] border-[#333333] mb-6">
+            <Card className="bg-card border-border mb-6">
               <CardContent className="p-6">
                 <div className="flex flex-col sm:flex-row items-start gap-6">
                   {/* Left side: Avatar with name and points below */}
@@ -162,7 +162,7 @@ export default function Leaderboard() {
               className={cn(
                 period === "7_days"
                   ? "bg-cyan-500 hover:bg-cyan-600 text-white border-cyan-500"
-                  : "border-[#333333] text-white hover:bg-[#232323] bg-transparent"
+                  : "border-border text-foreground hover:bg-muted bg-transparent"
               )}
             >
               7 días
@@ -173,7 +173,7 @@ export default function Leaderboard() {
               className={cn(
                 period === "30_days"
                   ? "bg-cyan-500 hover:bg-cyan-600 text-white border-cyan-500"
-                  : "border-[#333333] text-white hover:bg-[#232323] bg-transparent"
+                  : "border-border text-foreground hover:bg-muted bg-transparent"
               )}
             >
               30 días
@@ -184,7 +184,7 @@ export default function Leaderboard() {
               className={cn(
                 period === "all_time"
                   ? "bg-cyan-500 hover:bg-cyan-600 text-white border-cyan-500"
-                  : "border-[#333333] text-white hover:bg-[#232323] bg-transparent"
+                  : "border-border text-foreground hover:bg-muted bg-transparent"
               )}
             >
               Todo el tiempo
@@ -215,7 +215,7 @@ export default function Leaderboard() {
                   <Card
                     key={member.userId}
                     className={cn(
-                      "bg-[#1a1a1a] border-[#333333] hover:bg-[#232323] transition-colors",
+                      "bg-card border-border hover:bg-muted transition-colors",
                       isCurrentUser && "border-cyan-500 border-2"
                     )}
                   >
@@ -263,7 +263,7 @@ export default function Leaderboard() {
 
       {/* Points Info Dialog */}
       <Dialog open={pointsInfoOpen} onOpenChange={setPointsInfoOpen}>
-        <DialogContent className="max-w-lg bg-[#1a1a1a] border-[#333333] text-white max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-lg bg-card border-border text-foreground max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-2xl font-bold text-white">
               ¿Cómo funcionan los puntos?
@@ -318,7 +318,7 @@ export default function Leaderboard() {
                           ? "bg-yellow-500/20 border-yellow-500 text-white"
                           : isUnlocked
                           ? "bg-green-500/10 border-green-500/50 text-white"
-                          : "bg-[#2a2a2a] border-[#333333] text-muted-foreground"
+                          : "bg-muted border-border text-muted-foreground"
                       )}
                     >
                       <div className="flex items-center gap-2">
