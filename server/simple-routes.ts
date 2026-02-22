@@ -10,7 +10,7 @@ import { SupabaseStorageService, supabaseStorage, supabase } from "./supabaseSto
 import { supabaseAuth, optionalSupabaseAuth, supabaseAdminAuth, AuthenticatedRequest } from "./supabaseAuth";
 import { setupSupabaseAuthRoutes } from "./supabaseAuthRoutes";
 import { insertLessonResourceSchema, updateRoomSchema, userSavedCourses, courses, communityChannels, communityMessages, communityPosts, communityPostComments, communityPostReactions, communityPostCommentReactions, users, adminUsers, rooms, userNotificationPreferences, userPoints, liveEvents, eventRegistrations, userSubscriptions, subscriptionPlans, userProgress, userRecentActivity, lessons, userLessonProgress } from "../shared/schema";
-import { createCheckoutSession, createEmbeddedCheckoutSession, handleStripeWebhook, stripe } from "./stripe";
+import { createCheckoutSession, createEmbeddedCheckoutSession, createEmbeddedCheckoutSessionGuest, handleStripeWebhook, stripe } from "./stripe";
 import { 
   sendEmail, 
   sendWelcomeEmail, 
@@ -6321,7 +6321,32 @@ const getUserIdFromRequest = (req: any): string | null => {
     }
   });
 
-  // Create EMBEDDED checkout session for subscription
+  // Create EMBEDDED checkout session for GUEST (sin login). Sin email: Stripe recoge email + pago en su formulario.
+  app.post("/api/subscriptions/checkout-embedded-guest", async (req: Request, res: Response) => {
+    try {
+      const { planId } = req.body || {};
+      if (!planId || typeof planId !== "string") {
+        return res.status(400).json({ message: "planId es requerido" });
+      }
+      const plan = await storage.getSubscriptionPlan(planId);
+      if (!plan) {
+        return res.status(404).json({ message: `Plan no encontrado: ${planId}` });
+      }
+      const session = await createEmbeddedCheckoutSessionGuest(planId);
+      res.json({
+        clientSecret: session.clientSecret,
+        sessionId: session.sessionId,
+      });
+    } catch (error: any) {
+      console.error("Error creating guest embedded checkout session:", error);
+      res.status(500).json({
+        message: "Error al crear sesión de checkout",
+        error: error.message,
+      });
+    }
+  });
+
+  // Create EMBEDDED checkout session for subscription (usuario logueado)
   app.post("/api/subscriptions/checkout-embedded", simpleAdminAuth, async (req: any, res: Response) => {
     try {
       const userId = req.user?.claims?.sub || req.user?.id || getUserIdFromRequest(req);

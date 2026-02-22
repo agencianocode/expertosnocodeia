@@ -298,7 +298,7 @@ export default function Dashboard() {
                         <Button 
                           size="lg" 
                           className="bg-blue-600 hover:bg-blue-700 text-white text-base px-8 py-3 rounded-lg font-medium"
-                          onClick={() => window.location.href = '/register'}
+                          onClick={() => window.location.href = '/checkout/trial'}
                         >
                           Comience una prueba gratuita
                         </Button>
@@ -397,7 +397,7 @@ export default function Dashboard() {
                     <Button
                       size="sm"
                       className="bg-blue-600 hover:bg-blue-700 text-white"
-                      onClick={() => window.location.href = '/register'}
+                      onClick={() => window.location.href = '/checkout/trial'}
                     >
                       Comience una prueba gratuita
                     </Button>

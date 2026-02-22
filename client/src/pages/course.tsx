@@ -1091,29 +1091,24 @@ export default function Course() {
                   </Button>
                   <Button
                     onClick={() => {
-                      // Desde intro, ir directamente a la segunda lección navegable (1.2), saltando 1.1
-                      let nextLessonIndex = 0;
-                      if (navigableLessonIndices.length > 1) {
-                        nextLessonIndex = navigableLessonIndices[1];
-                      } else if (navigableLessonIndices.length === 1) {
-                        nextLessonIndex = navigableLessonIndices[0];
+                      // La intro (descripción + FAQs) no es una lección. Próximo lleva a la primera lección (1.1).
+                      let firstLessonIndex = 0;
+                      if (navigableLessonIndices.length > 0) {
+                        firstLessonIndex = navigableLessonIndices[0];
                       } else {
                         const firstModule = modules[0];
                         if (firstModule) {
                           const firstModuleSubLessons = subLessonsByParent[firstModule.id];
-                          if (firstModuleSubLessons && firstModuleSubLessons.length > 1) {
-                            const secondSubLessonIndex = lessonsArray.findIndex((l: any) => l.id === firstModuleSubLessons[1].id);
-                            if (secondSubLessonIndex !== -1) nextLessonIndex = secondSubLessonIndex;
-                          } else if (firstModuleSubLessons?.length === 1) {
+                          if (firstModuleSubLessons && firstModuleSubLessons.length > 0) {
                             const firstSubLessonIndex = lessonsArray.findIndex((l: any) => l.id === firstModuleSubLessons[0].id);
-                            if (firstSubLessonIndex !== -1) nextLessonIndex = firstSubLessonIndex;
+                            if (firstSubLessonIndex !== -1) firstLessonIndex = firstSubLessonIndex;
                           }
                         }
                       }
-                      setCurrentLessonIndex(nextLessonIndex);
+                      setCurrentLessonIndex(firstLessonIndex);
                       setShowCourseInfo(false);
-                      if (lessonsArray[nextLessonIndex] && courseId) {
-                        saveLessonPosition(courseId, lessonsArray[nextLessonIndex].id, (course as any)?.type, roomSlug);
+                      if (lessonsArray[firstLessonIndex] && courseId) {
+                        saveLessonPosition(courseId, lessonsArray[firstLessonIndex].id, (course as any)?.type, roomSlug);
                       }
                     }}
                     size="lg"
@@ -1130,8 +1125,8 @@ export default function Course() {
             {/* Current Lesson Content */}
             {!showCourseInfo && currentLesson && (
               <section>
-                {!isAuthenticated && !isFirstNavigableLesson(currentLessonIndex) ? (
-                  /* Vista para invitados en lecciones bloqueadas: video arriba, luego Desbloquea, luego card título/mensaje, luego Anterior/Próximo */
+                {!isAuthenticated ? (
+                  /* Vista para invitados (todas las lecciones, incluida 1.1): video difuminado+candado, Desbloquea, card título/mensaje, Anterior/Próximo */
                   <>
                     {/* 1. Video/imagen de la lección arriba: visible pero difuminado y con candado */}
                     {currentLesson.videoUrl ? (
@@ -1182,7 +1177,7 @@ export default function Course() {
                     <div className="grid grid-cols-2 w-full gap-3">
                       <Button
                         variant="outline"
-                        onClick={currentLessonIndex <= 0 ? () => setLocation(backUrl || "/cursos") : handlePreviousLesson}
+                        onClick={isFirstNavigableLesson(currentLessonIndex) ? () => setShowCourseInfo(true) : handlePreviousLesson}
                         size="lg"
                         className="w-full text-foreground hover:opacity-90 border-0"
                         style={{ backgroundColor: '#29282d' }}
@@ -1581,12 +1576,12 @@ export default function Course() {
                             )}>
                               {lesson.title}
                             </div>
-                            {!isAuthenticated && !isFirstNavigableLesson(lessonIndex) && (
+                            {!isAuthenticated && (
                               <span className="text-xs text-muted-foreground mt-1 block">Bloqueado</span>
                             )}
                           </div>
-                          {/* Candado a la derecha - no autenticado: bg #373737, candado #606060 */}
-                          {!isAuthenticated && !isFirstNavigableLesson(lessonIndex) && (
+                          {/* Candado a la derecha - no autenticado: bg #373737, candado #606060 (incluye 1.1) */}
+                          {!isAuthenticated && (
                             <div className="w-7 h-7 rounded flex items-center justify-center flex-shrink-0 mt-1" style={{ backgroundColor: '#373737' }}>
                               <Lock size={14} style={{ color: '#606060' }} />
                             </div>
@@ -1706,8 +1701,8 @@ export default function Course() {
                                         {subLesson.title}
                                       </div>
                                     </div>
-                                    {/* Candado a la derecha - no autenticado: bg #373737, candado #606060 */}
-                                    {!isAuthenticated && !isFirstNavigableLesson(subIndex) && (
+                                    {/* Candado a la derecha - no autenticado: bg #373737, candado #606060 (incluye 1.1) */}
+                                    {!isAuthenticated && (
                                       <div className="w-7 h-7 rounded flex items-center justify-center flex-shrink-0" style={{ backgroundColor: '#373737' }}>
                                         <Lock size={14} style={{ color: '#606060' }} />
                                       </div>
@@ -1838,8 +1833,8 @@ export default function Course() {
                                     {subLessonNumber} - {subLesson.title}
                                   </div>
                                 </div>
-                                {/* Candado a la derecha - no accesible: bg #373737, candado #606060 */}
-                                {!isAccessible && (
+                                {/* Candado a la derecha - no autenticado (incluye 1.1): bg #373737, candado #606060 */}
+                                {!isAuthenticated && (
                                   <div className="w-7 h-7 rounded flex items-center justify-center flex-shrink-0" style={{ backgroundColor: '#373737' }}>
                                     <Lock size={14} style={{ color: '#606060' }} />
                                   </div>

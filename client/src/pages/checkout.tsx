@@ -7,10 +7,12 @@ import {
 } from "@stripe/react-stripe-js";
 import { useQuery } from "@tanstack/react-query";
 import { useSimpleAuth } from "@/hooks/use-simple-auth";
-import { Check, ArrowLeft } from "lucide-react";
+import { Check, ArrowLeft, ChevronDown, ChevronUp, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Link } from "wouter";
 
 // Inicializar Stripe (usa tu publishable key)
 const stripePromise = loadStripe(
@@ -23,6 +25,8 @@ export default function Checkout() {
   const { user, isAuthenticated } = useSimpleAuth();
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [guestClientSecret, setGuestClientSecret] = useState<string | null>(null);
+  const [detailsOpen, setDetailsOpen] = useState(true);
 
   const planId = params?.planId;
 
@@ -31,18 +35,37 @@ export default function Checkout() {
     queryKey: ["/api/subscription/plans"],
   });
 
-  const plan = plans?.find((p: any) => p.id === planId);
+  // Resolver planId "trial" al plan de prueba real (14 días, etc.)
+  const effectivePlanId =
+    planId === "trial"
+      ? plans?.find(
+          (p: any) =>
+            (p.trialDays && p.trialDays > 0) ||
+            p.billingInterval === "trial" ||
+            (p.price !== undefined && Number(p.price) === 0)
+        )?.id ?? null
+      : planId;
 
-  // Redirect if not authenticated
+  const plan = plans?.find((p: any) => p.id === effectivePlanId);
+  const isGuestTrial = !isAuthenticated && planId === "trial" && !!effectivePlanId;
+  const isTrialWaitingPlans = !isAuthenticated && planId === "trial" && plans === undefined;
+
+  // Redirigir a login solo si no es flujo guest de prueba (no redirigir mientras cargan planes en /checkout/trial)
   useEffect(() => {
-    if (!isAuthenticated) {
+    if (isTrialWaitingPlans) return;
+    if (!isAuthenticated && planId !== "trial") {
       setLocation("/login");
+      return;
     }
-  }, [isAuthenticated, setLocation]);
+    if (!isAuthenticated && planId === "trial" && plans && !effectivePlanId) {
+      setLocation("/planes");
+      return;
+    }
+  }, [isAuthenticated, planId, plans, effectivePlanId, isTrialWaitingPlans, setLocation]);
 
-  // Create checkout session
+  // Create checkout session (usuario logueado)
   useEffect(() => {
-    if (!planId || !isAuthenticated || clientSecret) return;
+    if (!effectivePlanId || !isAuthenticated || clientSecret) return;
 
     const createCheckoutSession = async () => {
       try {
@@ -53,7 +76,7 @@ export default function Checkout() {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify({ planId }),
+          body: JSON.stringify({ planId: effectivePlanId }),
         });
 
         if (!response.ok) {
@@ -70,15 +93,63 @@ export default function Checkout() {
     };
 
     createCheckoutSession();
-  }, [planId, isAuthenticated, clientSecret]);
+  }, [effectivePlanId, isAuthenticated, clientSecret]);
 
-  if (!isAuthenticated) {
+  // Invitado en /checkout/trial: crear sesión al cargar y mostrar Stripe directo (como The Rundown)
+  useEffect(() => {
+    if (!isGuestTrial || !effectivePlanId || guestClientSecret) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const response = await fetch("/api/subscriptions/checkout-embedded-guest", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ planId: effectivePlanId }),
+        });
+        if (cancelled) return;
+        if (!response.ok) {
+          const data = await response.json();
+          setError(data.message || "Error al crear sesión");
+          return;
+        }
+        const data = await response.json();
+        setGuestClientSecret(data.clientSecret);
+      } catch (err: any) {
+        if (!cancelled) setError(err.message);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [isGuestTrial, effectivePlanId, guestClientSecret]);
+
+  // Invitado en /checkout/trial: solo "Cargando..." hasta tener guestClientSecret
+  if (isGuestTrial && !guestClientSecret) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-10 w-10 border-2 border-primary border-t-transparent mx-auto mb-4" />
+          <p className="text-muted-foreground">Preparando checkout...</p>
+          {error && <p className="text-sm text-destructive mt-2">{error}</p>}
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated && !isGuestTrial) {
+    if (planId === "trial" && plans === undefined) {
+      return (
+        <div className="min-h-screen bg-background flex items-center justify-center">
+          <p className="text-muted-foreground">Cargando...</p>
+        </div>
+      );
+    }
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <p className="text-muted-foreground">Redirigiendo...</p>
       </div>
     );
   }
+
+  const activeClientSecret = isGuestTrial ? guestClientSecret : clientSecret;
 
   if (error) {
     return (
@@ -100,6 +171,26 @@ export default function Checkout() {
   }
 
   if (!plan) {
+    if (planId === "trial" && plans && !effectivePlanId) {
+      return (
+        <div className="min-h-screen bg-background flex items-center justify-center p-4">
+          <Card className="max-w-md w-full">
+            <CardContent className="p-6">
+              <h2 className="text-xl font-bold text-foreground mb-2">
+                Plan de prueba no disponible
+              </h2>
+              <p className="text-muted-foreground mb-4">
+                No encontramos un plan con prueba gratuita. Revisa las opciones en Planes.
+              </p>
+              <Button onClick={() => setLocation("/planes")} variant="outline">
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Ver planes
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      );
+    }
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <p className="text-muted-foreground">Cargando plan...</p>
@@ -114,177 +205,132 @@ export default function Checkout() {
       : plan.billingInterval === "month"
       ? "mes"
       : "14 días";
-  
-  // Nombres amigables para los planes
-  const planDisplayName = 
-    plan.billingInterval === "month" ? "Mensual" :
-    plan.billingInterval === "year" ? "Anual" :
-    plan.displayName;
+
+  const isTrialPlan = (plan.trialDays && plan.trialDays > 0) || plan.billingInterval === "trial";
+  const totalToday = isTrialPlan ? 0 : priceInDollars;
+  const annualRateDollars = plan.billingInterval === "year" ? priceInDollars : plan.price / 100;
+
+  const planDisplayName =
+    plan.billingInterval === "month"
+      ? "Mensual"
+      : plan.billingInterval === "year"
+      ? "Anual"
+      : plan.displayName;
+  const trialTitle = isTrialPlan ? "Prueba Gratuita De 14 Días" : planDisplayName;
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 py-8">
-        {/* Back Button */}
+      <div className="container mx-auto px-4 py-8 max-w-6xl">
         <Button
           variant="ghost"
           onClick={() => setLocation("/planes")}
-          className="mb-4"
+          className="mb-6"
         >
           <ArrowLeft className="mr-2 h-4 w-4" />
           Volver a planes
         </Button>
 
-        <div className="grid lg:grid-cols-2 gap-8 max-w-6xl mx-auto">
-          {/* Left Side: Plan Summary */}
-          <div className="space-y-6">
-            <div>
-              <h1 className="text-3xl font-bold text-foreground mb-2">
-                {planDisplayName}
-              </h1>
-              <div className="flex items-baseline gap-2 mb-4">
-                <span className="text-4xl font-bold text-foreground">
-                  ${priceInDollars}
-                </span>
-                <span className="text-muted-foreground">/ {period}</span>
-              </div>
+        <div className="grid lg:grid-cols-2 gap-8">
+          {/* Left: Resumen estilo The Rundown */}
+          <div className="space-y-5">
+            <h1 className="text-2xl lg:text-3xl font-bold text-foreground">
+              {trialTitle}
+            </h1>
+
+            {/* Total a pagar hoy - $0 en verde cuando es trial */}
+            <div className="flex items-center justify-between">
+              <span className="text-muted-foreground">Total a pagar hoy</span>
+              <span className={`text-2xl font-bold ${totalToday === 0 ? "text-green-600" : "text-foreground"}`}>
+                ${totalToday}
+              </span>
             </div>
 
-            {/* Total Due Today */}
-            <Card className="bg-card border-border">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-muted-foreground">Total a pagar hoy</span>
-                  <span className="text-2xl font-bold text-foreground">
-                    ${priceInDollars}
-                  </span>
-                </div>
-                <div className="text-sm text-muted-foreground">
-                  {plan.billingInterval === "year"
-                    ? "Tarifa anual"
-                    : plan.billingInterval === "month"
-                    ? "Tarifa mensual"
-                    : "Prueba gratuita por 14 días"}
-                  : ${priceInDollars} / {period}
-                </div>
-              </CardContent>
-            </Card>
+            {/* Ver detalles (collapsible) */}
+            <Collapsible open={detailsOpen} onOpenChange={setDetailsOpen}>
+              <CollapsibleTrigger className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground w-full text-left">
+                {detailsOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                Ver detalles
+              </CollapsibleTrigger>
+              <CollapsibleContent className="pt-2 space-y-1 text-sm text-muted-foreground">
+                <div>Tasa anual: ${annualRateDollars} / año</div>
+                {isTrialPlan && (
+                  <div>Total a pagar después de 14 días de prueba: ${annualRateDollars}</div>
+                )}
+              </CollapsibleContent>
+            </Collapsible>
 
-            {/* Access Benefits */}
-            <Card className="bg-card border-border">
-              <CardContent className="p-6">
-                <h3 className="font-semibold text-foreground mb-4">
-                  Tendrás acceso completo a:
-                </h3>
-                <ul className="space-y-3">
-                  {plan.billingInterval === 'month' ? (
-                    // Características del Plan Mensual
-                    <>
-                      <li className="flex items-start gap-2">
-                        <Check className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
-                        <span className="text-sm text-foreground">Acceso completo a la universidad</span>
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <Check className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
-                        <span className="text-sm text-foreground">300+ guías paso a paso</span>
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <Check className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
-                        <span className="text-sm text-foreground">Workshops en vivo semanales</span>
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <Check className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
-                        <span className="text-sm text-foreground">Comunidad privada</span>
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <Check className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
-                        <span className="text-sm text-foreground">Certificados de finalización</span>
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <Check className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
-                        <span className="text-sm text-foreground">Descuentos en herramientas</span>
-                      </li>
-                    </>
-                  ) : plan.billingInterval === 'year' ? (
-                    // Características del Plan Anual
-                    <>
-                      <li className="flex items-start gap-2">
-                        <Check className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
-                        <span className="text-sm text-foreground">Todo lo incluido en Mensual</span>
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <Check className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
-                        <span className="text-sm text-foreground">2 meses GRATIS</span>
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <Check className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
-                        <span className="text-sm text-foreground">Acceso prioritario a workshops</span>
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <Check className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
-                        <span className="text-sm text-foreground">Sesiones 1:1 mensuales</span>
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <Check className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
-                        <span className="text-sm text-foreground">Recursos exclusivos</span>
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <Check className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
-                        <span className="text-sm text-foreground">Garantía de 30 días</span>
-                      </li>
-                    </>
-                  ) : (
-                    // Características por defecto
-                    <>
-                      <li className="flex items-start gap-2">
-                        <Check className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
-                        <span className="text-sm text-foreground">Acceso completo a la universidad</span>
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <Check className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
-                        <span className="text-sm text-foreground">300+ guías paso a paso</span>
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <Check className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
-                        <span className="text-sm text-foreground">Workshops en vivo semanales</span>
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <Check className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
-                        <span className="text-sm text-foreground">Comunidad privada</span>
-                      </li>
-                    </>
-                  )}
-                </ul>
-              </CardContent>
-            </Card>
+            {/* Caja azul: beneficios de la prueba */}
+            <div className="rounded-lg p-5 bg-blue-500/10 border border-blue-500/20">
+              <h3 className="font-semibold text-foreground mb-3">
+                {isTrialPlan
+                  ? "Su prueba de 14 días le brinda acceso completo a:"
+                  : "Tendrás acceso completo a:"}
+              </h3>
+              <ul className="space-y-2">
+                <li className="flex items-start gap-2">
+                  <Check className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                  <span className="text-sm text-foreground">5-10 recursos de IA que puedes implementar en minutos</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <Check className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                  <span className="text-sm text-foreground">Guías diarias paso a paso para las últimas herramientas y flujos de trabajo de IA</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <Check className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                  <span className="text-sm text-foreground">Talleres semanales en vivo dirigidos por expertos</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <Check className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                  <span className="text-sm text-foreground">Cursos de certificación específicos de la industria para demostrar sus habilidades</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <Check className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                  <span className="text-sm text-foreground">Una red de más de 10 000 usuarios pioneros de IA</span>
+                </li>
+              </ul>
+            </div>
+
+            {/* Caja info: reembolso */}
+            <div className="rounded-lg p-4 bg-blue-500/5 border border-blue-500/10 flex gap-3">
+              <Info className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+              <p className="text-sm text-muted-foreground">
+                El 70% de los miembros reciben un reembolso de su empresa. Pregúntele a su gerente sobre la posibilidad de deducir su membresía como gasto.
+              </p>
+            </div>
           </div>
 
-          {/* Right Side: Stripe Embedded Checkout */}
-          <div>
-            <Card className="bg-card border-border">
+          {/* Right: Método de pago (fondo gris como la imagen) */}
+          <div className="space-y-4">
+            <Card className="bg-muted/40 border-border">
               <CardContent className="p-6">
                 <h2 className="text-xl font-bold text-foreground mb-6">
                   Método de pago
                 </h2>
-
-                {clientSecret ? (
+                {activeClientSecret ? (
                   <EmbeddedCheckoutProvider
                     stripe={stripePromise}
-                    options={{ clientSecret }}
+                    options={{ clientSecret: activeClientSecret }}
                   >
                     <EmbeddedCheckout />
                   </EmbeddedCheckoutProvider>
                 ) : (
                   <div className="flex items-center justify-center py-12">
                     <div className="text-center">
-                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-                      <p className="text-muted-foreground">
-                        Preparando checkout...
-                      </p>
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4" />
+                      <p className="text-muted-foreground">Preparando checkout...</p>
                     </div>
                   </div>
                 )}
               </CardContent>
             </Card>
+
+            {/* Footer legal */}
+            <p className="text-xs text-muted-foreground">
+              Se factura anualmente o al finalizar el periodo de prueba. Todos los precios están en USD. Cancela antes del periodo de prueba sin coste. Al suscribirte, aceptas nuestros{" "}
+              <Link href="/condiciones-servicio" className="text-primary underline hover:no-underline">términos</Link>
+              {" "}y nuestra{" "}
+              <Link href="/politica-privacidad" className="text-primary underline hover:no-underline">política de privacidad</Link>.
+            </p>
           </div>
         </div>
       </div>

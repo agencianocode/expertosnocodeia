@@ -141,6 +141,101 @@ export async function createEmbeddedCheckoutSession(
 }
 
 /**
+ * Create embedded checkout session for GUEST (no auth).
+ * Sin email: Stripe muestra el formulario completo (email + tarjeta) como en The Rundown.
+ */
+export async function createEmbeddedCheckoutSessionGuest(
+  planId: string
+): Promise<{ clientSecret: string; sessionId: string }> {
+  if (!stripe) {
+    throw new Error('Stripe no está configurado. Verifica STRIPE_SECRET_KEY en las variables de entorno.');
+  }
+
+  const plan = await storage.getSubscriptionPlan(planId);
+  if (!plan) {
+    throw new Error(`Plan no encontrado: ${planId}`);
+  }
+
+  const baseUrl = process.env.FRONTEND_URL || 'http://localhost:5000';
+  const returnUrl = `${baseUrl}/checkout-return?session_id={CHECKOUT_SESSION_ID}`;
+
+  const trialDays = plan.trialDays && plan.trialDays > 0 ? plan.trialDays : 14;
+  const isSubscription = plan.billingInterval !== 'trial' && plan.price > 0;
+
+  if (isSubscription) {
+    const price = await stripe.prices.create({
+      currency: (plan.currency || 'usd').toLowerCase(),
+      unit_amount: plan.price,
+      recurring: {
+        interval: plan.billingInterval === 'year' ? 'year' : 'month',
+      },
+      product_data: {
+        name: plan.displayName,
+      },
+    });
+
+    const session = await stripe.checkout.sessions.create({
+      ui_mode: 'embedded',
+      mode: 'subscription',
+      line_items: [{ price: price.id, quantity: 1 }],
+      return_url: returnUrl,
+      customer_creation: 'always',
+      metadata: {
+        planId: planId,
+        planName: plan.name,
+        guest: '1',
+      },
+      subscription_data: {
+        trial_period_days: trialDays,
+        metadata: {
+          planId: planId,
+          planName: plan.name,
+          guest: '1',
+        },
+      },
+      allow_promotion_codes: true,
+      billing_address_collection: 'auto',
+      phone_number_collection: { enabled: false },
+    });
+
+    return {
+      clientSecret: session.client_secret!,
+      sessionId: session.id,
+    };
+  }
+
+  const session = await stripe.checkout.sessions.create({
+    ui_mode: 'embedded',
+    mode: 'payment',
+    customer_creation: 'always',
+    line_items: [
+      {
+        price_data: {
+          currency: (plan.currency || 'usd').toLowerCase(),
+          unit_amount: plan.price,
+          product_data: {
+            name: plan.displayName,
+            description: `Plan ${plan.displayName}`,
+          },
+        },
+        quantity: 1,
+      },
+    ],
+    return_url: returnUrl,
+    metadata: {
+      planId: planId,
+      planName: plan.name,
+      guest: '1',
+    },
+  });
+
+  return {
+    clientSecret: session.client_secret!,
+    sessionId: session.id,
+  };
+}
+
+/**
  * Create a Stripe Checkout Session for subscription (Legacy - Hosted)
  * Mantener por compatibilidad
  */
@@ -253,16 +348,49 @@ export async function handleStripeWebhook(
 }
 
 /**
- * Handle successful checkout
+ * Handle successful checkout (incl. guest checkout: crear/buscar usuario por email)
  */
 async function handleCheckoutCompleted(session: Stripe.Checkout.Session): Promise<void> {
-  const userId = session.metadata?.userId;
   const planId = session.metadata?.planId;
   const planName = session.metadata?.planName;
+  const isGuest = session.metadata?.guest === '1';
 
-  if (!userId || !planId || !planName) {
+  if (!planId || !planName) {
     console.error('❌ Missing metadata in checkout session:', session.id);
     return;
+  }
+
+  let userId: string | undefined = session.metadata?.userId as string | undefined;
+
+  if (isGuest || !userId) {
+    const email = (session.customer_details as any)?.email || (session as any).customer_email;
+    if (!email) {
+      console.error('❌ Guest checkout: no email in session', session.id);
+      return;
+    }
+    let user = await storage.getUserByEmail(email);
+    if (!user) {
+      const crypto = await import('crypto');
+      const randomPassword = crypto.randomBytes(24).toString('base64');
+      let hashedPassword: string;
+      try {
+        const bcrypt = await import('bcrypt');
+        const bcryptModule = (bcrypt as any).default || bcrypt;
+        hashedPassword = await bcryptModule.hash(randomPassword, 10);
+      } catch {
+        hashedPassword = Buffer.from(randomPassword).toString('base64');
+      }
+      user = await storage.createUser({
+        email,
+        password: hashedPassword,
+        firstName: '',
+        lastName: '',
+        provider: 'email',
+        isEmailVerified: true,
+      });
+      console.log('✅ Guest checkout: usuario creado por email', user.id);
+    }
+    userId = user.id;
   }
 
   const customerId = session.customer as string;

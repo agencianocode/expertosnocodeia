@@ -8,7 +8,6 @@ import { Check, Loader2, ArrowRight } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useSimpleAuth } from "@/hooks/use-simple-auth";
 import { Link } from "wouter";
-import Sidebar from "@/components/layout/sidebar";
 import MobileHeader from "@/components/layout/mobile-header";
 import MobileNav from "@/components/layout/mobile-nav";
 
@@ -168,13 +167,8 @@ export default function LandingPricing() {
       <MobileHeader />
       
       <div className="flex">
-        {/* Sidebar - Hidden on mobile */}
-        <div className="hidden lg:block">
-          <Sidebar />
-        </div>
-        
-        {/* Main Content */}
-        <main className="flex-1 lg:ml-[250px] h-screen bg-background pb-20 lg:pb-0 overflow-auto flex items-center justify-center">
+        {/* Sin sidebar lateral: solo contenido de precios centrado */}
+        <main className="flex-1 w-full min-h-screen bg-background pb-20 lg:pb-12 overflow-auto flex items-center justify-center">
           <div className="max-w-7xl mx-auto w-full px-8">
             {/* Hero Section */}
             <section className="px-4 mb-6">

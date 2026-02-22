@@ -199,13 +199,13 @@ export function SimpleAuthProvider({ children }: { children: ReactNode }) {
         saveEmail(data.user.email, 'email', `${data.user.firstName || ''} ${data.user.lastName || ''}`.trim());
         const intent = typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("intent") : null;
         toast({
-          title: intent === "trial" ? "¡Prueba activada!" : "¡Cuenta creada!",
+          title: intent === "trial" ? "¡Cuenta creada!" : "¡Cuenta creada!",
           description: intent === "trial"
-            ? "Tu prueba gratuita de 14 días ha comenzado. Redirigiendo..."
+            ? "Redirigiendo al checkout para activar tu prueba gratuita..."
             : (data.message || "Redirigiendo..."),
         });
         setTimeout(() => {
-          const target = intent === "trial" ? "/planes?trial_started=1" : "/planes";
+          const target = intent === "trial" ? "/checkout/trial" : "/planes";
           window.location.href = target;
         }, 500);
       } else {

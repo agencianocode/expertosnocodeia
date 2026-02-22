@@ -150,6 +150,8 @@ function Router() {
           {/* Public Landing Pages - Specific routes first */}
           <Route path="/pricing" component={LandingPricing} />
           <Route path="/planes" component={LandingPricing} />
+          <Route path="/checkout/:planId" component={Checkout} />
+          <Route path="/checkout-return" component={CheckoutReturn} />
           <Route path="/landing" component={PublicLanding} />
           
           {/* Public access to main content pages with locked content */}
