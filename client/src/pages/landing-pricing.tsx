@@ -69,15 +69,25 @@ export default function LandingPricing() {
 
   const handlePlanSelect = (planId: string, isFreePlan: boolean = false) => {
     if (!isAuthenticated) {
-      toast({
-        title: "Crea tu cuenta",
-        description: isFreePlan
-          ? "Regístrate para comenzar tu prueba gratuita de 14 días."
-          : "Regístrate para elegir tu plan y continuar al pago.",
-        variant: "default",
+      // Ir directo al checkout según la opción elegida (guest checkout)
+      if (isFreePlan) {
+        setLocation('/checkout/trial');
+        return;
+      }
+      const apiPlan = plans?.find(p => {
+        if (planId === 'mensual') return p.billingInterval === 'month';
+        if (planId === 'anual') return p.billingInterval === 'year';
+        return false;
       });
-      const intent = isFreePlan ? "trial" : "subscribe";
-      setLocation(`/register?intent=${intent}`);
+      if (apiPlan) {
+        setLocation(`/checkout/${apiPlan.id}`);
+      } else {
+        toast({
+          title: "Plan no disponible",
+          description: "Los planes se están cargando. Intenta en un momento.",
+          variant: "destructive",
+        });
+      }
       return;
     }
 
@@ -111,52 +121,56 @@ export default function LandingPricing() {
   const staticPlans = [
     {
       id: 'prueba-gratis',
-      title: 'Prueba Gratis',
+      title: 'Prueba Gratis (15 días)',
       price: 0,
-      period: '/14 días',
-      subtitle: 'Desbloquear el acceso a:',
+      period: '/primeros 15 días (luego $39/mes)',
+      subtitle: 'Explora todo el ecosistema sin compromiso.',
       features: [
-        '5-10 casos de uso de IA',
-        'Cursos de IA certificados para la industria seleccionada',
-        'Guías diarias paso a paso',
-        'Talleres semanales dirigidos por expertos (solo en vivo)',
-        'Comunidad privada'
+        'Acceso completo a Programas Core: Agentes IA 2.0, VibeCoding y NoCode SaaS IA.',
+        'Guías diarias paso a paso: Implementaciones prácticas desde el primer día.',
+        'Workshops en vivo: Participa en los talleres de la semana con expertos.',
+        'Comunidad Privada: Conecta con otros creadores y profesionales.',
+        'Centro de Oportunidades: Explora vacantes y proyectos en NoCode Match.',
+        'Sin permanencia: Cancela fácilmente antes del día 15 si no es para ti.'
       ],
       isPopular: false,
+      ctaLabel: 'Empezar mi prueba gratuita',
       apiPlanId: plans?.find(p => p.billingInterval === 'trial' || p.price === 0)?.id
     },
     {
       id: 'mensual',
-      title: 'Mensual',
+      title: 'Membresía Mensual',
       price: 39,
       period: '/mes',
-      subtitle: 'Perfecto para empezar',
+      subtitle: 'Formación continua y herramientas de implementación.',
       features: [
-        'Acceso completo a la universidad',
-        '300+ guías paso a paso',
-        'Workshops en vivo semanales',
-        'Comunidad privada',
-        'Certificados de finalización',
-        'Descuentos en herramientas'
+        'Todo el contenido de la Prueba Gratis incluido.',
+        'Cursos de IA Certificados: Obtén diplomas avalados por la industria.',
+        'Biblioteca de Workshops "A pedido": Acceso a todas las grabaciones pasadas.',
+        'Rutas de Aprendizaje: Guía estructurada para dominar cada tecnología.',
+        'Apoyo del equipo de expertos: Resolvemos tus dudas técnicas en la plataforma.',
+        'Descuentos en Herramientas: Ahorra en las suscripciones de software que usas a diario.'
       ],
       isPopular: false,
+      ctaLabel: 'Unirme mensualmente',
       apiPlanId: plans?.find(p => p.billingInterval === 'month')?.id
     },
     {
       id: 'anual',
-      title: 'Anual',
-      price: 299,
+      title: 'Plan Anual — Acceso Total',
+      price: 297,
       period: '/año',
-      subtitle: 'Mejor valor - Ahorra $169',
+      subtitle: 'Ahorras $171 USD al año (Equivale a solo $24.75/mes).',
       features: [
-        'Todo lo incluido en Mensual',
-        '2 meses GRATIS',
-        'Acceso prioritario a workshops',
-        'Sesiones 1:1 mensuales',
-        'Recursos exclusivos',
-        'Garantía de 30 días'
+        'Todo lo incluido en el Plan Mensual.',
+        '2 Meses de regalo: Pago único anual con descuento masivo.',
+        'Apoyo Personalizado Prioritario: Respuesta preferente de nuestro equipo en tus proyectos.',
+        'Acceso VIP a NoCode Match: Sé el primero en ver y aplicar a las mejores oportunidades.',
+        'Recursos Exclusivos: Plantillas y prompts avanzados solo para miembros anuales.',
+        'Garantía de 30 días: Si no estás satisfecho, te devolvemos el dinero sin preguntas.'
       ],
       isPopular: true,
+      ctaLabel: 'Obtener Acceso Total y Ahorrar',
       apiPlanId: plans?.find(p => p.billingInterval === 'year')?.id
     }
   ];
@@ -281,7 +295,7 @@ export default function LandingPricing() {
                       'Tu plan actual'
                     ) : (
                       <>
-                        Empezar ahora
+                        {(plan as any).ctaLabel || 'Empezar ahora'}
                         <ArrowRight className="ml-2 h-4 w-4" />
                       </>
                     )}

@@ -10,7 +10,7 @@ import { SupabaseStorageService, supabaseStorage, supabase } from "./supabaseSto
 import { supabaseAuth, optionalSupabaseAuth, supabaseAdminAuth, AuthenticatedRequest } from "./supabaseAuth";
 import { setupSupabaseAuthRoutes } from "./supabaseAuthRoutes";
 import { insertLessonResourceSchema, updateRoomSchema, userSavedCourses, courses, communityChannels, communityMessages, communityPosts, communityPostComments, communityPostReactions, communityPostCommentReactions, users, adminUsers, rooms, userNotificationPreferences, userPoints, liveEvents, eventRegistrations, userSubscriptions, subscriptionPlans, userProgress, userRecentActivity, lessons, userLessonProgress } from "../shared/schema";
-import { createCheckoutSession, createEmbeddedCheckoutSession, createEmbeddedCheckoutSessionGuest, createTrialSetupIntent, createTrialSetupIntentGuest, createTrialSubscriptionFromSetupIntentId, createTrialSubscriptionWithPaymentMethod, createTrialSubscriptionWithPaymentMethodId, handleStripeWebhook, stripe } from "./stripe";
+import { createCheckoutSession, createEmbeddedCheckoutSession, createEmbeddedCheckoutSessionGuest, createTrialSetupIntent, createTrialSetupIntentGuest, createTrialSubscriptionFromSetupIntentId, createTrialSubscriptionWithPaymentMethod, createTrialSubscriptionWithPaymentMethodId, createPaidSubscriptionWithPaymentMethodId, createPaidSubscriptionFromSetupIntentId, handleStripeWebhook, stripe } from "./stripe";
 import { 
   sendEmail, 
   sendWelcomeEmail, 
@@ -6403,6 +6403,42 @@ const getUserIdFromRequest = (req: any): string | null => {
       }
     } catch (error: any) {
       console.error("Error creating trial subscription:", error);
+      res.status(500).json({
+        message: error?.message || "Error al crear suscripción",
+        error: error?.message,
+      });
+    }
+  });
+
+  // Invitado + plan de pago (mensual/anual): crear suscripción con paymentMethodId (mismo flujo que trial: email + tarjeta en una pantalla)
+  app.post("/api/subscriptions/create-paid-subscription", async (req: Request, res: Response) => {
+    try {
+      const { paymentMethodId, planId, email } = req.body || {};
+      if (!paymentMethodId || !planId || !email) {
+        return res.status(400).json({ message: "paymentMethodId, planId y email son requeridos" });
+      }
+      const result = await createPaidSubscriptionWithPaymentMethodId(paymentMethodId, planId, email);
+      res.json({ subscriptionId: result.subscriptionId, success: true });
+    } catch (error: any) {
+      console.error("Error creating paid subscription (guest):", error);
+      res.status(500).json({
+        message: error?.message || "Error al crear suscripción",
+        error: error?.message,
+      });
+    }
+  });
+
+  // Invitado pago: tras redirección 3DS, completar suscripción con setupIntentId
+  app.post("/api/subscriptions/confirm-paid-from-setup-intent", async (req: Request, res: Response) => {
+    try {
+      const { setupIntentId, planId, email } = req.body || {};
+      if (!setupIntentId || !planId || !email) {
+        return res.status(400).json({ message: "setupIntentId, planId y email son requeridos" });
+      }
+      const result = await createPaidSubscriptionFromSetupIntentId(setupIntentId, planId, email);
+      res.json({ subscriptionId: result.subscriptionId, success: true });
+    } catch (error: any) {
+      console.error("Error confirming paid from setup intent:", error);
       res.status(500).json({
         message: error?.message || "Error al crear suscripción",
         error: error?.message,

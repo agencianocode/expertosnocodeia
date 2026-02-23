@@ -32,6 +32,7 @@ function TrialPaymentForm({
   onError,
   loading,
   setLoading,
+  submitLabel = "Suscribir",
 }: {
   email: string;
   planId: string;
@@ -39,6 +40,7 @@ function TrialPaymentForm({
   onError: (msg: string) => void;
   loading: boolean;
   setLoading: (v: boolean) => void;
+  submitLabel?: string;
 }) {
   const stripe = useStripe();
   const elements = useElements();
@@ -99,7 +101,89 @@ function TrialPaymentForm({
         <PaymentElement options={{ layout: "tabs" }} />
       </div>
       <Button type="submit" className="w-full" disabled={!stripe || loading}>
-        {loading ? "Procesando…" : "Suscribir"}
+        {loading ? "Procesando…" : submitLabel}
+      </Button>
+    </form>
+  );
+}
+
+function GuestPaidPaymentForm({
+  email,
+  planId,
+  onSuccess,
+  onError,
+  loading,
+  setLoading,
+  submitLabel = "Suscribir",
+}: {
+  email: string;
+  planId: string;
+  onSuccess: () => void;
+  onError: (msg: string) => void;
+  loading: boolean;
+  setLoading: (v: boolean) => void;
+  submitLabel?: string;
+}) {
+  const stripe = useStripe();
+  const elements = useElements();
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!stripe || !elements) return;
+    const trimmedEmail = email.trim();
+    if (!trimmedEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
+      onError("Introduce un email válido");
+      return;
+    }
+    setLoading(true);
+    onError("");
+    try {
+      sessionStorage.setItem("paidPending", JSON.stringify({ planId, email: trimmedEmail }));
+      const result = await stripe.confirmSetup({
+        elements,
+        confirmParams: {
+          payment_method_data: { billing_details: { email: trimmedEmail } },
+          return_url: `${window.location.origin}/checkout-return?paid=1`,
+        },
+      });
+      if (result.error) {
+        sessionStorage.removeItem("paidPending");
+        onError(result.error.message || "Error al guardar el método de pago");
+        setLoading(false);
+        return;
+      }
+      const si = (result as { setupIntent?: { payment_method?: string | { id: string } } }).setupIntent;
+      const pm = si?.payment_method;
+      const paymentMethodId = typeof pm === "string" ? pm : pm?.id;
+      if (paymentMethodId) {
+        const res = await fetch("/api/subscriptions/create-paid-subscription", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            paymentMethodId,
+            planId,
+            email: trimmedEmail,
+          }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.error || data.message || "Error al activar la suscripción");
+      }
+      sessionStorage.removeItem("paidPending");
+      onSuccess();
+    } catch (err: any) {
+      onError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="rounded-lg border border-gray-200 bg-white p-3">
+        <PaymentElement options={{ layout: "tabs" }} />
+      </div>
+      <Button type="submit" className="w-full" disabled={!stripe || loading}>
+        {loading ? "Procesando…" : submitLabel}
       </Button>
     </form>
   );
@@ -116,6 +200,8 @@ export default function Checkout() {
   const [guestEmail, setGuestEmail] = useState("");
   const [setupClientSecret, setSetupClientSecret] = useState<string | null>(null);
   const [loadingSubmit, setLoadingSubmit] = useState(false);
+  const [guestEmbeddedClientSecret, setGuestEmbeddedClientSecret] = useState<string | null>(null);
+  const [guestPaidSetupClientSecret, setGuestPaidSetupClientSecret] = useState<string | null>(null);
 
   const planId = params?.planId;
 
@@ -137,16 +223,17 @@ export default function Checkout() {
 
   const plan = plans?.find((p: any) => p.id === effectivePlanId);
   const isGuestTrial = !isAuthenticated && planId === "trial" && !!effectivePlanId;
+  const isGuestPaidPlan = !isAuthenticated && planId !== "trial" && !!effectivePlanId && !!plan;
   const isTrialWaitingPlans = !isAuthenticated && planId === "trial" && plans === undefined;
 
-  // Redirigir a login solo si no es flujo guest de prueba (no redirigir mientras cargan planes en /checkout/trial)
+  // Redirigir: solo si no hay plan válido (trial sin plan, o planId no encontrado)
   useEffect(() => {
     if (isTrialWaitingPlans) return;
-    if (!isAuthenticated && planId !== "trial") {
-      setLocation("/login");
+    if (!isAuthenticated && planId === "trial" && plans && !effectivePlanId) {
+      setLocation("/planes");
       return;
     }
-    if (!isAuthenticated && planId === "trial" && plans && !effectivePlanId) {
+    if (!isAuthenticated && planId !== "trial" && plans && !effectivePlanId) {
       setLocation("/planes");
       return;
     }
@@ -206,21 +293,48 @@ export default function Checkout() {
     return () => { cancelled = true; };
   }, [isGuestTrial, effectivePlanId, setupClientSecret]);
 
+  // Invitado + plan de pago (mensual/anual): mismo formulario que trial (SetupIntent + email + Payment Element)
+  useEffect(() => {
+    if (!isGuestPaidPlan || !effectivePlanId || guestPaidSetupClientSecret) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch("/api/subscriptions/trial-setup-intent-guest", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ planId: effectivePlanId }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (cancelled) return;
+        if (!res.ok) throw new Error(data.error || data.message || "Error al cargar");
+        setGuestPaidSetupClientSecret(data.clientSecret);
+      } catch (err: any) {
+        if (!cancelled) setError(err.message);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [isGuestPaidPlan, effectivePlanId, guestPaidSetupClientSecret]);
+
   // Clases para fondo blanco fijo en toda la página de checkout
   const pageBg = "min-h-screen bg-white text-gray-900";
   const mutedText = "text-gray-600";
 
-  // Trial invitado: una sola pantalla como imagen 1 (dos columnas: beneficios + email/tarjeta/Suscribir)
+  // Trial invitado: Prueba Gratis 15 días
   if (isGuestTrial && plan) {
-    const isTrialPlan = (plan.trialDays && plan.trialDays > 0) || plan.billingInterval === "trial";
-    const totalToday = isTrialPlan ? 0 : (plan.price / 100);
-    const monthlyDollars = plan.billingInterval === "year" ? Math.round(plan.price / 100 / 12) : (plan.price / 100) || 39;
+    const trialFeatures = [
+      "Acceso completo a Programas Core: Agentes IA 2.0, VibeCoding y NoCode SaaS IA.",
+      "Guías diarias paso a paso: Implementaciones prácticas desde el primer día.",
+      "Workshops en vivo: Participa en los talleres de la semana con expertos.",
+      "Comunidad Privada: Conecta con otros creadores y profesionales.",
+      "Centro de Oportunidades: Explora vacantes y proyectos en NoCode Match.",
+      "Sin permanencia: Cancela fácilmente antes del día 15 si no es para ti.",
+    ];
+    const monthlyDollars = 39;
 
     return (
       <div className={pageBg}>
         <div className="container mx-auto px-6 sm:px-4 pt-12 pb-4 sm:pt-16 sm:pb-6 max-w-6xl">
           <div className="grid lg:grid-cols-2 gap-6 lg:gap-8 items-start">
-            {/* Columna izquierda: logo + beneficios */}
             <div className="space-y-4">
               <img
                 src="/Logo.svg"
@@ -229,13 +343,15 @@ export default function Checkout() {
                 onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
               />
               <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900">
-                Prueba Gratuita De 14 Días
+                Prueba Gratis por 15 días
               </h1>
+              <p className={`text-sm font-medium text-gray-800`}>
+                Explora todo el ecosistema sin compromiso.
+              </p>
+              {/* Recuadro: Total a pagar hoy + Ver detalles */}
               <div className="flex items-center justify-between">
                 <span className={mutedText}>Total a pagar hoy</span>
-                <span className={`text-2xl font-bold ${totalToday === 0 ? "text-green-600" : "text-gray-900"}`}>
-                  ${totalToday}
-                </span>
+                <span className="text-2xl font-bold text-green-600">$0</span>
               </div>
               <Collapsible defaultOpen={true}>
                 <CollapsibleTrigger className={`flex items-center gap-2 text-sm ${mutedText} hover:text-gray-900 w-full text-left`}>
@@ -243,15 +359,12 @@ export default function Checkout() {
                 </CollapsibleTrigger>
                 <CollapsibleContent className={`pt-2 space-y-1 text-sm ${mutedText}`}>
                   <div>Valor mensual: ${monthlyDollars} USD</div>
-                  <div>Total a pagar después de 14 días de prueba: ${monthlyDollars} USD</div>
+                  <div>Total a pagar después de 15 días de prueba: ${monthlyDollars} USD</div>
                 </CollapsibleContent>
               </Collapsible>
               <div className="rounded-lg p-4 sm:p-5 bg-sky-50 border border-sky-200">
-                <h3 className="font-semibold text-gray-900 mb-3">
-                  Su prueba de 14 días le brinda acceso completo a:
-                </h3>
                 <ul className="space-y-2">
-                  {["5-10 recursos de IA que puedes implementar en minutos", "Guías diarias paso a paso para las últimas herramientas y flujos de trabajo de IA", "Talleres semanales en vivo dirigidos por expertos", "Cursos de certificación específicos de la industria para demostrar sus habilidades", "Comunidad exclusiva de profesionales que aprenden y aplican IA"].map((text, i) => (
+                  {trialFeatures.map((text, i) => (
                     <li key={i} className="flex items-start gap-2">
                       <Check className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
                       <span className="text-sm text-gray-800">{text}</span>
@@ -267,7 +380,6 @@ export default function Checkout() {
               </div>
             </div>
 
-            {/* Columna derecha: Método de pago alineado con el logo */}
             <div className="space-y-4 lg:pt-0">
               <Card className="bg-gray-100 border-gray-200">
                 <CardContent className="p-4 sm:p-6">
@@ -300,6 +412,7 @@ export default function Checkout() {
                           onError={setError}
                           loading={loadingSubmit}
                           setLoading={setLoadingSubmit}
+                          submitLabel="Empezar mi prueba gratuita"
                         />
                       </Elements>
                     </>
@@ -307,7 +420,147 @@ export default function Checkout() {
                 </CardContent>
               </Card>
               <p className="text-xs text-gray-500">
-                Se factura mensualmente o al finalizar el periodo de prueba. Todos los precios están en USD. Cancela antes del periodo de prueba sin coste. Al suscribirte, aceptas nuestros{" "}
+                Se factura mensualmente o al finalizar el periodo de prueba. Todos los precios están en USD. Cancela antes del día 15 sin coste. Al suscribirte, aceptas nuestros{" "}
+                <Link href="/condiciones-servicio" className="underline">términos</Link> y{" "}
+                <Link href="/politica-privacidad" className="underline">política de privacidad</Link>.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Invitado + plan de pago (mensual/anual): mismo layout que trial, textos según plan
+  if (isGuestPaidPlan && plan) {
+    const priceInDollars = plan.price / 100;
+    const isAnnual = plan.billingInterval === "year";
+    const displayPrice = isAnnual ? 297 : priceInDollars;
+    const monthlyFeatures = [
+      "Todo el ecosistema de programas (Agentes 2.0, VibeCoding, SaaS IA) + Beneficios de Miembro.",
+      "Cursos de IA Certificados: Obtén diplomas avalados por la industria.",
+      "Biblioteca de Workshops \"A pedido\": Acceso a todas las grabaciones pasadas.",
+      "Rutas de Aprendizaje: Guía estructurada para dominar cada tecnología.",
+      "Apoyo del equipo de expertos: Resolvemos tus dudas técnicas en la plataforma.",
+      "Descuentos en Herramientas: Ahorra en las suscripciones de software que usas a diario.",
+    ];
+    const annualFeatures = [
+      "Todo lo incluido en el Plan Mensual.",
+      "2 Meses de regalo: Pago único anual con descuento masivo.",
+      "Apoyo Personalizado Prioritario: Respuesta preferente de nuestro equipo en tus proyectos.",
+      "Acceso VIP a NoCode Match: Sé el primero en ver y aplicar a las mejores oportunidades.",
+      "Recursos Exclusivos: Plantillas y prompts avanzados solo para miembros anuales.",
+      "Garantía de 30 días: Si no estás satisfecho, te devolvemos el dinero sin preguntas.",
+    ];
+    const planTitle = isAnnual ? "Plan Anual — Acceso Total" : "Membresía Mensual";
+    const planSubtitle = isAnnual
+      ? "Equivale a solo $24.75/mes."
+      : "Formación continua y herramientas de implementación.";
+    const features = isAnnual ? annualFeatures : monthlyFeatures;
+    const submitLabel = isAnnual ? "Obtener Acceso Total y Ahorrar" : "Unirme mensualmente";
+
+    return (
+      <div className={pageBg}>
+        <div className="container mx-auto px-6 sm:px-4 pt-12 pb-4 sm:pt-16 sm:pb-6 max-w-6xl">
+          <div className="grid lg:grid-cols-2 gap-6 lg:gap-8 items-start">
+            <div className="space-y-4">
+              <img
+                src="/Logo.svg"
+                alt="Expertos NoCode IA"
+                className="h-12 w-auto sm:h-16 object-contain"
+                onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+              />
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900">
+                {planTitle}
+              </h1>
+              {/* Total a pagar hoy + Ver detalles (estilo The Rundown) */}
+              <div className="flex items-center justify-between">
+                <span className={mutedText}>Total a pagar hoy</span>
+                <span className="text-2xl font-bold text-gray-900">${displayPrice}</span>
+              </div>
+              <Collapsible defaultOpen={true}>
+                <CollapsibleTrigger className={`flex items-center gap-2 text-sm ${mutedText} hover:text-gray-900 w-full text-left`}>
+                  <ChevronDown className="h-4 w-4" /> Ver detalles
+                </CollapsibleTrigger>
+                <CollapsibleContent className={`pt-2 space-y-1 text-sm ${mutedText}`}>
+                  {isAnnual ? (
+                    <>
+                      <div>Tasa anual: ${displayPrice} / año</div>
+                      <div>Equivale a ${Math.round(displayPrice / 12)}/mes</div>
+                    </>
+                  ) : (
+                    <div>Tasa mensual: ${displayPrice} / mes</div>
+                  )}
+                </CollapsibleContent>
+              </Collapsible>
+              {isAnnual && (
+                <div className="inline-flex items-center px-3 py-1.5 rounded-full bg-green-100 border border-green-300">
+                  <span className="text-sm font-semibold text-green-800">Ahorras $171 USD al año</span>
+                </div>
+              )}
+              {/* Tendrás acceso completo a: (como en la imagen) */}
+              <div className="rounded-lg p-4 sm:p-5 bg-sky-50 border border-sky-200">
+                <h3 className="font-semibold text-gray-900 mb-3">
+                  Tendrás acceso completo a:
+                </h3>
+                <ul className="space-y-2">
+                  {features.map((text, i) => (
+                    <li key={i} className="flex items-start gap-2">
+                      <Check className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
+                      <span className="text-sm text-gray-800">{text}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <div className="rounded-lg p-4 bg-sky-50/80 border border-sky-200 flex gap-3">
+                <Info className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                <p className={`text-sm ${mutedText}`}>
+                  Invierte en tu crecimiento profesional. La formación en IA es una de las mejores decisiones para tu carrera.
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-4 lg:pt-0">
+              <Card className="bg-gray-100 border-gray-200">
+                <CardContent className="p-4 sm:p-6">
+                  <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-4">
+                    Método de pago
+                  </h2>
+                  {!guestPaidSetupClientSecret ? (
+                    <div className="flex items-center justify-center py-8">
+                      <p className={mutedText}>Cargando…</p>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="space-y-2 mb-4">
+                        <Label htmlFor="guest-paid-email" className="text-gray-900">Correo electrónico</Label>
+                        <Input
+                          id="guest-paid-email"
+                          type="email"
+                          placeholder="tu@correoelectrónico.com"
+                          value={guestEmail}
+                          onChange={(e) => { setGuestEmail(e.target.value); setError(null); }}
+                          className="bg-white border-gray-300"
+                        />
+                      </div>
+                      {error && <p className="text-sm text-destructive mb-2">{error}</p>}
+                      <Elements stripe={stripePromise} options={{ clientSecret: guestPaidSetupClientSecret, appearance: { theme: "stripe", variables: { borderRadius: "8px" } } }}>
+                        <GuestPaidPaymentForm
+                          email={guestEmail}
+                          planId={effectivePlanId!}
+                          onSuccess={() => setLocation("/checkout-return?paid=1")}
+                          onError={setError}
+                          loading={loadingSubmit}
+                          setLoading={setLoadingSubmit}
+                          submitLabel={submitLabel}
+                        />
+                      </Elements>
+                    </>
+                  )}
+                </CardContent>
+              </Card>
+              <p className="text-xs text-gray-500">
+                Todos los precios están en USD. Al suscribirte, aceptas nuestros{" "}
                 <Link href="/condiciones-servicio" className="underline">términos</Link> y{" "}
                 <Link href="/politica-privacidad" className="underline">política de privacidad</Link>.
               </p>
@@ -327,7 +580,7 @@ export default function Checkout() {
     );
   }
 
-  if (!isAuthenticated && !isGuestTrial) {
+  if (!isAuthenticated && !isGuestTrial && !isGuestPaidPlan) {
     if (planId === "trial" && plans === undefined) {
       return (
         <div className={`${pageBg} flex items-center justify-center`}>

@@ -60,7 +60,7 @@ async function createSubscriptionPlans() {
     {
       name: 'ANUAL',
       displayName: 'Anual',
-      price: 29900, // $299.00 en centavos
+      price: 29700, // $297.00 USD en centavos
       currency: 'USD',
       billingInterval: 'year',
       trialDays: 0,

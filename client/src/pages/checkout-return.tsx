@@ -15,8 +15,47 @@ export default function CheckoutReturn() {
     const params = new URLSearchParams(window.location.search);
     const sessionIdFromUrl = params.get("session_id");
     const trial = params.get("trial");
+    const paid = params.get("paid");
     const setupIntent = params.get("setup_intent");
     const redirectStatus = params.get("redirect_status");
+
+    // Flujo plan de pago invitado: suscripción ya creada en checkout, solo mostramos éxito
+    if (paid === "1") {
+      setStatus("success");
+      window.history.replaceState({}, "", "/checkout-return");
+      return;
+    }
+
+    // Flujo plan de pago invitado tras 3DS: completar suscripción con setupIntent
+    if (setupIntent && redirectStatus === "succeeded") {
+      const paidPending = sessionStorage.getItem("paidPending");
+      if (paidPending) {
+        try {
+          const parsed = JSON.parse(paidPending);
+          const { planId, email } = parsed;
+          if (planId && email) {
+            fetch("/api/subscriptions/confirm-paid-from-setup-intent", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ setupIntentId: setupIntent, planId, email }),
+            })
+              .then((res) => res.json().catch(() => ({})))
+              .then((data) => {
+                sessionStorage.removeItem("paidPending");
+                if (data.success !== false) {
+                  setStatus("success");
+                  window.history.replaceState({}, "", "/checkout-return");
+                } else setStatus("error");
+              })
+              .catch(() => setStatus("error"));
+            return;
+          }
+        } catch {
+          setStatus("error");
+          return;
+        }
+      }
+    }
 
     // Flujo trial: volvemos con trial=1 o setup_intent (tras 3DS)
     if (trial === "1" || (setupIntent && redirectStatus === "succeeded")) {
