@@ -10,7 +10,7 @@ import { SupabaseStorageService, supabaseStorage, supabase } from "./supabaseSto
 import { supabaseAuth, optionalSupabaseAuth, supabaseAdminAuth, AuthenticatedRequest } from "./supabaseAuth";
 import { setupSupabaseAuthRoutes } from "./supabaseAuthRoutes";
 import { insertLessonResourceSchema, updateRoomSchema, userSavedCourses, courses, communityChannels, communityMessages, communityPosts, communityPostComments, communityPostReactions, communityPostCommentReactions, users, adminUsers, rooms, userNotificationPreferences, userPoints, liveEvents, eventRegistrations, userSubscriptions, subscriptionPlans, userProgress, userRecentActivity, lessons, userLessonProgress } from "../shared/schema";
-import { createCheckoutSession, createEmbeddedCheckoutSession, createEmbeddedCheckoutSessionGuest, handleStripeWebhook, stripe } from "./stripe";
+import { createCheckoutSession, createEmbeddedCheckoutSession, createEmbeddedCheckoutSessionGuest, createTrialSetupIntent, createTrialSetupIntentGuest, createTrialSubscriptionFromSetupIntentId, createTrialSubscriptionWithPaymentMethod, createTrialSubscriptionWithPaymentMethodId, handleStripeWebhook, stripe } from "./stripe";
 import { 
   sendEmail, 
   sendWelcomeEmail, 
@@ -6340,8 +6340,90 @@ const getUserIdFromRequest = (req: any): string | null => {
     } catch (error: any) {
       console.error("Error creating guest embedded checkout session:", error);
       res.status(500).json({
-        message: "Error al crear sesión de checkout",
-        error: error.message,
+        message: error?.message || "Error al crear sesión de checkout",
+        error: error?.message,
+      });
+    }
+  });
+
+  // Trial una sola pantalla: SetupIntent sin customer (email + tarjeta visibles desde el inicio)
+  app.post("/api/subscriptions/trial-setup-intent-guest", async (req: Request, res: Response) => {
+    try {
+      const { planId } = req.body || {};
+      if (!planId || typeof planId !== "string") {
+        return res.status(400).json({ message: "planId es requerido" });
+      }
+      const result = await createTrialSetupIntentGuest(planId);
+      res.json({ clientSecret: result.clientSecret });
+    } catch (error: any) {
+      console.error("Error creating trial setup intent guest:", error);
+      res.status(500).json({
+        message: error?.message || "Error al crear sesión",
+        error: error?.message,
+      });
+    }
+  });
+
+  // Trial con email primero (flujo en dos pasos)
+  app.post("/api/subscriptions/trial-setup-intent", async (req: Request, res: Response) => {
+    try {
+      const { email, planId } = req.body || {};
+      if (!email || typeof email !== "string" || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+        return res.status(400).json({ message: "Email válido es requerido" });
+      }
+      if (!planId || typeof planId !== "string") {
+        return res.status(400).json({ message: "planId es requerido" });
+      }
+      const result = await createTrialSetupIntent(email, planId);
+      res.json({ clientSecret: result.clientSecret, customerId: result.customerId });
+    } catch (error: any) {
+      console.error("Error creating trial setup intent:", error);
+      res.status(500).json({
+        message: error?.message || "Error al crear sesión",
+        error: error?.message,
+      });
+    }
+  });
+
+  // Trial: tras confirmar tarjeta, crear suscripción. Acepta customerId (flujo 2 pasos) o paymentMethodId (flujo 1 pantalla).
+  app.post("/api/subscriptions/create-trial-subscription", async (req: Request, res: Response) => {
+    try {
+      const { customerId, paymentMethodId, planId, email } = req.body || {};
+      if (!planId || !email) {
+        return res.status(400).json({ message: "planId y email son requeridos" });
+      }
+      if (paymentMethodId && typeof paymentMethodId === "string") {
+        const result = await createTrialSubscriptionWithPaymentMethodId(paymentMethodId, planId, email);
+        res.json({ subscriptionId: result.subscriptionId, success: true });
+      } else if (customerId && typeof customerId === "string") {
+        const result = await createTrialSubscriptionWithPaymentMethod(customerId, planId, email);
+        res.json({ subscriptionId: result.subscriptionId, success: true });
+      } else {
+        return res.status(400).json({ message: "customerId o paymentMethodId es requerido" });
+      }
+    } catch (error: any) {
+      console.error("Error creating trial subscription:", error);
+      res.status(500).json({
+        message: error?.message || "Error al crear suscripción",
+        error: error?.message,
+      });
+    }
+  });
+
+  // Trial: tras redirección 3DS, completar suscripción con setupIntentId (flujo una pantalla)
+  app.post("/api/subscriptions/confirm-trial-from-setup-intent", async (req: Request, res: Response) => {
+    try {
+      const { setupIntentId, planId, email } = req.body || {};
+      if (!setupIntentId || !planId || !email) {
+        return res.status(400).json({ message: "setupIntentId, planId y email son requeridos" });
+      }
+      const result = await createTrialSubscriptionFromSetupIntentId(setupIntentId, planId, email);
+      res.json({ subscriptionId: result.subscriptionId, success: true });
+    } catch (error: any) {
+      console.error("Error confirming trial from setup intent:", error);
+      res.status(500).json({
+        message: error?.message || "Error al crear suscripción",
+        error: error?.message,
       });
     }
   });
@@ -6380,8 +6462,8 @@ const getUserIdFromRequest = (req: any): string | null => {
     } catch (error: any) {
       console.error("Error creating embedded checkout session:", error);
       res.status(500).json({ 
-        message: "Error al crear sesión de checkout",
-        error: error.message,
+        message: error?.message || "Error al crear sesión de checkout",
+        error: error?.message,
       });
     }
   });

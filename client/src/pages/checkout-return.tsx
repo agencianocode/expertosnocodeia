@@ -14,7 +14,63 @@ export default function CheckoutReturn() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const sessionIdFromUrl = params.get("session_id");
-    
+    const trial = params.get("trial");
+    const setupIntent = params.get("setup_intent");
+    const redirectStatus = params.get("redirect_status");
+
+    // Flujo trial: volvemos con trial=1 o setup_intent (tras 3DS)
+    if (trial === "1" || (setupIntent && redirectStatus === "succeeded")) {
+      const pending = sessionStorage.getItem("trialPending");
+      if (pending) {
+        try {
+          const parsed = JSON.parse(pending);
+          const { planId, email } = parsed;
+          const customerId = parsed.customerId;
+          if (setupIntent && redirectStatus === "succeeded" && planId && email) {
+            fetch("/api/subscriptions/confirm-trial-from-setup-intent", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ setupIntentId: setupIntent, planId, email }),
+            })
+              .then((res) => res.json().catch(() => ({})))
+              .then((data) => {
+                sessionStorage.removeItem("trialPending");
+                if (data.success !== false) {
+                  setStatus("success");
+                  window.history.replaceState({}, "", "/checkout-return");
+                } else setStatus("error");
+              })
+              .catch(() => setStatus("error"));
+          } else if (customerId && planId && email) {
+            fetch("/api/subscriptions/create-trial-subscription", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ customerId, planId, email }),
+            })
+              .then((res) => res.json().catch(() => ({})))
+              .then((data) => {
+                sessionStorage.removeItem("trialPending");
+                if (data.success !== false) {
+                  setStatus("success");
+                  window.history.replaceState({}, "", "/checkout-return");
+                } else setStatus("error");
+              })
+              .catch(() => setStatus("error"));
+          } else {
+            setStatus("success");
+            sessionStorage.removeItem("trialPending");
+            window.history.replaceState({}, "", "/checkout-return");
+          }
+        } catch {
+          setStatus("error");
+        }
+      } else {
+        setStatus("success");
+        window.history.replaceState({}, "", "/checkout-return");
+      }
+      return;
+    }
+
     if (!sessionIdFromUrl) {
       setStatus("error");
       return;
@@ -22,7 +78,6 @@ export default function CheckoutReturn() {
 
     setSessionId(sessionIdFromUrl);
 
-    // Verificar el estado del pago con Stripe
     const verifySession = async () => {
       try {
         const token = localStorage.getItem("simpleAuthToken");
@@ -37,9 +92,8 @@ export default function CheckoutReturn() {
 
         if (response.ok) {
           setStatus("success");
-          // Limpiar query params después de un tiempo
           setTimeout(() => {
-            window.history.replaceState({}, '', '/checkout-return');
+            window.history.replaceState({}, "", "/checkout-return");
           }, 1000);
         } else {
           setStatus("error");

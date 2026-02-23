@@ -161,13 +161,19 @@ export async function createEmbeddedCheckoutSessionGuest(
 
   const trialDays = plan.trialDays && plan.trialDays > 0 ? plan.trialDays : 14;
   const isSubscription = plan.billingInterval !== 'trial' && plan.price > 0;
+  const isTrialPlan = (plan.billingInterval === 'trial' || plan.price === 0) && trialDays > 0;
 
-  if (isSubscription) {
+  // Trial plan (Prueba Gratis): suscripción con trial que pide email + tarjeta desde el inicio (como The Rundown)
+  if (isTrialPlan) {
+    const afterTrialPlan = await storage.getSubscriptionPlanByName('MENSUAL');
+    if (!afterTrialPlan) {
+      throw new Error('Plan MENSUAL no encontrado. Necesario para cobrar después del trial.');
+    }
     const price = await stripe.prices.create({
-      currency: (plan.currency || 'usd').toLowerCase(),
-      unit_amount: plan.price,
+      currency: (afterTrialPlan.currency || 'usd').toLowerCase(),
+      unit_amount: afterTrialPlan.price,
       recurring: {
-        interval: plan.billingInterval === 'year' ? 'year' : 'month',
+        interval: afterTrialPlan.billingInterval === 'year' ? 'year' : 'month',
       },
       product_data: {
         name: plan.displayName,
@@ -179,7 +185,7 @@ export async function createEmbeddedCheckoutSessionGuest(
       mode: 'subscription',
       line_items: [{ price: price.id, quantity: 1 }],
       return_url: returnUrl,
-      customer_creation: 'always',
+      payment_method_collection: 'always',
       metadata: {
         planId: planId,
         planName: plan.name,
@@ -204,6 +210,49 @@ export async function createEmbeddedCheckoutSessionGuest(
     };
   }
 
+  if (isSubscription) {
+    const price = await stripe.prices.create({
+      currency: (plan.currency || 'usd').toLowerCase(),
+      unit_amount: plan.price,
+      recurring: {
+        interval: plan.billingInterval === 'year' ? 'year' : 'month',
+      },
+      product_data: {
+        name: plan.displayName,
+      },
+    });
+
+    const session = await stripe.checkout.sessions.create({
+      ui_mode: 'embedded',
+      mode: 'subscription',
+      line_items: [{ price: price.id, quantity: 1 }],
+      return_url: returnUrl,
+      payment_method_collection: 'always',
+      metadata: {
+        planId: planId,
+        planName: plan.name,
+        guest: '1',
+      },
+      subscription_data: {
+        ...(trialDays > 0 ? { trial_period_days: trialDays } : {}),
+        metadata: {
+          planId: planId,
+          planName: plan.name,
+          guest: '1',
+        },
+      },
+      allow_promotion_codes: true,
+      billing_address_collection: 'auto',
+      phone_number_collection: { enabled: false },
+    });
+
+    return {
+      clientSecret: session.client_secret!,
+      sessionId: session.id,
+    };
+  }
+
+  // Pago único $0 (solo si no es trial con tarjeta)
   const session = await stripe.checkout.sessions.create({
     ui_mode: 'embedded',
     mode: 'payment',
@@ -233,6 +282,254 @@ export async function createEmbeddedCheckoutSessionGuest(
     clientSecret: session.client_secret!,
     sessionId: session.id,
   };
+}
+
+/**
+ * Trial SetupIntent SIN customer: para mostrar email + tarjeta en una sola pantalla desde el inicio.
+ * El cliente se crea después al confirmar, con createTrialSubscriptionWithPaymentMethodId.
+ */
+export async function createTrialSetupIntentGuest(planId: string): Promise<{ clientSecret: string }> {
+  if (!stripe) {
+    throw new Error('Stripe no está configurado. Verifica STRIPE_SECRET_KEY en las variables de entorno.');
+  }
+  const plan = await storage.getSubscriptionPlan(planId);
+  if (!plan) {
+    throw new Error(`Plan no encontrado: ${planId}`);
+  }
+  const setupIntent = await stripe.setupIntents.create({
+    payment_method_types: ['card'],
+    usage: 'off_session',
+    metadata: { planId, planName: plan.name, guest: '1' },
+  });
+  return { clientSecret: setupIntent.client_secret! };
+}
+
+/**
+ * Trial con Payment Element: crea Customer + SetupIntent (flujo antiguo por email primero).
+ */
+export async function createTrialSetupIntent(
+  email: string,
+  planId: string
+): Promise<{ clientSecret: string; customerId: string }> {
+  if (!stripe) {
+    throw new Error('Stripe no está configurado. Verifica STRIPE_SECRET_KEY en las variables de entorno.');
+  }
+  const plan = await storage.getSubscriptionPlan(planId);
+  if (!plan) {
+    throw new Error(`Plan no encontrado: ${planId}`);
+  }
+  const customer = await stripe.customers.create({
+    email: email.trim().toLowerCase(),
+    metadata: { planId, planName: plan.name, guest: '1' },
+  });
+  const setupIntent = await stripe.setupIntents.create({
+    customer: customer.id,
+    payment_method_types: ['card'],
+    usage: 'off_session',
+    metadata: { planId, planName: plan.name, guest: '1' },
+  });
+  return {
+    clientSecret: setupIntent.client_secret!,
+    customerId: customer.id,
+  };
+}
+
+/**
+ * Tras confirmar el SetupIntent en el front, crea la suscripción con trial y registra usuario/suscripción en nuestra BD.
+ */
+export async function createTrialSubscriptionWithPaymentMethod(
+  customerId: string,
+  planId: string,
+  email: string
+): Promise<{ subscriptionId: string }> {
+  if (!stripe) {
+    throw new Error('Stripe no está configurado.');
+  }
+  const plan = await storage.getSubscriptionPlan(planId);
+  if (!plan) {
+    throw new Error(`Plan no encontrado: ${planId}`);
+  }
+  const afterTrialPlan = await storage.getSubscriptionPlanByName('MENSUAL');
+  if (!afterTrialPlan) {
+    throw new Error('Plan MENSUAL no encontrado.');
+  }
+  const trialDays = plan.trialDays && plan.trialDays > 0 ? plan.trialDays : 14;
+  const price = await stripe.prices.create({
+    currency: (afterTrialPlan.currency || 'usd').toLowerCase(),
+    unit_amount: afterTrialPlan.price,
+    recurring: { interval: 'month' },
+    product_data: { name: plan.displayName },
+  });
+  const subscription = await stripe.subscriptions.create({
+    customer: customerId,
+    items: [{ price: price.id }],
+    trial_period_days: trialDays,
+    payment_settings: { save_default_payment_method: 'on_subscription' },
+    metadata: { planId, planName: plan.name, guest: '1' },
+  });
+  const normalizedEmail = email.trim().toLowerCase();
+  let user = await storage.getUserByEmail(normalizedEmail);
+  if (!user) {
+    const crypto = await import('crypto');
+    const randomPassword = crypto.randomBytes(24).toString('base64');
+    let hashedPassword: string;
+    try {
+      const bcrypt = await import('bcrypt');
+      const bcryptModule = (bcrypt as any).default || bcrypt;
+      hashedPassword = await bcryptModule.hash(randomPassword, 10);
+    } catch {
+      hashedPassword = Buffer.from(randomPassword).toString('base64');
+    }
+    user = await storage.createUser({
+      email: normalizedEmail,
+      password: hashedPassword,
+      firstName: '',
+      lastName: '',
+      provider: 'email',
+      isEmailVerified: true,
+    });
+  }
+  const trialEndsAt = new Date();
+  trialEndsAt.setDate(trialEndsAt.getDate() + trialDays);
+  const endDate = new Date();
+  endDate.setMonth(endDate.getMonth() + 1);
+  await storage.createUserSubscription({
+    userId: user.id,
+    planId: planId,
+    status: 'active',
+    startDate: new Date(),
+    endDate,
+    trialEndsAt,
+    metadata: {
+      stripeCustomerId: customerId,
+      stripeSubscriptionId: subscription.id,
+    },
+  });
+  await storage.createPurchase({
+    userId: user.id,
+    productType: 'plan',
+    productId: planId,
+    amount: plan.price,
+    currency: plan.currency.toLowerCase(),
+    stripeCustomerId: customerId,
+    status: 'completed',
+    metadata: { planName: plan.name, trial: '1' },
+  });
+  return { subscriptionId: subscription.id };
+}
+
+/**
+ * Trial con paymentMethodId (tras confirmar SetupIntent sin customer).
+ * Crea customer con email, adjunta el payment method y crea la suscripción con trial.
+ */
+export async function createTrialSubscriptionWithPaymentMethodId(
+  paymentMethodId: string,
+  planId: string,
+  email: string
+): Promise<{ subscriptionId: string }> {
+  if (!stripe) {
+    throw new Error('Stripe no está configurado.');
+  }
+  const plan = await storage.getSubscriptionPlan(planId);
+  if (!plan) {
+    throw new Error(`Plan no encontrado: ${planId}`);
+  }
+  const afterTrialPlan = await storage.getSubscriptionPlanByName('MENSUAL');
+  if (!afterTrialPlan) {
+    throw new Error('Plan MENSUAL no encontrado.');
+  }
+  const normalizedEmail = email.trim().toLowerCase();
+  const customer = await stripe.customers.create({
+    email: normalizedEmail,
+    metadata: { planId, planName: plan.name, guest: '1' },
+  });
+  await stripe.paymentMethods.attach(paymentMethodId, { customer: customer.id });
+  await stripe.customers.update(customer.id, {
+    invoice_settings: { default_payment_method: paymentMethodId },
+  });
+  const trialDays = plan.trialDays && plan.trialDays > 0 ? plan.trialDays : 14;
+  const price = await stripe.prices.create({
+    currency: (afterTrialPlan.currency || 'usd').toLowerCase(),
+    unit_amount: afterTrialPlan.price,
+    recurring: { interval: 'month' },
+    product_data: { name: plan.displayName },
+  });
+  const subscription = await stripe.subscriptions.create({
+    customer: customer.id,
+    items: [{ price: price.id }],
+    trial_period_days: trialDays,
+    payment_settings: { save_default_payment_method: 'on_subscription' },
+    metadata: { planId, planName: plan.name, guest: '1' },
+  });
+  let user = await storage.getUserByEmail(normalizedEmail);
+  if (!user) {
+    const crypto = await import('crypto');
+    const randomPassword = crypto.randomBytes(24).toString('base64');
+    let hashedPassword: string;
+    try {
+      const bcrypt = await import('bcrypt');
+      const bcryptModule = (bcrypt as any).default || bcrypt;
+      hashedPassword = await bcryptModule.hash(randomPassword, 10);
+    } catch {
+      hashedPassword = Buffer.from(randomPassword).toString('base64');
+    }
+    user = await storage.createUser({
+      email: normalizedEmail,
+      password: hashedPassword,
+      firstName: '',
+      lastName: '',
+      provider: 'email',
+      isEmailVerified: true,
+    });
+  }
+  const trialEndsAt = new Date();
+  trialEndsAt.setDate(trialEndsAt.getDate() + trialDays);
+  const endDate = new Date();
+  endDate.setMonth(endDate.getMonth() + 1);
+  await storage.createUserSubscription({
+    userId: user.id,
+    planId: planId,
+    status: 'active',
+    startDate: new Date(),
+    endDate,
+    trialEndsAt,
+    metadata: {
+      stripeCustomerId: customer.id,
+      stripeSubscriptionId: subscription.id,
+    },
+  });
+  await storage.createPurchase({
+    userId: user.id,
+    productType: 'plan',
+    productId: planId,
+    amount: plan.price,
+    currency: plan.currency.toLowerCase(),
+    stripeCustomerId: customer.id,
+    status: 'completed',
+    metadata: { planName: plan.name, trial: '1' },
+  });
+  return { subscriptionId: subscription.id };
+}
+
+/**
+ * Tras redirección de Stripe (3DS): recupera el payment_method del SetupIntent y crea la suscripción trial.
+ */
+export async function createTrialSubscriptionFromSetupIntentId(
+  setupIntentId: string,
+  planId: string,
+  email: string
+): Promise<{ subscriptionId: string }> {
+  if (!stripe) {
+    throw new Error('Stripe no está configurado.');
+  }
+  const setupIntent = await stripe.setupIntents.retrieve(setupIntentId);
+  const paymentMethodId = typeof setupIntent.payment_method === 'string'
+    ? setupIntent.payment_method
+    : setupIntent.payment_method?.id;
+  if (!paymentMethodId) {
+    throw new Error('No se encontró método de pago en el SetupIntent.');
+  }
+  return createTrialSubscriptionWithPaymentMethodId(paymentMethodId, planId, email);
 }
 
 /**
