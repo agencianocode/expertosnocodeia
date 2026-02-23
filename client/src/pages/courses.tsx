@@ -165,9 +165,10 @@ export default function Courses() {
     const fallbackName = user?.firstName || user?.lastName
       ? `${user?.firstName || ""} ${user?.lastName || ""}`.trim()
       : "";
-    const defaultAvatar = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='96' height='96' viewBox='0 0 96 96'><rect width='96' height='96' fill='%2320132d'/><circle cx='48' cy='36' r='16' fill='%23c0467f'/><rect x='20' y='58' width='56' height='26' rx='13' fill='%23c0467f'/></svg>";
+    // Misma imagen que home (Cursos/Talleres/Programas): instructor-avatar.webp cuando no hay avatar
+    const defaultAvatar = "/instructor-avatar.webp";
     return {
-      name: instructor?.name || course?.instructorName || fallbackName || "Instructor",
+      name: instructor?.name || course?.instructorName || fallbackName || "Fabián Segura",
       avatar: instructor?.avatar || course?.instructorAvatar || (user as any)?.profileImageUrl || defaultAvatar,
     };
   };

@@ -1,10 +1,13 @@
-Para que la foto del fundador se vea nítida (sin pixelado):
+FOTOS: FUNDADOR (MARKETING) vs INSTRUCTOR (HOME)
+================================================
 
-1. Sustituye public/fundador.png por una imagen de al menos 1000 px de ancho
-   (por ejemplo 1200x900 px o más). Mientras más resolución, mejor en pantallas grandes.
+1) PREVIEW-MARKETING (/preview-marketing) – foto grande del fundador
+   → Sube aquí:  client/public/fundador.webp
+   (Esta es la que ya usas en la landing de marketing; no la cambies si no quieres.)
 
-2. Opción para pantallas Retina/4K: añade además public/fundador@2x.png
-   con la misma foto en el doble de resolución (p. ej. 2000 px de ancho).
-   El sitio la usará automáticamente en pantallas de alta densidad.
+2) HOME – avatar del instructor en Cursos, Talleres, Programas y Guías
+   → Sube aquí:  client/public/instructor-avatar.webp
+   → O aquí:     client/public/instructor-avatar.png
+   Si no existe, se muestra la inicial del nombre. Puedes usar otra foto distinta a fundador.webp.
 
-Formato: PNG o JPG. Mismo encuadre que fundador.png.
+Requisitos: WebP o PNG, al menos 1000 px de ancho para buena nitidez.

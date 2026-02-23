@@ -36,24 +36,11 @@ export default function Workshop() {
   const { id } = useParams();
   const queryClient = useQueryClient();
 
-  // Redirect to login if not authenticated
-  useEffect(() => {
-    if (!authLoading && !isAuthenticated) {
-      toast({
-        title: "Unauthorized",
-        description: "You are logged out. Logging in again...",
-        variant: "destructive",
-      });
-      setTimeout(() => {
-        window.location.href = "/api/login";
-      }, 500);
-      return;
-    }
-  }, [isAuthenticated, authLoading, toast]);
+  // Acceso público: invitados ven el taller con contenido bloqueado (igual que /curso y /guia)
 
   const { data: workshop, isLoading: workshopLoading } = useQuery<any>({
     queryKey: [`/api/courses/${id}`],
-    enabled: isAuthenticated && !!id,
+    enabled: !!id,
   });
 
   // Invalidate dashboard cache when workshop is loaded
@@ -72,10 +59,10 @@ export default function Workshop() {
     queryKey: [`/api/resources/${id}`],
     enabled: isAuthenticated && !!id,
   });
-  
+
   const { data: categories = [] } = useQuery<any[]>({
     queryKey: ['/api/categories'],
-    enabled: isAuthenticated,
+    enabled: true,
   });
 
   if (authLoading || workshopLoading) {
@@ -117,7 +104,7 @@ export default function Workshop() {
     instructor: {
       name: workshop?.instructorName || workshop?.instructor?.name || "Fabián Segura",
       bio: workshop?.instructorBio || workshop?.instructor?.title || "Experto en Inteligencia Artificial con más de 10 años de experiencia en el desarrollo de soluciones empresariales.",
-      avatar: workshop?.instructorAvatar || workshop?.instructor?.avatar || ""
+      avatar: workshop?.instructorAvatar || workshop?.instructor?.avatar || "/instructor-avatar.webp"
     },
     topics: [
       "Configuración inicial del entorno",
@@ -202,6 +189,14 @@ export default function Workshop() {
                         <Play className="w-6 h-6 ml-1" fill="currentColor" />
                       </Button>
                     </div>
+                    {!isAuthenticated && (
+                      <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/60 gap-3">
+                        <p className="text-white font-medium">Inicia sesión para ver el taller</p>
+                        <Button onClick={() => window.location.href = "/login"} className="bg-white text-black hover:bg-gray-200">
+                          Iniciar sesión
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 </div>
 

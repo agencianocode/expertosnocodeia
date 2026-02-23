@@ -15,6 +15,27 @@ import {
 } from "@/components/ui/tooltip";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
+// Avatar del instructor en la home (Cursos, Talleres, Programas, Guías). Intenta .webp y, si falla, .png
+const INSTRUCTOR_AVATAR_PATHS = ["/instructor-avatar.webp", "/instructor-avatar.png"] as const;
+function InstructorAvatarImage({ src, alt, fallbackChar, className }: { src: string; alt: string; fallbackChar: string; className?: string }) {
+  const isInstructorAvatarPath = INSTRUCTOR_AVATAR_PATHS.includes(src as any);
+  const [currentSrc, setCurrentSrc] = useState(src);
+  const [tryNext, setTryNext] = useState(0);
+  const fallbackPath = src === "/instructor-avatar.webp" ? "/instructor-avatar.png" : "/instructor-avatar.webp";
+  const onError = () => {
+    if (isInstructorAvatarPath && tryNext === 0) {
+      setCurrentSrc(fallbackPath);
+      setTryNext(1);
+    }
+  };
+  return (
+    <>
+      <AvatarImage src={currentSrc} alt={alt} onError={onError} />
+      <AvatarFallback delayMs={0} className={className}>{fallbackChar}</AvatarFallback>
+    </>
+  );
+}
+
 interface CourseCardProps {
   course: any;
   category?: any;
@@ -124,8 +145,9 @@ export default function CourseCard({ course, category, progress, variant = "defa
     return "bg-muted text-muted-foreground border-border";
   };
 
-  // Instructor por defecto para guías sin datos (misma foto que la landing)
-  const DEFAULT_GUIDE_INSTRUCTOR = { name: "Fabián Segura", avatar: "/fundador.webp" };
+  // Instructor por defecto: mismo nombre que la landing; avatar intenta foto del fundador (como en guías) y luego SVG con inicial
+  const DEFAULT_INSTRUCTOR_NAME = "Fabián Segura";
+  const DEFAULT_AVATAR_PATH = "/instructor-avatar.webp"; // Home: Cursos, Talleres, Programas, Guías (no confundir con fundador.webp = preview-marketing)
 
   const getInstructorInfo = (courseItem: any) => {
     const raw = courseItem?.metadata;
@@ -135,11 +157,13 @@ export default function CourseCard({ course, category, progress, variant = "defa
         ? (() => { try { return JSON.parse(raw); } catch { return {}; } })()
         : raw;
     const instructor = metadata?.instructor || metadata?.Instructor || {};
-    const name = instructor?.name ?? instructor?.nombre ?? courseItem?.instructorName ?? courseItem?.instructor_name ?? (courseItem?.type === "guide" ? DEFAULT_GUIDE_INSTRUCTOR.name : "Instructor");
+    const name = instructor?.name ?? instructor?.nombre ?? courseItem?.instructorName ?? courseItem?.instructor_name ?? DEFAULT_INSTRUCTOR_NAME;
     const initial = (name || "I").charAt(0).toUpperCase();
-    const avatarUrl = instructor?.avatar ?? instructor?.avatarUrl ?? instructor?.image ?? courseItem?.instructorAvatar ?? courseItem?.instructor_avatar ?? (courseItem?.type === "guide" ? DEFAULT_GUIDE_INSTRUCTOR.avatar : undefined);
+    const avatarUrl = instructor?.avatar ?? instructor?.avatarUrl ?? instructor?.image ?? courseItem?.instructorAvatar ?? courseItem?.instructor_avatar ?? DEFAULT_AVATAR_PATH;
     const hasValidUrl = typeof avatarUrl === "string" && avatarUrl.trim().length > 0 && (avatarUrl.startsWith("http") || avatarUrl.startsWith("data:") || avatarUrl.startsWith("/"));
-    const avatar = hasValidUrl ? avatarUrl : `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='64' height='64' viewBox='0 0 64 64'><rect width='64' height='64' fill='%236366f1'/><text x='50%' y='50%' dy='.35em' font-size='28' fill='white' text-anchor='middle' font-family='system-ui'>${initial}</text></svg>`;
+    // Si no hay URL válida, mismo fallback que guide.tsx: SVG con inicial para que siempre cargue
+    const defaultAvatarSvg = `data:image/svg+xml;base64,${btoa(`<svg width="64" height="64" xmlns="http://www.w3.org/2000/svg"><circle cx="32" cy="32" r="32" fill="#6366f1"/><text x="32" y="42" font-size="28" fill="white" text-anchor="middle" font-weight="bold" font-family="system-ui">${initial}</text></svg>`)}`;
+    const avatar = hasValidUrl ? avatarUrl : defaultAvatarSvg;
     return { name, avatar };
   };
 
@@ -362,8 +386,14 @@ export default function CourseCard({ course, category, progress, variant = "defa
                 ) : (
                   <>
                     <Avatar className="h-5 w-5 flex-shrink-0">
-                      <AvatarImage src={instructor.avatar} alt={instructor.name} />
-                      <AvatarFallback className="text-[10px]">{instructor.name.charAt(0).toUpperCase()}</AvatarFallback>
+                      {(instructor.avatar === "/instructor-avatar.webp" || instructor.avatar === "/instructor-avatar.png") ? (
+                        <InstructorAvatarImage src={instructor.avatar} alt={instructor.name} fallbackChar={instructor.name.charAt(0).toUpperCase()} className="text-[10px]" />
+                      ) : (
+                        <>
+                          <AvatarImage src={instructor.avatar} alt={instructor.name} />
+                          <AvatarFallback className="text-[10px]">{instructor.name.charAt(0).toUpperCase()}</AvatarFallback>
+                        </>
+                      )}
                     </Avatar>
                     <span className="line-clamp-1 text-sm">Impartido por {instructor.name}</span>
                   </>
@@ -554,10 +584,16 @@ export default function CourseCard({ course, category, progress, variant = "defa
                     ) : (
                       <>
                         <Avatar className="h-6 w-6 flex-shrink-0">
-                          <AvatarImage src={instructor.avatar} alt={instructor.name} />
-                          <AvatarFallback delayMs={0} className="text-xs bg-muted text-muted-foreground">
-                            {instructor.name.charAt(0).toUpperCase()}
-                          </AvatarFallback>
+                          {(instructor.avatar === "/instructor-avatar.webp" || instructor.avatar === "/instructor-avatar.png") ? (
+                            <InstructorAvatarImage src={instructor.avatar} alt={instructor.name} fallbackChar={instructor.name.charAt(0).toUpperCase()} className="text-xs bg-muted text-muted-foreground" />
+                          ) : (
+                            <>
+                              <AvatarImage src={instructor.avatar} alt={instructor.name} />
+                              <AvatarFallback delayMs={0} className="text-xs bg-muted text-muted-foreground">
+                                {instructor.name.charAt(0).toUpperCase()}
+                              </AvatarFallback>
+                            </>
+                          )}
                         </Avatar>
                         <span className="text-xs text-muted-foreground truncate">
                           Impartido por {instructor.name}

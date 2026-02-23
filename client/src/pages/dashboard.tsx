@@ -306,7 +306,7 @@ export default function Dashboard() {
                           size="lg" 
                           variant="outline"
                           className="bg-transparent border-border text-foreground hover:bg-muted text-base px-8 py-3 rounded-lg font-medium"
-                          onClick={() => window.location.href = '/api/login'}
+                          onClick={() => window.location.href = '/login'}
                         >
                           Iniciar sesión
                         </Button>
@@ -397,7 +397,7 @@ export default function Dashboard() {
                     <Button
                       size="sm"
                       className="bg-blue-600 hover:bg-blue-700 text-white"
-                      onClick={() => window.location.href = '/checkout/trial'}
+                      onClick={() => window.location.href = '/planes'}
                     >
                       Comience una prueba gratuita
                     </Button>
@@ -512,7 +512,8 @@ export default function Dashboard() {
                     const bannerImage = room.heroImageUrl || room.coverImageUrl;
                     const meta = room.metadata || {};
                     const instructor = meta.instructor || meta.Instructor || {};
-                    const instructorName = instructor?.name ?? instructor?.nombre ?? "Equipo Expertos NoCode IA";
+                    const instructorName = instructor?.name ?? instructor?.nombre ?? "Fabián Segura";
+                    const instructorAvatar = instructor?.avatar ?? instructor?.avatarUrl ?? instructor?.image ?? "/instructor-avatar.webp";
                     return (
                       <Link key={room.id} href={`/sala/${room.slug}`}>
                         <div className="group bg-card rounded-2xl border border-border overflow-hidden hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 cursor-pointer h-full flex flex-col">
@@ -540,8 +541,12 @@ export default function Dashboard() {
                             <p className="text-muted-foreground text-xs lg:text-sm line-clamp-2 flex-1">
                               {room.shortDescription || room.description}
                             </p>
-                            {/* Impartido por */}
-                            <div className="pt-3 border-t border-border/50 mt-auto">
+                            {/* Impartido por: foto + nombre */}
+                            <div className="pt-3 border-t border-border/50 mt-auto flex items-center gap-2">
+                              <Avatar className="h-5 w-5 flex-shrink-0">
+                                <AvatarImage src={instructorAvatar} alt={instructorName} />
+                                <AvatarFallback className="text-[10px]">{instructorName.charAt(0).toUpperCase()}</AvatarFallback>
+                              </Avatar>
                               <span className="text-xs text-muted-foreground">
                                 Impartido por {instructorName}
                               </span>
@@ -630,7 +635,7 @@ export default function Dashboard() {
                     <Button
                       size="sm"
                       className="bg-blue-600 hover:bg-blue-700 text-white"
-                      onClick={() => window.location.href = '/register'}
+                      onClick={() => window.location.href = '/planes'}
                     >
                       Regístrate para ser profesional
                     </Button>

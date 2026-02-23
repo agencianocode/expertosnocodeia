@@ -1,7 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
-import { useToast } from "@/hooks/use-toast";
 import Sidebar from "@/components/layout/sidebar";
 import MobileHeader from "@/components/layout/mobile-header";
 import CourseCard from "@/components/course-card";
@@ -10,33 +9,18 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Filter, X } from "lucide-react";
 
 export default function Workshops() {
-  const { toast } = useToast();
   const { isAuthenticated, isLoading } = useAuth();
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
 
-  // Redirect to login if not authenticated
-  useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
-      toast({
-        title: "Unauthorized",
-        description: "You are logged out. Logging in again...",
-        variant: "destructive",
-      });
-      setTimeout(() => {
-        window.location.href = "/api/login";
-      }, 500);
-      return;
-    }
-  }, [isAuthenticated, isLoading, toast]);
-
+  // Acceso público: se muestran talleres con contenido bloqueado si no está logueado (igual que /courses)
   const { data: workshops = [], isLoading: workshopsLoading } = useQuery<any[]>({
     queryKey: ['/api/workshops'],
-    enabled: isAuthenticated,
+    enabled: true,
   });
 
   const { data: categories = [] } = useQuery<any[]>({
     queryKey: ['/api/categories'],
-    enabled: isAuthenticated,
+    enabled: true,
   });
 
   if (isLoading || workshopsLoading) {
@@ -147,6 +131,7 @@ export default function Workshops() {
                     key={workshop.id}
                     course={workshop}
                     category={category}
+                    isAuthenticated={isAuthenticated}
                   />
                 );
               })}
