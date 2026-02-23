@@ -4,7 +4,9 @@ import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Check, Loader2, ArrowRight } from "lucide-react";
+import { Check, Loader2, ArrowRight, Star } from "lucide-react";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { useToast } from "@/hooks/use-toast";
 import { useSimpleAuth } from "@/hooks/use-simple-auth";
 import { Link } from "wouter";
@@ -185,7 +187,7 @@ export default function LandingPricing() {
         <main className="flex-1 w-full min-h-screen bg-background pb-20 lg:pb-12 overflow-auto flex items-center justify-center">
           <div className="max-w-7xl mx-auto w-full px-8">
             {/* Hero Section */}
-            <section className="px-4 mb-6">
+            <section className="px-4 pt-10 lg:pt-14 mb-6">
               <div className="text-center">
                 <Badge className="mb-3 bg-primary/20 text-primary border-primary/50 text-sm">
                   💰 Planes y Precios
@@ -307,20 +309,112 @@ export default function LandingPricing() {
               </div>
             </section>
 
-            {/* CTA Section */}
-            <section className="px-4">
-              <div className="text-center">
-                <h2 className="text-base font-semibold mb-3 text-foreground">
-                  ¿Tienes preguntas? Estamos aquí para ayudar.
-                </h2>
-                <Link href="/support">
-                  <Button 
-                    size="default"
-                    variant="outline"
-                    className="border-border text-foreground hover:bg-muted"
+            {/* Testimonios */}
+            <section className="px-4 mb-10">
+              <h2 className="text-xl font-bold text-foreground text-center mb-6">
+                Lo que dicen quienes ya están creciendo con nosotros
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {[
+                  {
+                    quote: "Esto es ideal para cualquier persona interesada en la IA: no se necesitan conocimientos técnicos.",
+                    name: "José Lacovara",
+                    title: "Analista de recuperación ante desastres",
+                    avatar: "https://i.pravatar.cc/150?img=12",
+                  },
+                  {
+                    quote: "Estoy encontrando nuevas formas de integrar la IA en mi trabajo como creador de contenido y propietario de un negocio todos los días.",
+                    name: "Adriana Carvajal",
+                    title: "Emprendedor y creador de contenido",
+                    avatar: "https://i.pravatar.cc/150?img=5",
+                  },
+                  {
+                    quote: "Creé un agente de IA que responde a mis correos electrónicos. Una revolución para mi negocio.",
+                    name: "Wouter Teunissen",
+                    title: "Fundador de Biography Podcast",
+                    avatar: "https://i.pravatar.cc/150?img=33",
+                  },
+                ].map((t, i) => (
+                  <div
+                    key={i}
+                    className="rounded-xl bg-muted/50 border border-border/80 border-l-4 border-l-primary/60 p-4 flex flex-col"
                   >
-                    Contactar Soporte
-                  </Button>
+                    <div className="flex gap-1 mb-3">
+                      {[1, 2, 3, 4, 5].map((s) => (
+                        <Star key={s} className="h-4 w-4 fill-amber-400 text-amber-400" />
+                      ))}
+                    </div>
+                    <p className="text-foreground text-sm leading-snug mb-4 flex-1">
+                      &ldquo;{t.quote}&rdquo;
+                    </p>
+                    <div className="flex items-center gap-3">
+                      <Avatar className="h-10 w-10 flex-shrink-0">
+                        <AvatarImage src={t.avatar} alt={t.name} />
+                        <AvatarFallback className="bg-muted text-muted-foreground text-sm">
+                          {t.name.split(" ").map((n) => n[0]).join("")}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <p className="font-medium text-foreground text-sm">{t.name}</p>
+                        <p className="text-muted-foreground text-xs">{t.title}</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+
+            {/* Preguntas frecuentes */}
+            <section className="px-4 mb-10">
+              <h2 className="text-xl font-bold text-foreground text-center mb-6">
+                Preguntas frecuentes
+              </h2>
+              <div className="max-w-2xl mx-auto">
+                <Accordion type="single" collapsible className="w-full space-y-2">
+                  {[
+                    {
+                      q: "¿Qué pasa después de mi prueba de 14 días?",
+                      a: "Al terminar los 15 días de prueba, puedes elegir quedarte con la membresía mensual o anual para seguir teniendo acceso a todo el contenido, o cancelar sin compromiso. Te avisamos antes de que termine la prueba para que decidas con tiempo.",
+                    },
+                    {
+                      q: "¿Puedo cancelar en cualquier momento?",
+                      a: "Sí. Puedes cancelar tu suscripción cuando quieras desde tu perfil. No hay permanencia mínima ni penalizaciones. Mantendrás acceso hasta el final del periodo ya pagado.",
+                    },
+                    {
+                      q: "¿En qué se diferencia del boletín gratuito?",
+                      a: "El boletín gratuito te mantiene al día con novedades y tips. La membresía incluye programas completos (Agentes IA 2.0, VibeCoding, NoCode SaaS IA), guías paso a paso, workshops en vivo, comunidad privada y centro de oportunidades, todo en un solo lugar.",
+                    },
+                    {
+                      q: "¿Con qué frecuencia se agrega contenido nuevo?",
+                      a: "Añadimos guías y recursos de forma regular, workshops en vivo cada semana y actualizaciones de programas según las tendencias. Los miembros anuales tienen acceso prioritario a recursos exclusivos y nuevas plantillas.",
+                    },
+                    {
+                      q: "¿Qué pasa si soy un principiante total con la IA?",
+                      a: "Está pensado para todos los niveles. No necesitas conocimientos técnicos: las guías son paso a paso y la comunidad y el equipo te apoyan. Muchos miembros empezaron desde cero y hoy implementan IA en su día a día.",
+                    },
+                  ].map((faq, i) => (
+                    <AccordionItem
+                      key={i}
+                      value={`faq-${i}`}
+                      className="rounded-lg border border-border bg-card px-4 data-[state=open]:bg-card"
+                    >
+                      <AccordionTrigger className="text-left text-foreground hover:no-underline py-4">
+                        {faq.q}
+                      </AccordionTrigger>
+                      <AccordionContent className="text-muted-foreground text-sm leading-relaxed pb-4">
+                        {faq.a}
+                      </AccordionContent>
+                    </AccordionItem>
+                  ))}
+                </Accordion>
+              </div>
+            </section>
+
+            {/* Acceso miembros */}
+            <section className="px-4 pb-8">
+              <div className="text-center">
+                <Link href={isAuthenticated ? "/dashboard" : "/login"} className="text-foreground hover:text-primary font-medium transition-colors inline-flex items-center gap-1">
+                  ¿Ya eres miembro? Acceso <ArrowRight className="h-4 w-4 inline" />
                 </Link>
               </div>
             </section>
