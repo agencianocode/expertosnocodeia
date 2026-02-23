@@ -95,7 +95,7 @@ export default function Workshop() {
 
   // Workshop details with real data from API
   const workshopDetails = {
-    videoUrl: workshop?.videoUrl || "https://www.youtube.com/embed/dQw4w9WgXcQ",
+    videoUrl: workshop?.videoUrl || "",
     duration: workshop?.duration || "2h 30min", 
     participants: workshop?.participants || "1,240",
     rating: workshop?.rating || 4.8,

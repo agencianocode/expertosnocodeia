@@ -167,11 +167,11 @@ export default function Register() {
 
                 <p className="text-xs text-gray-500 text-center">
                   Al registrarte aceptas nuestros{" "}
-                  <Link href="/terms" className="text-purple-400 hover:underline">
+                  <Link href="/condiciones-servicio" className="text-purple-400 hover:underline">
                     Términos de Servicio
                   </Link>{" "}
                   y{" "}
-                  <Link href="/privacy" className="text-purple-400 hover:underline">
+                  <Link href="/politica-privacidad" className="text-purple-400 hover:underline">
                     Política de Privacidad
                   </Link>
                 </p>

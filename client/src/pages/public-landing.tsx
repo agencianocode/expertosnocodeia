@@ -1251,8 +1251,8 @@ export default function PublicLanding() {
                 <li><Link href="#" className="hover:text-black transition-colors">Anunciar</Link></li>
                 <li><Link href="#" className="hover:text-black transition-colors">Carreras</Link></li>
                 <li><Link href="#" className="hover:text-black transition-colors">Contáctenos</Link></li>
-                <li><Link href="#" className="hover:text-black transition-colors">política de privacidad</Link></li>
-                <li><Link href="#" className="hover:text-black transition-colors">Términos y condiciones</Link></li>
+                <li><Link href="/politica-privacidad" className="hover:text-black transition-colors">política de privacidad</Link></li>
+                <li><Link href="/condiciones-servicio" className="hover:text-black transition-colors">Términos y condiciones</Link></li>
               </ul>
             </div>
           </div>

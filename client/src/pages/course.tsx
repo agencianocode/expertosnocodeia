@@ -983,8 +983,8 @@ export default function Course() {
             {/* Course Info View - Show before lessons if no saved position */}
             {showCourseInfo && (
               <section className="space-y-6 lg:space-y-8">
-                {/* Presentation Video - sin barra de desplazamiento; invitados: difuminado + candado */}
-                {presentationVideoUrl && (
+                {/* Presentation Video - invitados: difuminado + candado. Si no hay video de presentación, invitados ven la primera lección bloqueada (igual que en /courses). */}
+                {presentationVideoUrl ? (
                   <div className="relative w-full aspect-video rounded-lg overflow-hidden bg-black">
                     <iframe
                       className={cn(
@@ -1002,7 +1002,50 @@ export default function Course() {
                       </div>
                     )}
                   </div>
-                )}
+                ) : !isAuthenticated && firstNavigableLessonIndex >= 0 ? (
+                  (() => {
+                    const firstLesson = lessonsArray[firstNavigableLessonIndex];
+                    const firstVideoUrl = firstLesson?.videoUrl;
+                    const firstImageUrl = firstLesson?.imageUrl;
+                    if (firstVideoUrl) {
+                      return (
+                        <div className="relative w-full aspect-video rounded-lg overflow-hidden bg-black">
+                          <iframe
+                            className="absolute top-0 left-0 w-full h-full border-0 blur-md select-none pointer-events-none"
+                            src={getYouTubeEmbedUrl(firstVideoUrl)}
+                            title={firstLesson?.title || "Video"}
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                            allowFullScreen
+                          />
+                          <div className="absolute inset-0 flex items-center justify-center bg-black/30 pointer-events-none">
+                            <Lock className="h-16 w-16 text-white drop-shadow-lg" />
+                          </div>
+                        </div>
+                      );
+                    }
+                    if (firstImageUrl) {
+                      return (
+                        <div className="relative w-full aspect-video rounded-lg overflow-hidden bg-black">
+                          <img
+                            src={firstImageUrl}
+                            alt=""
+                            className="absolute top-0 left-0 w-full h-full object-cover blur-md select-none pointer-events-none"
+                          />
+                          <div className="absolute inset-0 flex items-center justify-center bg-black/30 pointer-events-none">
+                            <Lock className="h-16 w-16 text-white drop-shadow-lg" />
+                          </div>
+                        </div>
+                      );
+                    }
+                    return (
+                      <div className="relative w-full aspect-video rounded-lg overflow-hidden bg-black flex items-center justify-center">
+                        <div className="absolute inset-0 flex items-center justify-center bg-black/40 pointer-events-none">
+                          <Lock className="h-16 w-16 text-white drop-shadow-lg" />
+                        </div>
+                      </div>
+                    );
+                  })()
+                ) : null}
 
                 {/* CTA para invitados: debajo del video */}
                 {!isAuthenticated && (

@@ -51,6 +51,10 @@ npm run dev
 
 ## 🔧 Variables de Entorno
 
+Ver `.env.example` para la lista completa. En producción (Railway) configurar las variables en el panel de Railway; no subir `.env` al repo.
+
+**Checklist de despliegue (Railway, Stripe, Google OAuth):** ver [docs/DEPLOY-RAILWAY.md](docs/DEPLOY-RAILWAY.md).
+
 ```env
 # Supabase
 SUPABASE_URL=your-supabase-project-url
@@ -63,6 +67,12 @@ DATABASE_URL=postgresql://postgres:[password]@[host]:5432/[database]
 # Auth
 JWT_SECRET=your-jwt-secret-here
 SESSION_SECRET=your-session-secret-here
+
+# URLs y Stripe (producción: claves live + STRIPE_WEBHOOK_SECRET)
+FRONTEND_URL=...
+BACKEND_URL=...
+STRIPE_SECRET_KEY=...
+VITE_STRIPE_PUBLISHABLE_KEY=...
 ```
 
 ## 🏃‍♂️ Scripts Disponibles

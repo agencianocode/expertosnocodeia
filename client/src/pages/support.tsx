@@ -238,15 +238,17 @@ export default function Support() {
 
   // Página de apoyo accesible sin autenticación
 
+  const SUPPORT_EMAIL = "soporte@expertosnocodeia.com";
+
   const handleSubmitContact = (e: React.FormEvent) => {
     e.preventDefault();
-    // Handle form submission
-    console.log("Contact form submitted:", contactForm);
-    // Reset form and close dialog
+    const { name, email, subject, message } = contactForm;
+    const body = `Nombre: ${name}\nEmail: ${email}\n\n${message}`;
+    const mailtoUrl = `mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    window.location.href = mailtoUrl;
     setContactForm({ name: "", email: "", subject: "", message: "" });
     setShowContactDialog(false);
-    // Show success message (could be a toast)
-    alert("¡Mensaje enviado con éxito! Te contactaremos pronto.");
+    // Toast opcional: el cliente de correo se abrirá; si no, el usuario puede copiar el correo
   };
 
   // Página de apoyo disponible para todos los usuarios
