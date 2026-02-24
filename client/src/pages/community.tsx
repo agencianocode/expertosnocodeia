@@ -234,6 +234,10 @@ export default function Community() {
   const [channelsSidebarOpen, setChannelsSidebarOpen] = useState(true);
   const [mobileChannelsOpen, setMobileChannelsOpen] = useState(false);
   const [mobileChannelSearch, setMobileChannelSearch] = useState("");
+  /** Altura del viewport visible (para que la lista de canales quede por encima del teclado en móvil) */
+  const [sheetViewportHeight, setSheetViewportHeight] = useState(() =>
+    typeof window !== "undefined" && window.visualViewport ? window.visualViewport.height : 400
+  );
   const [isAnunciosChannel, setIsAnunciosChannel] = useState(false);
   const [postCommentCounts, setPostCommentCounts] = useState<{ [postId: string]: number }>({});
   const [allPostComments, setAllPostComments] = useState<{ [postId: string]: Comment[] }>({});
@@ -266,6 +270,20 @@ export default function Community() {
   useEffect(() => {
     activeChannelRef.current = activeChannel;
   }, [activeChannel]);
+
+  // Ajustar altura de la lista de canales al viewport visible (teclado abierto en móvil)
+  useEffect(() => {
+    const vv = typeof window !== "undefined" ? window.visualViewport : null;
+    if (!mobileChannelsOpen || !vv) return;
+    const update = () => setSheetViewportHeight(vv.height);
+    update();
+    vv.addEventListener("resize", update);
+    vv.addEventListener("scroll", update);
+    return () => {
+      vv.removeEventListener("resize", update);
+      vv.removeEventListener("scroll", update);
+    };
+  }, [mobileChannelsOpen]);
   
   // Custom handler for changing channel
   const setActiveChannel = (channel: Channel | null) => {
@@ -1133,7 +1151,12 @@ export default function Community() {
                 />
               </div>
               {/* Lista de canales (filtrada por búsqueda) */}
-              <div className="flex-1 overflow-y-auto px-2 py-3 space-y-0 bg-muted">
+              <div
+                className="flex-1 overflow-y-auto px-2 py-3 space-y-0 bg-muted min-h-0"
+                style={{
+                  maxHeight: `calc(${sheetViewportHeight}px - 160px)`,
+                }}
+              >
                 <div className="text-xs text-muted-foreground px-2 py-1 font-semibold uppercase">Canales</div>
                 {orderedSections.map((section) => {
                   const query = mobileChannelSearch.trim().toLowerCase();

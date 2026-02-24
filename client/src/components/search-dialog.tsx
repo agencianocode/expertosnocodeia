@@ -168,7 +168,6 @@ export function SearchDialog({ open, onOpenChange }: SearchDialogProps) {
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10 pr-4 py-2"
-              autoFocus
             />
           </div>
         </div>
