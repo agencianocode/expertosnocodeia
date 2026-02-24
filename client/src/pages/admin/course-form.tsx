@@ -66,7 +66,7 @@ const courseSchema = z.object({
   selectedCategoryIds: z.array(z.string()).optional(), // For guides with multiple categories
   type: z.enum(["course", "guide", "workshop"]),
   difficulty: z.enum(["beginner", "intermediate", "advanced"]).optional(),
-  estimatedHours: z.number().min(1, "Las horas estimadas son requeridas"),
+  estimatedHours: z.number({ required_error: "La duración es requerida", invalid_type_error: "Indica un número (ej. 5,5)" }).min(0.5, "Indica al menos 0,5 horas"),
   isPublished: z.boolean().default(false),
   hasCertificate: z.boolean().default(false),
   coverImageUrl: z.string().optional(),
@@ -245,7 +245,7 @@ export default function CourseForm() {
             : [], // Use multiple categories if available, fallback to single
         type: course.type,
         difficulty: course.difficulty,
-        estimatedHours: course.estimatedHours || 1,
+        estimatedHours: Number(course.estimatedHours) || 1,
         isPublished: course.isPublished,
         hasCertificate: course.hasCertificate,
         coverImageUrl: course.coverImageUrl || "",
@@ -1184,18 +1184,32 @@ export default function CourseForm() {
                 </div>
 
                 <div>
-                  <Label htmlFor="estimatedHours" className="text-white">Horas Estimadas *</Label>
-                  <Input
-                    id="estimatedHours"
-                    type="number"
-                    min="1"
-                    {...form.register("estimatedHours", { valueAsNumber: true })}
-                    className="bg-slate-800 border-slate-600 text-white"
-                    data-testid="input-horas"
+                  <Label htmlFor="estimatedHours" className="text-white">Duración del curso (horas) *</Label>
+                  <Controller
+                    name="estimatedHours"
+                    control={form.control}
+                    render={({ field }) => (
+                      <Input
+                        id="estimatedHours"
+                        type="text"
+                        inputMode="decimal"
+                        placeholder="ej. 5,5 o 5.5"
+                        {...field}
+                        value={field.value === undefined || field.value === null ? "" : String(field.value).replace(".", ",")}
+                        onChange={(e) => {
+                          const raw = e.target.value.replace(",", ".");
+                          const num = parseFloat(raw);
+                          field.onChange(Number.isNaN(num) ? undefined : num);
+                        }}
+                        className="bg-slate-800 border-slate-600 text-white"
+                        data-testid="input-horas"
+                      />
+                    )}
                   />
                   {form.formState.errors.estimatedHours && (
                     <p className="text-red-400 text-sm mt-1">{form.formState.errors.estimatedHours.message}</p>
                   )}
+                  <p className="text-xs text-gray-400 mt-1">Puedes usar decimales: 5,5 o 5.5 horas</p>
                 </div>
 
                 <div className="space-y-3">

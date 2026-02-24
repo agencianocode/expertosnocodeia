@@ -9,6 +9,7 @@ import {
   text,
   integer,
   boolean,
+  real,
 } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -84,7 +85,7 @@ export const courses = pgTable("courses", {
   type: varchar("type").notNull(), // 'course', 'guide', 'workshop'
   categoryId: varchar("category_id").references(() => categories.id),
   difficulty: varchar("difficulty"), // 'beginner', 'intermediate', 'advanced'
-  estimatedHours: integer("estimated_hours"),
+  estimatedHours: real("estimated_hours"),
   hasCertificate: boolean("has_certificate").default(true),
   isPublished: boolean("is_published").default(true),
   coverImageUrl: varchar("cover_image_url"), // Custom course image
