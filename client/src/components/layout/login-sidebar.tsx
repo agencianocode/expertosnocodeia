@@ -235,7 +235,7 @@ export default function LoginSidebar() {
 
           {/* Botón Acceso */}
           <Button 
-            className="w-full bg-muted-foreground hover:bg-muted text-background"
+            className="w-full bg-muted-foreground hover:bg-primary hover:text-primary-foreground text-background transition-colors"
             onClick={() => window.location.href = "/login"}
           >
             Acceso

@@ -249,8 +249,8 @@ export default function Guide() {
           <Sidebar />
         </div>
 
-        <div className="flex-1 lg:ml-[250px] bg-background">
-          <div className="max-w-[1200px] mx-auto px-4 lg:px-8 py-6 lg:py-8">
+        <div className="flex-1 lg:ml-[250px] bg-background min-h-screen">
+          <div className="max-w-[1200px] mx-auto px-4 lg:px-8 py-6 lg:py-8 max-lg:pb-24">
             <div className="lg:hidden mb-4">
               <Button
                 variant="ghost"

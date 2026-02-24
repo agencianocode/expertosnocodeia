@@ -1,11 +1,12 @@
 import { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { useLocation } from "wouter";
 import { useSimpleAuth } from "@/hooks/use-simple-auth";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Send, Loader2, Menu, Heart, MessageCircle, X, Smile, ChevronDown, MoreVertical, Bell, Plus, Trash2, Pin, Paperclip, Music, AtSign, Trophy, Medal, Award, HelpCircle, Lock, Radio } from "lucide-react";
+import { Send, Loader2, Menu, Heart, MessageCircle, X, Smile, ChevronDown, MoreVertical, Bell, Plus, Trash2, Pin, Paperclip, Music, AtSign, Trophy, Medal, Award, HelpCircle, Lock, Radio, Reply } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Sidebar from "@/components/layout/sidebar";
 import MobileNav from "@/components/layout/mobile-nav";
@@ -25,9 +26,81 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+
+/** Clases para contenido con formato (anuncios/comunidad) */
+const PROSE_CLASS =
+  "community-prose prose prose-invert prose-sm max-w-none text-muted-foreground [&_a]:text-cyan-500 [&_a]:hover:text-cyan-400 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_li]:mb-1 [&_p]:mb-2 [&_strong]:text-foreground [&_h1]:text-foreground [&_h2]:text-foreground [&_h3]:text-foreground";
+
+/** Convierte \n literales a salto de línea real y opcionalmente a texto plano para vista previa. */
+function normalizeContentForDisplay(content: string, stripHtml = false): string {
+  if (!content || typeof content !== "string") return "";
+  let out = content.replace(/\\n/g, "\n");
+  if (stripHtml) {
+    out = out.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+  }
+  return out;
+}
+
+/** Devuelve texto plano para vista previa de un post (sin HTML, una línea). */
+function getPostPreviewText(post: { content?: string; contentBlocks?: { type: string; content?: string }[] }): string {
+  if (!post) return "";
+  const blocks = post.contentBlocks || [];
+  const firstText = blocks.find((b: any) => b.type === "text" && b.content);
+  const raw = firstText ? (firstText as any).content : post.content || "";
+  return normalizeContentForDisplay(raw, true);
+}
+
+function CommunityFormattedContent({
+  content,
+  className = "",
+}: {
+  content: string;
+  className?: string;
+}) {
+  if (!content) return null;
+  const normalized = normalizeContentForDisplay(content);
+  const isHtml = /<[^>]+>/.test(normalized);
+  if (isHtml) {
+    return (
+      <div
+        className={cn(PROSE_CLASS, className)}
+        dangerouslySetInnerHTML={{ __html: normalized }}
+      />
+    );
+  }
+  // Linkificar URLs; convertir saltos de línea simples en saltos GFM para que se vean en el frontend
+  const withLinks = normalized.replace(
+    /(\bhttps?:\/\/[^\s]+)/g,
+    (url) => `[${url}](${url})`
+  );
+  const withLineBreaks = withLinks.replace(/\n/g, "  \n");
+  return (
+    <div className={cn(PROSE_CLASS, className)}>
+      <ReactMarkdown
+        remarkPlugins={[remarkGfm]}
+        components={{
+          p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
+          ul: ({ children }) => <ul className="list-disc pl-5 my-2 space-y-1">{children}</ul>,
+          ol: ({ children }) => <ol className="list-decimal pl-5 my-2 space-y-1">{children}</ol>,
+          li: ({ children }) => <li className="mb-1">{children}</li>,
+          a: ({ href, children }) => (
+            <a href={href} target="_blank" rel="noopener noreferrer" className="text-cyan-500 hover:text-cyan-400 underline break-all">
+              {children}
+            </a>
+          ),
+        }}
+      >
+        {withLineBreaks}
+      </ReactMarkdown>
+    </div>
+  );
+}
 
 interface Channel {
   id: string;
@@ -159,6 +232,8 @@ export default function Community() {
   const [commentInput, setCommentInput] = useState("");
   const [sendingComment, setSendingComment] = useState(false);
   const [channelsSidebarOpen, setChannelsSidebarOpen] = useState(true);
+  const [mobileChannelsOpen, setMobileChannelsOpen] = useState(false);
+  const [mobileChannelSearch, setMobileChannelSearch] = useState("");
   const [isAnunciosChannel, setIsAnunciosChannel] = useState(false);
   const [postCommentCounts, setPostCommentCounts] = useState<{ [postId: string]: number }>({});
   const [allPostComments, setAllPostComments] = useState<{ [postId: string]: Comment[] }>({});
@@ -890,51 +965,89 @@ export default function Community() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background overflow-x-hidden" style={{ backgroundColor: '#0f0f19' }}>
       {/* Left Sidebar - Main Navigation (fixed) */}
       <Sidebar />
-      {/* Main Content Container - accounts for fixed sidebar */}
-      <div className={cn("md:ml-16 lg:ml-[250px] min-h-screen flex overflow-hidden transition-all", !isAccordionChannel && selectedPost && "lg:mr-[420px]")}>
-        {/* Middle Sidebar - Channels (fixed) */}
+      {/* Wrapper: ancho = viewport menos sidebar (y panel derecho si abre) para evitar scroll horizontal */}
+      <div className={cn(
+        "md:ml-16 lg:ml-[250px] min-h-screen max-lg:w-full max-lg:h-[calc(100vh-56px)] max-lg:min-h-0",
+        "lg:w-[calc(100vw-250px)]",
+        !isAccordionChannel && selectedPost && "lg:mr-[420px] lg:w-[calc(100vw-250px-420px)]"
+      )}>
         <div className={cn(
-          "hidden lg:flex fixed left-[250px] top-0 w-[280px] h-screen bg-card overflow-y-auto flex-col transition-all duration-300 z-40",
-          !channelsSidebarOpen && "lg:hidden"
+          "min-h-screen flex flex-col overflow-hidden transition-all",
+          "lg:max-w-[1280px] lg:px-4 lg:mx-auto",
+          "max-lg:h-[calc(100vh-56px)] max-lg:min-h-0 max-lg:px-4 max-lg:pt-4"
         )}>
-          {/* User Profile Section */}
-          <div className="p-4 flex items-center gap-3 bg-muted mt-[0px] mb-[0px] pl-[16px] pr-[16px] pt-[12px] pb-[12px]">
-            <Avatar className="h-10 w-10">
+        {/* Contenedor: columna izquierda (título + card canales) y card contenido — como imagen 2 */}
+        <div className={cn(
+          "flex flex-1 min-w-0 min-h-0 gap-4 lg:mb-8",
+          "max-lg:flex-col max-lg:gap-0"
+        )}>
+        {/* Columna izquierda: título encima solo de la card de canales */}
+        <div className="hidden lg:flex flex-col flex-shrink-0 w-[280px] gap-0">
+          <p className="flex-shrink-0 text-sm font-semibold uppercase tracking-wide pt-4 pb-2 px-1 text-foreground">
+            Chat de la comunidad
+          </p>
+          <div className={cn(
+            "flex flex-col overflow-hidden transition-all duration-300 z-40 flex-1 min-h-0",
+            "rounded-xl border border-border bg-card shadow-sm",
+            "max-h-[calc(100vh-5.5rem)]",
+            !channelsSidebarOpen && "hidden"
+          )}>
+          <div className="flex-shrink-0 p-4 flex items-center gap-3 bg-muted/30 pt-4 pb-3 border-b border-border">
+            <Avatar className="h-10 w-10 flex-shrink-0">
               <AvatarImage src={(user as any)?.profileImageUrl || undefined} />
               <AvatarFallback>{(user?.firstName?.charAt(0) || "U").toUpperCase()}</AvatarFallback>
             </Avatar>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-semibold text-foreground truncate">{user?.firstName} {user?.lastName}</p>
-              <p className="text-xs text-cyan-500 font-medium">● En Línea</p>
+              <p className="text-xs text-muted-foreground">Miembro de la comunidad</p>
             </div>
           </div>
 
-          {/* Search */}
-          <div className="p-4 sticky top-0 z-10 bg-muted">
-            <Input type="search" placeholder="Buscar..." className="text-xs h-8 bg-card border-border" />
+          <div className="flex-shrink-0 px-4 pb-3">
+            <Input type="search" placeholder="Canales de búsqueda" className="text-xs h-9 bg-background/50 border-border" />
           </div>
 
-          {/* Sections */}
-          <div className="flex-1 overflow-y-auto px-2 py-3 space-y-0 bg-muted">
+          {/* CANALES - lista con scroll interno */}
+          <div className="flex-1 min-h-0 overflow-y-auto px-2 py-2 space-y-0 scrollbar-community">
+            <div className="text-xs text-muted-foreground font-semibold uppercase px-2 py-1.5">Canales</div>
             {orderedSections.map((section) => (
               <div key={section.title}>
-                <div className="text-xs text-muted-foreground px-2 py-1 font-semibold uppercase">{section.title}</div>
+                <div className="text-xs text-muted-foreground/80 px-2 py-0.5 font-medium uppercase">{section.title}</div>
                 {section.channels.map((channel) => (
-                  <button
+                  <div
                     key={channel.id}
-                    onClick={() => setActiveChannel(channel)}
                     className={cn(
-                      "w-full text-left px-3 py-1.5 rounded text-sm font-medium flex items-center gap-2 hover:bg-muted transition-colors",
-                      activeChannel?.id === channel.id && "bg-muted text-foreground"
+                      "group/channel flex items-center w-full rounded-md text-sm font-medium transition-colors",
+                      activeChannel?.id === channel.id && "bg-primary/20 text-primary-foreground"
                     )}
-                    data-testid={`channel-${channel.slug}`}
                   >
-                    <span className="text-lg">{channel.icon}</span>
-                    <span className="truncate">{channel.name}</span>
-                  </button>
+                    <button
+                      type="button"
+                      onClick={() => setActiveChannel(channel)}
+                      className={cn(
+                        "flex-1 min-w-0 text-left px-3 py-2 flex items-center gap-2 rounded-md transition-colors",
+                        activeChannel?.id === channel.id ? "text-primary-foreground hover:bg-primary/30" : "text-foreground hover:bg-muted"
+                      )}
+                      data-testid={`channel-${channel.slug}`}
+                    >
+                      <span className={activeChannel?.id === channel.id ? "text-primary-foreground" : "text-muted-foreground"}>#</span>
+                      <span className="truncate">{channel.name}</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toast({ title: "Canal", description: "Opciones de notificaciones próximamente" });
+                      }}
+                      className="flex-shrink-0 p-1.5 rounded opacity-0 group-hover/channel:opacity-100 hover:bg-muted transition-opacity text-muted-foreground hover:text-foreground"
+                      aria-label="Opciones del canal"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
                 ))}
               </div>
             ))}
@@ -956,7 +1069,7 @@ export default function Community() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <span className="text-xs text-gray-300 truncate">{liveEvent.hostName}</span>
+                      <span className="text-xs text-muted-foreground truncate">{liveEvent.hostName}</span>
                       <span className="flex items-center gap-1 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded">
                         <Radio className="h-2.5 w-2.5 animate-pulse" />
                         LIVE
@@ -982,28 +1095,114 @@ export default function Community() {
           )}
 
           </div>
+        </div>
 
-        {/* Center Content - Posts Feed */}
+        {/* Mobile: Sheet de canales */}
+        <div className="flex-shrink-0 w-0 min-w-0 overflow-visible max-lg:w-auto">
+        <Sheet
+          open={mobileChannelsOpen}
+          onOpenChange={(open) => {
+            setMobileChannelsOpen(open);
+            if (!open) setMobileChannelSearch("");
+          }}
+        >
+          <SheetContent side="left" className="w-[280px] max-w-[85vw] p-0 flex flex-col bg-card border-r border-border">
+            <div className="flex flex-col h-full overflow-hidden">
+              {/* Perfil + cerrar: el SheetContent ya incluye el botón X */}
+              <div className="p-4 flex items-center justify-between gap-3 bg-muted border-b border-border">
+                <div className="flex items-center gap-3 min-w-0">
+                  <Avatar className="h-10 w-10 flex-shrink-0">
+                    <AvatarImage src={(user as any)?.profileImageUrl || undefined} />
+                    <AvatarFallback>{(user?.firstName?.charAt(0) || "U").toUpperCase()}</AvatarFallback>
+                  </Avatar>
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-foreground truncate">{user?.firstName} {user?.lastName}</p>
+                    <p className="text-xs text-cyan-500 font-medium">Miembro de la comunidad</p>
+                  </div>
+                </div>
+              </div>
+              {/* Búsqueda de canales */}
+              <div className="p-4 bg-muted">
+                <Input
+                  type="search"
+                  placeholder="Canales de búsqueda"
+                  className="text-xs h-9 bg-card border-border"
+                  value={mobileChannelSearch}
+                  onChange={(e) => setMobileChannelSearch(e.target.value)}
+                  aria-label="Buscar canales"
+                />
+              </div>
+              {/* Lista de canales (filtrada por búsqueda) */}
+              <div className="flex-1 overflow-y-auto px-2 py-3 space-y-0 bg-muted">
+                <div className="text-xs text-muted-foreground px-2 py-1 font-semibold uppercase">Canales</div>
+                {orderedSections.map((section) => {
+                  const query = mobileChannelSearch.trim().toLowerCase();
+                  const filteredChannels = query
+                    ? section.channels.filter(
+                        (ch) =>
+                          ch.name.toLowerCase().includes(query) ||
+                          (ch.slug && ch.slug.toLowerCase().includes(query))
+                      )
+                    : section.channels;
+                  if (filteredChannels.length === 0) return null;
+                  return (
+                    <div key={section.title}>
+                      <div className="text-xs text-muted-foreground px-2 py-1 font-semibold uppercase">{section.title}</div>
+                      {filteredChannels.map((channel) => (
+                        <button
+                          key={channel.id}
+                          onClick={() => {
+                            setActiveChannel(channel);
+                            setMobileChannelsOpen(false);
+                            setMobileChannelSearch("");
+                          }}
+                          className={cn(
+                            "w-full text-left px-3 py-2 rounded text-sm font-medium flex items-center gap-2 hover:bg-muted transition-colors",
+                            activeChannel?.id === channel.id && "bg-muted text-foreground"
+                          )}
+                          data-testid={`channel-mobile-${channel.slug}`}
+                        >
+                          <span className="text-lg">#</span>
+                          <span className="truncate">{channel.name}</span>
+                        </button>
+                      ))}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </SheetContent>
+        </Sheet>
+        </div>
+
+        {/* Card 2: Contenido del canal — alineada en altura con la card izquierda (debajo del título) */}
         <div className={cn(
-          "flex-1 flex flex-col overflow-hidden lg:ml-[280px]",
-          selectedPost && isAnunciosChannel ? "lg:w-1/2" : "",
+          "flex-1 flex flex-col overflow-hidden min-h-0 min-w-0",
+          "rounded-xl border border-border bg-card shadow-sm overflow-hidden",
+          "lg:max-h-[calc(100vh-5.5rem)]",
+          "max-lg:mx-0 max-lg:mt-3 max-lg:mb-4",
+          "lg:mt-11",
           isRedesChatChannel && "lg:mr-[420px]"
         )}>
-          {/* Header */}
-          <div className="bg-card px-6 py-4 flex items-center justify-between gap-4">
-            <div className="flex items-center gap-4 flex-1">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setChannelsSidebarOpen(!channelsSidebarOpen)}
-                className="lg:hidden"
-                data-testid="toggle-channels-button"
-              >
-                <Menu className="h-5 w-5" />
-              </Button>
-              <div className="flex-1">
-                <h1 className="text-xl font-bold text-foreground">{activeChannel?.name}</h1>
-                {activeChannel?.description && <p className="text-xs text-muted-foreground mt-1">{activeChannel.description}</p>}
+          {/* Mobile: solo el título fuera de la card — más margen interior en responsive */}
+          <p className="flex-shrink-0 text-xs font-semibold uppercase text-muted-foreground tracking-wide lg:hidden mb-0 max-lg:pt-5 max-lg:pb-2 max-lg:px-4">
+            Chat de la comunidad
+          </p>
+
+          {/* Header (desktop): CANAL #nombre + banner Conectado (banner grueso como imagen 1) */}
+          <div className="hidden lg:flex flex-shrink-0 bg-muted/30 px-6 lg:px-8 py-4 flex items-center justify-between gap-4 border-b border-border rounded-t-xl min-h-[76px]">
+            <div className="flex items-center gap-4 flex-1 min-w-0">
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-semibold uppercase text-muted-foreground">Canal</p>
+                <h1 className="text-lg font-bold text-foreground truncate">{activeChannel?.name ? `#${activeChannel.name}` : "Elige un canal"}</h1>
+                {activeChannel?.description && !isRedesChatChannel && <p className="text-xs text-muted-foreground mt-0.5">{activeChannel.description}</p>}
+              </div>
+              {/* Banner conectados: siempre visible (como imagen 2) */}
+              <div className="flex-shrink-0 px-5 py-3 rounded-lg bg-muted border border-border min-h-[48px] flex items-center">
+                <p className="text-sm text-cyan-500 font-medium flex items-center gap-2">
+                  <span className="h-2.5 w-2.5 rounded-full bg-green-500 flex-shrink-0" />
+                  Conectado • {Array.isArray(onlineMembers) ? onlineMembers.length : 0} en línea
+                </p>
               </div>
             </div>
 
@@ -1082,7 +1281,7 @@ export default function Community() {
                           }}
                           className="border-border"
                         />
-                        <Label htmlFor="email-notif-dd" className="cursor-pointer text-sm text-gray-200">
+                        <Label htmlFor="email-notif-dd" className="cursor-pointer text-sm text-foreground">
                           Notificaciones por Email
                         </Label>
                       </div>
@@ -1098,7 +1297,7 @@ export default function Community() {
                           }}
                           className="border-border"
                         />
-                        <Label htmlFor="app-notif-dd" className="cursor-pointer text-sm text-gray-200">
+                        <Label htmlFor="app-notif-dd" className="cursor-pointer text-sm text-foreground">
                           Notificaciones en la App
                         </Label>
                       </div>
@@ -1114,7 +1313,7 @@ export default function Community() {
                           }}
                           className="border-border"
                         />
-                        <Label htmlFor="mobile-notif-dd" className="cursor-pointer text-sm text-gray-200">
+                        <Label htmlFor="mobile-notif-dd" className="cursor-pointer text-sm text-foreground">
                           Notificaciones Móvil
                         </Label>
                       </div>
@@ -1147,15 +1346,37 @@ export default function Community() {
             )}
           </div>
 
-          {/* Content Feed - Posts OR Chat OR Leaderboard depending on channel type */}
+          {/* Una sola card en mobile: cabecera del canal + contenido con scroll + input (chat) */}
+          <div className={cn(
+            "flex-1 min-h-0 flex flex-col overflow-hidden",
+            "max-lg:rounded-xl max-lg:border max-lg:border-border max-lg:bg-card max-lg:overflow-hidden"
+          )}>
+          {/* Mobile: cabecera del canal DENTRO de la card (primera fila) */}
+          <div className="flex-shrink-0 border-b border-border lg:hidden">
+            <button
+              type="button"
+              onClick={() => setMobileChannelsOpen(true)}
+              className="w-full flex items-center justify-between gap-3 px-4 py-3 text-left hover:bg-muted/50 transition-colors rounded-t-xl"
+              data-testid="toggle-channels-button"
+            >
+              <span className="text-sm font-medium text-foreground truncate">
+                {activeChannel?.name ? `#${activeChannel.name}` : "Elige un canal"}
+              </span>
+              <span className="flex items-center gap-1.5 text-xs text-muted-foreground flex-shrink-0">
+                <span>Canales</span>
+                <Menu className="h-4 w-4" />
+              </span>
+            </button>
+          </div>
+          {/* Content Feed - Posts OR Chat OR Leaderboard (scroll interno) */}
           {isLeaderboardChannel ? (
-            <div className="flex-1 overflow-y-auto px-6 py-6">
+            <div className="flex-1 min-h-0 overflow-y-auto px-3 py-3 lg:px-4 lg:py-3 max-lg:pb-12 scrollbar-community">
               <div className="max-w-6xl mx-auto">
                 {/* User's Personal Progress Card */}
                 {user && (
-                  <Card className="bg-card border-border mb-6">
-                    <CardContent className="p-6">
-                      <div className="flex flex-col sm:flex-row items-start gap-6">
+                  <Card className="bg-card border-border rounded-xl mb-3">
+                    <CardContent className="p-4">
+                      <div className="flex flex-col sm:flex-row items-start gap-4">
                         {/* Left side: Avatar with name and points below */}
                         <div className="flex flex-col items-center sm:items-start">
                           <div className="relative mb-3">
@@ -1180,13 +1401,13 @@ export default function Community() {
 
                         {/* Right side: Level info and levels grid */}
                         <div className="flex-1 w-full">
-                          <div className="flex items-center gap-3 mb-4">
+                          <div className="flex items-center gap-3 mb-2">
                             <div className="flex items-center gap-2">
                               <Trophy className="h-6 w-6 text-yellow-500" />
                               <span className="text-foreground font-semibold text-lg">Nivel {userStats?.level || 1}</span>
                             </div>
                           </div>
-                          <div className="flex items-center gap-2 mb-6">
+                          <div className="flex items-center gap-2 mb-3">
                             <span className="text-sm text-muted-foreground">
                               {userStats ? getPointsForNextLevel(userStats.level || 1, userStats.points || 0) : 0} puntos para subir de nivel
                             </span>
@@ -1229,7 +1450,7 @@ export default function Community() {
                 )}
 
                 {/* Period Filters */}
-                <div className="flex items-center gap-4 mb-6 flex-wrap">
+                <div className="flex items-center gap-4 mb-3 flex-wrap">
                   <Button
                     variant={leaderboardPeriod === "7_days" ? "default" : "outline"}
                     onClick={() => setLeaderboardPeriod("7_days")}
@@ -1281,7 +1502,7 @@ export default function Community() {
                     <p>Cargando clasificación...</p>
                   </div>
                 ) : leaderboard && leaderboard.length > 0 ? (
-                  <div className="space-y-3">
+                  <div className="space-y-2">
                     {leaderboard.map((member: any, index: number) => {
                       const rank = index + 1;
                       const isCurrentUser = member.userId === user?.id;
@@ -1300,11 +1521,11 @@ export default function Community() {
                         <Card
                           key={member.userId}
                           className={cn(
-                            "bg-card border-border hover:bg-muted transition-colors",
+                            "rounded-xl bg-card border-border hover:bg-muted transition-colors",
                             isCurrentUser && "border-cyan-500 border-2"
                           )}
                         >
-                          <CardContent className="p-4">
+                          <CardContent className="p-3">
                             <div className="flex items-center gap-4">
                               <div className="flex-shrink-0">
                                 {getRankBadge(rank)}
@@ -1345,7 +1566,7 @@ export default function Community() {
               </div>
             </div>
           ) : isRedesChatChannel ? (
-            <div className="flex-1 w-full flex flex-col">
+            <div className="flex-1 min-h-0 w-full flex flex-col">
               {/* Messages Feed - Always centered */}
               {messages.length === 0 ? (
                 <div className="flex-1 flex justify-center items-center">
@@ -1354,17 +1575,17 @@ export default function Community() {
                   </div>
                 </div>
               ) : (
-                <div className="flex-1 overflow-y-auto px-6 py-6 w-full flex flex-col">
-                  <div className="w-full max-w-3xl mx-auto space-y-4">
+                <div className="flex-1 min-h-0 overflow-y-auto px-3 py-3 lg:px-4 lg:py-3 w-full flex flex-col max-lg:pb-4 scrollbar-community">
+                  <div className="w-full max-w-3xl mx-auto space-y-2">
                     {/* Pinned Messages Section */}
                     {groupMessagesByDate(messages).pinned.length > 0 && (
-                      <div className="space-y-3 pb-4 border-b border-border">
+                      <div className="space-y-2 pb-3 border-b border-border">
                         <div className="flex items-center gap-2 text-xs font-semibold text-cyan-400">
                           <Pin className="h-3 w-3" />
                           <span>Mensajes fijados</span>
                         </div>
                         {groupMessagesByDate(messages).pinned.map((message) => (
-                          <div key={message.id} className="rounded-lg border border-border bg-card p-3">
+                          <div key={message.id} className="rounded-xl border border-border bg-card p-3">
                             <div className="flex items-start gap-3">
                               <Avatar className="h-6 w-6 flex-shrink-0">
                                 <AvatarImage src={message.user?.profileImageUrl || undefined} />
@@ -1439,25 +1660,25 @@ export default function Community() {
 
                     {/* Regular Messages Grouped by Date */}
                     {Object.entries(groupMessagesByDate(messages).grouped).map(([date, dateMessages]) => (
-                      <div key={date} className="space-y-3">
-                        <div className="flex items-center justify-center gap-3">
-                          <div className="flex-1 border-t border-border"></div>
-                          <span className="text-xs text-muted-foreground px-3 py-1 rounded-full bg-card border border-border">
+                      <div key={date} className="space-y-2">
+                        <div className="flex items-center justify-center gap-3 py-1">
+                          <div className="flex-1 border-t border-border" />
+                          <span className="text-xs text-muted-foreground px-3 py-1 rounded-full bg-muted/80 border border-border">
                             {date}
                           </span>
-                          <div className="flex-1 border-t border-border"></div>
+                          <div className="flex-1 border-t border-border" />
                         </div>
                         {dateMessages.map((message) => (
-                          <div key={message.id} className="rounded-lg border border-border bg-card p-4 group">
-                            <div className="flex items-start gap-3 mb-2">
-                              <Avatar 
+                        <div key={message.id} className="rounded-xl border border-border bg-card p-3 group">
+                            <div className="flex items-start gap-3 mb-1">
+                              <Avatar
                                 className="h-8 w-8 flex-shrink-0 cursor-pointer hover:opacity-80 transition-opacity"
                                 onClick={() => message.user && handleOpenProfile(message.user)}
                               >
                                 <AvatarImage src={message.user?.profileImageUrl || undefined} />
                                 <AvatarFallback>{(message.user?.firstName?.charAt(0) || "U").toUpperCase()}</AvatarFallback>
                               </Avatar>
-                              <div className="flex-1">
+                              <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-2">
                                   <p 
                                     className="font-semibold text-foreground cursor-pointer hover:underline"
@@ -1465,7 +1686,7 @@ export default function Community() {
                                   >
                                     {message.user?.firstName} {message.user?.lastName}
                                   </p>
-                                  <p className="text-xs text-muted-foreground">
+                                  <p className="text-xs text-muted-foreground flex-shrink-0">
                                     {new Date(message.createdAt).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })}
                                   </p>
                                 </div>
@@ -1522,9 +1743,20 @@ export default function Community() {
                                 </div>
                               )}
                             </div>
-                            {/* Message reactions */}
-                            <div className="flex items-center gap-2 text-xs text-muted-foreground ml-11 flex-wrap">
-                              <div className="relative">
+                            {/* Responder + reacciones (estilo referencia) */}
+                            <div className="flex items-center gap-3 text-xs text-muted-foreground ml-11 flex-wrap mt-1">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const input = document.querySelector('[data-testid="message-input"]') as HTMLTextAreaElement;
+                                  if (input) input.focus();
+                                }}
+                                className="flex items-center gap-1 hover:text-cyan-500 transition-colors"
+                              >
+                                <Reply className="h-3.5 w-3.5" />
+                                <span>Responder</span>
+                              </button>
+                              <div className="relative flex items-center gap-1">
                                 <button 
                                   onClick={() => setOpenReactionMessageId(openReactionMessageId === message.id ? null : message.id)}
                                   disabled={(userMessageEmojis[message.id] || []).length >= 3}
@@ -1535,7 +1767,7 @@ export default function Community() {
                                       : "hover:text-cyan-500"
                                   )}
                                 >
-                                  <Smile className="h-3 w-3" />
+                                  <Smile className="h-3.5 w-3.5" />
                                 </button>
                                 {openReactionMessageId === message.id && (
                                   <div className="absolute bottom-full left-0 mb-2 bg-card border border-border rounded-lg p-2 grid grid-cols-5 gap-1 w-40 z-50 shadow-lg">
@@ -1576,15 +1808,16 @@ export default function Community() {
                 </div>
               )}
 
-              {/* Message Input with Toolbar */}
-              <div className="flex-shrink-0 border-t border-border flex justify-center w-full bg-card">
-                <div className="flex flex-col w-full px-6 py-2 max-w-3xl bg-card">
+              {/* Message Input: barra fija abajo — fondo #10101a como referencia */}
+              <div className="flex-shrink-0 border-t border-border flex justify-center w-full min-h-[72px] px-4 py-3 lg:px-6" style={{ backgroundColor: "#10101a" }}>
+                <div className="flex flex-col w-full max-w-3xl justify-center">
                   {/* Text Input with Integrated Toolbar */}
-                  <div className="flex flex-col border border-border rounded-lg bg-card p-2">
+                  <div className="flex flex-col border border-border rounded-lg p-2.5 focus-within:ring-2 focus-within:ring-[#2c57e7] focus-within:border-[#2c57e7] transition-colors shadow-sm" style={{ backgroundColor: "#10101a" }}>
                     {/* Textarea - Full width on top */}
                     <textarea
-                      placeholder="Escribe un mensaje... (Shift+Enter para nueva línea)"
+                      placeholder="Envía un mensaje al canal..."
                       value={messageInput}
+                      disabled={sendingMessage}
                       onChange={(e) => {
                         const newValue = e.target.value;
                         setMessageInput(newValue);
@@ -1633,8 +1866,7 @@ export default function Community() {
                           })();
                         }
                       }}
-                      disabled={sendingMessage}
-                      className="w-full bg-transparent border-0 text-foreground text-left resize-none min-h-[24px] max-h-[120px] overflow-y-auto outline-none text-sm"
+                      className="w-full bg-transparent border-0 text-foreground text-left resize-none min-h-[28px] max-h-[120px] overflow-y-auto outline-none text-sm placeholder:text-muted-foreground focus:ring-0"
                       rows={1}
                       data-testid="message-input"
                     />
@@ -1705,9 +1937,9 @@ export default function Community() {
                         </button>
                       </div>
                       
-                      {/* Send Button - Right side */}
+                      {/* Send Button - circular azul a la derecha (estilo referencia) */}
                       <Button
-                        size="sm"
+                        size="icon"
                         onClick={async () => {
                           if (!messageInput.trim()) return;
                           setSendingMessage(true);
@@ -1735,7 +1967,8 @@ export default function Community() {
                           }
                         }}
                         disabled={sendingMessage || !messageInput.trim()}
-                        className="bg-cyan-500 hover:bg-cyan-600 text-black font-semibold flex-shrink-0 ml-auto"
+                        className="h-9 w-9 rounded-full text-white flex-shrink-0 ml-auto p-0 hover:opacity-90 transition-opacity"
+                        style={{ backgroundColor: "#2c57e7" }}
                         data-testid="send-message-button"
                       >
                         {sendingMessage ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
@@ -1746,67 +1979,9 @@ export default function Community() {
               </div>
             </div>
           ) : posts.length > 0 || activeChannel?.section === "Comunidad" ? (
-            <div className="flex-1 overflow-y-auto px-6 py-6 space-y-4 max-w-4xl mx-auto w-full">
-
-              {/* Inicia una publicación - para Presentante y Dudas */}
-              {(isPresentanteChannel || isDudasChannel) && (
-                <div className="border border-border rounded-lg p-3 bg-card flex items-center gap-3 w-full">
-                  <Avatar className="h-8 w-8 flex-shrink-0">
-                    <AvatarImage src={(user as any)?.profileImageUrl || undefined} />
-                    <AvatarFallback>{(user?.firstName?.charAt(0) || "U").toUpperCase()}</AvatarFallback>
-                  </Avatar>
-                  <input
-                    type="text"
-                    placeholder="Inicia una publicación"
-                    value={newPostContent}
-                    onChange={(e) => setNewPostContent(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" && newPostContent.trim()) {
-                        e.preventDefault();
-                        const button = e.currentTarget.parentElement?.querySelector('[data-testid="create-post-button"]') as HTMLButtonElement;
-                        button?.click();
-                      }
-                    }}
-                    className="flex-1 bg-transparent border-0 outline-none text-sm text-foreground placeholder-muted-foreground focus:ring-0"
-                    data-testid="new-post-input"
-                  />
-                  <Button
-                    size="sm"
-                    onClick={async () => {
-                      if (!newPostContent.trim()) return;
-                      setCreatingPost(true);
-                      try {
-                        const res = await fetch(`/api/community/channels/${activeChannel?.id}/posts`, {
-                          method: "POST",
-                          headers: { "Content-Type": "application/json" },
-                          credentials: "include",
-                          body: JSON.stringify({
-                            title: "",
-                            content: newPostContent,
-                          }),
-                        });
-                        if (res.ok) {
-                          setNewPostContent("");
-                          // Refetch posts
-                          const postsRes = await fetch(`/api/community/channels/${activeChannel?.id}/posts?limit=50&sort=${sortBy}`);
-                          const postsData = await postsRes.json();
-                          setPosts(Array.isArray(postsData) ? postsData : []);
-                          toast({ title: "Éxito", description: "Publicación creada" });
-                        }
-                      } catch (error) {
-                        toast({ title: "Error", description: "No se pudo crear la publicación", variant: "destructive" });
-                      } finally {
-                        setCreatingPost(false);
-                      }
-                    }}
-                    disabled={creatingPost || !newPostContent.trim()}
-                    className="bg-cyan-500 hover:bg-cyan-600 text-black font-semibold flex-shrink-0"
-                    data-testid="create-post-button"
-                  >
-                    {creatingPost ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
-                  </Button>
-                </div>
-              )}
+            <div className="flex flex-col flex-1 min-h-0">
+              {/* Área de scroll: solo listado de posts (barra de escribir abajo, como imagen 2) */}
+              <div className="flex-1 min-h-0 overflow-y-auto px-3 py-3 lg:px-4 lg:py-3 space-y-2 max-w-4xl mx-auto w-full max-lg:pb-2 scrollbar-community">
               {posts.length === 0 ? (
                 <div className="flex items-center justify-center h-full text-muted-foreground">
                   <p>No hay anuncios. Vuelve pronto.</p>
@@ -1821,11 +1996,11 @@ export default function Community() {
                     <div
                       key={post.post.id}
                       className={cn(
-                        "rounded-lg border transition-colors",
+                        "rounded-xl border transition-colors",
                         isAccordionChannel 
                           ? "border-border bg-card" 
                           : cn(
-                              "p-4 border-border bg-card cursor-pointer hover:border-border",
+                              "p-3 border-border bg-card cursor-pointer hover:border-border",
                               selectedPost?.post.id === post.post.id && "border-cyan-500 bg-muted"
                             )
                       )}
@@ -1848,7 +2023,7 @@ export default function Community() {
                       )}
                       {/* Header para Presentante y Dudas - estilo chat */}
                       {!isAccordionChannel && (isPresentanteChannel || isDudasChannel) && !(post.post as any)?.isAdminPost && (
-                        <div className="bg-muted rounded-lg p-3 mb-3 relative">
+                        <div className="bg-muted rounded-xl p-3 mb-2 relative">
                           <div className="flex items-start gap-3">
                             <Avatar className="h-10 w-10 flex-shrink-0">
                               <AvatarImage src={(post.user as any)?.profileImageUrl || undefined} />
@@ -1856,7 +2031,7 @@ export default function Community() {
                             </Avatar>
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2 mb-1">
-                                <p className="font-semibold text-white">
+                                <p className="font-semibold text-foreground">
                                   {post.user?.firstName} {post.user?.lastName}
                                 </p>
                                 {/* Show "Pregunta" badge if post has lesson metadata */}
@@ -2017,38 +2192,18 @@ export default function Community() {
 
                           {/* Renderizar bloques si existen */}
                           {post.post.contentBlocks && post.post.contentBlocks.length > 0 ? (
-                            <div className={cn("space-y-3 mb-3", isAccordionChannel && "px-4")}>
+                            <div className={cn("space-y-2 mb-2", isAccordionChannel && "px-4")}>
                               {(() => {
                                 const nonMetadataBlocks = post.post.contentBlocks.filter((block: any) => block.type !== "metadata");
                                 const hasTextBlocks = nonMetadataBlocks.some((block: any) => block.type === "text" && block.content);
                                 
                                 // If no text blocks but there's post content, show it
                                 if (!hasTextBlocks && post.post.content) {
-                                  const isHtml = /<[^>]+>/.test(post.post.content);
-                                  return isHtml ? (
-                                    <div 
-                                      className="prose prose-invert prose-sm max-w-none text-muted-foreground [&_a]:text-cyan-500 [&_a]:hover:text-cyan-400 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_li]:mb-1 [&_p]:mb-2 [&_strong]:text-white [&_h1]:text-white [&_h2]:text-white [&_h3]:text-white"
-                                      dangerouslySetInnerHTML={{ __html: post.post.content }}
+                                  return (
+                                    <CommunityFormattedContent
+                                      content={post.post.content}
+                                      className="text-sm text-foreground"
                                     />
-                                  ) : (
-                                    <div className="text-sm text-white whitespace-pre-wrap break-words">
-                                      {post.post.content.split(/(\bhttps?:\/\/[^\s]+)/g).map((part: string, i: number) => {
-                                        if (part.match(/^\bhttps?:\/\//)) {
-                                          return (
-                                            <a
-                                              key={i}
-                                              href={part}
-                                              target="_blank"
-                                              rel="noopener noreferrer"
-                                              className="text-cyan-500 hover:text-cyan-400 underline break-all"
-                                            >
-                                              {part}
-                                            </a>
-                                          );
-                                        }
-                                        return part;
-                                      })}
-                                    </div>
                                   );
                                 }
                                 
@@ -2057,37 +2212,9 @@ export default function Community() {
                                   .filter((block: any) => block.type !== "metadata")
                                   .map((block: any, idx: number) => {
                                 if (block.type === "text") {
-                                  // Check if content is HTML (contains HTML tags)
-                                  const isHtml = block.content && /<[^>]+>/.test(block.content);
-                                  
-                                  if (isHtml) {
-                                    return (
-                                      <div 
-                                        key={idx} 
-                                        className="prose prose-invert prose-sm max-w-none text-muted-foreground [&_a]:text-cyan-500 [&_a]:hover:text-cyan-400 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_li]:mb-1 [&_p]:mb-2 [&_strong]:text-white [&_h1]:text-white [&_h2]:text-white [&_h3]:text-white"
-                                        dangerouslySetInnerHTML={{ __html: block.content }}
-                                      />
-                                    );
-                                  }
-                                  
                                   return (
-                                    <div key={idx} className="text-sm text-muted-foreground whitespace-pre-wrap break-words">
-                                      {block.content && block.content.split(/(\bhttps?:\/\/[^\s]+)/g).map((part: string, i: number) => {
-                                        if (part.match(/^\bhttps?:\/\//)) {
-                                          return (
-                                            <a
-                                              key={i}
-                                              href={part}
-                                              target="_blank"
-                                              rel="noopener noreferrer"
-                                              className="text-cyan-500 hover:text-cyan-400 underline break-all"
-                                            >
-                                              {part}
-                                            </a>
-                                          );
-                                        }
-                                        return part;
-                                      })}
+                                    <div key={idx} className="text-sm text-muted-foreground break-words">
+                                      <CommunityFormattedContent content={block.content || ""} />
                                     </div>
                                   );
                                 } else if (block.type === "video") {
@@ -2165,36 +2292,11 @@ export default function Community() {
                               )}
 
                               {/* Contenido legacy - solo si no hay contentBlocks */}
-                              {(!post.post.contentBlocks || post.post.contentBlocks.length === 0 || post.post.contentBlocks.every((block: any) => block.type === "metadata")) && (() => {
-                                // Check if content is HTML (contains HTML tags)
-                                const isHtml = post.post.content && /<[^>]+>/.test(post.post.content);
-                                
-                                return isHtml ? (
-                                  <div 
-                                    className={cn("prose prose-invert prose-sm max-w-none text-muted-foreground mb-3 [&_a]:text-cyan-500 [&_a]:hover:text-cyan-400 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_li]:mb-1 [&_p]:mb-2 [&_strong]:text-white [&_h1]:text-white [&_h2]:text-white [&_h3]:text-white", isAccordionChannel && "px-4")}
-                                    dangerouslySetInnerHTML={{ __html: post.post.content }}
-                                  />
-                                ) : (
-                                  <div className={cn("text-sm text-muted-foreground mb-3 whitespace-pre-line break-words leading-relaxed", isAccordionChannel && "px-4")}>
-                                    {post.post.content.split(/(\bhttps?:\/\/[^\s]+)/g).map((part, idx) => {
-                                      if (part.match(/^\bhttps?:\/\//)) {
-                                        return (
-                                          <a
-                                            key={idx}
-                                            href={part}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="text-cyan-500 hover:text-cyan-400 underline break-all"
-                                          >
-                                            {part}
-                                          </a>
-                                        );
-                                      }
-                                      return part;
-                                    })}
-                                  </div>
-                                );
-                              })()}
+                              {(!post.post.contentBlocks || post.post.contentBlocks.length === 0 || post.post.contentBlocks.every((block: any) => block.type === "metadata")) && post.post.content && (
+                                <div className={cn("text-sm text-muted-foreground mb-3 break-words", isAccordionChannel && "px-4")}>
+                                  <CommunityFormattedContent content={post.post.content} />
+                                </div>
+                              )}
                             </>
                           )}
                         </>
@@ -2207,7 +2309,7 @@ export default function Community() {
                               <AvatarImage src={post.user?.profileImageUrl || undefined} />
                               <AvatarFallback>{(post.user?.firstName?.charAt(0) || "U").toUpperCase()}</AvatarFallback>
                             </Avatar>
-                            <p className="font-semibold text-white">
+                            <p className="font-semibold text-foreground">
                               {post.user?.firstName} {post.user?.lastName}
                             </p>
                           </div>
@@ -2283,8 +2385,8 @@ export default function Community() {
                                   className={cn(
                                     "text-sm px-2 py-1 rounded-full transition-all cursor-pointer bg-muted",
                                     isUserReaction 
-                                      ? "text-white" 
-                                      : "text-muted-foreground hover:text-white"
+                                      ? "text-foreground" 
+                                      : "text-muted-foreground hover:text-foreground"
                                   )}
                                 >
                                   {reaction.emoji} {reaction.count}
@@ -2403,33 +2505,98 @@ export default function Community() {
                   );
                 })
               )}
+              </div>
+              {/* Barra de escribir abajo - Preséntate / Dudas (como imagen 2) */}
+              {(isPresentanteChannel || isDudasChannel) && (
+                <div className="flex-shrink-0 border-t border-border px-3 py-3 lg:px-4 lg:py-3 bg-card/80">
+                  <div className="border border-border rounded-xl p-3 bg-card flex items-center gap-3 w-full max-w-4xl mx-auto focus-within:ring-2 focus-within:ring-[#2c57e7] focus-within:border-[#2c57e7] transition-colors">
+                    <Avatar className="h-8 w-8 flex-shrink-0">
+                      <AvatarImage src={(user as any)?.profileImageUrl || undefined} />
+                      <AvatarFallback>{(user?.firstName?.charAt(0) || "U").toUpperCase()}</AvatarFallback>
+                    </Avatar>
+                    <input
+                      type="text"
+                      placeholder="Enviar un mensaje..."
+                      value={newPostContent}
+                      onChange={(e) => setNewPostContent(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && newPostContent.trim()) {
+                          e.preventDefault();
+                          const button = e.currentTarget.parentElement?.querySelector('[data-testid="create-post-button"]') as HTMLButtonElement;
+                          button?.click();
+                        }
+                      }}
+                      className="flex-1 bg-transparent border-0 outline-none text-sm text-foreground placeholder-muted-foreground focus:ring-0"
+                      data-testid="new-post-input"
+                    />
+                    <Button
+                      size="sm"
+                      onClick={async () => {
+                        if (!newPostContent.trim()) return;
+                        setCreatingPost(true);
+                        try {
+                          const res = await fetch(`/api/community/channels/${activeChannel?.id}/posts`, {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            credentials: "include",
+                            body: JSON.stringify({
+                              title: "",
+                              content: newPostContent,
+                            }),
+                          });
+                          if (res.ok) {
+                            setNewPostContent("");
+                            const postsRes = await fetch(`/api/community/channels/${activeChannel?.id}/posts?limit=50&sort=${sortBy}`);
+                            const postsData = await postsRes.json();
+                            setPosts(Array.isArray(postsData) ? postsData : []);
+                            toast({ title: "Éxito", description: "Publicación creada" });
+                          }
+                        } catch (error) {
+                          toast({ title: "Error", description: "No se pudo crear la publicación", variant: "destructive" });
+                        } finally {
+                          setCreatingPost(false);
+                        }
+                      }}
+                      disabled={creatingPost || !newPostContent.trim()}
+                      className="text-white font-semibold flex-shrink-0 hover:opacity-90 transition-opacity rounded-lg min-h-[40px] min-w-[40px] px-3"
+                      style={{ backgroundColor: "#2c57e7" }}
+                      data-testid="create-post-button"
+                    >
+                      {creatingPost ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
           ) : (
-            <div className="flex-1 overflow-y-auto px-6 py-6 text-muted-foreground text-center">
+            <div className="flex-1 min-h-0 overflow-y-auto px-4 py-4 lg:px-8 lg:py-6 text-muted-foreground text-center max-lg:pb-12 scrollbar-community">
               <p>Este canal no tiene contenido configurado.</p>
             </div>
           )}
+          </div>
+
         </div>
 
-        {/* Right Sidebar - Comments/Thread (for all channels except empieza-aqui when post selected) */}
+        {/* Right Sidebar - Comments/Thread (for all channels except empieza-aqui when post selected). En móvil se renderiza por portal para evitar recorte y que funcionen toques. */}
         {!isAccordionChannel && selectedPost && (() => {
           const contentBlocks = selectedPost.post.contentBlocks || [];
           const metadataBlock = contentBlocks.find((block: any) => block.type === "metadata" && block.lessonId);
           const isQuestionThread = !!metadataBlock;
           
-          return (
-          <div className="hidden lg:fixed right-0 top-0 h-screen w-[420px] lg:flex flex-col bg-card overflow-hidden z-40">
+          const commentsPanel = (
+          <div className="fixed right-0 top-0 h-screen flex flex-col bg-card overflow-hidden w-[420px] max-lg:left-0 max-lg:right-0 max-lg:w-full z-[60] border-l border-border">
             {/* Comments/Thread Header */}
             <div className="flex-shrink-0 px-6 py-4 flex items-center justify-between bg-muted">
               <div>
-                <h2 className="text-lg font-bold text-white">{isQuestionThread ? "Hilo" : "Comentarios"}</h2>
+                <h2 className="text-lg font-bold text-foreground">{isQuestionThread ? "Hilo" : "Comentarios"}</h2>
                 <p className="text-xs text-muted-foreground mt-1">{comments.length} {isQuestionThread ? "mensajes" : "comentarios"}</p>
               </div>
               <Button
                 variant="ghost"
                 size="sm"
+                type="button"
                 onClick={() => setSelectedPost(null)}
-                className="h-8 w-8 p-0"
+                className="h-10 w-10 min-h-[44px] min-w-[44px] p-0 touch-manipulation"
                 data-testid="close-comments"
               >
                 <X className="h-4 w-4" />
@@ -2437,15 +2604,15 @@ export default function Community() {
             </div>
 
             {/* Comments List - scrollable, stuck to input, grouped by date */}
-            <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4 bg-muted scrollbar-thin">
+            <div className="flex-1 overflow-y-auto px-4 py-3 space-y-2 bg-muted scrollbar-community">
               {comments.length === 0 ? (
                 <div className="flex items-center justify-center text-muted-foreground text-sm">
                   <p>Sin comentarios aún. ¡Sé el primero!</p>
                 </div>
               ) : (
-                <div className="space-y-4">
+                <div className="space-y-2">
                   {Object.entries(groupCommentsByDate(comments)).map(([date, groupedComments]) => (
-                    <div key={date} className="space-y-3">
+                    <div key={date} className="space-y-2">
                       {/* Date separator */}
                       <div className="text-center">
                         <span className="text-xs bg-muted px-3 py-1 rounded-full text-muted-foreground">
@@ -2457,10 +2624,10 @@ export default function Community() {
                         const isOriginalPost = (comment.comment as any).isOriginalPost;
                         return (
                         <div key={comment.comment.id} className={cn(
-                          "rounded-lg p-3 border",
+                          "rounded-xl p-3 border",
                           isOriginalPost 
                             ? "bg-muted border-cyan-500/30" 
-                            : "bg-[#1f1f1f] border-border"
+                            : "bg-card border-border"
                         )}>
                           <div className="flex gap-2">
                             <Avatar className="h-8 w-8 flex-shrink-0">
@@ -2469,7 +2636,7 @@ export default function Community() {
                             </Avatar>
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2 mb-1">
-                                <p className="text-sm font-semibold text-white">
+                                <p className="text-sm font-semibold text-foreground">
                                   {comment.user?.firstName} {comment.user?.lastName}
                                 </p>
                                 {isOriginalPost && (
@@ -2481,21 +2648,22 @@ export default function Community() {
                               </div>
                               <p className={cn(
                                 "text-sm break-words",
-                                isOriginalPost ? "text-white" : "text-muted-foreground"
+                                isOriginalPost ? "text-foreground" : "text-muted-foreground"
                               )}>{comment.comment.content}</p>
                               
-                              {/* Emoji reactions - Only show for actual comments, not original post */}
+                              {/* Emoji reactions - Only show for actual comments, not original post. En móvil: área táctil mínima. */}
                               {!isOriginalPost && (
-                              <div className="flex items-center gap-2 mt-2 flex-wrap">
+                              <div className="flex items-center gap-2 mt-2 flex-wrap touch-manipulation">
                                 <div className="relative">
                                   <button 
-                                    onClick={() => setOpenReactionCommentId(openReactionCommentId === comment.comment.id ? null : comment.comment.id)}
+                                    type="button"
+                                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); setOpenReactionCommentId(openReactionCommentId === comment.comment.id ? null : comment.comment.id); }}
                                     disabled={(userCommentEmojis[comment.comment.id] || []).length >= 3}
                                     className={cn(
-                                      "flex items-center gap-1 text-xs transition-colors",
+                                      "flex items-center gap-1 text-xs transition-colors min-h-[44px] min-w-[44px] items-center justify-center rounded-lg touch-manipulation",
                                       (userCommentEmojis[comment.comment.id] || []).length >= 3 
                                         ? "text-muted-foreground cursor-not-allowed opacity-50" 
-                                        : "hover:text-cyan-500"
+                                        : "hover:text-cyan-500 active:bg-muted"
                                     )}
                                   >
                                     <Smile className="h-4 w-4" />
@@ -2511,7 +2679,10 @@ export default function Community() {
                                         return (
                                           <button
                                             key={emoji}
-                                            onClick={async () => {
+                                            type="button"
+                                            onClick={async (e) => {
+                                              e.preventDefault();
+                                              e.stopPropagation();
                                               try {
                                                 const token = localStorage.getItem('simpleAuthToken');
                                                 const headers: Record<string, string> = { "Content-Type": "application/json" };
@@ -2551,9 +2722,9 @@ export default function Community() {
                                             }}
                                             disabled={!canAdd}
                                             className={cn(
-                                              "text-2xl transition-transform",
+                                              "text-2xl transition-transform touch-manipulation min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg",
                                               hasEmoji ? "ring-2 ring-cyan-500 rounded-lg scale-110" : "",
-                                              canAdd ? "hover:scale-125 cursor-pointer" : "opacity-30 cursor-not-allowed"
+                                              canAdd ? "hover:scale-125 cursor-pointer active:bg-muted" : "opacity-30 cursor-not-allowed"
                                             )}
                                           >
                                             {emoji}
@@ -2570,7 +2741,10 @@ export default function Community() {
                                     {(commentReactions[comment.comment.id] || []).map((reaction, idx) => (
                                       <button
                                         key={idx}
-                                        onClick={async () => {
+                                        type="button"
+                                        onClick={async (e) => {
+                                          e.preventDefault();
+                                          e.stopPropagation();
                                           try {
                                             const token = localStorage.getItem('simpleAuthToken');
                                             const headers: Record<string, string> = { "Content-Type": "application/json" };
@@ -2608,10 +2782,10 @@ export default function Community() {
                                           }
                                         }}
                                         className={cn(
-                                          "text-sm px-2 py-1 rounded-full transition-all cursor-pointer bg-muted",
+                                          "text-sm px-2 py-1 rounded-full transition-all cursor-pointer bg-muted touch-manipulation min-h-[44px]",
                                           (userCommentEmojis[comment.comment.id] || []).includes(reaction.emoji)
-                                            ? "text-white" 
-                                            : "text-muted-foreground hover:text-white"
+                                            ? "text-foreground" 
+                                            : "text-muted-foreground hover:text-foreground"
                                         )}
                                         data-testid={`reaction-${comment.comment.id}-${reaction.emoji}`}
                                       >
@@ -2633,21 +2807,23 @@ export default function Community() {
               )}
             </div>
 
-            {/* Comment Input */}
-            <div className="flex-shrink-0 px-6 py-4 bg-muted">
-              <div className="flex gap-2">
+            {/* Comment Input — mismo reborde y botón #2c57e7. En móvil: área táctil y touch-manipulation para que funcione. */}
+            <div className="flex-shrink-0 px-4 py-4 bg-muted max-lg:pb-6">
+              <div className="flex gap-2 focus-within:ring-2 focus-within:ring-[#2c57e7] focus-within:border-[#2c57e7] focus-within:rounded-md transition-colors border border-transparent touch-manipulation">
                 <Input
                   placeholder="Escribe un comentario..."
-                  className="border-border text-white text-sm bg-[#181818]"
+                  className="border-border text-foreground text-sm bg-muted focus-visible:ring-0 focus-visible:ring-offset-0 border-0 min-h-[44px]"
                   value={commentInput}
                   onChange={(e) => setCommentInput(e.target.value)}
                   onKeyPress={(e) => e.key === "Enter" && handleSendComment()}
                   data-testid="comment-input"
                 />
                 <Button
-                  onClick={handleSendComment}
+                  type="button"
+                  onClick={(e) => { e.preventDefault(); handleSendComment(); }}
                   disabled={sendingComment || !commentInput.trim()}
-                  className="bg-cyan-500 hover:bg-cyan-600 px-3"
+                  className="px-3 text-white hover:opacity-90 transition-opacity min-h-[44px] touch-manipulation"
+                  style={{ backgroundColor: "#2c57e7" }}
                   size="sm"
                   data-testid="send-comment-button"
                 >
@@ -2657,6 +2833,7 @@ export default function Community() {
             </div>
           </div>
           );
+          return createPortal(commentsPanel, document.body);
         })()}
 
 
@@ -2683,7 +2860,7 @@ export default function Community() {
           <div className="hidden lg:fixed right-0 top-0 h-screen w-[420px] lg:flex flex-col bg-card overflow-hidden z-40 border-l border-border">
               {/* Header */}
             <div className="flex-shrink-0 px-6 py-4 bg-muted border-b border-border">
-                <h2 className="text-lg font-bold text-white">Detalles</h2>
+                <h2 className="text-lg font-bold text-foreground">Detalles</h2>
             </div>
 
             {/* Channel Description */}
@@ -2698,7 +2875,7 @@ export default function Community() {
             </div>
 
             {/* Members List - scrollable */}
-              <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4 scrollbar-thin">
+              <div className="flex-1 overflow-y-auto px-4 py-3 space-y-2 scrollbar-community">
                 {/* Debug info - remove after fixing */}
                 {allUsers.length === 0 && (
                   <div className="text-xs text-yellow-500 mb-4">
@@ -2708,7 +2885,7 @@ export default function Community() {
                 
                 {/* Online Users */}
                 <div>
-                  <h3 className="text-sm font-semibold text-white mb-3">EN LÍNEA ({onlineUsersList.length})</h3>
+                  <h3 className="text-sm font-semibold text-foreground mb-3">EN LÍNEA ({onlineUsersList.length})</h3>
                   {onlineUsersList.length === 0 ? (
                 <p className="text-xs text-muted-foreground">No hay miembros en línea</p>
               ) : (
@@ -2727,7 +2904,7 @@ export default function Community() {
                             <div className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-green-500 border-2 border-border"></div>
                           </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm text-white truncate">
+                      <p className="text-sm text-foreground truncate">
                         {member?.firstName} {member?.lastName}
                       </p>
                     </div>
@@ -2745,7 +2922,7 @@ export default function Community() {
 
                 {/* Offline Users */}
                 <div>
-                  <h3 className="text-sm font-semibold text-white mb-3">FUERA DE LÍNEA ({offlineUsersList.length})</h3>
+                  <h3 className="text-sm font-semibold text-foreground mb-3">FUERA DE LÍNEA ({offlineUsersList.length})</h3>
                   {offlineUsersList.length === 0 ? (
                     <p className="text-xs text-muted-foreground">No hay miembros fuera de línea</p>
                   ) : (
@@ -2764,7 +2941,7 @@ export default function Community() {
                             <div className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-gray-500 border-2 border-border"></div>
           </div>
                           <div className="flex-1 min-w-0">
-                            <p className="text-sm text-white truncate">
+                            <p className="text-sm text-foreground truncate">
                               {member?.firstName} {member?.lastName}
                             </p>
                           </div>
@@ -2784,11 +2961,13 @@ export default function Community() {
           );
         })()}
       </div>
+      </div>
+      </div>
       <MobileNav />
 
       {/* Profile Dialog */}
       <Dialog open={profileDialogOpen} onOpenChange={setProfileDialogOpen}>
-        <DialogContent className="w-[95vw] sm:w-[90vw] max-w-4xl h-[90vh] max-h-[90vh] overflow-hidden flex flex-col bg-card border-border text-white p-0 sm:p-6 m-0 translate-x-[-50%] translate-y-[-50%] left-[50%] top-[50%]">
+        <DialogContent className="w-[95vw] sm:w-[90vw] max-w-4xl h-[90vh] max-h-[90vh] overflow-hidden flex flex-col bg-card border-border text-foreground p-0 sm:p-6 m-0 translate-x-[-50%] translate-y-[-50%] left-[50%] top-[50%]">
           {selectedProfileUser && (
             <div className="flex flex-col h-full overflow-hidden">
               <DialogHeader className="pb-4 px-4 sm:px-0 flex-shrink-0">
@@ -2796,7 +2975,7 @@ export default function Community() {
                   <div className="relative flex-shrink-0">
                     <Avatar className="h-24 w-24 sm:h-28 sm:w-28">
                       <AvatarImage src={selectedProfileUser.profileImageUrl || undefined} />
-                      <AvatarFallback className="bg-muted text-white text-3xl sm:text-4xl">
+                      <AvatarFallback className="bg-muted text-foreground text-3xl sm:text-4xl">
                         {(selectedProfileUser.firstName?.charAt(0) || "U").toUpperCase()}
                       </AvatarFallback>
                     </Avatar>
@@ -2806,7 +2985,7 @@ export default function Community() {
                     </div>
                   </div>
                   <div className="flex-1 w-full min-w-0">
-                    <DialogTitle className="text-xl sm:text-2xl lg:text-3xl font-bold text-white mb-2 break-words">
+                    <DialogTitle className="text-xl sm:text-2xl lg:text-3xl font-bold text-foreground mb-2 break-words">
                       {selectedProfileUser.firstName} {selectedProfileUser.lastName}
                     </DialogTitle>
                     <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 text-xs sm:text-sm text-muted-foreground">
@@ -2847,8 +3026,8 @@ export default function Community() {
                     className={cn(
                       "pb-2 px-2 sm:px-1 text-xs sm:text-sm font-medium transition-colors whitespace-nowrap",
                       activeProfileTab === "about" 
-                        ? "border-b-2 border-white text-white" 
-                        : "text-muted-foreground hover:text-white"
+                        ? "border-b-2 border-primary text-foreground" 
+                        : "text-muted-foreground hover:text-foreground"
                     )}
                     onClick={() => setActiveProfileTab("about")}
                   >
@@ -2858,8 +3037,8 @@ export default function Community() {
                     className={cn(
                       "pb-2 px-2 sm:px-1 text-xs sm:text-sm font-medium transition-colors whitespace-nowrap",
                       activeProfileTab === "posts" 
-                        ? "border-b-2 border-white text-white" 
-                        : "text-muted-foreground hover:text-white"
+                        ? "border-b-2 border-primary text-foreground" 
+                        : "text-muted-foreground hover:text-foreground"
                     )}
                     onClick={() => setActiveProfileTab("posts")}
                   >
@@ -2869,8 +3048,8 @@ export default function Community() {
                     className={cn(
                       "pb-2 px-2 sm:px-1 text-xs sm:text-sm font-medium transition-colors whitespace-nowrap",
                       activeProfileTab === "comments" 
-                        ? "border-b-2 border-white text-white" 
-                        : "text-muted-foreground hover:text-white"
+                        ? "border-b-2 border-primary text-foreground" 
+                        : "text-muted-foreground hover:text-foreground"
                     )}
                     onClick={() => setActiveProfileTab("comments")}
                   >
@@ -2880,8 +3059,8 @@ export default function Community() {
                     className={cn(
                       "pb-2 px-2 sm:px-1 text-xs sm:text-sm font-medium transition-colors whitespace-nowrap",
                       activeProfileTab === "spaces" 
-                        ? "border-b-2 border-white text-white" 
-                        : "text-muted-foreground hover:text-white"
+                        ? "border-b-2 border-primary text-foreground" 
+                        : "text-muted-foreground hover:text-foreground"
                     )}
                     onClick={() => setActiveProfileTab("spaces")}
                   >
@@ -2891,8 +3070,8 @@ export default function Community() {
                     className={cn(
                       "pb-2 px-2 sm:px-1 text-xs sm:text-sm font-medium transition-colors whitespace-nowrap",
                       activeProfileTab === "rewards" 
-                        ? "border-b-2 border-white text-white" 
-                        : "text-muted-foreground hover:text-white"
+                        ? "border-b-2 border-primary text-foreground" 
+                        : "text-muted-foreground hover:text-foreground"
                     )}
                     onClick={() => setActiveProfileTab("rewards")}
                   >
@@ -2902,7 +3081,7 @@ export default function Community() {
               </div>
 
               {/* Contenido del tab activo - Scrollable */}
-              <div className="flex-1 overflow-y-auto px-4 sm:px-0">
+              <div className="flex-1 overflow-y-auto px-4 sm:px-0 scrollbar-community">
                 {activeProfileTab === "about" && (
                   <div className="space-y-4 pb-4">
                     {/* Nivel y puntos */}
@@ -2916,7 +3095,7 @@ export default function Community() {
                           {selectedProfileUser.level || 1}
                         </div>
                         <div>
-                          <p className="text-white font-medium text-sm sm:text-base">Nivel {selectedProfileUser.level || 1}</p>
+                          <p className="text-foreground font-medium text-sm sm:text-base">Nivel {selectedProfileUser.level || 1}</p>
                           <p className="text-xs sm:text-sm text-muted-foreground">
                             {selectedProfileUser.points || 0} puntos • {getPointsForNextLevel(selectedProfileUser.level || 1, selectedProfileUser.points || 0)} para subir de nivel
                           </p>
@@ -2934,7 +3113,7 @@ export default function Community() {
 
                     {/* Descripción corta */}
                     <div>
-                      <h3 className="text-white font-medium mb-2 text-sm sm:text-base">Descripción corta</h3>
+                      <h3 className="text-foreground font-medium mb-2 text-sm sm:text-base">Descripción corta</h3>
                       <p className="text-xs sm:text-sm text-muted-foreground break-words">
                         {selectedProfileUser.shortDescription || 'No hay descripción disponible'}
                       </p>
@@ -2942,7 +3121,7 @@ export default function Community() {
 
                     {/* Bio */}
                     <div>
-                      <h3 className="text-white font-medium mb-2 text-sm sm:text-base">Bio</h3>
+                      <h3 className="text-foreground font-medium mb-2 text-sm sm:text-base">Bio</h3>
                       <p className="text-xs sm:text-sm text-muted-foreground break-words whitespace-pre-wrap">
                         {selectedProfileUser.bio || 'No hay biografía disponible'}
                       </p>
@@ -2964,9 +3143,9 @@ export default function Community() {
                         >
                           <div className="flex items-start gap-3 mb-3">
                             <div className="flex-1">
-                              <h3 className="font-bold text-white text-sm sm:text-base mb-2">{item.post.title}</h3>
+                              <h3 className="font-bold text-foreground text-sm sm:text-base mb-2">{item.post.title}</h3>
                               <p className="text-xs sm:text-sm text-muted-foreground line-clamp-3 mb-2">
-                                {item.post.content}
+                                {getPostPreviewText(item.post)}
                               </p>
                               <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
                                 {item.channel && (
@@ -3001,7 +3180,7 @@ export default function Community() {
                         >
                           <div className="flex items-start gap-3 mb-2">
                             <div className="flex-1">
-                              <p className="text-xs sm:text-sm text-white mb-2 break-words">
+                              <p className="text-xs sm:text-sm text-foreground mb-2 break-words">
                                 {item.comment.content}
                               </p>
                               <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
@@ -3102,9 +3281,9 @@ export default function Community() {
 
       {/* Points Info Dialog */}
       <Dialog open={pointsInfoOpen} onOpenChange={setPointsInfoOpen}>
-        <DialogContent className="max-w-lg bg-card border-border text-white max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-lg bg-card border-border text-foreground max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="text-2xl font-bold text-white">
+            <DialogTitle className="text-2xl font-bold text-foreground">
               ¿Cómo funcionan los puntos?
             </DialogTitle>
           </DialogHeader>
@@ -3112,7 +3291,7 @@ export default function Community() {
           <div className="space-y-6 mt-4">
             {/* 1 me gusta = 1 punto */}
             <div className="space-y-2">
-              <h3 className="text-lg font-semibold text-white">1 me gusta = 1 punto</h3>
+              <h3 className="text-lg font-semibold text-foreground">1 me gusta = 1 punto</h3>
               <p className="text-sm text-muted-foreground">
                 Recibir un "me gusta" en una publicación o comentario te otorga 1 punto. 
                 Esto fomenta que los miembros hagan contribuciones valiosas y recompensa a otros 
@@ -3122,7 +3301,7 @@ export default function Community() {
 
             {/* Recompensas */}
             <div className="space-y-2">
-              <h3 className="text-lg font-semibold text-white">Recompensas</h3>
+              <h3 className="text-lg font-semibold text-foreground">Recompensas</h3>
               <p className="text-sm text-muted-foreground">
                 Los administradores de la comunidad pueden otorgar puntos ocasionalmente. 
                 Estas recompensas son visibles en tu perfil.
@@ -3131,7 +3310,7 @@ export default function Community() {
 
             {/* Niveles */}
             <div className="space-y-2">
-              <h3 className="text-lg font-semibold text-white">Niveles</h3>
+              <h3 className="text-lg font-semibold text-foreground">Niveles</h3>
               <p className="text-sm text-muted-foreground">
                 A medida que acumulas puntos, avanzarás por los niveles del 1 al 9. 
                 Tu nivel actual se muestra en tu avatar y los puntos necesarios para el siguiente 
@@ -3141,7 +3320,7 @@ export default function Community() {
 
             {/* Tabla de niveles */}
             <div className="space-y-3">
-              <h3 className="text-lg font-semibold text-white">Progresión de Niveles</h3>
+              <h3 className="text-lg font-semibold text-foreground">Progresión de Niveles</h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 {LEVELS.map((level) => {
                   const currentLevel = userStats?.level || 1;
@@ -3154,9 +3333,9 @@ export default function Community() {
                       className={cn(
                         "p-3 rounded border",
                         isCurrent
-                          ? "bg-yellow-500/20 border-yellow-500 text-white"
+                          ? "bg-yellow-500/20 border-yellow-500 text-foreground"
                           : isUnlocked
-                          ? "bg-green-500/10 border-green-500/50 text-white"
+                          ? "bg-green-500/10 border-green-500/50 text-foreground"
                           : "bg-card border-border text-muted-foreground"
                       )}
                     >

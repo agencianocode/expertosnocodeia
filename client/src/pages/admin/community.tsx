@@ -26,6 +26,20 @@ interface ContentBlock {
   url?: string;
 }
 
+/** Convierte texto plano (con \n) a HTML para que el editor muestre saltos de línea y párrafos. */
+function plainTextToEditorHtml(text: string): string {
+  if (!text || typeof text !== "string") return "";
+  const trimmed = text.trim();
+  if (!trimmed) return "";
+  if (/<[^>]+>/.test(trimmed)) return trimmed;
+  const withRealNewlines = trimmed.replace(/\\n/g, "\n");
+  const paragraphs = withRealNewlines.split(/\n\n+/);
+  return paragraphs
+    .map((p) => p.replace(/\n/g, "<br/>"))
+    .map((p) => `<p>${p}</p>`)
+    .join("");
+}
+
 export default function AdminCommunity() {
   const { isAdmin, isLoading: adminLoading } = useAdmin();
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -410,7 +424,7 @@ export default function AdminCommunity() {
                             </div>
                             {block.type === "text" ? (
                               <RichTextEditor
-                                content={block.content || ""}
+                                content={plainTextToEditorHtml(block.content || "")}
                                 onChange={(content) => updateBlock(index, { content })}
                                 placeholder="Escribe tu texto aquí..."
                                 className="min-h-[200px]"

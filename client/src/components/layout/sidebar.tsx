@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import OnboardingModal from "@/components/onboarding-modal";
+import { SearchDialog, useSearchDialog } from "@/components/search-dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -63,8 +64,19 @@ export default function Sidebar({ onToggle }: SidebarProps = {}) {
   const { user } = useAuth();
   const { logout } = useSimpleAuth();
   const { isStudentView, toggleView } = useRoleSwitch();
-  const [searchQuery, setSearchQuery] = useState("");
+  const { open: searchDialogOpen, setOpen: setSearchDialogOpen } = useSearchDialog();
   const { theme, changeTheme } = useTheme();
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+        e.preventDefault();
+        setSearchDialogOpen(true);
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [setSearchDialogOpen]);
   const [onboardingOpen, setOnboardingOpen] = useState(false);
   const [programasExpanded, setProgramasExpanded] = useState(false);
   const { isAdmin } = useAdmin();
@@ -136,6 +148,7 @@ export default function Sidebar({ onToggle }: SidebarProps = {}) {
   };
 
   return (
+    <>
     <aside className="hidden md:flex w-16 lg:w-[250px] bg-card flex-col fixed h-screen top-0 left-0 z-40">
       {/* Logo */}
       <div className="px-4 py-4">
@@ -155,9 +168,10 @@ export default function Sidebar({ onToggle }: SidebarProps = {}) {
           <Input
             type="text"
             placeholder="Buscar"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-background border-border rounded-lg pl-10 pr-12 py-2 font-satoshi text-sm text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
+            readOnly
+            className="w-full bg-background border-border rounded-lg pl-10 pr-12 py-2 font-satoshi text-sm text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent cursor-pointer"
+            onClick={() => setSearchDialogOpen(true)}
+            onFocus={() => setSearchDialogOpen(true)}
           />
           <div className="absolute right-3 top-2.5 flex items-center bg-muted rounded px-1">
             <span className="text-xs text-muted-foreground font-satoshi">⌘K</span>
@@ -165,9 +179,14 @@ export default function Sidebar({ onToggle }: SidebarProps = {}) {
         </div>
       </div>
       {/* Search icon only for tablet */}
-      <div className="px-4 py-4 lg:hidden md:flex justify-center">
-        <Search className="text-muted-foreground h-6 w-6" />
-      </div>
+      <button
+        type="button"
+        className="px-4 py-4 lg:hidden md:flex justify-center w-full text-muted-foreground hover:text-foreground transition-colors"
+        onClick={() => setSearchDialogOpen(true)}
+        aria-label="Abrir búsqueda"
+      >
+        <Search className="h-6 w-6" />
+      </button>
       {/* Navigation */}
       <nav className="flex-1 px-4">
         <ul className="space-y-2">
@@ -608,7 +627,7 @@ export default function Sidebar({ onToggle }: SidebarProps = {}) {
 
             {/* Botón Acceso */}
             <Button 
-              className="w-full bg-muted-foreground hover:bg-muted text-background"
+              className="w-full bg-muted-foreground hover:bg-primary hover:text-primary-foreground text-background transition-colors"
               onClick={() => window.location.href = "/login"}
             >
               Acceso
@@ -633,5 +652,7 @@ export default function Sidebar({ onToggle }: SidebarProps = {}) {
       </div>
 
     </aside>
+    <SearchDialog open={searchDialogOpen} onOpenChange={setSearchDialogOpen} />
+    </>
   );
 }

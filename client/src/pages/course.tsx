@@ -22,7 +22,7 @@ import {
 import { LessonResources } from "@/components/lesson-resources";
 import { LessonComments } from "@/components/LessonComments";
 import { UnlockContentCTA } from "@/components/UnlockContentCTA";
-import { Award, Check, ChevronRight, ChevronLeft, ChevronDown, ChevronUp, Menu, Users, Bot, Code, Megaphone, Settings, DollarSign, Heart, Building, CheckSquare, Scale, BarChart, GraduationCap, PlayCircle, Clock, CheckCircle2, BookOpen, Play, Lock, MessageCirclePlus, Link as LinkIcon } from "lucide-react";
+import { Award, Check, ChevronRight, ChevronLeft, ChevronDown, ChevronUp, Menu, Users, Bot, Code, Megaphone, Settings, DollarSign, Heart, Building, CheckSquare, Scale, BarChart, GraduationCap, PlayCircle, Clock, CheckCircle2, BookOpen, Play, Lock, MessageCirclePlus, Link as LinkIcon, Trash2 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
@@ -585,6 +585,23 @@ export default function Course() {
     },
   });
 
+  const resetProgressMutation = useMutation({
+    mutationFn: async () => {
+      return await apiRequest('DELETE', `/api/courses/${courseId}/progress${roomSlug ? `?roomSlug=${encodeURIComponent(roomSlug)}` : ""}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [progressQueryKey] });
+      if (roomSlug && isRoomContext) {
+        queryClient.invalidateQueries({ queryKey: [`/api/rooms/${roomSlug}/user-progress`] });
+      }
+      setIsMobileLessonsOpen(false);
+      toast({ title: "Progreso restablecido", description: "El progreso del curso se ha reiniciado." });
+    },
+    onError: () => {
+      toast({ title: "Error", description: "No se pudo restablecer el progreso.", variant: "destructive" });
+    },
+  });
+
   const getIcon = (course: any) => {
     const title = course?.title?.toLowerCase() || '';
     if (title.includes('consultoría')) return Users;
@@ -964,17 +981,25 @@ export default function Course() {
                 </div>
               </div>
             </div>
-            {/* Progress bar - Only on mobile - Clickeable */}
+            {/* Progress bar - Solo móvil, como imagen 1: "Progreso" + barra + "% completado" */}
             <div
-              className="lg:hidden mt-3 flex items-center gap-2 text-sm text-muted-foreground cursor-pointer hover:text-foreground transition-colors"
+              className="lg:hidden mt-6 mb-6 rounded-lg px-4 py-3 flex items-center gap-3 cursor-pointer hover:opacity-95 transition-opacity"
+              style={{ backgroundColor: "#0f0f1a" }}
               onClick={() => setIsMobileLessonsOpen(true)}
             >
-              <span className="w-2 h-2 bg-white rounded-full"></span>
-              <span>Lecciones</span>
-              <div className="flex-1 bg-muted rounded-full h-1">
-                <div className="bg-white rounded-full h-1 transition-all duration-300" style={{ width: `${progressPercentage}%` }}></div>
+              <span className="text-sm font-medium text-foreground flex-shrink-0">Progreso</span>
+              <div className="flex-1 min-w-0 flex items-center gap-2">
+                <div className="flex-1 min-w-0 bg-muted/80 rounded-full h-1.5 overflow-hidden">
+                  <div
+                    className={cn("h-1.5 rounded-full transition-all duration-300", isAgentesIARoom ? "bg-[#faa318]" : "bg-primary")}
+                    style={{ width: `${progressPercentage}%` }}
+                  />
+                </div>
               </div>
-              <ChevronRight className="h-4 w-4 ml-1" />
+              <span className="text-sm font-medium text-foreground flex-shrink-0 tabular-nums">
+                {isAuthenticated ? `${Math.round(progressPercentage)}% completado` : "0% completado"}
+              </span>
+              <ChevronRight className="h-4 w-4 text-muted-foreground flex-shrink-0" />
             </div>
 
             {/* Grid dos columnas (igual que en guías) - sidebar siempre visible en PC */}
@@ -1928,47 +1953,47 @@ export default function Course() {
       </div>
       {/* Mobile Navigation */}
       <MobileNav />
-      {/* Mobile Lessons Sidebar */}
+      {/* Mobile Lessons Sidebar - ancho completo como imagen 1 */}
       {isMobileLessonsOpen && (
         <div className="fixed inset-0 z-50 lg:hidden">
-          {/* Background overlay - partial transparency to show content behind */}
-          <div className="absolute inset-0 bg-black/40" onClick={() => setIsMobileLessonsOpen(false)}></div>
-          {/* Sliding sidebar from right */}
-          <div className="fixed right-0 top-0 h-full w-[85%] max-w-md bg-background flex flex-col animate-in slide-in-from-right duration-300">
-            {/* Header */}
+          <div className="absolute inset-0 bg-black/40" onClick={() => setIsMobileLessonsOpen(false)} aria-hidden />
+          <div className="fixed right-0 top-0 h-full w-full max-w-full bg-background flex flex-col animate-in slide-in-from-right duration-300">
+            {/* Header: Lecciones y módulos */}
             <div className="flex items-center justify-between p-4 border-b border-border">
-              <div className="flex items-center space-x-3">
-                <h2 className="text-foreground font-bold text-lg">Lecciones</h2>
-              </div>
-              <button 
+              <h2 className="text-foreground font-bold text-xl">Lecciones y módulos</h2>
+              <button
                 onClick={() => setIsMobileLessonsOpen(false)}
-                className="w-8 h-8 rounded-full bg-muted hover:bg-muted/80 flex items-center justify-center transition-colors"
+                className="w-10 h-10 rounded-full bg-muted hover:bg-muted/80 flex items-center justify-center transition-colors"
+                aria-label="Cerrar"
               >
-                <ChevronRight className="h-4 w-4 text-foreground" />
+                <ChevronRight className="h-5 w-5 text-foreground" />
               </button>
             </div>
 
-            {/* Progress */}
-            <div className="p-4 border-b border-border">
+            {/* Progreso + % completado — barra visible: track #262626, fill #a173ef */}
+            <div className="p-4 border-b border-border" style={{ backgroundColor: "#0f0f1a" }}>
               <div className="flex items-center justify-between mb-2">
                 <span className="text-foreground font-medium">Progreso</span>
-                <span className="text-muted-foreground text-sm">{Math.round(progressPercentage)}% completado</span>
+                <span className="text-foreground text-sm tabular-nums">{Math.round(progressPercentage)}% completado</span>
               </div>
-              <div className="w-full bg-muted rounded-full h-2">
-                <div 
-                  className={cn("h-2 rounded-full transition-all duration-300", isAgentesIARoom ? "bg-[#faa318]" : "bg-primary")}
-                  style={{ width: `${progressPercentage}%` }}
-                ></div>
+              <div className="w-full rounded-full h-2 mb-3 overflow-hidden" style={{ backgroundColor: "#262626" }}>
+                <div
+                  className="h-2 rounded-full transition-all duration-300"
+                  style={{ width: `${progressPercentage}%`, backgroundColor: "#a173ef" }}
+                />
               </div>
+              <p className="text-muted-foreground text-sm">
+                Tiempo estimado: {formatEstimatedTime((course as any)?.estimatedHours)}
+              </p>
             </div>
 
-            {/* Course Title */}
+            {/* Curso: título */}
             <div className="p-4 border-b border-border">
               <h3 className="text-foreground font-bold text-lg">{(course as any)?.title}</h3>
             </div>
 
-            {/* Lessons List */}
-            <div className="flex-1 overflow-y-auto">
+            {/* Lista de lecciones - scroll */}
+            <div className="flex-1 overflow-y-auto min-h-0">
               <div className="space-y-2 p-4">
                 {isRoomContext ? (
                   /* Room Context Timeline Design (Mobile) */
@@ -2266,6 +2291,23 @@ export default function Course() {
                   </Link>
                 )}
               </div>
+            </div>
+
+            {/* Restablecer progreso - como imagen 1 */}
+            <div className="flex-shrink-0 p-4 border-t border-border bg-background">
+              <Button
+                variant="outline"
+                className="w-full justify-center gap-2 border-red-500/50 text-red-500 hover:bg-red-500/10 hover:text-red-500 hover:border-red-500"
+                onClick={() => {
+                  if (window.confirm("¿Restablecer el progreso de este curso? Se perderán todas las lecciones marcadas como completadas.")) {
+                    resetProgressMutation.mutate();
+                  }
+                }}
+                disabled={resetProgressMutation.isPending}
+              >
+                <Trash2 className="h-4 w-4" />
+                Restablecer progreso
+              </Button>
             </div>
           </div>
         </div>

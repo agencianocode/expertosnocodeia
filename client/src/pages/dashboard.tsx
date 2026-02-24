@@ -4,6 +4,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useToast } from "@/hooks/use-toast";
 import { isUnauthorizedError } from "@/lib/authUtils";
+import { cn } from "@/lib/utils";
 import Sidebar from "@/components/layout/sidebar";
 import MobileNav from "@/components/layout/mobile-nav";
 import MobileHeader from "@/components/layout/mobile-header";
@@ -159,12 +160,12 @@ export default function Dashboard() {
                     </p>
                     <div className="flex flex-col sm:flex-row gap-4">
                       <Link href="/guides">
-                        <Button size="lg" className="bg-blue-600 hover:bg-blue-700 text-white text-base px-8 py-3 rounded-lg font-medium">
+                        <Button size="lg" className="bg-blue-600 hover:bg-blue-700 dark:hover:bg-blue-700 text-white text-base px-8 py-3 rounded-lg font-medium transition-colors">
                           Explorar guías
                         </Button>
                       </Link>
                       <Link href="/courses">
-                        <Button size="lg" variant="outline" className="bg-transparent border-border text-foreground hover:bg-muted text-base px-8 py-3 rounded-lg font-medium">
+                        <Button size="lg" variant="outline" className="bg-transparent border-border text-foreground hover:bg-gray-100 hover:border-gray-300 dark:hover:bg-muted dark:hover:border-border text-base px-8 py-3 rounded-lg font-medium transition-colors">
                           Empezar de nuevo
                         </Button>
                       </Link>
@@ -189,12 +190,12 @@ export default function Dashboard() {
                       <div className="flex items-center gap-1.5 mb-2">
                         <span className="text-[10px] text-muted-foreground">Menos</span>
                         {[
-                          'rgba(255,255,255,0.08)',
-                          'rgba(59, 130, 246, 0.35)',
-                          'rgba(59, 130, 246, 0.65)',
-                          'rgb(59, 130, 246)',
+                          'bg-gray-200 dark:bg-white/10',
+                          'bg-blue-400/40',
+                          'bg-blue-400/70',
+                          'bg-blue-500',
                         ].map((bg, i) => (
-                          <div key={i} className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: bg }} />
+                          <div key={i} className={cn('w-2 h-2 rounded-full flex-shrink-0', bg)} />
                         ))}
                         <span className="text-[10px] text-muted-foreground">Más</span>
                       </div>
@@ -202,8 +203,12 @@ export default function Dashboard() {
                         {last30Days.map((day) => (
                           <div
                             key={day.date}
-                            className="rounded-[2px] min-w-0 min-h-0 w-full"
-                            style={{ backgroundColor: day.active ? 'rgb(59, 130, 246)' : 'rgba(255,255,255,0.06)' }}
+                            className={cn(
+                              "rounded-[2px] min-w-0 min-h-0 w-full",
+                              day.active
+                                ? "bg-blue-500"
+                                : "bg-gray-100 border border-gray-200 dark:border-0 dark:bg-white/10"
+                            )}
                             title={day.date}
                           />
                         ))}

@@ -2828,6 +2828,26 @@ export function registerSimpleRoutes(app: Express): Server {
     }
   });
 
+  // Reset (delete) user progress for a course
+  app.delete("/api/courses/:courseId/progress", legacyAuth, async (req: Request, res: Response) => {
+    try {
+      const { courseId } = req.params;
+      const course = await storage.getCourseById(courseId);
+      if (!course) {
+        return res.status(404).json({ message: "Curso no encontrado" });
+      }
+      const userId = (req as any).user?.claims?.sub ?? (req as any).user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "Usuario no autenticado" });
+      }
+      await storage.resetCourseProgress(userId, course.id);
+      res.json({ ok: true });
+    } catch (error) {
+      console.error("Error resetting course progress:", error);
+      res.status(500).json({ message: "Error al restablecer el progreso" });
+    }
+  });
+
   // Mark lesson as complete
   app.post("/api/lessons/:lessonId/complete", legacyAuth, async (req: Request, res: Response) => {
     try {

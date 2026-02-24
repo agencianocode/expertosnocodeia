@@ -2117,6 +2117,17 @@ export class DatabaseStorage implements IStorage {
     return completed.map(row => row.lessonId).filter((id): id is string => id !== null);
   }
 
+  async resetCourseProgress(userId: string, courseId: string): Promise<void> {
+    await db
+      .update(userLessonProgress)
+      .set({ isCompleted: false, completedAt: null, updatedAt: new Date() })
+      .where(and(
+        eq(userLessonProgress.userId, userId),
+        eq(userLessonProgress.courseId, courseId)
+      ));
+    await this.updateCourseProgress(userId, courseId);
+  }
+
   // Lesson Resources operations
   async getLessonResources(lessonId: string): Promise<LessonResource[]> {
     return await db

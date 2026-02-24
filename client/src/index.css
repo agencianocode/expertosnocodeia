@@ -230,6 +230,19 @@ body {
   color: hsl(0, 0%, 10%) !important;
 }
 
+/* Community prose (formatted content) - legible en modo claro */
+.light .community-prose,
+.light .community-prose p,
+.light .community-prose li {
+  color: var(--muted-foreground) !important;
+}
+.light .community-prose strong,
+.light .community-prose h1,
+.light .community-prose h2,
+.light .community-prose h3 {
+  color: var(--foreground) !important;
+}
+
 .light .markdown-content em {
   font-style: italic;
   color: hsl(0, 0%, 15%) !important;
@@ -776,6 +789,31 @@ body {
 
 .scrollbar-thin::-webkit-scrollbar-thumb:hover {
   background-color: rgb(107 114 128);
+}
+
+/* Community page scrollbar: track #2c2c2c, thumb #9f9f9f */
+.scrollbar-community {
+  scrollbar-width: thin;
+  scrollbar-color: #9f9f9f #2c2c2c;
+}
+
+.scrollbar-community::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.scrollbar-community::-webkit-scrollbar-track {
+  background: #2c2c2c;
+  border-radius: 4px;
+}
+
+.scrollbar-community::-webkit-scrollbar-thumb {
+  background-color: #9f9f9f;
+  border-radius: 4px;
+}
+
+.scrollbar-community::-webkit-scrollbar-thumb:hover {
+  background-color: #b0b0b0;
 }
 
 /* Rich Text Editor Nested Lists */
