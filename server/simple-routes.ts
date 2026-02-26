@@ -2677,6 +2677,36 @@ export function registerSimpleRoutes(app: Express): Server {
     }
   });
 
+  // Mover lección hacia arriba (mismo nivel: módulos con módulos, sub-lecciones con sub-lecciones del mismo módulo)
+  app.put("/api/admin/lessons/:id/move-up", simpleAdminAuth, isAdmin, async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+      const success = await storage.moveLessonUp(id);
+      if (!success) {
+        return res.status(400).json({ message: "No se pudo mover la lección hacia arriba" });
+      }
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error("Error moving lesson up:", error);
+      res.status(500).json({ message: "Error interno del servidor" });
+    }
+  });
+
+  // Mover lección hacia abajo
+  app.put("/api/admin/lessons/:id/move-down", simpleAdminAuth, isAdmin, async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+      const success = await storage.moveLessonDown(id);
+      if (!success) {
+        return res.status(400).json({ message: "No se pudo mover la lección hacia abajo" });
+      }
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error("Error moving lesson down:", error);
+      res.status(500).json({ message: "Error interno del servidor" });
+    }
+  });
+
   // Get lesson resources from database
   app.get("/api/lessons/:lessonId/resources", async (req: Request, res: Response) => {
     try {

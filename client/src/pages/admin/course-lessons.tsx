@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRoute, Link } from "wouter";
 import Sidebar from "@/components/layout/sidebar";
@@ -24,7 +24,8 @@ import {
   Move,
   Eye,
   ChevronUp,
-  ChevronDown
+  ChevronDown,
+  ChevronRight
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -39,7 +40,19 @@ export default function CourseLessons() {
   const [match, params] = useRoute("/admin/content/course/:id/lessons");
   const { isAdmin, isLoading: adminLoading } = useAdmin();
   const [searchTerm, setSearchTerm] = useState("");
+  /** Módulos colapsados (por id). Solo se abren cuando el usuario hace clic. Por defecto todos colapsados. */
+  const [collapsedModuleIds, setCollapsedModuleIds] = useState<Set<string>>(new Set());
+  const collapsedInitializedForCourse = useRef<string | null>(null);
   const { toast } = useToast();
+
+  const toggleModule = (moduleId: string) => {
+    setCollapsedModuleIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(moduleId)) next.delete(moduleId);
+      else next.add(moduleId);
+      return next;
+    });
+  };
   const queryClient = useQueryClient();
 
   // Verificar que la ruta coincide
@@ -84,6 +97,40 @@ export default function CourseLessons() {
     enabled: !!courseId && !!course,
     retry: false,
   });
+
+  // Inicializar colapsados: por defecto todos cerrados; si hay estado guardado (sessionStorage), restaurarlo
+  useEffect(() => {
+    if (!courseId) return;
+    if (collapsedInitializedForCourse.current === courseId) return;
+    const allLessons = lessons || [];
+    const modules = (allLessons as any[]).filter((l: any) => !l.parentLessonId).sort((a: any, b: any) => a.order - b.order);
+    if (modules.length === 0) return;
+    const storageKey = `course-lessons-collapsed-${courseId}`;
+    try {
+      const saved = sessionStorage.getItem(storageKey);
+      if (saved) {
+        const ids = JSON.parse(saved) as string[];
+        if (Array.isArray(ids)) setCollapsedModuleIds(new Set(ids));
+      } else {
+        setCollapsedModuleIds(new Set(modules.map((m: any) => m.id)));
+      }
+    } catch {
+      setCollapsedModuleIds(new Set(modules.map((m: any) => m.id)));
+    }
+    collapsedInitializedForCourse.current = courseId;
+  }, [courseId, lessons]);
+
+  // Al cambiar de curso, permitir reinicializar
+  useEffect(() => {
+    if (!courseId) collapsedInitializedForCourse.current = null;
+  }, [courseId]);
+
+  // Persistir qué módulos están colapsados al cambiar (así no se abren solos al volver de "Nueva Lección")
+  useEffect(() => {
+    if (!courseId) return;
+    const storageKey = `course-lessons-collapsed-${courseId}`;
+    sessionStorage.setItem(storageKey, JSON.stringify(Array.from(collapsedModuleIds)));
+  }, [courseId, collapsedModuleIds]);
 
   const deleteMutation = useMutation({
     mutationFn: async (lessonId: string) => {
@@ -249,6 +296,23 @@ export default function CourseLessons() {
     lesson.description?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  // Agrupar por módulo para poder colapsar/expandir (módulo + sus sub-lecciones)
+  type ModuleGroup = { module: any; subs: any[] };
+  const moduleGroups: ModuleGroup[] = [];
+  let orphanSubs: any[] = [];
+  let currentGroup: ModuleGroup | null = null;
+  for (const lesson of filteredLessons) {
+    if (lesson.isModule) {
+      currentGroup = { module: lesson, subs: [] };
+      moduleGroups.push(currentGroup);
+    } else if (lesson.isOrphan) {
+      orphanSubs.push(lesson);
+    } else if (currentGroup) {
+      currentGroup.subs.push(lesson);
+    }
+  }
+  const getLessonIndex = (id: string) => filteredLessons.findIndex((l: any) => l.id === id);
+
   const getTypeIcon = (type: string) => {
     switch (type) {
       case 'video':
@@ -403,123 +467,299 @@ export default function CourseLessons() {
       </div>
 
       <div className="space-y-4">
-        {filteredLessons.map((lesson: any, index: number) => {
-          const TypeIcon = getTypeIcon(lesson.type);
-          const isSubLesson = lesson.level === 1;
+        {moduleGroups.map(({ module: mod, subs }) => {
+          const isCollapsed = collapsedModuleIds.has(mod.id);
           return (
-            <div 
-              key={lesson.id} 
-              className={isSubLesson ? "ml-12" : ""}
-            >
-              <Card className={`bg-slate-900/50 border-slate-700 ${isSubLesson ? 'border-l-4 border-l-purple-500' : ''}`}>
+            <div key={mod.id} className="space-y-2">
+              {/* Cabecera del módulo: clic para colapsar/expandir */}
+              <Card className="bg-slate-900/50 border-slate-700 border-l-4 border-l-orange-500">
                 <CardContent className="p-4">
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-start gap-4 flex-1">
-                      <div className="flex items-center justify-center w-8 h-8 rounded-full bg-slate-800 text-gray-400 text-sm font-medium">
-                        {lesson.order || index + 1}
+                  <div className="flex items-center justify-between gap-4">
+                    <button
+                      type="button"
+                      onClick={() => toggleModule(mod.id)}
+                      className="flex items-center gap-3 flex-1 min-w-0 text-left"
+                    >
+                      {isCollapsed ? (
+                        <ChevronRight className="h-5 w-5 text-orange-400 flex-shrink-0" />
+                      ) : (
+                        <ChevronDown className="h-5 w-5 text-orange-400 flex-shrink-0" />
+                      )}
+                      <div className="flex items-center justify-center w-8 h-8 rounded-full bg-slate-800 text-gray-400 text-sm font-medium flex-shrink-0">
+                        {mod.order ?? 0}
                       </div>
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2 flex-wrap">
-                          {lesson.isOrphan && (
-                            <Badge variant="secondary" className="bg-red-500/20 text-red-400 text-xs">
-                              ⚠️ Huérfana
-                            </Badge>
-                          )}
-                          {isSubLesson && !lesson.isOrphan && (
-                            <Badge variant="secondary" className="bg-purple-500/20 text-purple-400 text-xs">
-                              Sub-lección
-                            </Badge>
-                          )}
-                          {lesson.isModule && (
-                            <Badge variant="secondary" className="bg-orange-500/20 text-orange-400 text-xs">
-                              Módulo
-                            </Badge>
-                          )}
-                          <h3 className="text-white font-medium">{lesson.title}</h3>
-                          <Badge className={getTypeColor(lesson.type)}>
-                            <TypeIcon className="h-3 w-3 mr-1" />
-                            {getTypeText(lesson.type)}
-                          </Badge>
-                          {lesson.isPublished ? (
-                            <Badge variant="secondary" className="bg-green-500/20 text-green-400">
-                              Publicado
-                            </Badge>
-                          ) : (
-                            <Badge variant="secondary" className="bg-gray-500/20 text-gray-400">
-                              Borrador
-                            </Badge>
-                          )}
-                        </div>
-                        <p className="text-gray-400 text-sm mb-2">{lesson.description}</p>
-                        <div className="flex items-center gap-4 text-xs text-gray-500">
-                          {lesson.duration && (
-                            <div>Duración: {lesson.duration} min</div>
-                          )}
-                          <div>Creado: {new Date(lesson.createdAt).toLocaleDateString()}</div>
-                          {isSubLesson && lesson.parentTitle && (
-                            <div className="text-purple-400">↳ Parte de: {lesson.parentTitle}</div>
-                          )}
-                        </div>
+                      <div className="min-w-0">
+                        <Badge variant="secondary" className="bg-orange-500/20 text-orange-400 text-xs mr-2">
+                          Módulo
+                        </Badge>
+                        <h3 className="text-white font-medium truncate">{mod.title}</h3>
+                        <p className="text-gray-500 text-xs mt-0.5">
+                          {subs.length} sub-lección{subs.length !== 1 ? "es" : ""}
+                        </p>
                       </div>
-                    </div>
-                  <div className="flex items-center gap-2">
-                    {/* Reorder buttons */}
-                    <div className="flex flex-col gap-1">
-                      <Button 
-                        variant="ghost" 
-                        size="sm"
-                        onClick={() => moveLessonUpMutation.mutate(lesson.id)}
-                        disabled={index === 0 || moveLessonUpMutation.isPending}
-                        className="h-6 w-6 p-0"
-                      >
-                        <ChevronUp className="h-3 w-3" />
-                      </Button>
-                      <Button 
-                        variant="ghost" 
-                        size="sm"
-                        onClick={() => moveLessonDownMutation.mutate(lesson.id)}
-                        disabled={index === filteredLessons.length - 1 || moveLessonDownMutation.isPending}
-                        className="h-6 w-6 p-0"
-                      >
-                        <ChevronDown className="h-3 w-3" />
-                      </Button>
-                    </div>
-                    
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="sm">
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <Link href={`/admin/content/lesson/${lesson.id}/edit`}>
-                          <DropdownMenuItem>
-                            <Edit className="h-4 w-4 mr-2" />
-                            Editar Lección
-                          </DropdownMenuItem>
-                        </Link>
-                        <Link href={`/course/${courseId}/lesson/${lesson.id}`} target="_blank">
-                          <DropdownMenuItem>
-                            <Eye className="h-4 w-4 mr-2" />
-                            Vista Previa
-                          </DropdownMenuItem>
-                        </Link>
-                        <DropdownMenuItem 
-                          className="text-red-400"
-                          onClick={() => deleteMutation.mutate(lesson.id)}
+                    </button>
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <div className="flex flex-col gap-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={(e) => { e.stopPropagation(); moveLessonUpMutation.mutate(mod.id); }}
+                          disabled={getLessonIndex(mod.id) === 0 || moveLessonUpMutation.isPending}
+                          className="h-6 w-6 p-0"
                         >
-                          <Trash2 className="h-4 w-4 mr-2" />
-                          Eliminar Lección
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                          <ChevronUp className="h-3 w-3" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={(e) => { e.stopPropagation(); moveLessonDownMutation.mutate(mod.id); }}
+                          disabled={getLessonIndex(mod.id) === filteredLessons.length - 1 || moveLessonDownMutation.isPending}
+                          className="h-6 w-6 p-0"
+                        >
+                          <ChevronDown className="h-3 w-3" />
+                        </Button>
+                      </div>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                          <Button variant="ghost" size="sm">
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <Link href={`/admin/content/lesson/${mod.id}/edit`}>
+                            <DropdownMenuItem>
+                              <Edit className="h-4 w-4 mr-2" />
+                              Editar Módulo
+                            </DropdownMenuItem>
+                          </Link>
+                          <Link href={`/course/${courseId}/lesson/${mod.id}`} target="_blank">
+                            <DropdownMenuItem>
+                              <Eye className="h-4 w-4 mr-2" />
+                              Vista Previa
+                            </DropdownMenuItem>
+                          </Link>
+                          <DropdownMenuItem
+                            className="text-red-400"
+                            onClick={() => deleteMutation.mutate(mod.id)}
+                          >
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            Eliminar Módulo
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
                   </div>
+                </CardContent>
+              </Card>
+
+              {/* Sub-lecciones del módulo (ocultas si está colapsado) */}
+              {!isCollapsed && (
+                <div className="ml-4 space-y-2 border-l-2 border-slate-700 pl-4">
+                  {subs.map((lesson: any) => {
+                    const TypeIcon = getTypeIcon(lesson.type);
+                    const index = getLessonIndex(lesson.id);
+                    return (
+                      <div key={lesson.id}>
+                        <Card className="bg-slate-900/50 border-slate-700 border-l-4 border-l-purple-500">
+                          <CardContent className="p-4">
+                            <div className="flex items-start justify-between">
+                              <div className="flex items-start gap-4 flex-1">
+                                <div className="flex items-center justify-center w-8 h-8 rounded-full bg-slate-800 text-gray-400 text-sm font-medium">
+                                  {lesson.order ?? index + 1}
+                                </div>
+                                <div className="flex-1">
+                                  <div className="flex items-center gap-3 mb-2 flex-wrap">
+                                    <Badge variant="secondary" className="bg-purple-500/20 text-purple-400 text-xs">
+                                      Sub-lección
+                                    </Badge>
+                                    <h3 className="text-white font-medium">{lesson.title}</h3>
+                                    <Badge className={getTypeColor(lesson.type)}>
+                                      <TypeIcon className="h-3 w-3 mr-1" />
+                                      {getTypeText(lesson.type)}
+                                    </Badge>
+                                    {lesson.isPublished ? (
+                                      <Badge variant="secondary" className="bg-green-500/20 text-green-400">
+                                        Publicado
+                                      </Badge>
+                                    ) : (
+                                      <Badge variant="secondary" className="bg-gray-500/20 text-gray-400">
+                                        Borrador
+                                      </Badge>
+                                    )}
+                                  </div>
+                                  <p className="text-gray-400 text-sm mb-2">{lesson.description}</p>
+                                  <div className="flex items-center gap-4 text-xs text-gray-500">
+                                    {lesson.duration && (
+                                      <div>Duración: {lesson.duration} min</div>
+                                    )}
+                                    <div>Creado: {new Date(lesson.createdAt).toLocaleDateString()}</div>
+                                    {lesson.parentTitle && (
+                                      <div className="text-purple-400">↳ Parte de: {lesson.parentTitle}</div>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <div className="flex flex-col gap-1">
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => moveLessonUpMutation.mutate(lesson.id)}
+                                    disabled={index === 0 || moveLessonUpMutation.isPending}
+                                    className="h-6 w-6 p-0"
+                                  >
+                                    <ChevronUp className="h-3 w-3" />
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => moveLessonDownMutation.mutate(lesson.id)}
+                                    disabled={index === filteredLessons.length - 1 || moveLessonDownMutation.isPending}
+                                    className="h-6 w-6 p-0"
+                                  >
+                                    <ChevronDown className="h-3 w-3" />
+                                  </Button>
+                                </div>
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                    <Button variant="ghost" size="sm">
+                                      <MoreHorizontal className="h-4 w-4" />
+                                    </Button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="end">
+                                    <Link href={`/admin/content/lesson/${lesson.id}/edit`}>
+                                      <DropdownMenuItem>
+                                        <Edit className="h-4 w-4 mr-2" />
+                                        Editar Lección
+                                      </DropdownMenuItem>
+                                    </Link>
+                                    <Link href={`/course/${courseId}/lesson/${lesson.id}`} target="_blank">
+                                      <DropdownMenuItem>
+                                        <Eye className="h-4 w-4 mr-2" />
+                                        Vista Previa
+                                      </DropdownMenuItem>
+                                    </Link>
+                                    <DropdownMenuItem
+                                      className="text-red-400"
+                                      onClick={() => deleteMutation.mutate(lesson.id)}
+                                    >
+                                      <Trash2 className="h-4 w-4 mr-2" />
+                                      Eliminar Lección
+                                    </DropdownMenuItem>
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      </div>
+                    );
+                  })}
                 </div>
-              </CardContent>
-            </Card>
+              )}
             </div>
           );
         })}
+
+        {/* Lecciones huérfanas (sin módulo) */}
+        {orphanSubs.length > 0 && (
+          <div className="space-y-2 mt-6">
+            <h3 className="text-sm font-medium text-gray-400 flex items-center gap-2">
+              <Badge variant="secondary" className="bg-red-500/20 text-red-400 text-xs">
+                Sin módulo
+              </Badge>
+              {orphanSubs.length} lección{orphanSubs.length !== 1 ? "es" : ""}
+            </h3>
+            <div className="space-y-2">
+              {orphanSubs.map((lesson: any) => {
+                const TypeIcon = getTypeIcon(lesson.type);
+                const index = getLessonIndex(lesson.id);
+                return (
+                  <div key={lesson.id} className="ml-4">
+                    <Card className="bg-slate-900/50 border-slate-700 border-l-4 border-l-red-500/50">
+                      <CardContent className="p-4">
+                        <div className="flex items-start justify-between">
+                          <div className="flex items-start gap-4 flex-1">
+                            <div className="flex items-center justify-center w-8 h-8 rounded-full bg-slate-800 text-gray-400 text-sm font-medium">
+                              {lesson.order ?? index + 1}
+                            </div>
+                            <div className="flex-1">
+                              <div className="flex items-center gap-3 mb-2 flex-wrap">
+                                <Badge variant="secondary" className="bg-red-500/20 text-red-400 text-xs">
+                                  ⚠️ Huérfana
+                                </Badge>
+                                <h3 className="text-white font-medium">{lesson.title}</h3>
+                                <Badge className={getTypeColor(lesson.type)}>
+                                  <TypeIcon className="h-3 w-3 mr-1" />
+                                  {getTypeText(lesson.type)}
+                                </Badge>
+                              </div>
+                              <p className="text-gray-400 text-sm mb-2">{lesson.description}</p>
+                              <div className="flex items-center gap-4 text-xs text-gray-500">
+                                {lesson.duration && <div>Duración: {lesson.duration} min</div>}
+                                <div>Creado: {new Date(lesson.createdAt).toLocaleDateString()}</div>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <div className="flex flex-col gap-1">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => moveLessonUpMutation.mutate(lesson.id)}
+                                disabled={index === 0 || moveLessonUpMutation.isPending}
+                                className="h-6 w-6 p-0"
+                              >
+                                <ChevronUp className="h-3 w-3" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => moveLessonDownMutation.mutate(lesson.id)}
+                                disabled={index === filteredLessons.length - 1 || moveLessonDownMutation.isPending}
+                                className="h-6 w-6 p-0"
+                              >
+                                <ChevronDown className="h-3 w-3" />
+                              </Button>
+                            </div>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="sm">
+                                  <MoreHorizontal className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <Link href={`/admin/content/lesson/${lesson.id}/edit`}>
+                                  <DropdownMenuItem>
+                                    <Edit className="h-4 w-4 mr-2" />
+                                    Editar Lección
+                                  </DropdownMenuItem>
+                                </Link>
+                                <Link href={`/course/${courseId}/lesson/${lesson.id}`} target="_blank">
+                                  <DropdownMenuItem>
+                                    <Eye className="h-4 w-4 mr-2" />
+                                    Vista Previa
+                                  </DropdownMenuItem>
+                                </Link>
+                                <DropdownMenuItem
+                                  className="text-red-400"
+                                  onClick={() => deleteMutation.mutate(lesson.id)}
+                                >
+                                  <Trash2 className="h-4 w-4 mr-2" />
+                                  Eliminar Lección
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         {filteredLessons.length === 0 && (
           <Card className="bg-slate-900/50 border-slate-700">
