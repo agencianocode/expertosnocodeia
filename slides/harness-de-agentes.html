@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Harness de Agentes</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #1a1a2e;
+      color: #e0e0e0;
+      width: 1456px;
+      height: 816px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* Grid background */
+    body::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px);
+      background-size: 48px 48px;
+      pointer-events: none;
+    }
+
+    /* Line numbers on the left */
+    .line-numbers {
+      position: absolute;
+      left: 18px;
+      top: 0;
+      bottom: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      padding-top: 10px;
+      gap: 0;
+      color: #5a6475;
+      font-size: 11px;
+      font-family: 'Courier New', monospace;
+      line-height: 1.6;
+      user-select: none;
+    }
+
+    .slide {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      padding: 36px 80px 24px 80px;
+    }
+
+    /* Header */
+    .slide-category {
+      font-size: 15px;
+      color: #8a9bb0;
+      letter-spacing: 0.03em;
+      margin-bottom: 4px;
+    }
+
+    .slide-title {
+      font-size: 52px;
+      font-weight: 700;
+      color: #ffffff;
+      margin-bottom: 28px;
+      letter-spacing: -0.01em;
+    }
+
+    /* Main diagram container */
+    .harness-container {
+      position: relative;
+      width: 820px;
+      border: 1.5px dashed #4a5568;
+      border-radius: 14px;
+      padding: 28px 32px 24px 80px;
+      background: rgba(255,255,255,0.01);
+    }
+
+    .harness-label {
+      position: absolute;
+      top: 14px;
+      left: 20px;
+      font-size: 13px;
+      color: #8a9bb0;
+    }
+
+    /* Vertical "repite hasta funcionar" label */
+    .repeat-label {
+      position: absolute;
+      left: -48px;
+      top: 50%;
+      transform: translateY(-50%) rotate(-90deg);
+      font-size: 11px;
+      color: #6b7280;
+      white-space: nowrap;
+      letter-spacing: 0.05em;
+    }
+
+    /* Modelo box */
+    .modelo-wrapper {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 10px;
+      position: relative;
+    }
+
+    .modelo-box {
+      background: #2563a8;
+      border-radius: 10px;
+      padding: 14px 32px;
+      text-align: center;
+      min-width: 240px;
+    }
+
+    .modelo-box .box-title {
+      font-size: 17px;
+      font-weight: 700;
+      color: #ffffff;
+    }
+
+    .modelo-box .box-subtitle {
+      font-size: 13px;
+      color: #a8c4e0;
+      margin-top: 2px;
+    }
+
+    /* Arrow down */
+    .arrow-down {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 10px;
+      color: #4a6fa5;
+      font-size: 20px;
+      line-height: 1;
+    }
+
+    .arrow-down::after {
+      content: '';
+      display: block;
+      width: 2px;
+      height: 18px;
+      background: #4a6fa5;
+      position: relative;
+    }
+
+    /* SVG arrow */
+    .arrow-svg {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 8px;
+    }
+
+    /* Dashed arrow on left side */
+    .loop-arrow {
+      position: absolute;
+      left: 20px;
+      top: 50%;
+      transform: translateY(-50%);
+    }
+
+    /* Tools row */
+    .tools-row {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      margin-bottom: 12px;
+    }
+
+    .tool-box {
+      background: #7c3a1a;
+      border-radius: 10px;
+      padding: 12px 20px;
+      text-align: center;
+      flex: 1;
+    }
+
+    .tool-box .box-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: #ffffff;
+    }
+
+    .tool-box .box-label {
+      font-size: 11px;
+      color: #c4855a;
+      margin-top: 2px;
+    }
+
+    /* Bottom row: memory + permissions */
+    .bottom-row {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      margin-bottom: 12px;
+    }
+
+    .memory-box {
+      background: #1a5c3a;
+      border-radius: 10px;
+      padding: 14px 24px;
+      text-align: center;
+      flex: 1;
+    }
+
+    .memory-box .box-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: #ffffff;
+    }
+
+    .memory-box .box-subtitle {
+      font-size: 12px;
+      color: #6ee7b7;
+      margin-top: 3px;
+    }
+
+    .permissions-box {
+      background: #3b2d6e;
+      border-radius: 10px;
+      padding: 14px 24px;
+      text-align: center;
+      flex: 1;
+    }
+
+    .permissions-box .box-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: #ffffff;
+    }
+
+    .permissions-box .box-subtitle {
+      font-size: 12px;
+      color: #a78bfa;
+      margin-top: 3px;
+    }
+
+    /* Loop highlight box */
+    .loop-box {
+      background: #2d3748;
+      border-radius: 10px;
+      padding: 14px 24px;
+      text-align: center;
+    }
+
+    .loop-box .box-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: #ffffff;
+    }
+
+    .loop-box .box-subtitle {
+      font-size: 12px;
+      color: #9ca3af;
+      margin-top: 4px;
+    }
+
+    /* Footer summary */
+    .footer-summary {
+      margin-top: 18px;
+      font-size: 13px;
+      color: #6b7280;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Line numbers -->
+  <div class="line-numbers">
+    <span>1</span>
+    <span style="margin-top:36px">13</span>
+    <span style="margin-top:36px">38</span>
+    <span style="margin-top:36px">61</span>
+    <span>62</span>
+    <span>63</span>
+    <span>64</span>
+    <span>65</span>
+    <span>66</span>
+    <span>67</span>
+    <span>68</span>
+    <span>69</span>
+    <span>70</span>
+    <span>71</span>
+    <span>72</span>
+    <span>73</span>
+    <span>74</span>
+    <span>75</span>
+    <span>76</span>
+  </div>
+
+  <div class="slide">
+    <p class="slide-category">Agentes IA</p>
+    <h1 class="slide-title">Harness de Agentes</h1>
+
+    <!-- Main harness diagram -->
+    <div class="harness-container">
+      <span class="harness-label">Harness</span>
+
+      <!-- "repite hasta funcionar" vertical text + dashed loop arrow -->
+      <div class="repeat-label">repite hasta funcionar</div>
+
+      <!-- Dashed loop arrow SVG on left -->
+      <svg class="loop-arrow" width="28" height="140" viewBox="0 0 28 140" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M14 130 L14 10" stroke="#6366f1" stroke-width="1.5" stroke-dasharray="5 3"/>
+        <path d="M14 10 L20 20 M14 10 L8 20" stroke="#6366f1" stroke-width="1.5"/>
+      </svg>
+
+      <!-- Modelo -->
+      <div class="modelo-wrapper">
+        <div class="modelo-box">
+          <div class="box-title">Modelo (el cerebro)</div>
+          <div class="box-subtitle">Claude, GPT, Gemini, Llama…</div>
+        </div>
+      </div>
+
+      <!-- Arrow down SVG -->
+      <div class="arrow-svg">
+        <svg width="2" height="22" viewBox="0 0 2 22" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <line x1="1" y1="0" x2="1" y2="16" stroke="#4a6fa5" stroke-width="2"/>
+          <path d="M1 22 L5 14 M1 22 L-3 14" stroke="#4a6fa5" stroke-width="2"/>
+        </svg>
+      </div>
+
+      <!-- Tools row -->
+      <div class="tools-row">
+        <div class="tool-box">
+          <div class="box-title">Leer archivos</div>
+          <div class="box-label">herramienta</div>
+        </div>
+        <div class="tool-box">
+          <div class="box-title">Editar código</div>
+          <div class="box-label">herramienta</div>
+        </div>
+        <div class="tool-box">
+          <div class="box-title">Ejecutar scripts</div>
+          <div class="box-label">herramienta</div>
+        </div>
+        <div class="tool-box">
+          <div class="box-title">Buscar en la web</div>
+          <div class="box-label">herramienta</div>
+        </div>
+      </div>
+
+      <!-- Memory + Permissions row -->
+      <div class="bottom-row">
+        <div class="memory-box">
+          <div class="box-title">Memoria y contexto</div>
+          <div class="box-subtitle">recuerda lo que ya hizo</div>
+        </div>
+        <div class="permissions-box">
+          <div class="box-title">Permisos y seguridad</div>
+          <div class="box-subtitle">controla lo que la IA puede hacer</div>
+        </div>
+      </div>
+
+      <!-- Loop highlight box -->
+      <div class="loop-box">
+        <div class="box-title">El loop es lo que diferencia un harness de un chatbot</div>
+        <div class="box-subtitle">El chatbot responde una vez. El harness resuelve el problema.</div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <p class="footer-summary">
+      El modelo decide. Las herramientas ejecutan. El loop repite. La memoria mantiene el hilo. Los permisos protegen.
+    </p>
+  </div>
+
+</body>
+</html>
