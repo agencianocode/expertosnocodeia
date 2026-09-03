@@ -30,6 +30,7 @@ import AdminEmails from "@/pages/admin/emails";
 import AdminBeehiiv from "@/pages/admin/beehiiv";
 import AdminAutomations from "@/pages/admin/automations";
 import AdminSegments from "@/pages/admin/segments";
+import AdminTasks from "@/pages/admin/tasks";
 import CourseForm from "@/pages/admin/course-form";
 import CourseLessons from "@/pages/admin/course-lessons";
 import LessonForm from "@/pages/admin/lesson-form";
@@ -247,6 +248,7 @@ function Router() {
           <Route path="/admin/beehiiv" component={AdminBeehiiv} />
           <Route path="/admin/automations" component={AdminAutomations} />
           <Route path="/admin/segments" component={AdminSegments} />
+          <Route path="/admin/tasks" component={AdminTasks} />
           <Route path="/admin/content/course/new" component={CourseForm} />
           <Route path="/admin/content/course/:id/lessons" component={CourseLessons} />
           <Route path="/admin/content/course/:id/edit" component={CourseForm} />
