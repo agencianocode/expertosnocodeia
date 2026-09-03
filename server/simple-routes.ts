@@ -7395,10 +7395,155 @@ const getUserIdFromRequest = (req: any): string | null => {
       });
     } catch (error: any) {
       console.error("Error fetching segment users:", error);
-      res.status(500).json({ 
+      res.status(500).json({
         message: "Error al obtener usuarios del segmento",
-        error: error.message 
+        error: error.message
       });
+    }
+  });
+
+  // ========== INTERNAL TASK MANAGEMENT (Admin Kanban board) ==========
+
+  // Get the full board: columns with their tasks, and the list of assignable admins
+  app.get("/api/admin/tasks/board", simpleAdminAuth, isAdmin, async (req: Request, res: Response) => {
+    try {
+      const { getBoard, getAssignableUsers } = await import("./adminTasks");
+      const [columns, assignableUsers] = await Promise.all([getBoard(), getAssignableUsers()]);
+      res.json({ columns, assignableUsers });
+    } catch (error: any) {
+      console.error("Error fetching task board:", error);
+      res.status(500).json({
+        message: "Error al obtener el tablero de tareas",
+        error: error.message,
+      });
+    }
+  });
+
+  // Create a column
+  app.post("/api/admin/tasks/columns", simpleAdminAuth, isAdmin, async (req: Request, res: Response) => {
+    try {
+      const { name, color } = req.body;
+      if (!name || typeof name !== "string" || !name.trim()) {
+        return res.status(400).json({ message: "El nombre de la columna es requerido" });
+      }
+      const { createColumn } = await import("./adminTasks");
+      const column = await createColumn({ name: name.trim(), color });
+      res.json(column);
+    } catch (error: any) {
+      console.error("Error creating task column:", error);
+      res.status(500).json({ message: "Error al crear la columna", error: error.message });
+    }
+  });
+
+  // Update a column (rename / recolor)
+  app.patch("/api/admin/tasks/columns/:id", simpleAdminAuth, isAdmin, async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+      const { name, color } = req.body;
+      const { updateColumn } = await import("./adminTasks");
+      const column = await updateColumn(id, {
+        ...(name !== undefined ? { name } : {}),
+        ...(color !== undefined ? { color } : {}),
+      });
+      res.json(column);
+    } catch (error: any) {
+      console.error("Error updating task column:", error);
+      res.status(500).json({ message: "Error al actualizar la columna", error: error.message });
+    }
+  });
+
+  // Reorder columns
+  app.post("/api/admin/tasks/columns/reorder", simpleAdminAuth, isAdmin, async (req: Request, res: Response) => {
+    try {
+      const { orderedIds } = req.body;
+      if (!Array.isArray(orderedIds)) {
+        return res.status(400).json({ message: "orderedIds debe ser un arreglo" });
+      }
+      const { reorderColumns } = await import("./adminTasks");
+      await reorderColumns(orderedIds);
+      res.json({ message: "Columnas reordenadas" });
+    } catch (error: any) {
+      console.error("Error reordering task columns:", error);
+      res.status(500).json({ message: "Error al reordenar columnas", error: error.message });
+    }
+  });
+
+  // Delete a column (and its tasks)
+  app.delete("/api/admin/tasks/columns/:id", simpleAdminAuth, isAdmin, async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+      const { deleteColumn } = await import("./adminTasks");
+      await deleteColumn(id);
+      res.json({ message: "Columna eliminada" });
+    } catch (error: any) {
+      console.error("Error deleting task column:", error);
+      res.status(500).json({ message: "Error al eliminar la columna", error: error.message });
+    }
+  });
+
+  // Create a task
+  app.post("/api/admin/tasks", simpleAdminAuth, isAdmin, async (req: Request, res: Response) => {
+    try {
+      const { insertAdminTaskSchema } = await import("../shared/schema");
+      const parsed = insertAdminTaskSchema.omit({ createdBy: true }).safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ message: "Datos inválidos", errors: parsed.error.flatten() });
+      }
+      const userId = (req as any).user?.id || (req as any).user?.claims?.sub;
+      const { createTask } = await import("./adminTasks");
+      const task = await createTask({ ...parsed.data, createdBy: userId || null });
+      res.json(task);
+    } catch (error: any) {
+      console.error("Error creating task:", error);
+      res.status(500).json({ message: "Error al crear la tarea", error: error.message });
+    }
+  });
+
+  // Update a task's fields (title, description, priority, assignee, due date)
+  app.patch("/api/admin/tasks/:id", simpleAdminAuth, isAdmin, async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+      const { patchAdminTaskSchema } = await import("../shared/schema");
+      const parsed = patchAdminTaskSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ message: "Datos inválidos", errors: parsed.error.flatten() });
+      }
+      const { updateTask } = await import("./adminTasks");
+      const task = await updateTask(id, parsed.data);
+      res.json(task);
+    } catch (error: any) {
+      console.error("Error updating task:", error);
+      res.status(500).json({ message: "Error al actualizar la tarea", error: error.message });
+    }
+  });
+
+  // Move a task to a column/position (drag and drop)
+  app.post("/api/admin/tasks/:id/move", simpleAdminAuth, isAdmin, async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+      const { columnId, position } = req.body;
+      if (!columnId || typeof position !== "number") {
+        return res.status(400).json({ message: "columnId y position son requeridos" });
+      }
+      const { moveTask } = await import("./adminTasks");
+      await moveTask(id, columnId, position);
+      res.json({ message: "Tarea movida" });
+    } catch (error: any) {
+      console.error("Error moving task:", error);
+      res.status(500).json({ message: "Error al mover la tarea", error: error.message });
+    }
+  });
+
+  // Delete a task
+  app.delete("/api/admin/tasks/:id", simpleAdminAuth, isAdmin, async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+      const { deleteTask } = await import("./adminTasks");
+      await deleteTask(id);
+      res.json({ message: "Tarea eliminada" });
+    } catch (error: any) {
+      console.error("Error deleting task:", error);
+      res.status(500).json({ message: "Error al eliminar la tarea", error: error.message });
     }
   });
 

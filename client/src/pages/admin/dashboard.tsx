@@ -1,6 +1,6 @@
 import { useAdmin } from "@/hooks/useAdmin";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, BookOpen, FolderOpen, Image, ClipboardList, MessageSquare, DoorOpen, Mail, Newspaper, Zap } from "lucide-react";
+import { Users, BookOpen, FolderOpen, Image, ClipboardList, MessageSquare, DoorOpen, Mail, Newspaper, Zap, KanbanSquare } from "lucide-react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import Sidebar from "@/components/layout/sidebar";
@@ -93,6 +93,13 @@ export default function AdminDashboard() {
       description: "Automatizaciones avanzadas",
       icon: Zap,
       href: "/admin/automations",
+    },
+    {
+      title: "Tareas",
+      value: "—",
+      description: "Tablero Kanban del equipo",
+      icon: KanbanSquare,
+      href: "/admin/tasks",
     },
   ];
 
@@ -193,6 +200,12 @@ export default function AdminDashboard() {
               <Button variant="outline" className="w-full justify-start">
                 <Users className="mr-2 h-4 w-4" />
                 Gestionar Segmentos
+              </Button>
+            </Link>
+            <Link href="/admin/tasks">
+              <Button variant="outline" className="w-full justify-start">
+                <KanbanSquare className="mr-2 h-4 w-4" />
+                Tablero de Tareas
               </Button>
             </Link>
           </CardContent>

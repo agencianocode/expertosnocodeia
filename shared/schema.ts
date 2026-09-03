@@ -1338,3 +1338,62 @@ export type InsertLiveEvent = z.infer<typeof insertLiveEventSchema>;
 
 // Update Types
 export type UpdateRoom = z.infer<typeof updateRoomSchema>;
+
+// ========== INTERNAL TASK MANAGEMENT (Admin Kanban board) ==========
+
+// Columns of the internal admin Kanban board (e.g. "Por hacer", "En progreso", "Hecho")
+export const adminTaskColumns = pgTable("admin_task_columns", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: varchar("name").notNull(),
+  color: varchar("color").default("#1978E5"), // Accent color for the column header
+  position: integer("position").notNull().default(0), // Display order, left to right
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Internal admin tasks organized on the Kanban board
+export const adminTasks = pgTable("admin_tasks", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  columnId: varchar("column_id").notNull().references(() => adminTaskColumns.id, { onDelete: "cascade" }),
+  title: varchar("title").notNull(),
+  description: text("description"),
+  priority: varchar("priority").notNull().default("medium"), // 'low', 'medium', 'high'
+  assigneeId: varchar("assignee_id").references(() => users.id, { onDelete: "set null" }),
+  dueDate: timestamp("due_date"),
+  position: real("position").notNull().default(0), // Display order within the column
+  createdBy: varchar("created_by").references(() => users.id, { onDelete: "set null" }),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertAdminTaskColumnSchema = createInsertSchema(adminTaskColumns).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertAdminTaskSchema = createInsertSchema(adminTasks).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  priority: z.enum(["low", "medium", "high"]).default("medium"),
+  dueDate: z.coerce.date().nullable().optional(),
+});
+
+export const updateAdminTaskSchema = insertAdminTaskSchema.partial().refine(
+  (data) => Object.keys(data).length > 0,
+  { message: "At least one field must be provided" }
+);
+
+// Fields a client is allowed to PATCH on a task (column moves go through the dedicated /move endpoint)
+export const patchAdminTaskSchema = insertAdminTaskSchema
+  .omit({ columnId: true, createdBy: true })
+  .partial();
+
+export type AdminTaskColumn = typeof adminTaskColumns.$inferSelect;
+export type AdminTask = typeof adminTasks.$inferSelect;
+export type InsertAdminTaskColumn = z.infer<typeof insertAdminTaskColumnSchema>;
+export type InsertAdminTask = z.infer<typeof insertAdminTaskSchema>;
+export type UpdateAdminTask = z.infer<typeof updateAdminTaskSchema>;
+export type PatchAdminTask = z.infer<typeof patchAdminTaskSchema>;
