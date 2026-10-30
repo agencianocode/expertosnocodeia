@@ -1,0 +1,486 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Barbería Don Corte | Reserva tu turno online</title>
+<meta name="description" content="Cortes clásicos, fade y barba con navaja. Reserva tu turno online en menos de un minuto.">
+<style>
+  :root {
+    --bg: #111111;
+    --bg-2: #181818;
+    --card: #1f1f1f;
+    --line: #2e2e2e;
+    --text: #f3efe8;
+    --muted: #a39d92;
+    --gold: #c9a24b;
+    --gold-2: #e2c27a;
+    --ok: #4caf7a;
+    --err: #e5645a;
+    --radius: 14px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg); color: var(--text); line-height: 1.6;
+  }
+  h1, h2, h3 { font-family: Georgia, "Times New Roman", serif; line-height: 1.15; }
+  a { color: inherit; text-decoration: none; }
+  .wrap { max-width: 1100px; margin: 0 auto; padding: 0 16px; }
+  section { padding: 72px 0; }
+  .eyebrow { color: var(--gold); letter-spacing: .2em; text-transform: uppercase; font-size: .78rem; font-weight: 600; }
+  h2 { font-size: clamp(1.8rem, 4vw, 2.6rem); margin: 8px 0 12px; }
+  .lead { color: var(--muted); max-width: 560px; }
+
+  .btn {
+    display: inline-block; border: 0; cursor: pointer; font: inherit; font-weight: 600;
+    background: var(--gold); color: #1a1405; padding: 13px 26px; border-radius: 999px;
+    transition: transform .15s, background .15s;
+  }
+  .btn:hover { background: var(--gold-2); transform: translateY(-1px); }
+  .btn:disabled { opacity: .45; cursor: not-allowed; transform: none; }
+  .btn.ghost { background: transparent; color: var(--text); border: 1px solid var(--line); }
+  .btn.ghost:hover { border-color: var(--gold); background: transparent; }
+
+  /* Nav */
+  nav { position: sticky; top: 0; z-index: 10; background: rgba(17,17,17,.88); backdrop-filter: blur(8px); border-bottom: 1px solid var(--line); }
+  nav .wrap { display: flex; align-items: center; justify-content: space-between; height: 64px; }
+  .logo { font-family: Georgia, serif; font-size: 1.25rem; font-weight: 700; }
+  .logo span { color: var(--gold); }
+  nav ul { display: flex; gap: 24px; list-style: none; font-size: .92rem; color: var(--muted); }
+  nav ul a:hover { color: var(--text); }
+  nav .btn { padding: 8px 18px; font-size: .9rem; }
+  @media (max-width: 700px) { nav ul { display: none; } }
+
+  /* Hero */
+  .hero {
+    padding: 110px 0 96px;
+    background:
+      linear-gradient(180deg, rgba(17,17,17,.55), var(--bg)),
+      repeating-linear-gradient(45deg, #161616 0 14px, #1b1b1b 14px 28px);
+    text-align: center;
+  }
+  .hero h1 { font-size: clamp(2.4rem, 7vw, 4.4rem); margin: 14px 0 18px; }
+  .hero h1 em { color: var(--gold); font-style: italic; }
+  .hero p { color: var(--muted); max-width: 520px; margin: 0 auto 30px; font-size: 1.08rem; }
+  .hero .cta { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+  .stats { display: flex; gap: 40px; justify-content: center; margin-top: 56px; flex-wrap: wrap; }
+  .stats div strong { display: block; font-family: Georgia, serif; font-size: 1.9rem; color: var(--gold); }
+  .stats div span { color: var(--muted); font-size: .85rem; }
+
+  /* Services */
+  .grid { display: grid; gap: 16px; margin-top: 36px; }
+  .services { grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 24px; }
+  .service h3 { font-size: 1.25rem; }
+  .service p { color: var(--muted); font-size: .92rem; margin: 6px 0 16px; }
+  .service .meta { display: flex; justify-content: space-between; align-items: baseline; }
+  .price { color: var(--gold-2); font-weight: 700; font-size: 1.25rem; }
+  .dur { color: var(--muted); font-size: .85rem; }
+
+  /* Team */
+  .team { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+  .barber { text-align: center; }
+  .avatar {
+    width: 84px; height: 84px; border-radius: 50%; margin: 0 auto 14px;
+    display: grid; place-items: center; font-family: Georgia, serif; font-size: 2rem; font-weight: 700;
+    background: linear-gradient(135deg, var(--gold), #7d6122); color: #1a1405;
+  }
+  .barber p { color: var(--muted); font-size: .88rem; }
+
+  /* Booking */
+  #reservar { background: var(--bg-2); border-block: 1px solid var(--line); }
+  .booking { display: grid; gap: 28px; grid-template-columns: 1fr; margin-top: 34px; }
+  @media (min-width: 860px) { .booking { grid-template-columns: 1.4fr 1fr; align-items: start; } }
+  .step + .step { margin-top: 26px; }
+  .step h3 { font-size: 1.05rem; margin-bottom: 12px; font-family: system-ui, sans-serif; font-weight: 600; }
+  .step h3 b { display: inline-grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; background: var(--gold); color: #1a1405; font-size: .8rem; margin-right: 8px; }
+  .opts { display: flex; flex-wrap: wrap; gap: 8px; }
+  .opt {
+    background: var(--card); color: var(--text); border: 1px solid var(--line); border-radius: 10px;
+    padding: 10px 14px; font: inherit; font-size: .92rem; cursor: pointer; transition: border-color .15s, background .15s;
+  }
+  .opt:hover { border-color: var(--gold); }
+  .opt[aria-pressed="true"] { border-color: var(--gold); background: rgba(201,162,75,.14); color: var(--gold-2); }
+  .opt:disabled { opacity: .3; cursor: not-allowed; text-decoration: line-through; }
+  .opt small { color: var(--muted); display: block; font-size: .75rem; }
+  input[type=date], input[type=text], input[type=tel] {
+    width: 100%; background: var(--card); border: 1px solid var(--line); border-radius: 10px;
+    color: var(--text); padding: 12px 14px; font: inherit; color-scheme: dark;
+  }
+  input:focus-visible, .opt:focus-visible, .btn:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+  .fields { display: grid; gap: 10px; grid-template-columns: 1fr 1fr; }
+  @media (max-width: 520px) { .fields { grid-template-columns: 1fr; } }
+  .hint { color: var(--muted); font-size: .85rem; margin-top: 8px; }
+
+  .summary { position: sticky; top: 84px; }
+  .summary h3 { font-size: 1.2rem; margin-bottom: 14px; }
+  .summary dl { display: grid; grid-template-columns: auto 1fr; gap: 8px 14px; font-size: .94rem; }
+  .summary dt { color: var(--muted); }
+  .summary dd { text-align: right; }
+  .summary .total { margin-top: 16px; padding-top: 14px; border-top: 1px dashed var(--line); display: flex; justify-content: space-between; font-weight: 700; }
+  .summary .btn { width: 100%; margin-top: 18px; }
+  .msg { margin-top: 12px; font-size: .9rem; min-height: 1.3em; }
+  .msg.err { color: var(--err); }
+
+  .confirm { display: none; text-align: center; padding: 32px 24px; border-color: var(--ok); }
+  .confirm.show { display: block; }
+  .confirm .check { width: 56px; height: 56px; border-radius: 50%; background: var(--ok); color: #fff; font-size: 1.8rem; display: grid; place-items: center; margin: 0 auto 14px; }
+  .confirm .code { font-family: ui-monospace, Menlo, monospace; color: var(--gold-2); letter-spacing: .12em; }
+  .confirm .btn { margin: 10px 4px 0; }
+
+  .myres { margin-top: 28px; }
+  .myres h4 { font-size: .85rem; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
+  .myres li { list-style: none; display: flex; justify-content: space-between; gap: 10px; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--line); font-size: .9rem; }
+  .myres button { background: none; border: 0; color: var(--err); cursor: pointer; font: inherit; font-size: .82rem; }
+
+  /* Reviews + info */
+  .reviews { grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+  .review p { font-style: italic; }
+  .review footer { margin-top: 12px; color: var(--muted); font-size: .85rem; }
+  .stars { color: var(--gold); letter-spacing: 2px; margin-bottom: 8px; }
+  .info { grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+  .hours { width: 100%; border-collapse: collapse; font-size: .94rem; }
+  .hours td { padding: 6px 0; border-bottom: 1px solid var(--line); }
+  .hours td:last-child { text-align: right; color: var(--muted); }
+  footer.site { padding: 28px 0; text-align: center; color: var(--muted); font-size: .85rem; border-top: 1px solid var(--line); }
+
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; scroll-behavior: auto !important; } }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="wrap">
+    <a href="#" class="logo">Don <span>Corte</span></a>
+    <ul>
+      <li><a href="#servicios">Servicios</a></li>
+      <li><a href="#equipo">Equipo</a></li>
+      <li><a href="#opiniones">Opiniones</a></li>
+      <li><a href="#contacto">Contacto</a></li>
+    </ul>
+    <a href="#reservar" class="btn">Reservar</a>
+  </div>
+</nav>
+
+<header class="hero">
+  <div class="wrap">
+    <div class="eyebrow">Barbería clásica · Desde 2014</div>
+    <h1>Corte de <em>caballero</em>,<br>sin esperas.</h1>
+    <p>Fade, clásico y barba con navaja caliente. Elige servicio, barbero y horario: tu turno queda confirmado en menos de un minuto.</p>
+    <div class="cta">
+      <a href="#reservar" class="btn">Reservar mi turno</a>
+      <a href="#servicios" class="btn ghost">Ver servicios</a>
+    </div>
+    <div class="stats">
+      <div><strong>4.9★</strong><span>+850 reseñas</span></div>
+      <div><strong>10 años</strong><span>de oficio</span></div>
+      <div><strong>0 esperas</strong><span>con turno reservado</span></div>
+    </div>
+  </div>
+</header>
+
+<section id="servicios">
+  <div class="wrap">
+    <div class="eyebrow">Servicios</div>
+    <h2>Lo que hacemos mejor</h2>
+    <p class="lead">Precios claros, sin sorpresas. Todos los servicios incluyen toalla caliente y asesoría de estilo.</p>
+    <div class="grid services" id="serviceGrid"></div>
+  </div>
+</section>
+
+<section id="equipo" style="padding-top:0">
+  <div class="wrap">
+    <div class="eyebrow">Equipo</div>
+    <h2>Tus barberos</h2>
+    <div class="grid team" id="teamGrid"></div>
+  </div>
+</section>
+
+<section id="reservar">
+  <div class="wrap">
+    <div class="eyebrow">Reservas online</div>
+    <h2>Reserva tu turno</h2>
+    <p class="lead">Elige en cuatro pasos. Los horarios ocupados aparecen tachados.</p>
+
+    <div class="booking">
+      <form id="form" novalidate>
+        <div class="step">
+          <h3><b>1</b>Servicio</h3>
+          <div class="opts" id="optServices"></div>
+        </div>
+        <div class="step">
+          <h3><b>2</b>Barbero</h3>
+          <div class="opts" id="optBarbers"></div>
+        </div>
+        <div class="step">
+          <h3><b>3</b>Fecha y hora</h3>
+          <input type="date" id="date" aria-label="Fecha">
+          <div class="opts" id="optSlots" style="margin-top:12px"></div>
+          <p class="hint" id="slotHint">Elige primero un barbero y una fecha.</p>
+        </div>
+        <div class="step">
+          <h3><b>4</b>Tus datos</h3>
+          <div class="fields">
+            <input type="text" id="name" placeholder="Nombre" autocomplete="name" aria-label="Nombre">
+            <input type="tel" id="phone" placeholder="Teléfono / WhatsApp" autocomplete="tel" aria-label="Teléfono">
+          </div>
+        </div>
+      </form>
+
+      <aside>
+        <div class="card summary" id="summaryCard">
+          <h3>Resumen</h3>
+          <dl>
+            <dt>Servicio</dt><dd id="sService">—</dd>
+            <dt>Barbero</dt><dd id="sBarber">—</dd>
+            <dt>Fecha</dt><dd id="sDate">—</dd>
+            <dt>Hora</dt><dd id="sTime">—</dd>
+            <dt>Duración</dt><dd id="sDur">—</dd>
+          </dl>
+          <div class="total"><span>Total</span><span id="sTotal">—</span></div>
+          <button class="btn" id="submit" type="button">Confirmar reserva</button>
+          <p class="msg" id="msg" role="alert"></p>
+          <div class="myres" id="myres" hidden>
+            <h4>Tus reservas en este dispositivo</h4>
+            <ul id="myresList"></ul>
+          </div>
+        </div>
+        <div class="card confirm" id="confirm" aria-live="polite">
+          <div class="check">✓</div>
+          <h3>¡Turno reservado!</h3>
+          <p id="confirmText" style="color:var(--muted);margin:8px 0"></p>
+          <p>Código: <span class="code" id="confirmCode"></span></p>
+          <a class="btn" id="waBtn" target="_blank" rel="noopener">Confirmar por WhatsApp</a>
+          <button class="btn ghost" id="again" type="button">Nueva reserva</button>
+        </div>
+      </aside>
+    </div>
+  </div>
+</section>
+
+<section id="opiniones">
+  <div class="wrap">
+    <div class="eyebrow">Opiniones</div>
+    <h2>Clientes que vuelven</h2>
+    <div class="grid reviews">
+      <div class="card review"><div class="stars">★★★★★</div><p>“El mejor fade de la ciudad. Reservé desde el celular y entré sin esperar ni un minuto.”</p><footer>— Martín R.</footer></div>
+      <div class="card review"><div class="stars">★★★★★</div><p>“La barba con navaja y toalla caliente es otro nivel. Ambiente impecable.”</p><footer>— Santiago L.</footer></div>
+      <div class="card review"><div class="stars">★★★★★</div><p>“Llevo a mi hijo y a mí: cada uno con su turno, todo ordenado. Súper recomendable.”</p><footer>— Diego P.</footer></div>
+    </div>
+  </div>
+</section>
+
+<section id="contacto" style="padding-top:0">
+  <div class="wrap">
+    <div class="eyebrow">Visítanos</div>
+    <h2>Dónde y cuándo</h2>
+    <div class="grid info">
+      <div class="card">
+        <h3 style="margin-bottom:10px">Horarios</h3>
+        <table class="hours">
+          <tr><td>Lunes – Viernes</td><td>10:00 – 20:00</td></tr>
+          <tr><td>Sábado</td><td>09:00 – 18:00</td></tr>
+          <tr><td>Domingo</td><td>Cerrado</td></tr>
+        </table>
+      </div>
+      <div class="card">
+        <h3 style="margin-bottom:10px">Contacto</h3>
+        <p>📍 Av. Principal 1234, Centro</p>
+        <p>📞 <a href="tel:+5491100000000">+54 9 11 0000-0000</a></p>
+        <p>💬 <a href="https://wa.me/5491100000000" target="_blank" rel="noopener">WhatsApp</a></p>
+        <p>📷 <a href="#">@doncorte.barberia</a></p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer class="site">© <span id="year"></span> Barbería Don Corte · Todos los derechos reservados</footer>
+
+<script>
+(() => {
+  // ===== Configuración (editar con los datos reales del negocio) =====
+  const WHATSAPP = "5491100000000";           // número con código de país, sin + ni espacios
+  const SERVICES = [
+    { id: "corte",   name: "Corte clásico",       desc: "Tijera y máquina, acabado con navaja.", price: 8000,  min: 30 },
+    { id: "fade",    name: "Fade / Degradé",      desc: "Degradé a medida, perfilado incluido.", price: 9000,  min: 45 },
+    { id: "barba",   name: "Barba con navaja",    desc: "Toalla caliente, aceites y perfilado.", price: 6000,  min: 30 },
+    { id: "combo",   name: "Corte + Barba",       desc: "El combo completo del caballero.",      price: 13500, min: 60 },
+    { id: "kids",    name: "Corte niños",         desc: "Hasta 12 años.",                        price: 6500,  min: 30 },
+    { id: "color",   name: "Perfilado + Cejas",   desc: "Detalle rápido para mantener el look.", price: 3500,  min: 15 },
+  ];
+  const BARBERS = [
+    { id: "any",   name: "Cualquiera",   role: "El primero disponible" },
+    { id: "nico",  name: "Nico",         role: "Fade y degradés" },
+    { id: "lucas", name: "Lucas",        role: "Clásicos y barba" },
+    { id: "mati",  name: "Mati",         role: "Estilos modernos" },
+  ];
+  // día de semana (0=dom) -> [abre, cierra] en horas decimales; null = cerrado
+  const HOURS = { 0: null, 1: [10,20], 2: [10,20], 3: [10,20], 4: [10,20], 5: [10,20], 6: [9,18] };
+  const STEP = 15;                            // minutos mínimos de grilla
+  const SLOT = 30;                            // intervalo entre horarios ofrecidos
+  const MAX_DAYS = 30;                        // cuántos días hacia adelante se puede reservar
+  const KEY = "doncorte_reservas_v1";
+
+  // ===== Utilidades =====
+  const $ = id => document.getElementById(id);
+  const money = n => "$" + n.toLocaleString("es-AR");
+  const pad = n => String(n).padStart(2, "0");
+  const iso = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+  const hm = m => `${pad(Math.floor(m/60))}:${pad(m%60)}`;
+  const parseDate = s => { const [y,m,d] = s.split("-").map(Number); return new Date(y, m-1, d); };
+  const fmtDate = s => parseDate(s).toLocaleDateString("es-AR", { weekday:"long", day:"numeric", month:"long" });
+  const el = (tag, props = {}, ...kids) => { const e = Object.assign(document.createElement(tag), props); kids.forEach(k => e.append(k)); return e; };
+
+  // ===== Almacenamiento (localStorage; reemplazar por una API/DB en producción) =====
+  const load = () => { try { return JSON.parse(localStorage.getItem(KEY)) || []; } catch { return []; } };
+  const save = list => { try { localStorage.setItem(KEY, JSON.stringify(list)); } catch {} };
+
+  // Reservas "simuladas" para que la agenda no se vea vacía en la demo (determinista por fecha+barbero)
+  function demoBusy(dateStr, barberId) {
+    let seed = 0; for (const c of dateStr + barberId) seed = (seed * 31 + c.charCodeAt(0)) >>> 0;
+    const busy = [];
+    for (let i = 0; i < 5; i++) { seed = (seed * 1103515245 + 12345) >>> 0; busy.push({ start: 600 + (seed % 20) * 30, len: 30 }); }
+    return busy;
+  }
+
+  // ===== Estado =====
+  const state = { service: null, barber: null, date: "", time: null };
+
+  // ===== Render: servicios y equipo =====
+  SERVICES.forEach(s => {
+    $("serviceGrid").append(el("div", { className: "card service" },
+      el("h3", { textContent: s.name }),
+      el("p", { textContent: s.desc }),
+      el("div", { className: "meta" }, el("span", { className: "price", textContent: money(s.price) }), el("span", { className: "dur", textContent: s.min + " min" }))
+    ));
+  });
+  BARBERS.filter(b => b.id !== "any").forEach(b => {
+    $("teamGrid").append(el("div", { className: "card barber" },
+      el("div", { className: "avatar", textContent: b.name[0] }),
+      el("h3", { textContent: b.name }),
+      el("p", { textContent: b.role })
+    ));
+  });
+
+  // ===== Render: opciones de reserva =====
+  function pressed(container, id) { [...container.children].forEach(c => c.setAttribute("aria-pressed", c.dataset.id === id)); }
+
+  SERVICES.forEach(s => {
+    const b = el("button", { type: "button", className: "opt", textContent: s.name }, el("small", { textContent: `${money(s.price)} · ${s.min} min` }));
+    b.dataset.id = s.id; b.setAttribute("aria-pressed", "false");
+    b.onclick = () => { state.service = s; state.time = null; pressed($("optServices"), s.id); renderSlots(); renderSummary(); };
+    $("optServices").append(b);
+  });
+  BARBERS.forEach(br => {
+    const b = el("button", { type: "button", className: "opt", textContent: br.name }, el("small", { textContent: br.role }));
+    b.dataset.id = br.id; b.setAttribute("aria-pressed", "false");
+    b.onclick = () => { state.barber = br; state.time = null; pressed($("optBarbers"), br.id); renderSlots(); renderSummary(); };
+    $("optBarbers").append(b);
+  });
+
+  const dateInput = $("date");
+  const today = new Date(); today.setHours(0,0,0,0);
+  const maxDate = new Date(today); maxDate.setDate(maxDate.getDate() + MAX_DAYS);
+  dateInput.min = iso(today); dateInput.max = iso(maxDate);
+  dateInput.onchange = () => { state.date = dateInput.value; state.time = null; renderSlots(); renderSummary(); };
+
+  // ===== Disponibilidad =====
+  function isBusy(barberId, dateStr, start, len) {
+    const overlap = (a, al, b, bl) => a < b + bl && b < a + al;
+    const mine = load().filter(r => r.date === dateStr && (r.barber === barberId));
+    return demoBusy(dateStr, barberId).some(x => overlap(start, len, x.start, x.len))
+        || mine.some(r => overlap(start, len, r.start, r.len));
+  }
+  function slotAvailable(barber, dateStr, start, len) {
+    const ids = barber.id === "any" ? BARBERS.filter(b => b.id !== "any").map(b => b.id) : [barber.id];
+    return ids.some(id => !isBusy(id, dateStr, start, len));
+  }
+  function pickBarberFor(barber, dateStr, start, len) {
+    if (barber.id !== "any") return barber.id;
+    return BARBERS.filter(b => b.id !== "any").find(b => !isBusy(b.id, dateStr, start, len)).id;
+  }
+
+  function renderSlots() {
+    const box = $("optSlots"), hint = $("slotHint");
+    box.replaceChildren();
+    if (!state.service || !state.barber || !state.date) {
+      hint.textContent = !state.service ? "Elige primero un servicio." : !state.barber ? "Elige un barbero." : "Elige una fecha.";
+      return;
+    }
+    const day = parseDate(state.date);
+    const hrs = HOURS[day.getDay()];
+    if (!hrs) { hint.textContent = "Ese día estamos cerrados. Elige otra fecha."; return; }
+    const now = new Date(); const isToday = iso(now) === state.date;
+    const nowMin = now.getHours() * 60 + now.getMinutes();
+    let count = 0;
+    for (let m = hrs[0] * 60; m + state.service.min <= hrs[1] * 60; m += SLOT) {
+      const past = isToday && m <= nowMin + 15;
+      const free = !past && slotAvailable(state.barber, state.date, m, state.service.min);
+      const b = el("button", { type: "button", className: "opt", textContent: hm(m), disabled: !free });
+      b.setAttribute("aria-pressed", String(state.time === m));
+      b.onclick = () => { state.time = m; [...box.children].forEach(c => c.setAttribute("aria-pressed", c === b)); renderSummary(); };
+      box.append(b); if (free) count++;
+    }
+    hint.textContent = count ? `${count} horarios disponibles.` : "No quedan horarios ese día. Prueba otra fecha u otro barbero.";
+  }
+
+  function renderSummary() {
+    $("sService").textContent = state.service ? state.service.name : "—";
+    $("sBarber").textContent = state.barber ? state.barber.name : "—";
+    $("sDate").textContent = state.date ? fmtDate(state.date) : "—";
+    $("sTime").textContent = state.time != null ? hm(state.time) : "—";
+    $("sDur").textContent = state.service ? state.service.min + " min" : "—";
+    $("sTotal").textContent = state.service ? money(state.service.price) : "—";
+  }
+
+  // ===== Mis reservas =====
+  function renderMine() {
+    const list = load().filter(r => r.date >= iso(today)).sort((a, b) => (a.date + hm(a.start)).localeCompare(b.date + hm(b.start)));
+    $("myres").hidden = !list.length;
+    $("myresList").replaceChildren(...list.map(r => {
+      const x = el("button", { type: "button", textContent: "Cancelar" });
+      x.onclick = () => { if (confirm("¿Cancelar esta reserva?")) { save(load().filter(i => i.code !== r.code)); renderMine(); renderSlots(); } };
+      return el("li", {}, el("span", { textContent: `${fmtDate(r.date)} · ${hm(r.start)} · ${r.serviceName}` }), x);
+    }));
+  }
+
+  // ===== Confirmar =====
+  const msg = (t, err = true) => { $("msg").textContent = t; $("msg").className = "msg" + (err ? " err" : ""); };
+  $("submit").onclick = () => {
+    const name = $("name").value.trim(), phone = $("phone").value.trim();
+    if (!state.service) return msg("Elige un servicio.");
+    if (!state.barber) return msg("Elige un barbero.");
+    if (!state.date) return msg("Elige una fecha.");
+    if (state.time == null) return msg("Elige un horario.");
+    if (name.length < 2) return msg("Escribe tu nombre.");
+    if (phone.replace(/\D/g, "").length < 8) return msg("Escribe un teléfono válido.");
+    if (!slotAvailable(state.barber, state.date, state.time, state.service.min)) { renderSlots(); return msg("Ese horario se acaba de ocupar. Elige otro."); }
+
+    const barberId = pickBarberFor(state.barber, state.date, state.time, state.service.min);
+    const barberName = BARBERS.find(b => b.id === barberId).name;
+    const code = "DC-" + Math.random().toString(36).slice(2, 7).toUpperCase();
+    const res = { code, name, phone, date: state.date, start: state.time, len: state.service.min,
+                  service: state.service.id, serviceName: state.service.name, barber: barberId, price: state.service.price };
+    save([...load(), res]);
+
+    const text = `Hola! Reservé en Don Corte.%0A${code}%0A${state.service.name} con ${barberName}%0A${fmtDate(state.date)} a las ${hm(state.time)}%0ANombre: ${encodeURIComponent(name)}`;
+    $("waBtn").href = `https://wa.me/${WHATSAPP}?text=${text}`;
+    $("confirmCode").textContent = code;
+    $("confirmText").textContent = `${state.service.name} con ${barberName} · ${fmtDate(state.date)} a las ${hm(state.time)}`;
+    $("summaryCard").hidden = true; $("confirm").classList.add("show");
+    $("confirm").scrollIntoView({ behavior: "smooth", block: "center" });
+    renderMine();
+  };
+  $("again").onclick = () => {
+    $("confirm").classList.remove("show"); $("summaryCard").hidden = false;
+    state.time = null; msg("", false); renderSlots(); renderSummary();
+  };
+
+  $("year").textContent = new Date().getFullYear();
+  renderSummary(); renderMine();
+})();
+</script>
+</body>
+</html>
